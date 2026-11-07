@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { applyEffect } from '../../../src/battle/effects/apply.js';
+import { effectContext } from '../../../src/battle/effects/context.js';
 import { createBattle } from '../../../src/battle/setup.js';
+import { MOVES } from '../../../src/content/moves.js';
+import type { BattleEvent } from '../../../src/events/types.js';
+import { draws } from '../helpers.js';
 import { at, gridlessSetup, mon, SEED } from '../helpers.js';
 import { fresh, ofType, run } from './kit.js';
 
@@ -62,6 +67,16 @@ describe('status shield (Sagelet’s Disclaimer)', () => {
     at(s, 0).shields = [{ against: 'status', count: 1 }];
     at(s, 0).statuses.push({ id: 'quantized', remaining: 2 });
     expect(ofType(run(s, 7, 'throttle', 0), 'StatusBlocked')).toHaveLength(1);
+    expect(at(s, 0).shields).toEqual([{ against: 'status', count: 1 }]);
+  });
+
+  it('Drift is not a status for Disclaimer (Ruling 64): a Drift stack lands and the shield stays', () => {
+    const s = fresh();
+    at(s, 0).shields = [{ against: 'status', count: 1 }];
+    const events: BattleEvent[] = [];
+    const ctx = effectContext(s, 7, 0, MOVES.throttle, draws(), 2, events);
+    applyEffect(ctx, { kind: 'applyStatus', who: 'target', status: 'drift' });
+    expect(events).toEqual([{ round: 1, type: 'DriftChanged', target: 0, drift: 1 }]);
     expect(at(s, 0).shields).toEqual([{ against: 'status', count: 1 }]);
   });
 

@@ -1,6 +1,7 @@
 import type { PassiveTrigger } from '../../content/primitives.js';
 import type { BattleEvent } from '../../events/types.js';
 import { EngineInvariantError } from '../../math/bp.js';
+import { onField } from '../order.js';
 import type { BattleState } from '../state.js';
 import { runTrigger } from './apply.js';
 
@@ -8,9 +9,9 @@ import { runTrigger } from './apply.js';
 // apply.ts with the dispatcher; afterFirstAction is fired by resolveAction and statusIncoming inside status
 // application.
 
-/** Fires `trigger` for every living creature in canonical order. */
-function fireAll(state: BattleState, trigger: PassiveTrigger, events: BattleEvent[]): void {
-  for (const c of state.creatures) runTrigger(state, c, trigger, events);
+/** Fires `trigger` for every living creature in canonical order (only those on the field with `fieldOnly`). */
+function fireAll(state: BattleState, trigger: PassiveTrigger, events: BattleEvent[], fieldOnly = false): void {
+  for (const c of state.creatures) if (!fieldOnly || onField(state, c)) runTrigger(state, c, trigger, events);
 }
 
 /**
@@ -29,7 +30,10 @@ export function roundEndPassives(state: BattleState, events: BattleEvent[]): voi
   fireAll(state, 'roundEnd', events);
 }
 
-/** notKoThisRound, at end of round after the status and field ticks, for every creature still alive (Slopling). */
+/**
+ * notKoThisRound, at end of round after the status and field ticks, for every creature still alive and on
+ * the field — never a benched one (Ruling 60; Slopling).
+ */
 export function notKoPassives(state: BattleState, events: BattleEvent[]): void {
-  fireAll(state, 'notKoThisRound', events);
+  fireAll(state, 'notKoThisRound', events, true);
 }

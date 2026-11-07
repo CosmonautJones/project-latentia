@@ -9,6 +9,7 @@ import { lo, type ActionDraws } from '../../rng/draws.js';
 import { moveCost } from '../../status/apply.js';
 import { extendChain } from '../handoff.js';
 import type { BattleState, CreatureState, Temperature } from '../state.js';
+import { legalTarget } from '../order.js';
 import { aimMove, temperatureOf } from '../targeting.js';
 import { applyCharge, chargesFirst } from './charge.js';
 import { holds } from './conditions.js';
@@ -158,9 +159,10 @@ export function bookkeeping(ctx: EffectContext, user: CreatureState, target: Cre
 }
 
 /**
- * `copy` of a move (Episodic Replay, Stochastic Repeat; Ruling 58). The copied move (copySource) is aimed at
- * its original target if still legal for the user, else its default selector; with none, the copy fails
- * (Missed). Otherwise MoveUsed for the copied move, the copied cost + costOffset is paid (min 0; Quantized
+ * `copy` of a move (Episodic Replay, Stochastic Repeat; Rulings 58, 59). The copied move (copySource) is aimed
+ * at the copier's own entry target if that is legal for the copied move, else at the copied move's original
+ * target if legal, else by its default selector (self/none moves at the user; engine-picked kinds pick); with
+ * no move to copy, or no target left, the copy fails (Missed). Otherwise MoveUsed for the copied move, the copied cost + costOffset is paid (min 0; Quantized
  * applies), and it resolves with THIS action's draws, modifiers and tally — its own accuracy on the same
  * lo(D3), its guard check, its effect list (a charge move only starts charging). The resolver's bookkeeping
  * then follows the copied move (`ctx.copied`).
@@ -168,7 +170,8 @@ export function bookkeeping(ctx: EffectContext, user: CreatureState, target: Cre
 function applyCopyMove(ctx: EffectContext, effect: CopyMoveEffect): void {
   const user = creature(ctx, ctx.actor);
   const source = copySource(ctx, effect);
-  const choice = source === null ? null : aimMove(ctx.state, user, source.def.id, source.target);
+  const intended = source === null || !legalTarget(ctx.state, user, source.def, ctx.target) ? source?.target : ctx.target;
+  const choice = source === null || intended === undefined ? null : aimMove(ctx.state, user, source.def.id, intended);
   if (choice === null) {
     ctx.events.push({ round: ctx.round, type: 'Missed', actor: user.index, target: ctx.target });
     return;

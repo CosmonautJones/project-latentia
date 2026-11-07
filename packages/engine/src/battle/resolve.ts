@@ -52,7 +52,8 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
  * nothing) → a charge round stops here (no accuracy, Ruling 13; no Observation, history or lastMoveId,
  * Ruling 55) → the accuracy-step modifiers are taken → fail / failsIf / accuracy (lo D3) → the target's
  * guard → effects in list order (crit lo D4, roll lo D5, hit count hi D5, riders D6) → bookkeeping (of the
- * copied move, after a move copy) → guard streak → history and the side's last move → on the creature's
+ * copied move, after a move copy) → guard streak → history (the move that ran: a copy records the copied
+ * move and its target, Ruling 62) and the side's last move → on the creature's
  * first action, its afterFirstAction passives (Ruling 57; before the round loop's win check). An action
  * that gets past the skip checks breaks the enemy's Handoff chains. Uses only the six given draws.
  */
@@ -93,7 +94,7 @@ export function resolveAction(state: BattleState, entry: ActionEntry, draws: Act
     bookkeeping(done, user, creature(done, done.target));
     user.guardStreak = isGuardMove(listed) ? user.guardStreak + 1 : 0;
     user.lastMoveId = move.id;
-    user.moveHistory.push({ round, moveId: move.id, target: targetIndex, damaged: [...ctx.tally.damaged] });
+    user.moveHistory.push({ round, moveId: done.move.id, target: done.target, damaged: [...ctx.tally.damaged] });
     if (!copiesMove(done.move)) state.sides[user.side].lastMove = { actor: user.index, moveId: done.move.id, target: done.target };
   }
   if (first) runTrigger(state, user, 'afterFirstAction', events, ctx);

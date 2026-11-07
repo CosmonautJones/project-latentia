@@ -60,11 +60,12 @@ export function applyRevert(ctx: EffectContext, effect: RevertEffect): void {
 }
 
 /**
- * A KO about to happen (HP is 0): the holder's oldest live revert-on-KO snapshot (Save State) is used up and
- * restored instead — Healed back to the saved HP, no Fainted. Returns whether the KO was reverted.
+ * A KO about to happen: the holder's oldest live revert-on-KO HP snapshot (Save State) is used up and
+ * restored instead — Healed back to the saved HP, no Fainted. Only an `hp` snapshot can revert a KO; any
+ * other is left alone (Ruling 65). Returns whether the KO was reverted.
  */
 export function revertKo(c: CreatureState, round: number, events: BattleEvent[]): boolean {
-  const snap = c.snapshots.find((x) => x.onKo && (x.lastRound === null || x.lastRound >= round));
+  const snap = c.snapshots.find((x) => x.what === 'hp' && x.onKo && (x.lastRound === null || x.lastRound >= round));
   if (snap === undefined) return false;
   c.snapshots = c.snapshots.filter((x) => x !== snap);
   restore(c, snap, round, events);

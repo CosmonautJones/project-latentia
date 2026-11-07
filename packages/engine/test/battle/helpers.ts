@@ -32,10 +32,13 @@ export const gridlessSetup = (a: Partial<SideSetup> = {}, b: Partial<SideSetup> 
 });
 
 /**
- * Undoes what the battleStart passives set up at createBattle (Sagelet's status shield, Forkling's hit
- * shield, Blitzr's +1 priority) and gives every creature round-start draws whose passive-proc value
- * (hi(r2, 100) = 99) fires no chance passive, so tests of other rules see no passive at all. submitRound
- * redraws R1/R2 every round. Passive tests use `battleWithPassives`.
+ * For tests of other rules. Clears every creature's shields and pending next-action modifiers — at creation
+ * these are exactly what the battleStart passives set up (Sagelet's status shield, Forkling's hit shield,
+ * Blitzr's +1 priority) — and sets every creature's round-start draws to R1 = 0, R2 with hi(r2, 100) = 99.
+ * That neutralizes chance passives (Blitzr's first-action recoil) only for actions resolved directly with
+ * resolveAction/resolveEntry: submitRound redraws R1/R2 every round, so there they can still proc. Passives
+ * without a chance — Slopling's notKoThisRound stage — are not neutralized. Passive tests use
+ * `battleWithPassives` or createBattle.
  */
 export function withoutPassives(s: BattleState): BattleState {
   for (const c of s.creatures) {

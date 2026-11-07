@@ -44,8 +44,8 @@ export function applyCopyBuff(ctx: EffectContext, effect: CopyBuffEffect): void 
 /**
  * The move a move copy re-uses, with the target that move was aimed at (Ruling 58), or null when there is
  * none: Episodic Replay (`lastAllyMove`) the user's side's last move (SideState.lastMove, which a copy
- * records as the move it copied); Stochastic Repeat (`targetLastMove`) the target's latest resolved move that
- * is not itself a move copy.
+ * records as the move it copied); Stochastic Repeat (`targetLastMove`) the target's latest history record
+ * that is not a move copy (a copy that ran records the copied move, Ruling 62; only a failed copy is skipped).
  */
 export function copySource(ctx: EffectContext, effect: CopyMoveEffect): { def: MoveDef; target: number } | null {
   const user = creature(ctx, ctx.actor);

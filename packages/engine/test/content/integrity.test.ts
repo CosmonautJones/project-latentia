@@ -216,6 +216,12 @@ describe('draw slots', () => {
     }
   });
 
+  it('every species passive chance reads r2hi, the round-start passive proc (Ruling 65)', () => {
+    const chances = SPECIES_IDS.flatMap((s) => walk(SPECIES[s].passives, s).filter(({ obj }) => 'chance' in obj));
+    expect(chances.length).toBeGreaterThan(0); // Blitzr's Move Fast recoil, at least
+    for (const { path, obj } of chances) expect((obj.chance as { slot: string }).slot, path).toBe('r2hi');
+  });
+
   it('random durations, hit counts, guard checks and random picks name their slot', () => {
     for (const { id, l } of moveEffects) {
       for (const e of allEffects(l)) {

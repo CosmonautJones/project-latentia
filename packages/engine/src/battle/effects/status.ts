@@ -62,10 +62,11 @@ function instanceFor(ctx: EffectContext, effect: ApplyStatusEffect, victim: Crea
  * `applyStatus` on every living recipient (StatusApplied / StatusBlocked); Drift adds one stack instead. A
  * status that would land (not already blocked) first runs `incoming` — the recipient's statusIncoming
  * passives (Ruling 57) — then meets its status shield (Sagelet's Disclaimer), which stops it (StatusBlocked).
+ * Drift is not a status for either (Ruling 64): its stack always lands.
  */
 export function applyStatusEffect(ctx: EffectContext, effect: ApplyStatusEffect, incoming: (c: CreatureState) => void = () => undefined): void {
   for (const c of recipients(ctx, effect.who)) {
-    if (effect.status === 'drift' || !statusBlocked(c, effect.status)) {
+    if (effect.status !== 'drift' && !statusBlocked(c, effect.status)) {
       incoming(c);
       if (c.fainted || absorbStatus(c, effect.status, ctx.round, ctx.events)) continue;
     }

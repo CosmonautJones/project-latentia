@@ -28,6 +28,14 @@ describe('Save State (snapshot hp, 3 rounds, revert on first KO)', () => {
     expect(ofType(koBy(s, 1), 'Fainted')).toEqual([{ round: 3, type: 'Fainted', target: 1 }]);
   });
 
+  it('a KO only ever consumes an hp snapshot (Ruling 65)', () => {
+    const s = fresh();
+    const stages = { compute: 0, robustness: 0, latency: 0, accuracy: 0, evasion: 0 };
+    at(s, 1).snapshots = [{ owner: 1, what: 'stages', stages, lastRound: null, onKo: true }];
+    expect(ofType(koBy(s, 1), 'Fainted')).toHaveLength(1);
+    expect(at(s, 1).snapshots).toHaveLength(1);
+  });
+
   it('no revert after the 3 rounds', () => {
     const s = fresh();
     run(s, 1, 'save-state', 1);

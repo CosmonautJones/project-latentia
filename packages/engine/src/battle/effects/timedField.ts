@@ -5,6 +5,7 @@ import { sideNumber } from '../end.js';
 import { onField } from '../order.js';
 import type { BattleState, CreatureState, FieldState, Temperature } from '../state.js';
 import { creature, recipients, type EffectContext } from './context.js';
+import { fieldEnded } from './fieldEnd.js';
 import { addJunk } from './tokens.js';
 
 export type TimedFieldEffect = Extract<NonPassiveEffect, { kind: 'timedField' }>;
@@ -36,10 +37,6 @@ export function applyTimedField(ctx: EffectContext, effect: TimedFieldEffect): v
   for (const c of recipients(ctx, effect.who)) startField(ctx.state, ctx.actor, c, effect.field, effect.rounds, ctx.events);
 }
 
-function ended(state: BattleState, f: FieldState, holder: CreatureState, events: BattleEvent[]): void {
-  events.push({ round: state.round, type: 'FieldEffectEnded', effect: f.effect.kind, side: sideNumber(holder.side), target: f.target });
-}
-
 /**
  * End of round (spec §5 step 5), fields in the order they started: a field on a KO'd holder ends at once;
  * otherwise `junkPerRound` adds its Junk to the holder (forced tokens, spec §5 Context), the field counts one
@@ -50,13 +47,13 @@ export function tickFields(state: BattleState, events: BattleEvent[]): void {
   for (const f of state.fields) {
     const holder = creature({ state, round: state.round }, f.target);
     if (holder.fainted) {
-      ended(state, f, holder, events);
+      fieldEnded(state, f, events);
       continue;
     }
     if (f.effect.kind === 'junkPerRound') addJunk(state, holder, f.effect.count, state.round, events);
     f.remaining -= 1;
     if (f.remaining > 0) kept.push(f);
-    else ended(state, f, holder, events);
+    else fieldEnded(state, f, events);
   }
   state.fields = kept;
 }

@@ -6,7 +6,9 @@ import { fresh, ofType, run } from './kit.js';
 // copy (spec §6, Ruling 58). Buffs: Fork copies the target's highest positive stage (ties in the order
 // compute, robustness, latency, accuracy, evasion); Merge Conflict swaps one positive stage picked by
 // hi(D6, count). Moves: Episodic Replay re-uses the last allied move, Stochastic Repeat the target's last
-// move, with its original target if still legal (else the move's default selector) and this action's draws.
+// move, with this action's draws. Ruling 59: aimed at the copier's own entry target if legal for the copied
+// move, else the copied move's original target if legal, else its default selector. Ruling 62: the copier's
+// moveHistory records the move that actually ran.
 
 const stages = (events: BattleEvent[]) => ofType(events, 'StageChanged').map((e) => [e.target, e.stat, e.delta, e.stageAfter]);
 
@@ -57,8 +59,8 @@ describe('Episodic Replay (copy the last allied move)', () => {
     ]);
     expect(ofType(events, 'Damage').map((e) => [e.actor, e.target])).toEqual([[0, 7]]);
     expect(ofType(events, 'ContextAdded').filter((e) => e.target === 0 && e.kind === 'cost').map((e) => e.tokens)).toEqual([2]);
-    // The copier's history keeps the move it used; the side's last move is the copied one, by the copier.
-    expect(at(s, 0).moveHistory.at(-1)).toEqual({ round: 1, moveId: 'episodic-replay', target: 0, damaged: [7] });
+    // Ruling 62: the copier's history and the side's last move record the move that ran, by the copier.
+    expect(at(s, 0).moveHistory.at(-1)).toEqual({ round: 1, moveId: 'segfault', target: 7, damaged: [7] });
     expect(s.sides.a.lastMove).toEqual({ actor: 0, moveId: 'segfault', target: 7 });
   });
 
@@ -87,13 +89,29 @@ describe('Episodic Replay (copy the last allied move)', () => {
 });
 
 describe('Stochastic Repeat (copy the target’s last move)', () => {
-  it('copies the foe’s last move; its original target (on the copier’s side) is illegal, so the default selector picks', () => {
+  it('copies the foe’s last move at the foe the copier chose (Ruling 59), not the default selector’s pick', () => {
     const s = fresh();
     run(s, 7, 'ship-it', 1);
-    at(s, 8).hp = 50;
+    at(s, 8).hp = 50; // the default selector would pick 8
     const events = run(s, 1, 'stochastic-repeat', 7);
-    expect(ofType(events, 'MoveUsed').map((e) => [e.moveId, e.target])).toEqual([['stochastic-repeat', 7], ['ship-it', 8]]);
-    expect(ofType(events, 'Damage').map((e) => [e.actor, e.target])).toEqual([[1, 8]]);
+    expect(ofType(events, 'MoveUsed').map((e) => [e.moveId, e.target])).toEqual([['stochastic-repeat', 7], ['ship-it', 7]]);
+    expect(ofType(events, 'Damage').map((e) => [e.actor, e.target])).toEqual([[1, 7]]);
+  });
+
+  it('a copied move its entry target does not suit falls back to the original target, then the default selector', () => {
+    const s = fresh();
+    run(s, 8, 'community-patch', 7); // an ally heal: 7 and 1 are not the copier's allies
+    at(s, 2).hp = 100;
+    const events = run(s, 1, 'stochastic-repeat', 8);
+    expect(ofType(events, 'MoveUsed').at(-1)).toMatchObject({ moveId: 'community-patch', target: 2 });
+  });
+
+  it('Stochastic Repeat after an Episodic Replay that ran X copies X (Ruling 62)', () => {
+    const s = fresh();
+    run(s, 2, 'segfault', 7);
+    run(s, 0, 'episodic-replay', 0);
+    const events = run(s, 7, 'stochastic-repeat', 0);
+    expect(ofType(events, 'MoveUsed').map((e) => [e.moveId, e.target])).toEqual([['stochastic-repeat', 0], ['segfault', 0]]);
   });
 
   it('a self move is copied onto the copier', () => {

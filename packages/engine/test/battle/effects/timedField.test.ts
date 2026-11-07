@@ -57,6 +57,15 @@ describe('Memory Leak (junkPerRound, 3 rounds)', () => {
     expect(at(r4.state, 7).context.tokens.filter((t) => t.kind === 'junk')).toHaveLength(3);
   });
 
+  it('ends when its holder leaves the field (FieldEffectEnded with the leaving cures, before Swapped); no more Junk (Ruling 63)', () => {
+    const r1 = ok(withMove('memory-leak'), use('memory-leak', 7));
+    const r2 = ok(r1.state, { ...idle, b: { temperature: 2, action: { kind: 'swap', out: 7, in: 9 } } });
+    const swapped = r2.events.findIndex((e) => e.type === 'Swapped' && e.outIndex === 7);
+    expect(r2.events[swapped - 1]).toEqual({ round: 2, type: 'FieldEffectEnded', effect: 'junkPerRound', side: 1, target: 7 });
+    expect(junkOn(r2.events, 7)).toEqual([]);
+    expect(r2.state.fields).toEqual([]);
+  });
+
   it('a field on a KO’d holder ends at the next tick without effect', () => {
     const s = fresh();
     run(s, 1, 'memory-leak', 7);

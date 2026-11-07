@@ -90,13 +90,14 @@ describe('Slopling — +1 Compute stage at the end of each round it is not KO’
     return s;
   }
 
-  it('gains a stage at end of every round, after every action, on the field or on the bench', () => {
+  it('gains a stage at end of every round, after every action, on the field only (Ruling 60)', () => {
     const r1 = ok(sloppy());
     const gains = (events: BattleEvent[]) => ofType(events, 'StageChanged').filter((e) => e.stat === 'compute' && (e.target === 1 || e.target === 3));
-    expect(gains(r1.events).map((e) => [e.target, e.stageAfter])).toEqual([[1, 1], [3, 1]]);
+    expect(gains(r1.events).map((e) => [e.target, e.stageAfter])).toEqual([[1, 1]]); // 3 is benched
     expect(r1.events.indexOf(gains(r1.events)[0] as BattleEvent)).toBeGreaterThan(r1.events.map((e) => e.type).lastIndexOf('ActionStarted'));
     const r2 = ok(r1.state);
-    expect(gains(r2.events).map((e) => [e.target, e.stageAfter])).toEqual([[1, 2], [3, 2]]);
+    expect(gains(r2.events).map((e) => [e.target, e.stageAfter])).toEqual([[1, 2]]);
+    expect(at(r2.state, 3).stages.compute).toBe(0);
   });
 
   it('a Slopling KO’d by its status tick that round gains nothing (the check follows the ticks)', () => {

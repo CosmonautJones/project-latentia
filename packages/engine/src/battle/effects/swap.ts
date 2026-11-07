@@ -7,6 +7,7 @@ import { benchOf, renumber, sideNumber } from '../end.js';
 import { holdsLiveSlot } from '../order.js';
 import type { BattleState, CreatureState } from '../state.js';
 import { creature, type EffectContext } from './context.js';
+import { endFieldsOn } from './fieldEnd.js';
 
 export type FieldSlotEffect = Extract<NonPassiveEffect, { kind: 'reorder'; what: 'fieldSlot' }>;
 
@@ -14,11 +15,13 @@ export type FieldSlotEffect = Extract<NonPassiveEffect, { kind: 'reorder'; what:
 const CURED_ON_LEAVING: readonly StatusId[] = ['overfit', 'deprecated', 'promptInjected'];
 
 /**
- * A creature leaving the field: the statuses above are cured (StatusCured), its charge and guard drop, and
- * `leftFieldRound` records the round so it cannot act again this round if brought back (Ruling 52).
+ * A creature leaving the field: the statuses above are cured (StatusCured), the timed fields it holds end
+ * (FieldEffectEnded, Ruling 63), its charge and guard drop, and `leftFieldRound` records the round so it
+ * cannot act again this round if brought back (Ruling 52).
  */
-function leaveField(c: CreatureState, round: number, events: BattleEvent[]): void {
+function leaveField(state: BattleState, c: CreatureState, round: number, events: BattleEvent[]): void {
   for (const id of CURED_ON_LEAVING) events.push(...cureStatus(c, id, round));
+  endFieldsOn(state, c.index, events);
   c.charging = null;
   c.guard = null;
   c.leftFieldRound = round;
@@ -43,7 +46,7 @@ export function swapCreatures(state: BattleState, outIndex: number, inIndex: num
   const i = slotIndexOf(state, out);
   const bench = benchOf(state, out.side);
   bench.splice(bench.indexOf(inc), 1, out);
-  leaveField(out, round, events);
+  leaveField(state, out, round, events);
   out.slot = 'bench';
   out.activeSlot = null;
   inc.slot = 'active';
@@ -64,7 +67,7 @@ export function swapCreatures(state: BattleState, outIndex: number, inIndex: num
 export function forceBench(state: BattleState, c: CreatureState, round: number, events: BattleEvent[]): void {
   const i = slotIndexOf(state, c);
   const bench = benchOf(state, c.side);
-  leaveField(c, round, events);
+  leaveField(state, c, round, events);
   c.slot = 'bench';
   c.activeSlot = null;
   bench.push(c);

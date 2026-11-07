@@ -46,15 +46,16 @@ describe('reveal', () => {
     expect(cards(ok(r3.state, idle).events)).toEqual([]);
   });
 
-  it('a holder off the field gets no round-start Revealed (it has no intent), but the reveal keeps ticking', () => {
+  it('a reveal ends when its holder leaves the field (Ruling 63)', () => {
     const s = fresh();
     s.round = 0;
     at(s, 0).moves = ['stack-trace', 'compact', 'clear', 'guardrail'];
     const r1 = ok(s, { a: { temperature: 2, action: { kind: 'move', moveId: 'stack-trace', target: 7 } } });
     const r2 = ok(r1.state, { b: { temperature: 2, action: { kind: 'swap', out: 7, in: 9 } } });
     expect(at(r2.state, 7).slot).toBe('bench');
+    expect(ofType(r2.events, 'FieldEffectEnded').map((e) => [e.effect, e.target])).toEqual([['revealTopDeckCard', 7]]);
     const r3 = ok(r2.state, {});
     expect(ofType(r3.events, 'Revealed').filter((e) => e.target === 7)).toEqual([]);
-    expect(ofType(r3.events, 'FieldEffectEnded').map((e) => [e.effect, e.target])).toEqual([['revealTopDeckCard', 7]]);
+    expect(ofType(r3.events, 'FieldEffectEnded')).toEqual([]);
   });
 });

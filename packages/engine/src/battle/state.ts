@@ -28,7 +28,10 @@ export const DEFAULT_TEMPERATURE: Temperature = 2;
 /** Raw stats at the creature's level, before stages (spec §5 "Stats"). */
 export type Stats = { compute: number; robustness: number; latency: number };
 
-/** One resolved move of a creature (see CreatureState.moveHistory): the move used, the target it was aimed at. */
+/**
+ * One resolved move of a creature (see CreatureState.moveHistory): the move that ran and the target it was
+ * aimed at — for a move copy, the copied move and its target (Ruling 62).
+ */
 export type MoveRecord = { round: number; moveId: string; target: number; damaged: number[] };
 
 /** A shield (spec §6 `shield`): absorbs the holder's next `count` incoming hits or status applications. */
@@ -118,8 +121,8 @@ export type CreatureState = StatusHolder & {
   actedThisBattle: boolean;
   lastMoveId: string | null;
   /**
-   * Every move this creature resolved (not skipped), oldest first: the round, the move actually used
-   * (after hallucination or Drift) and the canonical indices it damaged. Feeds the damage conditions
+   * Every move this creature resolved (not skipped), oldest first: the round, the move that actually ran
+   * (after hallucination or Drift; a copy's copied move), its target and the canonical indices it damaged. Feeds the damage conditions
    * (targetActedThisRound, targetLastRound, userConsecutiveRoundsUsingType, hitsTakenFromTarget).
    */
   moveHistory: MoveRecord[];
