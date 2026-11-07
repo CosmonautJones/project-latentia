@@ -1,0 +1,26 @@
+{
+  "name": "@latentia/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "bench": "echo 'bench: no-op until A15'",
+    "golden:record": "tsx scripts/record-golden.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitest/browser": "^3.0.0",
+    "fast-check": "^3.0.0",
+    "playwright": "^1.49.0",
+    "tsx": "^4.0.0",
+    "vitest": "^3.0.0"
+  }
+}
