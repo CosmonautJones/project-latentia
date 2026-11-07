@@ -22,7 +22,20 @@ function checkState(state: BattleState): void {
   }
 }
 
-/** The source, checking every state it is shown (the state before each round). Counts the rounds. */
+/** What the scripted sources sent, over every battle: orchestrator commands by kind. */
+const sent = { commands: 0, swap: 0, directive: 0, injection: 0, policyUpdate: 0 };
+
+function tally(cmd: RoundCommand): void {
+  for (const sc of [cmd.a, cmd.b]) {
+    if (sc === undefined) continue;
+    sent.commands++;
+    const a = sc.action;
+    if (a.kind === 'swap' || a.kind === 'directive' || a.kind === 'policyUpdate') sent[a.kind]++;
+    if (a.kind === 'move' && a.injection !== undefined) sent.injection++;
+  }
+}
+
+/** The source, checking every state it is shown (the state before each round). Counts the rounds and tallies the commands. */
 function watched(source: CommandSource, shown: { rounds: number }): CommandSource {
   if (source.kind !== 'scripted') return source;
   return {
@@ -30,7 +43,9 @@ function watched(source: CommandSource, shown: { rounds: number }): CommandSourc
     next: (state) => {
       checkState(state);
       shown.rounds++;
-      return source.next(state);
+      const cmd = source.next(state);
+      tally(cmd);
+      return cmd;
     },
   };
 }
@@ -107,5 +122,11 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
       }),
       { numRuns: RUNS },
     );
+    // The lever and injection paths are exercised, not just moves: ≥ 10% of the orchestrator commands
+    // are a swap, a directive or a move carrying an injection, and each kind occurs.
+    expect(sent.swap).toBeGreaterThan(0);
+    expect(sent.directive).toBeGreaterThan(0);
+    expect(sent.injection).toBeGreaterThan(0);
+    expect((sent.swap + sent.directive + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
   });
 });

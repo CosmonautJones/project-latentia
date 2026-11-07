@@ -165,32 +165,68 @@ export const arbLegalSetup: fc.Arbitrary<BattleSetup> = fc.record({
 
 // --- commands ----------------------------------------------------------------------------------
 
-/** Choices per round: temperature and action pick for each side. */
-const PER_ROUND = 4;
+/** Choices per round: for each side, temperature, kind, pick and injection pick. */
+const PER_SIDE = 4;
+const PER_ROUND = 2 * PER_SIDE;
 const ROUNDS = 50;
 
-/** Every legal `move` action for a side's orchestrator (a self/none move once, aimed at the user). */
-export function legalMoveActions(state: BattleState, side: SideId): OrchestratorAction[] {
+const SIDE_IDS: readonly SideId[] = ['a', 'b'];
+
+const legal = (state: BattleState, side: SideId, action: OrchestratorAction): boolean =>
+  validateCommand(state, { [side]: { temperature: 2, action } }) === null;
+
+/** Targets worth trying for `moveId`: the user alone for self/none moves, every creature otherwise. */
+function targetsFor(state: BattleState, user: number, moveId: string): number[] {
+  const def = moveDef(moveId);
+  if (def === null) return [];
+  return def.target === 'self' || def.target === 'none' ? [user] : state.creatures.map((c) => c.index);
+}
+
+/**
+ * Every legal orchestrator action for a side, by kind, each one accepted by validateCommand:
+ * - `move`: each orchestrator move × legal target (a self/none move once, aimed at the user);
+ * - `swap`: each allied active creature out × each living allied bench creature in;
+ * - `directive`: each live allied subagent × each of its moves × legal target.
+ * Policy Update is not generated: Card is opaque until B1 and no Card value can be built without a cast.
+ * Injections are added at pick time (scriptedFrom), onto a legal move.
+ */
+export function legalActions(state: BattleState, side: SideId): { move: OrchestratorAction[]; swap: OrchestratorAction[]; directive: OrchestratorAction[] } {
+  const out = { move: [] as OrchestratorAction[], swap: [] as OrchestratorAction[], directive: [] as OrchestratorAction[] };
   const orch = state.creatures.find((c) => c.side === side && c.isOrchestrator);
-  if (orch === undefined) return [];
-  const out: OrchestratorAction[] = [];
-  for (const moveId of orch.moves) {
-    const def = moveDef(moveId);
-    if (def === null) continue;
-    const targets = def.target === 'self' || def.target === 'none' ? [orch.index] : state.creatures.map((c) => c.index);
-    for (const target of targets) {
-      const action: OrchestratorAction = { kind: 'move', moveId, target };
-      if (validateCommand(state, { [side]: { temperature: 2, action } }) === null) out.push(action);
-    }
+  if (orch === undefined) return out;
+  const add = (list: OrchestratorAction[], action: OrchestratorAction): void => {
+    if (legal(state, side, action)) list.push(action);
+  };
+  for (const moveId of orch.moves) for (const target of targetsFor(state, orch.index, moveId)) add(out.move, { kind: 'move', moveId, target });
+  const allies = state.creatures.filter((c) => c.side === side && !c.isOrchestrator);
+  for (const o of allies.filter((c) => c.slot === 'active')) for (const i of allies.filter((c) => c.slot === 'bench')) add(out.swap, { kind: 'swap', out: o.index, in: i.index });
+  for (const sub of allies.filter((c) => c.slot === 'active' && !c.fainted)) {
+    for (const moveId of sub.moves) for (const target of targetsFor(state, sub.index, moveId)) add(out.directive, { kind: 'directive', subagent: sub.index, moveId, target });
   }
   return out;
 }
 
 /**
+ * A move with an injection choice (Deepfake Call's Prompt Injected pick, spec §6): a foe's known move and
+ * a canonical index, picked by `pick`. No slice species knows Deepfake Call, so the choice is carried to the
+ * entry but never applied; it still exercises the command, planning and resolution paths for injections.
+ */
+function withInjection(state: BattleState, side: SideId, move: OrchestratorAction, pick: number): OrchestratorAction {
+  if (move.kind !== 'move') return move;
+  const foes = state.creatures.filter((c) => c.side !== side);
+  const foe = foes[pick % foes.length];
+  const moveId = foe?.moves[(pick >>> 4) % Math.max(1, foe.moves.length)];
+  if (moveId === undefined) return move;
+  const injected: OrchestratorAction = { ...move, injection: { moveId, target: (pick >>> 8) % state.creatures.length } };
+  return legal(state, side, injected) ? injected : move;
+}
+
+/**
  * A scripted source from precomputed choices: each round, for each side, a temperature and one legal
- * orchestrator move with a legal target picked from the current state (`none` when there is none, e.g.
- * while charging or headless). `next` is a pure function of the state, so the same source replays the same
- * battle every time it is simulated.
+ * orchestrator action picked from the current state — a kind among those with a legal action (move, move
+ * with an injection, swap, directive), then one action of that kind; `none` when nothing is legal (e.g.
+ * while charging). `next` is a pure function of the state, so the same source replays the same battle
+ * every time it is simulated, and it never mutates the state.
  */
 export function scriptedFrom(choices: readonly number[]): CommandSource {
   const choice = (round: number, k: number): number => choices[(round * PER_ROUND + k) % choices.length] ?? 0;
@@ -198,11 +234,14 @@ export function scriptedFrom(choices: readonly number[]): CommandSource {
     kind: 'scripted',
     next: (state: BattleState): RoundCommand => {
       const cmd: RoundCommand = {};
-      (['a', 'b'] as const).forEach((side, s) => {
-        const actions = legalMoveActions(state, side);
-        const temperature = (choice(state.round, s * 2) % 5) as Temperature;
-        const action = actions[choice(state.round, s * 2 + 1) % Math.max(1, actions.length)] ?? { kind: 'none' };
-        cmd[side] = { temperature, action };
+      SIDE_IDS.forEach((side, s) => {
+        const c = (k: number): number => choice(state.round, s * PER_SIDE + k);
+        const { move, swap, directive } = legalActions(state, side);
+        const kinds = [move, move, swap, directive].map((list, k) => ({ list, inject: k === 1 })).filter((x) => x.list.length > 0);
+        const kind = kinds[c(1) % Math.max(1, kinds.length)];
+        const picked = kind?.list[c(2) % kind.list.length];
+        const action = picked === undefined ? { kind: 'none' as const } : kind?.inject === true ? withInjection(state, side, picked, c(3)) : picked;
+        cmd[side] = { temperature: (c(0) % 5) as Temperature, action };
       });
       return cmd;
     },

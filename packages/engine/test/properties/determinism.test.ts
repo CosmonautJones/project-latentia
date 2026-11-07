@@ -195,6 +195,22 @@ describe('replay errors (Ruling 29): typed, never thrown', () => {
     expect(replay({ ...good(), engineVersion: '0.0.9' })).toEqual({ error: { code: 'version' } });
   });
 
+  it('a different engineVersion with a different shape → version, not malformed (Ruling 69)', () => {
+    const version = { error: { code: 'version' } };
+    expect(replay({ engineVersion: '9.9.9' } as unknown as BattleLog)).toEqual(version);
+    expect(replay({ engineVersion: '0.0.9', seed: 4, setup: [], rounds: 'x' } as unknown as BattleLog)).toEqual(version);
+    expect(replay({ ...good(), engineVersion: '0.2.0', setup: { a: 1 } } as unknown as BattleLog)).toEqual(version);
+  });
+
+  it('a log whose rounds run out before the battle ends → malformed, never padded (Ruling 70)', () => {
+    const full = simulate(gridlessSetup(), SEED, scriptedFrom([7, 0, 2, 11])).log;
+    expect(full.rounds.length).toBeGreaterThan(1);
+    expect(replayed(full).rounds).toBe(full.rounds.length);
+    const short = { ...full, rounds: full.rounds.slice(0, -1) };
+    expect(replay(short)).toEqual(malformed);
+    expect(replay({ ...full, rounds: [] })).toEqual(malformed);
+  });
+
   it('a well-formed setup validateSetup rejects → invalidSetup', () => {
     const log = good();
     log.setup.a.orchestrator.species = 'missingno';

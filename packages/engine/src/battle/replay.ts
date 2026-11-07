@@ -5,8 +5,8 @@ import { runBattle, type BattleResult } from './simulate.js';
 
 /**
  * Why a log cannot be replayed (Ruling 29). `malformed`: not shaped like a BattleLog (see wellFormed), a
- * seed parseSeed rejects, or a recorded round command submitRound rejects (including any round logged
- * after the battle ended). `version`: written by another ENGINE_VERSION (re-simulation policy is sub-project 5's).
+ * seed parseSeed rejects, a recorded round command submitRound rejects (including any round logged after
+ * the battle ended), or rounds that run out before the battle ends (Ruling 70). `version`: written by another ENGINE_VERSION (re-simulation policy is sub-project 5's).
  * `invalidSetup`: a well-formed setup that validateSetup rejects.
  */
 export type ReplayError = { code: 'version' | 'malformed' | 'invalidSetup' };
@@ -73,17 +73,20 @@ const fail = (code: ReplayError['code']): { error: ReplayError } => ({ error: { 
 
 /**
  * Re-runs a logged battle (spec §4, §5 "Events, logs and hashing"): the same setup and seed, the logged
- * round commands re-submitted in order (`{}` for any round past the end of a short log, as simulate's
- * `recorded` source does). Returns the BattleResult — same events and hash as the recorded battle — or a
- * typed ReplayError; never throws for any input. Does not modify the log.
+ * round commands re-submitted in order. Returns the BattleResult — same events and hash as the recorded
+ * battle — or a typed ReplayError; never throws for any input. The version is checked first, on the
+ * smallest shape that carries it (Ruling 69), so a log from another version is `version` whatever else it
+ * holds. Rounds are never padded (Ruling 70): a log whose rounds run out before the battle ends is
+ * `malformed`, as is one with rounds after the end. Does not modify the log.
  */
 export function replay(log: BattleLog): BattleResult | { error: ReplayError } {
   const raw: unknown = log;
+  if (isRecord(raw) && isStr(raw.engineVersion) && raw.engineVersion !== ENGINE_VERSION) return fail('version');
   if (!wellFormed(raw)) return fail('malformed');
-  if (raw.engineVersion !== ENGINE_VERSION) return fail('version');
   if (!parseSeed(raw.seed).ok) return fail('malformed');
   if (!validateSetup(raw.setup).ok) return fail('invalidSetup');
-  const result = runBattle(raw.setup, raw.seed, { kind: 'recorded', rounds: raw.rounds });
+  const rounds = raw.rounds;
+  const result = runBattle(raw.setup, raw.seed, (state) => rounds[state.round] ?? null);
   // A logged round after the battle ended is one submitRound would reject (battleEnded).
-  return 'error' in result || raw.rounds.length > result.rounds ? fail('malformed') : result;
+  return 'error' in result || rounds.length > result.rounds ? fail('malformed') : result;
 }
