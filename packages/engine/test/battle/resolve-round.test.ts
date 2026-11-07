@@ -58,12 +58,11 @@ describe('through submitRound (the real pipeline)', () => {
 
   it('resets the Handoff chains at round start', () => {
     const s = battle();
-    s.handoff = [{ target: 8, side: 'a', actors: [5, 5] }]; // a bench creature never hits: only a stale chain holds 5
-    const { state, events } = ok(s);
-    const chains = events.filter((e) => e.type === 'HandoffChain');
-    expect(chains.length).toBeGreaterThan(0);
-    expect(chains.every((e) => !e.chain.includes(5))).toBe(true);
-    expect(state.handoff.every((h) => !h.actors.includes(5))).toBe(true);
+    at(s, 7).stats.latency = 1; // a-act1 Blitzr (Latency 13) acts first and aims at the lowest-HP foe, b-act1 (7)
+    s.handoff = [{ target: 7, side: 'a', actors: [5, 5] }]; // stale: a bench creature never hits
+    const { events } = ok(s);
+    expect(events.find((e) => e.type === 'MoveUsed')).toEqual({ round: 1, type: 'MoveUsed', actor: 1, moveId: 'ship-it', target: 7 });
+    expect(events.find((e) => e.type === 'HandoffChain')).toEqual({ round: 1, type: 'HandoffChain', actor: 1, chain: [1] });
   });
 
   it('an enemy lever (Policy Update) between two allied hits breaks the chain; a none command does not', () => {

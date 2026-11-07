@@ -2,6 +2,7 @@ import { moveDef } from '../content/moves.js';
 import type { MoveDef } from '../content/primitives.js';
 import { EngineInvariantError } from '../math/bp.js';
 import { effectiveStat } from '../math/stats.js';
+import { statStage } from '../status/apply.js';
 import type { OrchestratorAction, RoundCommand } from './log.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
 
@@ -172,7 +173,7 @@ export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[
     }
     entries.push({
       actor: c.index,
-      latency: effectiveStat(c.stats.latency, c.stages.latency ?? 0),
+      latency: effectiveStat(c.stats.latency, statStage(c, 'latency')),
       tieBreak: c.roundStart.r1 & 0xffff,
       ...planFor(state, c, cmd),
     });

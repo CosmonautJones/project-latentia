@@ -4,7 +4,7 @@ import type { BattleEvent } from '../events/types.js';
 import { hitChance } from '../math/accuracy.js';
 import { EngineInvariantError, mulBp } from '../math/bp.js';
 import { lo, type ActionDraws } from '../rng/draws.js';
-import { hasStatus } from '../status/apply.js';
+import { hasStatus, moveCost } from '../status/apply.js';
 import { holds } from './effects/conditions.js';
 import { chancePasses, creature, effectContext, temperatureRow, type EffectContext } from './effects/context.js';
 import { applyDamage } from './effects/damage.js';
@@ -105,7 +105,7 @@ function bookkeeping(ctx: EffectContext, user: CreatureState, target: CreatureSt
 /**
  * Resolves one acting entry after its six draws are taken and ActionStarted is emitted (spec §5 step 4):
  * Rate Limited skip check (lo D2) → hallucination / Drift substitution and re-targeting → MoveUsed → pay
- * context (overflow → Drift) → failsIf / accuracy (lo D3; a miss skips the whole effect list, Ruling 13)
+ * context (cost − 1 while Quantized; overflow → Drift) → failsIf / accuracy (lo D3; a miss skips the whole effect list, Ruling 13)
  * → effects in list order (crit lo D4, roll lo D5, hit count hi D5, riders D6) → bookkeeping → history.
  * An action that gets past the skip checks breaks the enemy's Handoff chains. Uses only the six given draws.
  */
@@ -125,7 +125,7 @@ export function resolveAction(state: BattleState, entry: ActionEntry, draws: Act
   const { move } = choice;
   breakEnemyChains(state, user.side);
   events.push({ round, type: 'MoveUsed', actor: user.index, moveId: move.id, target: choice.target });
-  events.push(...pay(user.context, move.cost, round, user.index));
+  events.push(...pay(user.context, moveCost(user, move.cost), round, user.index));
   const ctx = effectContext(state, user.index, choice.target, move, draws, temperature, events, takePenaltyBp(user));
   const target = creature(ctx, choice.target);
   const effects = effectList(move, temperature);

@@ -44,7 +44,7 @@ const dealt = (events: BattleEvent[]) => ofType(events, 'Damage').map((e) => e.a
 describe('resolveAction: a plain hit', () => {
   it('emits MoveUsed, pays context, deals damage and starts a Handoff chain; records the move', () => {
     const s = fresh();
-    const dmg = expected(s, 1, 7, 65, { type: 10000, native: 12500, roll: 10000, handoff: 11000 });
+    const dmg = expected(s, 1, 7, 65, { type: 10000, native: 12500, roll: 10000 });
     expect(run(s, 1, 'ship-it', 7)).toEqual([
       { round: 1, type: 'MoveUsed', actor: 1, moveId: 'ship-it', target: 7 },
       { round: 1, type: 'ContextAdded', target: 1, kind: 'cost', tokens: 1, tokensAfter: 1 },
@@ -57,13 +57,13 @@ describe('resolveAction: a plain hit', () => {
     expect(at(s, 1)).toMatchObject({ actedThisBattle: true, lastMoveId: 'ship-it', moveHistory: [{ round: 1, moveId: 'ship-it', damaged: [7] }] });
   });
 
-  it('pins one L5 number: Sagelet Happy to Help on Forkling at T2 deals 17', () => {
+  it('pins one L5 number: Sagelet Happy to Help on Forkling at T2 deals 16', () => {
     // P 70, Atk 12, Def 11, LF 4: floor(70×12×4×10000 / 550) = 61090 → type 20000: 122180 → native 12500:
-    // 152725 → roll 10000 → handoff 11000: 167997 → floor(/10000) + 1 = 17.
+    // 152725 → roll 10000 (a first hit takes no Handoff) → floor(/10000) + 1 = 16.
     const s = battle();
     s.round = 1;
-    expect(dealt(run(s, 0, 'happy-to-help', 8))).toEqual([17]);
-    expect(at(s, 8).hp).toBe(at(s, 8).maxHp - 17);
+    expect(dealt(run(s, 0, 'happy-to-help', 8))).toEqual([16]);
+    expect(at(s, 8).hp).toBe(at(s, 8).maxHp - 16);
   });
 });
 
@@ -124,7 +124,7 @@ describe('resolveAction: crit and roll', () => {
     const s = fresh();
     const crit = run(s, 1, 'ship-it', 7, { d4lo: 1 });
     expect(ofType(crit, 'Crit')).toEqual([{ round: 1, type: 'Crit', actor: 1, target: 7 }]);
-    expect(dealt(crit)).toEqual([expected(s, 1, 7, 65, { type: 10000, native: 12500, crit: 15000, roll: 10000, handoff: 11000 })]);
+    expect(dealt(crit)).toEqual([expected(s, 1, 7, 65, { type: 10000, native: 12500, crit: 15000, roll: 10000 })]);
     expect(ofType(run(s, 1, 'ship-it', 7, { d4lo: 2 }), 'Crit')).toEqual([]);
   });
 
@@ -147,23 +147,23 @@ describe('resolveAction: crit and roll', () => {
     at(s, 7).stages.robustness = 2;
     const [hit] = dealt(run(s, 1, 'ship-it', 7, { d4lo: 0 }));
     at(s, 7).stages.robustness = 0;
-    expect(hit).toBe(expected(s, 1, 7, 65, { type: 10000, native: 12500, crit: 15000, roll: 10000, handoff: 11000 }));
+    expect(hit).toBe(expected(s, 1, 7, 65, { type: 10000, native: 12500, crit: 15000, roll: 10000 }));
     const t = fresh();
     at(t, 7).stages.robustness = -1;
     expect(dealt(run(t, 1, 'ship-it', 7, { d4lo: 0 }))).toEqual([
-      expected(t, 1, 7, 65, { type: 10000, native: 12500, crit: 15000, roll: 10000, handoff: 11000 }),
+      expected(t, 1, 7, 65, { type: 10000, native: 12500, crit: 15000, roll: 10000 }),
     ]);
   });
 
   it('rolls rollMinPct×100 + lo(d5, width)×100 basis points; T0 is always 10000', () => {
     const s = fresh();
-    expect(dealt(run(s, 1, 'ship-it', 7, { d5lo: 10 }))).toEqual([expected(s, 1, 7, 65, { type: 10000, native: 12500, roll: 9500, handoff: 11000 })]);
+    expect(dealt(run(s, 1, 'ship-it', 7, { d5lo: 10 }))).toEqual([expected(s, 1, 7, 65, { type: 10000, native: 12500, roll: 9500 })]);
     const t4 = fresh();
     at(t4, 1).trainedTemperature = 4; // 60 + lo(d5, 91); 90 → 150%
-    expect(dealt(run(t4, 1, 'ship-it', 7, { d5lo: 90 }))).toEqual([expected(t4, 1, 7, 65, { type: 10000, native: 12500, roll: 15000, handoff: 11000 })]);
+    expect(dealt(run(t4, 1, 'ship-it', 7, { d5lo: 90 }))).toEqual([expected(t4, 1, 7, 65, { type: 10000, native: 12500, roll: 15000 })]);
     const t0 = fresh();
     at(t0, 1).trainedTemperature = 0;
-    expect(dealt(run(t0, 1, 'ship-it', 7, { d5lo: 0xffff }))).toEqual([expected(t0, 1, 7, 65, { type: 10000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(dealt(run(t0, 1, 'ship-it', 7, { d5lo: 0xffff }))).toEqual([expected(t0, 1, 7, 65, { type: 10000, native: 12500, roll: 10000 })]);
   });
 });
 
@@ -178,11 +178,11 @@ describe('resolveAction: Wild effect lists', () => {
 
   it('fires only at T3+, and wildT4 replaces wild at T4', () => {
     const t2 = at_(2);
-    expect(t2.got).toEqual([expected(t2.s, 1, 7, 90, { type: 10000, roll: t2.roll, handoff: 11000 })]);
+    expect(t2.got).toEqual([expected(t2.s, 1, 7, 90, { type: 10000, roll: t2.roll })]);
     const t3 = at_(3);
-    expect(t3.got).toEqual([expected(t3.s, 1, 7, 135, { type: 10000, roll: t3.roll, handoff: 11000 })]);
+    expect(t3.got).toEqual([expected(t3.s, 1, 7, 135, { type: 10000, roll: t3.roll })]);
     const t4 = at_(4);
-    expect(t4.got).toEqual([expected(t4.s, 1, 7, 180, { type: 10000, roll: t4.roll, handoff: 11000 })]);
+    expect(t4.got).toEqual([expected(t4.s, 1, 7, 180, { type: 10000, roll: t4.roll })]);
   });
 
   it('applies the T4 super-effective 12500 and emits TypeEffect; a super-effective hit frees the oldest non-Junk token', () => {
@@ -191,7 +191,7 @@ describe('resolveAction: Wild effect lists', () => {
     at(s, 0).context.tokens.push({ kind: 'junk', seq: 90 });
     const events = run(s, 0, 'happy-to-help', 8, { d5lo: 40 }); // 60 + 40 → 100%
     expect(ofType(events, 'TypeEffect')).toEqual([{ round: 1, type: 'TypeEffect', actor: 0, target: 8, multiplierBp: 20000 }]);
-    expect(dealt(events)).toEqual([expected(s, 0, 8, 70, { type: 20000, t4se: 12500, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(dealt(events)).toEqual([expected(s, 0, 8, 70, { type: 20000, t4se: 12500, native: 12500, roll: 10000 })]);
     expect(ofType(events, 'ContextAdded').filter((e) => e.target === 0)).toEqual([
       { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 3, tokensAfter: 4 },
       { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: -1, tokensAfter: 3 },
@@ -199,7 +199,7 @@ describe('resolveAction: Wild effect lists', () => {
     expect(at(s, 0).context.tokens.map((t) => t.kind)).toEqual(['junk', 'cost', 'cost']);
     const t3 = fresh();
     t3.sides.a.temperature = 3;
-    expect(dealt(run(t3, 0, 'happy-to-help', 8, { d5lo: 25 }))).toEqual([expected(t3, 0, 8, 70, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(dealt(run(t3, 0, 'happy-to-help', 8, { d5lo: 25 }))).toEqual([expected(t3, 0, 8, 70, { type: 20000, native: 12500, roll: 10000 })]);
   });
 });
 

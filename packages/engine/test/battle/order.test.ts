@@ -166,6 +166,19 @@ describe('planEntries', () => {
     expect(planEntries(s, {}).map((e) => e.actor).sort((x, y) => x - y)).toEqual([0, 1, 2, 6, 7]);
   });
 
+  it('a Quantized creature uses its Latency stage − 1 (floor −3), so it sorts after an otherwise tied creature', () => {
+    const s = withRoundStart(battle());
+    // Latency 10: sagelets 0 and 6, forklings 2 and 8; tie-breaks put 8 first among them.
+    const before = sortActions(planEntries(s, {})).map((e) => e.actor);
+    expect(before.indexOf(8)).toBeLessThan(before.indexOf(2));
+    at(s, 8).statuses.push({ id: 'quantized', remaining: 4 });
+    const entries = planEntries(s, {});
+    expect(entries.find((e) => e.actor === 8)?.latency).toBe(effectiveStat(at(s, 8).stats.latency, -1));
+    expect(sortActions(entries).map((e) => e.actor).slice(-1)).toEqual([8]);
+    at(s, 8).stages.latency = -3;
+    expect(planEntries(s, {}).find((e) => e.actor === 8)?.latency).toBe(effectiveStat(at(s, 8).stats.latency, -3));
+  });
+
   it('fills priority from the move, effective latency from the stat and stage, tie-break from R1 low 16 bits', () => {
     const s = withRoundStart(battle());
     at(s, 1).stages.latency = 2;

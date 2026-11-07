@@ -1,10 +1,12 @@
-import { EngineInvariantError } from '../math/bp.js';
 import { nextU32, type RngState } from './sfc32.js';
 
-/** A draw half is reduced by a modulus that is a safe integer in 1..65536 (spec §5); anything else is an engine bug. */
+/**
+ * A draw half is reduced by a modulus that is a safe integer in 1..65536 (spec §5); anything else is an engine
+ * bug. A plain RangeError keeps rng dependency-free (Ruling 44).
+ */
 function modulus(m: number): number {
   if (!Number.isSafeInteger(m) || m < 1 || m > 65536) {
-    throw new EngineInvariantError(`draw modulus must be an integer in 1..65536, got ${String(m)}`);
+    throw new RangeError(`draw modulus must be an integer in 1..65536, got ${String(m)}`);
   }
   return m;
 }

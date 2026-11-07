@@ -34,7 +34,7 @@ describe('multiHit', () => {
   it('hits min + hi(d5, span) times with one shared accuracy, crit and roll', () => {
     const s = fresh();
     const events = run(s, 1, 'speculative-decoding', 7, { d5hi: 2, d5lo: 10, d4lo: 0 });
-    const per = expected(s, 1, 7, 22, { type: 10000, native: 12500, crit: 15000, roll: 9500, handoff: 11000 });
+    const per = expected(s, 1, 7, 22, { type: 10000, native: 12500, crit: 15000, roll: 9500 });
     expect(events.filter((e) => e.type === 'Crit')).toHaveLength(1);
     expect(damages(events).map((e) => [e.amount, e.hpAfter])).toEqual([1, 2, 3, 4].map((k) => [per, 500 - k * per]));
     expect(at(s, 1).moveHistory).toEqual([{ round: 2, moveId: 'speculative-decoding', damaged: [7] }]);
@@ -55,12 +55,12 @@ describe('multiHit', () => {
     expect(damages(run(t4, 1, 'speculative-decoding', 7, { d5hi: 5 }))).toHaveLength(7);
   });
 
-  it('counts once for the Handoff chain: the next allied hit gets 12000', () => {
+  it('counts once for the Handoff chain: the next allied hit is the second (11000)', () => {
     const s = fresh();
     const multi = run(s, 1, 'speculative-decoding', 7, { d5hi: 3 });
     expect(multi.filter((e) => e.type === 'HandoffChain')).toEqual([{ round: 2, type: 'HandoffChain', actor: 1, chain: [1] }]);
     const next = run(s, 2, 'hard-fork', 7);
-    expect(damages(next).map((e) => e.amount)).toEqual([expected(s, 2, 7, 70, { type: 20000, native: 12500, roll: 10000, handoff: 12000 })]);
+    expect(damages(next).map((e) => e.amount)).toEqual([expected(s, 2, 7, 70, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
   });
 
   it('stops when the target faints and emits Fainted once', () => {

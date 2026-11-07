@@ -48,29 +48,31 @@ function expected(s: BattleState, actor: number, target: number, power: number, 
 const shipIt = (s: BattleState, extra: DamageMods) => expected(s, 1, 7, 65, { type: 10000, native: 12500, roll: 10000, ...extra });
 
 describe('Handoff chain', () => {
-  it('gives 11000 / 12000 / 13000 over three allied hits on one target, then an enemy action resets it', () => {
+  it('counts consecutive allied hits on one target (Ruling 39): none, 11000, 12000, then 13000; an enemy action resets it', () => {
     const s = fresh();
     const chains: BattleEvent[] = [];
     const amounts: number[] = [];
-    for (const [actor, move] of [[0, 'happy-to-help'], [1, 'ship-it'], [2, 'hard-fork']] as const) {
+    const hits = [[0, 'happy-to-help'], [1, 'ship-it'], [2, 'hard-fork'], [0, 'happy-to-help'], [1, 'ship-it']] as const;
+    for (const [actor, move] of hits) {
       const ev = run(s, actor, move, 8);
       amounts.push(...dealt(ev));
       chains.push(...ev.filter((e) => e.type === 'HandoffChain'));
     }
-    expect(chains).toEqual([
-      { round: 3, type: 'HandoffChain', actor: 0, chain: [0] },
-      { round: 3, type: 'HandoffChain', actor: 1, chain: [0, 1] },
-      { round: 3, type: 'HandoffChain', actor: 2, chain: [0, 1, 2] },
+    expect(chains.map((e) => (e as { chain: number[] }).chain)).toEqual([[0], [0, 1], [0, 1, 2], [0, 1, 2, 0], [0, 1, 2, 0, 1]]);
+    const reasoning = { type: 20000, native: 12500, roll: 10000 };
+    expect(amounts).toEqual([
+      expected(s, 0, 8, 70, reasoning),
+      expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, handoff: 11000 }),
+      expected(s, 2, 8, 70, { type: 10000, native: 12500, roll: 10000, handoff: 12000 }),
+      expected(s, 0, 8, 70, { ...reasoning, handoff: 13000, observation: 9000 }),
+      expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, handoff: 13000, observation: 9000 }),
     ]);
-    expect(amounts[2]).toBe(expected(s, 2, 8, 70, { type: 10000, native: 12500, roll: 10000, handoff: 13000 }));
-    run(s, 0, 'happy-to-help', 8); // a fourth allied hit stays capped at 13000
-    expect(s.handoff).toEqual([{ target: 8, side: 'a', actors: [0, 1, 2, 0] }]);
 
     run(s, 7, 'ship-it', 1); // an enemy action breaks side a's chains
     expect(s.handoff).toEqual([{ target: 1, side: 'b', actors: [7] }]);
     const after = run(s, 1, 'ship-it', 8);
     expect(after.filter((e) => e.type === 'HandoffChain')).toEqual([{ round: 3, type: 'HandoffChain', actor: 1, chain: [1] }]);
-    expect(dealt(after)).toEqual([expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, handoff: 11000, observation: 9000 })]);
+    expect(dealt(after)).toEqual([expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, observation: 9000 })]);
   });
 
   it('is not broken by an allied action or a miss, and keys chains by target', () => {
@@ -94,9 +96,9 @@ describe('Observation', () => {
     s.handoff = [];
     const second = run(s, 1, 'ship-it', 7);
     expect(second.filter((e) => e.type === 'ObservationGained')).toEqual([]);
-    expect(dealt(second)).toEqual([shipIt(s, { handoff: 11000, observation: 9000 })]);
+    expect(dealt(second)).toEqual([shipIt(s, { observation: 9000 })]);
     s.handoff = [];
-    expect(dealt(run(s, 1, 'token-burst', 7))).toEqual([expected(s, 1, 7, 40, { type: 10000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(dealt(run(s, 1, 'token-burst', 7))).toEqual([expected(s, 1, 7, 40, { type: 10000, native: 12500, roll: 10000 })]);
   });
 
   it('with no free cell nothing happens, and the sighting is used up', () => {
@@ -108,7 +110,7 @@ describe('Observation', () => {
     s.handoff = [];
     const again = run(s, 1, 'ship-it', 7);
     expect(again.filter((e) => e.type === 'ObservationGained')).toEqual([]);
-    expect(dealt(again)).toEqual([shipIt(s, { handoff: 11000 })]);
+    expect(dealt(again)).toEqual([shipIt(s, {})]);
   });
 
   it('allies never observe each other (a hallucinated hit on an ally)', () => {
@@ -125,9 +127,9 @@ describe('status damage modifiers', () => {
   it('Overfit: 11500 against its source, 7000 against others; a hit refreshes the source (Ruling 21)', () => {
     const s = fresh();
     at(s, 1).statuses.push({ id: 'overfit', remaining: 2, source: 7 });
-    expect(dealt(hit(s, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))).toEqual([shipIt(s, { handoff: 11000, overfit: 11500 })]);
+    expect(dealt(hit(s, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))).toEqual([shipIt(s, { overfit: 11500 })]);
     expect(dealt(hit(s, 1, 'ship-it', 6, { kind: 'damage', who: 'target' }))).toEqual([
-      expected(s, 1, 6, 65, { type: 20000, native: 12500, roll: 10000, handoff: 11000, overfit: 7000 }),
+      expected(s, 1, 6, 65, { type: 20000, native: 12500, roll: 10000, overfit: 7000 }),
     ]);
     expect(at(s, 1).statuses[0]).toMatchObject({ id: 'overfit', source: 6 });
   });
@@ -135,15 +137,15 @@ describe('status damage modifiers', () => {
   it('Glazed: 7000 only against its glazer', () => {
     const s = fresh();
     at(s, 1).statuses.push({ id: 'glazed', remaining: 3, source: 7 });
-    expect(dealt(hit(s, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))).toEqual([shipIt(s, { handoff: 11000, glazed: 7000 })]);
-    expect(dealt(hit(s, 1, 'ship-it', 8, { kind: 'damage', who: 'target' }))).toEqual([expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(dealt(hit(s, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))).toEqual([shipIt(s, { glazed: 7000 })]);
+    expect(dealt(hit(s, 1, 'ship-it', 8, { kind: 'damage', who: 'target' }))).toEqual([expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000 })]);
   });
 
   it('Refusal’s powerBp penalty is the step-4 modifier, consumed by the next move even on a miss; incomingDamageBp is consumed by the next hit taken', () => {
     const s = fresh();
     at(s, 1).nextActionMods.push({ kind: 'powerBp', bp: 5000 });
     at(s, 7).nextActionMods.push({ kind: 'incomingDamageBp', bp: 7000 });
-    expect(dealt(run(s, 1, 'ship-it', 7))).toEqual([shipIt(s, { handoff: 11000, refusalOrApology: 3500 })]);
+    expect(dealt(run(s, 1, 'ship-it', 7))).toEqual([shipIt(s, { refusalOrApology: 3500 })]);
     expect(at(s, 1).nextActionMods).toEqual([]);
     expect(at(s, 7).nextActionMods).toEqual([]);
     at(s, 1).nextActionMods.push({ kind: 'powerBp', bp: 5000 });
@@ -170,24 +172,24 @@ describe('effective power (step 1)', () => {
 
   it('a Tool step raises an orchestrator Skill’s power by 11000; a compacted Skill deals 50% power (summary)', () => {
     const s = gridded();
-    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 66, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 66, { type: 20000, native: 12500, roll: 10000 })]);
     at(s, 0).context.summarizedPieces.push('sk');
-    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 33, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 33, { type: 20000, native: 12500, roll: 10000 })]);
     const sub = gridded();
     at(sub, 2).speciesId = 'sagelet'; // a subagent using the same move gets no grid bonus
-    expect(cot(sub, 2)).toEqual([expected(sub, 2, 8, 60, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(cot(sub, 2)).toEqual([expected(sub, 2, 8, 60, { type: 20000, native: 12500, roll: 10000 })]);
   });
 
   it('additive bonuses: Chain of Thought +20 per consecutive Reasoning round (cap +60); Long-Term Recall +10 per hit taken (power cap 120)', () => {
     const s = fresh();
     at(s, 0).moveHistory.push({ round: 1, moveId: 'happy-to-help', damaged: [] }, { round: 2, moveId: 'proof-by-contradiction', damaged: [] });
-    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 100, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 100, { type: 20000, native: 12500, roll: 10000 })]);
     at(s, 0).moveHistory.unshift({ round: 0, moveId: 'happy-to-help', damaged: [] }, { round: -1, moveId: 'chain-of-thought', damaged: [] });
     at(s, 0).moveHistory.sort((x, y) => x.round - y.round);
-    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 120, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(cot(s, 0)).toEqual([expected(s, 0, 8, 120, { type: 20000, native: 12500, roll: 10000 })]);
     const gap = fresh();
     at(gap, 0).moveHistory.push({ round: 1, moveId: 'happy-to-help', damaged: [] }); // round 2 missing → streak 0
-    expect(cot(gap, 0)).toEqual([expected(gap, 0, 8, 60, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(cot(gap, 0)).toEqual([expected(gap, 0, 8, 60, { type: 20000, native: 12500, roll: 10000 })]);
 
     const ltr = (n: number) => {
       const t = fresh();
@@ -197,19 +199,19 @@ describe('effective power (step 1)', () => {
       return { got: dealt(hit(t, 1, 'long-term-recall', 7, effect)), t };
     };
     const three = ltr(3);
-    expect(three.got).toEqual([expected(three.t, 1, 7, 70, { type: 10000, roll: 10000, handoff: 11000 })]);
+    expect(three.got).toEqual([expected(three.t, 1, 7, 70, { type: 10000, roll: 10000 })]);
     const many = ltr(12);
-    expect(many.got).toEqual([expected(many.t, 1, 7, 120, { type: 10000, roll: 10000, handoff: 11000 })]);
+    expect(many.got).toEqual([expected(many.t, 1, 7, 120, { type: 10000, roll: 10000 })]);
   });
 
   it('flat bonus: Leaderboard Flex +30 when the user’s HP% is above the target’s (cross-multiplied)', () => {
     const s = fresh();
     const flex = () => dealt(run(s, 2, 'leaderboard-flex', 7));
-    expect(flex()).toEqual([expected(s, 2, 7, 65, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(flex()).toEqual([expected(s, 2, 7, 65, { type: 20000, native: 12500, roll: 10000 })]);
     at(s, 7).hp = 400;
     s.handoff = [];
     const [got] = flex();
-    expect(got).toBe(expected(s, 2, 7, 95, { type: 20000, native: 12500, roll: 10000, handoff: 11000, observation: 9000 }));
+    expect(got).toBe(expected(s, 2, 7, 95, { type: 20000, native: 12500, roll: 10000, observation: 9000 }));
   });
 
   it('conditional multipliers: Proof by Contradiction ×2 if the target buffed or used a status move last round', () => {
@@ -219,10 +221,10 @@ describe('effective power (step 1)', () => {
       return { got: dealt(run(s, 0, 'proof-by-contradiction', 8)), s };
     };
     const plain = proof(null);
-    expect(plain.got).toEqual([expected(plain.s, 0, 8, 70, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(plain.got).toEqual([expected(plain.s, 0, 8, 70, { type: 20000, native: 12500, roll: 10000 })]);
     for (const last of ['community-patch', 'observer-effect']) {
       const r = proof(last); // a status move; a damage move with a self buff
-      expect(r.got).toEqual([expected(r.s, 0, 8, 140, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+      expect(r.got).toEqual([expected(r.s, 0, 8, 140, { type: 20000, native: 12500, roll: 10000 })]);
     }
     expect(proof('hard-fork').got).toEqual(plain.got);
     expect(proof('community-patch', 1).got).toEqual(plain.got); // two rounds ago
@@ -231,7 +233,7 @@ describe('effective power (step 1)', () => {
   it('targetHasStatus multiplier (Citation Needed ×2 against Hallucinating)', () => {
     const s = fresh();
     const effect = moveDef('citation-needed')?.effects[0] as DamageEffect;
-    const base = { type: 5000, roll: 10000, handoff: 11000 };
+    const base = { type: 5000, roll: 10000 };
     expect(dealt(hit(s, 1, 'citation-needed', 7, effect))).toEqual([expected(s, 1, 7, 60, base)]);
     at(s, 7).statuses.push({ id: 'hallucinating', remaining: 2 });
     expect(dealt(hit(s, 1, 'citation-needed', 7, effect))).toEqual([expected(s, 1, 7, 120, base)]);
@@ -243,7 +245,41 @@ describe('effective power (step 1)', () => {
     at(s, 1).stages.compute = -2;
     const [dropped] = dealt(hit(s, 1, 'retrieval-strike', 7, effect));
     at(s, 1).stages.compute = 0;
-    expect(dropped).toBe(expected(s, 1, 7, 70, { type: 5000, roll: 10000, handoff: 11000 }));
+    expect(dropped).toBe(expected(s, 1, 7, 70, { type: 5000, roll: 10000 }));
+    at(s, 1).stages.compute = 2;
+    const [raised] = dealt(hit(s, 1, 'retrieval-strike', 7, effect));
+    expect(raised).toBe(expected(s, 1, 7, 70, { type: 5000, roll: 10000 }));
+    expect(raised).toBeGreaterThan(dropped as number);
+  });
+});
+
+describe('Quantized', () => {
+  it('a Quantized attacker uses Compute stage − 1 and a Quantized defender Robustness stage − 1 (floor −3)', () => {
+    const s = fresh();
+    const plain = dealt(hit(s, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))[0] as number;
+    at(s, 1).statuses.push({ id: 'quantized', remaining: 4 });
+    const weaker = dealt(hit(s, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))[0] as number;
+    at(s, 1).stages.compute = -1;
+    expect(weaker).toBe(shipIt(s, {}));
+    expect(weaker).toBeLessThan(plain);
+    at(s, 1).stages.compute = -3; // already at the floor: stays −3
+    const floored = dealt(hit(s, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))[0];
+    expect(floored).toBe(shipIt(s, {}));
+
+    const d = fresh();
+    at(d, 7).statuses.push({ id: 'quantized', remaining: 4 });
+    const softer = dealt(hit(d, 1, 'ship-it', 7, { kind: 'damage', who: 'target' }))[0];
+    at(d, 7).stages.robustness = -1;
+    expect(softer).toBe(shipIt(d, {}));
+  });
+
+  it('every move cost it pays is cost − 1, never below 0', () => {
+    const s = fresh();
+    at(s, 2).statuses.push({ id: 'quantized', remaining: 4 });
+    expect(run(s, 2, 'hard-fork', 7)[1]).toEqual({ round: 3, type: 'ContextAdded', target: 2, kind: 'cost', tokens: 1, tokensAfter: 1 });
+    at(s, 1).statuses.push({ id: 'quantized', remaining: 4 });
+    expect(run(s, 1, 'ship-it', 7).filter((e) => e.type === 'ContextAdded' && e.target === 1)).toEqual([]);
+    expect(at(s, 1).context.tokens).toEqual([]);
   });
 });
 

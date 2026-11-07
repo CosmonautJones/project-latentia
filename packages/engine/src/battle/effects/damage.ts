@@ -6,7 +6,7 @@ import { computeDamage, effectivePower, type DamageMods } from '../../math/damag
 import { effectiveStat } from '../../math/stats.js';
 import { toolStepsFor } from '../../grid/adjacency.js';
 import { lo } from '../../rng/draws.js';
-import { statusDamageMods } from '../../status/apply.js';
+import { statStage, statusDamageMods } from '../../status/apply.js';
 import { sideNumber } from '../end.js';
 import { handoffBp } from '../handoff.js';
 import type { BattleState, CreatureState } from '../state.js';
@@ -85,17 +85,20 @@ export function takeIncomingBp(defender: CreatureState): number | null {
 }
 
 /**
- * One hit of the move on `ctx.target` (spec §5 steps 1–5), modifiers in the normative order. A crit
- * ignores the defender's positive Robustness stages; `ignoreUserComputeDrops` ignores negative Compute stages.
+ * One hit of the move on `ctx.target` (spec §5 steps 1–5), modifiers in the normative order. Stages are
+ * the stat stages after Quantized's −1. A crit ignores the defender's positive Robustness stage;
+ * `ignoreUserComputeDrops` ignores a negative Compute stage (Quantized's included).
  */
 export function computeHit(ctx: EffectContext, shape: HitShape, incomingBp: number | null): Hit {
   const user = creature(ctx, ctx.actor);
   const target = creature(ctx, ctx.target);
   const crit = rollsCrit(ctx, shape.crit);
-  const atkStage = user.stages.compute ?? 0;
-  const defStage = target.stages.robustness ?? 0;
+  const atkStage = statStage(user, 'compute');
+  const defStage = statStage(target, 'robustness');
   const typeBp = typeBpAgainst(ctx.move, target);
-  const mods: DamageMods = { roll: rollBp(ctx), handoff: handoffBp(ctx.state, user.side, target.index) };
+  const mods: DamageMods = { roll: rollBp(ctx) };
+  const handoff = handoffBp(ctx.state, user.side, target.index);
+  if (handoff !== null) mods.handoff = handoff;
   if (typeBp !== null) mods.type = typeBp;
   if (typeBp !== null && typeBp > 10000 && ctx.temperature === 4) mods.t4se = T4_SUPER_EFFECTIVE_BP;
   if (ctx.move.type !== 'system' && typesOf(user).includes(ctx.move.type)) mods.native = NATIVE_BP;

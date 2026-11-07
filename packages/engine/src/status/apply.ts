@@ -1,5 +1,6 @@
 import { STATUSES } from '../content/statuses.js';
 import type { StatusId } from '../content/ids.js';
+import type { MoveDef } from '../content/primitives.js';
 import type { BattleEvent } from '../events/types.js';
 import { EngineInvariantError } from '../math/bp.js';
 import { hi } from '../rng/draws.js';
@@ -102,4 +103,37 @@ export function statusDamageMods(h: StatusHolder, targetIndex: number): { overfi
 /** Quantized: all stages -1 and move costs -1 (callers floor costs at 0) while held. */
 export function quantizedAdjust(h: StatusHolder): { stageDelta: -1; costDelta: -1 } | null {
   return hasStatus(h, 'quantized') ? { stageDelta: -1, costDelta: -1 } : null;
+}
+
+/** The stage a stat is computed with: the held stage, −1 while Quantized, never below −3. */
+export function statStage(h: StatusHolder, stat: 'compute' | 'robustness' | 'latency'): number {
+  const stage = (h.stages[stat] ?? 0) + (quantizedAdjust(h)?.stageDelta ?? 0);
+  return Math.max(-3, stage);
+}
+
+/** The cells a move costs its user: cost − 1 while Quantized, never below 0. */
+export function moveCost(h: StatusHolder, cost: number): number {
+  return Math.max(0, cost + (quantizedAdjust(h)?.costDelta ?? 0));
+}
+
+/**
+ * A status move or a debuff (what Glazed forbids): a move with no power, or one whose effects lower a stage of,
+ * clear stages of, or apply a status to anyone but the user's own side.
+ */
+function statusOrDebuff(def: MoveDef): boolean {
+  if (def.power === null) return true;
+  return def.effects.some((e) => {
+    const atOthers = e.who !== 'self' && e.who !== 'allAllies';
+    if (e.kind === 'stage') return atOthers && (e.op === 'clear' || e.delta < 0);
+    return e.kind === 'applyStatus' && atOthers;
+  });
+}
+
+/**
+ * Whether a held status forbids the move (bible status table): Glazed forbids status moves and debuffs;
+ * Overfit forbids every move but the last one used (nothing before the first move).
+ */
+export function moveDisabledByStatus(h: StatusHolder, def: MoveDef, lastMoveId: string | null): boolean {
+  if (hasStatus(h, 'glazed') && statusOrDebuff(def)) return true;
+  return hasStatus(h, 'overfit') && lastMoveId !== null && def.id !== lastMoveId;
 }

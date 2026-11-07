@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { EngineInvariantError } from '../../src/math/bp.js';
 import { drawAction, drawRoundStart, hi, lo } from '../../src/rng/draws.js';
 import { nextU32, seedRng } from '../../src/rng/sfc32.js';
 
@@ -29,10 +28,10 @@ describe('draws', () => {
     expect(lo(0xabcd1234, 65536)).toBe(0x1234);
     expect(hi(0xabcd1234, 65536)).toBe(0xabcd);
   });
-  it('lo/hi throw EngineInvariantError for a modulus that is not a safe integer in 1..65536', () => {
+  it('lo/hi throw a plain RangeError (rng stays dependency-free) for a modulus that is not a safe integer in 1..65536', () => {
     for (const m of [0, -1, 65537, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 53]) {
-      expect(() => lo(0xabcd1234, m)).toThrow(EngineInvariantError);
-      expect(() => hi(0xabcd1234, m)).toThrow(EngineInvariantError);
+      expect(() => lo(0xabcd1234, m)).toThrow(RangeError);
+      expect(() => hi(0xabcd1234, m)).toThrow(RangeError);
     }
   });
 });
