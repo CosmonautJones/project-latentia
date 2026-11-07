@@ -1,0 +1,240 @@
+{
+  "name": "forkling-community-patch",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "393b04bc17a75055248fec67c710d310",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-forkling",
+          "species": "forkling",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "hard-fork",
+            "community-patch",
+            "swarm-of-fine-tunes",
+            "leaderboard-flex"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-slopling",
+            "species": "slopling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "six-fingers",
+              "swarm-of-fine-tunes",
+              "adversarial-patch",
+              "weights-dump"
+            ]
+          },
+          {
+            "id": "a-embeddingo",
+            "species": "embeddingo",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "cosine-sniff",
+              "citation-needed",
+              "retrieval-strike",
+              "ground-truth"
+            ]
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-spaghettopus",
+          "species": "spaghettopus",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "tangle",
+            "infinite-loop",
+            "merge-conflict",
+            "memory-leak"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-vibrat",
+            "species": "vibrat",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "accept-all",
+              "merge-conflict",
+              "segfault",
+              "hype-train"
+            ]
+          },
+          {
+            "id": "b-agentoad",
+            "species": "agentoad",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-deprecatter",
+            "species": "deprecatter",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "nostalgia-trip",
+              "long-term-recall",
+              "save-state",
+              "episodic-replay"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "community-patch",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "memory-leak",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hard-fork",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "swarm-of-fine-tunes",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "leaderboard-flex",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "community-patch",
+            "target": 0
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "memory-leak",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hard-fork",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "swarm-of-fine-tunes",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "35f6f1319ce13e7d",
+  "rounds": 7,
+  "winner": "b"
+}

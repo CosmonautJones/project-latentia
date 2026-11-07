@@ -1,0 +1,175 @@
+{
+  "name": "temperature-sweep",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "e9ff92156085f0a16bfbd50f1abaac3c",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-wasp",
+            "species": "off-by-wasp",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-blitzr",
+          "species": "blitzr",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "ship-it",
+            "token-burst",
+            "low-latency",
+            "distilled-strike"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-deprecatter",
+            "species": "deprecatter",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "nostalgia-trip",
+              "long-term-recall",
+              "save-state",
+              "episodic-replay"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "distilled-strike",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "ship-it",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "distilled-strike",
+            "target": 1
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "b18a3e52b40c6d5a",
+  "rounds": 4,
+  "winner": "a"
+}

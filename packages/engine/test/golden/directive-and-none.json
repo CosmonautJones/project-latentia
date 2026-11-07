@@ -1,0 +1,257 @@
+{
+  "name": "directive-and-none",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "f8325c620f93f6ccf9f02aaca08697dd",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-embeddingo",
+            "species": "embeddingo",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "cosine-sniff",
+              "citation-needed",
+              "retrieval-strike",
+              "ground-truth"
+            ]
+          },
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-hallucinat",
+          "species": "hallucinat",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "confident-citation",
+            "proof-by-contradiction",
+            "adversarial-patch",
+            "socratic-method"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-agentoad",
+            "species": "agentoad",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-scrapion",
+            "species": "scrapion",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "scrape",
+              "fact-check",
+              "merge-conflict",
+              "retrieval-strike"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "directive",
+            "subagent": 1,
+            "moveId": "ground-truth",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "directive",
+            "subagent": 4,
+            "moveId": "rerank",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "directive",
+            "subagent": 1,
+            "moveId": "ground-truth",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "bccd8925f5698fc6",
+  "rounds": 9,
+  "winner": "b"
+}

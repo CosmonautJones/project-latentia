@@ -1,0 +1,139 @@
+{
+  "name": "scrapion-steals-buffs",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "6484b5f0be1e6d559a764a6048db7810",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-scrapion",
+          "species": "scrapion",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "scrape",
+            "fact-check",
+            "merge-conflict",
+            "retrieval-strike"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-parrot",
+          "species": "stochastiparrot",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "hype-train",
+            "hot-take"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "low-latency",
+              "ship-it"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "fact-check",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "scrape",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 5
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "afdb1aabe243f8a1",
+  "rounds": 4,
+  "winner": "a"
+}

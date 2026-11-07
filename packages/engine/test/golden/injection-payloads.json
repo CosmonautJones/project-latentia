@@ -1,0 +1,221 @@
+{
+  "name": "injection-payloads",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "708cb0c6ad21d24119cf0f9a5cbbe5dc",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-scrapion",
+          "species": "scrapion",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "scrape",
+            "fact-check",
+            "merge-conflict",
+            "retrieval-strike"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-agentoad",
+            "species": "agentoad",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-sagelet",
+          "species": "sagelet",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "scrape",
+            "target": 4,
+            "injection": {
+              "moveId": "happy-to-help",
+              "target": 1
+            }
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 1,
+            "injection": {
+              "moveId": "token-burst",
+              "target": 0
+            }
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 4,
+            "injection": {
+              "moveId": "deepfake-call",
+              "target": 3
+            }
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 2,
+            "injection": {
+              "moveId": "token-burst",
+              "target": 0
+            }
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "scrape",
+            "target": 5,
+            "injection": {
+              "moveId": "happy-to-help",
+              "target": 1
+            }
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 5,
+            "injection": {
+              "moveId": "deepfake-call",
+              "target": 3
+            }
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 0,
+            "injection": {
+              "moveId": "token-burst",
+              "target": 0
+            }
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "ebe3ddbf372e703c",
+  "rounds": 5,
+  "winner": "b"
+}

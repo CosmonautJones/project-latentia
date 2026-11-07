@@ -1,0 +1,243 @@
+{
+  "name": "deprecatter-save-state",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "a3235ce8b880a6ed6cbdefe0ee1faf28",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-deprecatter",
+          "species": "deprecatter",
+          "level": 22,
+          "version": "v1",
+          "moves": [
+            "nostalgia-trip",
+            "long-term-recall",
+            "save-state",
+            "episodic-replay"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-vibrat",
+          "species": "vibrat",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "accept-all",
+            "merge-conflict",
+            "segfault",
+            "hype-train"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-spaghettopus",
+            "species": "spaghettopus",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tangle",
+              "infinite-loop",
+              "merge-conflict",
+              "memory-leak"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "save-state",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "episodic-replay",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "nostalgia-trip",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "segfault",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "save-state",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "segfault",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 2
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "0f918ddfdb123fdf",
+  "rounds": 8,
+  "winner": "b"
+}

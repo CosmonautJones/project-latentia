@@ -1,0 +1,512 @@
+{
+  "name": "grid-l15-cache",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "3e6c10aa64ee3c369399d8a5e1981fc7",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-agentoad",
+          "species": "agentoad",
+          "level": 18,
+          "version": "v1",
+          "moves": []
+        },
+        "active": [
+          {
+            "id": "a-heisenmoth",
+            "species": "heisenmoth",
+            "level": 14,
+            "version": "v1",
+            "moves": [
+              "observer-effect",
+              "refactor",
+              "bounding-box",
+              "flash-inference"
+            ]
+          },
+          {
+            "id": "a-deprecatter",
+            "species": "deprecatter",
+            "level": 14,
+            "version": "v1",
+            "moves": [
+              "nostalgia-trip",
+              "long-term-recall",
+              "save-state",
+              "episodic-replay"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 14,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": {
+          "width": 6,
+          "height": 6,
+          "pieces": [
+            {
+              "id": "sp",
+              "kind": "systemPrompt",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                0
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "slot0",
+              "anchor": [
+                0,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "a-heisenmoth"
+            },
+            {
+              "id": "slot1",
+              "anchor": [
+                4,
+                4
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "a-deprecatter"
+            },
+            {
+              "id": "skill2",
+              "anchor": [
+                0,
+                3
+              ],
+              "rotation": 0,
+              "kind": "skill",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "moveId": "token-burst"
+            },
+            {
+              "id": "cache3",
+              "anchor": [
+                5,
+                0
+              ],
+              "rotation": 0,
+              "kind": "cache",
+              "shape": [
+                [
+                  0,
+                  0
+                ]
+              ]
+            }
+          ]
+        },
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-embeddingo",
+          "species": "embeddingo",
+          "level": 18,
+          "version": "v1",
+          "moves": []
+        },
+        "active": [
+          {
+            "id": "b-slopling",
+            "species": "slopling",
+            "level": 14,
+            "version": "v1",
+            "moves": [
+              "six-fingers",
+              "swarm-of-fine-tunes",
+              "adversarial-patch",
+              "weights-dump"
+            ]
+          },
+          {
+            "id": "b-hallucinat",
+            "species": "hallucinat",
+            "level": 14,
+            "version": "v1",
+            "moves": [
+              "confident-citation",
+              "proof-by-contradiction",
+              "adversarial-patch",
+              "socratic-method"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-cobolt",
+            "species": "cobolt",
+            "level": 14,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "grid": {
+          "width": 6,
+          "height": 6,
+          "pieces": [
+            {
+              "id": "sp",
+              "kind": "systemPrompt",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                0
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "slot0",
+              "anchor": [
+                0,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "b-slopling"
+            },
+            {
+              "id": "slot1",
+              "anchor": [
+                2,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "b-hallucinat"
+            },
+            {
+              "id": "skill2",
+              "anchor": [
+                0,
+                3
+              ],
+              "rotation": 0,
+              "kind": "skill",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "moveId": "citation-needed"
+            },
+            {
+              "id": "skill3",
+              "anchor": [
+                2,
+                3
+              ],
+              "rotation": 0,
+              "kind": "skill",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "moveId": "retrieval-strike"
+            },
+            {
+              "id": "skill4",
+              "anchor": [
+                4,
+                0
+              ],
+              "rotation": 90,
+              "kind": "skill",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "moveId": "ground-truth"
+            },
+            {
+              "id": "graft5",
+              "anchor": [
+                4,
+                2
+              ],
+              "rotation": 0,
+              "kind": "graft",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "moveId": "observer-effect"
+            }
+          ]
+        },
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "cosine-sniff",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "citation-needed",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "ground-truth",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 7
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 7
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "cosine-sniff",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 7
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "citation-needed",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "2852716899bab790",
+  "rounds": 6,
+  "winner": "b"
+}

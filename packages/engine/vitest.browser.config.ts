@@ -8,6 +8,8 @@ const instance =
     ? { browser: 'chromium' as const, launch: { channel: 'chrome' } }
     : { browser: browser as 'chromium' | 'webkit' };
 
+// The cross-runtime run (spec §2 criterion 1): the golden files, the property suites and the unit tests.
+// Excluded: the lint test (runs ESLint through Node) and the fuzz suite (Node only, sized by FUZZ_N).
 export default defineConfig({
   test: {
     include: ['test/**/*.test.ts'],

@@ -1,0 +1,239 @@
+{
+  "name": "blitzr-move-fast",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "14cc4c5ddaac116ad7e96d46bb74cddb",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-blitzr",
+          "species": "blitzr",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "ship-it",
+            "token-burst",
+            "low-latency",
+            "distilled-strike"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-cobolt",
+          "species": "cobolt",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "segfault",
+              "null-chomp"
+            ]
+          },
+          {
+            "id": "b-wasp",
+            "species": "off-by-wasp",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-heisenmoth",
+            "species": "heisenmoth",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "observer-effect",
+              "refactor",
+              "bounding-box",
+              "flash-inference"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "wild"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "ship-it",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "hotfix",
+            "target": 5
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "distilled-strike",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "ship-it",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "hotfix",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "distilled-strike",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 1
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "082519dd645af2cf",
+  "rounds": 7,
+  "winner": "a"
+}

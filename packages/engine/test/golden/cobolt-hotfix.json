@@ -1,0 +1,209 @@
+{
+  "name": "cobolt-hotfix",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "515ff8c8027597ecb5718321da0f8efd",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-cobolt",
+          "species": "cobolt",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-heisenmoth",
+            "species": "heisenmoth",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "refactor",
+              "observer-effect"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-wasp",
+            "species": "off-by-wasp",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-scrapion",
+          "species": "scrapion",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "scrape",
+            "fact-check",
+            "merge-conflict",
+            "retrieval-strike"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-wasp",
+            "species": "off-by-wasp",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "fact-check",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "scrape",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "hotfix",
+            "target": 2
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "fact-check",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "scrape",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "4f2e241b362c7648",
+  "rounds": 6,
+  "winner": "b"
+}

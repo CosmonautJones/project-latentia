@@ -1,0 +1,171 @@
+{
+  "name": "sagelet-reasoning",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "03bd336a88a467f27d89f8827a04d4e3",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          },
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "community-patch",
+              "hard-fork"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-tokenibble",
+            "species": "tokenibble",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-hallucinat",
+          "species": "hallucinat",
+          "level": 14,
+          "version": "v1",
+          "moves": [
+            "confident-citation",
+            "proof-by-contradiction",
+            "adversarial-patch",
+            "socratic-method"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-parrot",
+            "species": "stochastiparrot",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "flattery",
+              "hot-take"
+            ]
+          },
+          {
+            "id": "b-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "infinite-loop",
+              "null-chomp"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 6
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 6
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 5
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 4
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 7
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "3fc7a7bc7c028f49",
+  "rounds": 5,
+  "winner": "a"
+}

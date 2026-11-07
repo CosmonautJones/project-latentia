@@ -1,0 +1,173 @@
+{
+  "name": "embeddingo-hallucination-cures",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "a7a37d3f54596947a7e6a9a29d8d753a",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-embeddingo",
+          "species": "embeddingo",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "cosine-sniff",
+            "citation-needed",
+            "retrieval-strike",
+            "ground-truth"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-scrapion",
+            "species": "scrapion",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "scrape",
+              "fact-check",
+              "merge-conflict",
+              "retrieval-strike"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-hallucinat",
+          "species": "hallucinat",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "confident-citation",
+            "proof-by-contradiction",
+            "adversarial-patch",
+            "socratic-method"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-slopling",
+            "species": "slopling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "adversarial-patch",
+              "six-fingers"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-hallucinat2",
+            "species": "hallucinat",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "confident-citation",
+              "proof-by-contradiction",
+              "adversarial-patch",
+              "socratic-method"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "citation-needed",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "cosine-sniff",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "adversarial-patch",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "ground-truth",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "728c577b06a96d4d",
+  "rounds": 4,
+  "winner": "b"
+}

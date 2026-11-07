@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "bench": "echo 'bench: no-op until A15'",
+    "bench": "tsx scripts/bench.ts",
     "golden:record": "tsx scripts/record-golden.ts"
   },
   "devDependencies": {

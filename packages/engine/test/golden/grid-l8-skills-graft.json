@@ -1,0 +1,471 @@
+{
+  "name": "grid-l8-skills-graft",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "7e97af09f621f30984f5941c6c624784",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-hallucinat",
+          "species": "hallucinat",
+          "level": 9,
+          "version": "v1",
+          "moves": []
+        },
+        "active": [
+          {
+            "id": "a-scrapion",
+            "species": "scrapion",
+            "level": 8,
+            "version": "v1",
+            "moves": [
+              "scrape",
+              "fact-check",
+              "merge-conflict",
+              "retrieval-strike"
+            ]
+          },
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 8,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 8,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": {
+          "width": 5,
+          "height": 5,
+          "pieces": [
+            {
+              "id": "sp",
+              "kind": "systemPrompt",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                0
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "slot0",
+              "anchor": [
+                0,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "a-scrapion"
+            },
+            {
+              "id": "slot1",
+              "anchor": [
+                3,
+                2
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "a-cobolt"
+            },
+            {
+              "id": "graft2",
+              "anchor": [
+                0,
+                3
+              ],
+              "rotation": 0,
+              "kind": "graft",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "moveId": "stochastic-repeat"
+            },
+            {
+              "id": "skill3",
+              "anchor": [
+                3,
+                0
+              ],
+              "rotation": 0,
+              "kind": "skill",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "moveId": "proof-by-contradiction"
+            }
+          ]
+        },
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-spaghettopus",
+          "species": "spaghettopus",
+          "level": 9,
+          "version": "v1",
+          "moves": []
+        },
+        "active": [
+          {
+            "id": "b-vibrat",
+            "species": "vibrat",
+            "level": 8,
+            "version": "v1",
+            "moves": [
+              "accept-all",
+              "merge-conflict",
+              "segfault",
+              "hype-train"
+            ]
+          },
+          {
+            "id": "b-agentoad",
+            "species": "agentoad",
+            "level": 8,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-sagelet",
+            "species": "sagelet",
+            "level": 8,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "grid": {
+          "width": 5,
+          "height": 5,
+          "pieces": [
+            {
+              "id": "sp",
+              "kind": "systemPrompt",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                0
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "slot0",
+              "anchor": [
+                0,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "b-vibrat"
+            },
+            {
+              "id": "slot1",
+              "anchor": [
+                2,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "b-agentoad"
+            },
+            {
+              "id": "skill2",
+              "anchor": [
+                0,
+                3
+              ],
+              "rotation": 0,
+              "kind": "skill",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "moveId": "infinite-loop"
+            },
+            {
+              "id": "skill3",
+              "anchor": [
+                2,
+                3
+              ],
+              "rotation": 0,
+              "kind": "skill",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ]
+              ],
+              "moveId": "merge-conflict"
+            }
+          ]
+        },
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 3
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "932713f3e76a0c89",
+  "rounds": 6,
+  "winner": "b"
+}

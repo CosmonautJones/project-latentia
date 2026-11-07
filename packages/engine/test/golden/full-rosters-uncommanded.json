@@ -1,0 +1,184 @@
+{
+  "name": "full-rosters-uncommanded",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "bb70351586509142bc45572d16926353",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-cobolt",
+          "species": "cobolt",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-agentoad",
+            "species": "agentoad",
+            "level": 18,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          },
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 18,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 16,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          },
+          {
+            "id": "a-embeddingo",
+            "species": "embeddingo",
+            "level": 16,
+            "version": "v1",
+            "moves": [
+              "cosine-sniff",
+              "citation-needed",
+              "retrieval-strike",
+              "ground-truth"
+            ]
+          },
+          {
+            "id": "a-slopling",
+            "species": "slopling",
+            "level": 16,
+            "version": "v1",
+            "moves": [
+              "six-fingers",
+              "swarm-of-fine-tunes",
+              "adversarial-patch",
+              "weights-dump"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-spaghettopus",
+          "species": "spaghettopus",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "tangle",
+            "infinite-loop",
+            "merge-conflict",
+            "memory-leak"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-hallucinat",
+            "species": "hallucinat",
+            "level": 18,
+            "version": "v1",
+            "moves": [
+              "confident-citation",
+              "proof-by-contradiction",
+              "adversarial-patch",
+              "socratic-method"
+            ]
+          },
+          {
+            "id": "b-scrapion",
+            "species": "scrapion",
+            "level": 18,
+            "version": "v1",
+            "moves": [
+              "scrape",
+              "fact-check",
+              "merge-conflict",
+              "retrieval-strike"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-heisenmoth",
+            "species": "heisenmoth",
+            "level": 16,
+            "version": "v1",
+            "moves": [
+              "observer-effect",
+              "refactor",
+              "bounding-box",
+              "flash-inference"
+            ]
+          },
+          {
+            "id": "b-deprecatter",
+            "species": "deprecatter",
+            "level": 16,
+            "version": "v1",
+            "moves": [
+              "nostalgia-trip",
+              "long-term-recall",
+              "save-state",
+              "episodic-replay"
+            ]
+          },
+          {
+            "id": "b-vibrat",
+            "species": "vibrat",
+            "level": 16,
+            "version": "v1",
+            "moves": [
+              "accept-all",
+              "merge-conflict",
+              "segfault",
+              "hype-train"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "wild"
+    },
+    "rounds": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ]
+  },
+  "expectedHash": "7fa65ddbc02327de",
+  "rounds": 9,
+  "winner": "b"
+}

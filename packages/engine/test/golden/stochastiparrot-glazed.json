@@ -1,0 +1,173 @@
+{
+  "name": "stochastiparrot-glazed",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "a5b0b8ebd3ca1eb493139e2561ace9c5",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-parrot",
+          "species": "stochastiparrot",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "stochastic-repeat",
+            "hype-train",
+            "flattery",
+            "hot-take"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-vibrat",
+            "species": "vibrat",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hype-train",
+              "accept-all"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-embeddingo",
+          "species": "embeddingo",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "cosine-sniff",
+            "citation-needed",
+            "retrieval-strike",
+            "ground-truth"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "flattery",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hot-take",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "cosine-sniff",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "stochastic-repeat",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "ground-truth",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "citation-needed",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "0c6e03f48895da57",
+  "rounds": 4,
+  "winner": "b"
+}

@@ -1,0 +1,945 @@
+{
+  "name": "round-cap-draw",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "18abdd154c989eccbedb3085d73d7fdd",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 25,
+          "version": "v1",
+          "moves": [
+            "step-back-prompt"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-cobolt",
+          "species": "cobolt",
+          "level": 25,
+          "version": "v1",
+          "moves": [
+            "refactor"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "ghost"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "d5a20d409925a26f",
+  "rounds": 50,
+  "winner": "draw"
+}

@@ -1,0 +1,192 @@
+{
+  "name": "off-by-wasp-stack-trace",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "62472151b258f0b4543467ec4ec28bc5",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-wasp",
+          "species": "off-by-wasp",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "off-by-one",
+            "stack-trace",
+            "token-burst",
+            "unit-test"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-agentoad",
+            "species": "agentoad",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-vibrat",
+            "species": "vibrat",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "accept-all",
+              "merge-conflict",
+              "segfault",
+              "hype-train"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-heisenmoth",
+          "species": "heisenmoth",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "observer-effect",
+            "refactor",
+            "bounding-box",
+            "flash-inference"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-scrapion",
+            "species": "scrapion",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "scrape",
+              "fact-check",
+              "merge-conflict",
+              "retrieval-strike"
+            ]
+          },
+          {
+            "id": "b-deprecatter",
+            "species": "deprecatter",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "nostalgia-trip",
+              "long-term-recall",
+              "save-state",
+              "episodic-replay"
+            ]
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "stack-trace",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "bounding-box",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "off-by-one",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "observer-effect",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "unit-test",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "flash-inference",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "stack-trace",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "bounding-box",
+            "target": 1
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "a65a9acb8d65ff18",
+  "rounds": 5,
+  "winner": "a"
+}
