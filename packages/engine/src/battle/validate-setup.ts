@@ -3,6 +3,7 @@ import { SPECIES, type SpeciesDef } from '../content/species.js';
 import type { GridLayout, PlacedPiece } from '../grid/model.js';
 import { validateGrid, type ValidationResult } from '../grid/validate.js';
 import type { BattleSetup, CreatureSetup, SideSetup, ValidationError } from './setup.js';
+import { setupShapeErrors } from './setup-shape.js';
 import { VERSIONS, type SideId } from './state.js';
 
 // validateSetup (spec §7 "Invalid setup or grid"): every problem as { code, path, message }.
@@ -149,8 +150,15 @@ function validateSide(side: SideSetup, id: SideId, ids: Set<string>, errors: Err
   }
 }
 
-/** Every problem with a setup, as `{ code, path, message }`, in side order (A then B). */
-export function validateSetup(setup: BattleSetup): ValidationResult {
+/**
+ * Every problem with a setup, as `{ code, path, message }`, in side order (A then B). Safe on untrusted
+ * JSON (Ruling 75): a setup of the wrong shape returns only its `shape` errors (setupShapeErrors) — values
+ * cannot be checked on it — and nothing here throws.
+ */
+export function validateSetup(input: unknown): ValidationResult {
+  const shape = setupShapeErrors(input);
+  if (shape.length > 0) return { ok: false, errors: shape };
+  const setup = input as BattleSetup;
   const errors: Errors = [];
   const ids = new Set<string>();
   validateSide(setup.a, 'a', ids, errors);

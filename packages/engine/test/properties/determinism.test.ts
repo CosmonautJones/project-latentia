@@ -142,7 +142,7 @@ describe('determinism and replay (spec §2 criterion 2, §8 properties)', () => 
   });
 });
 
-describe('replay errors (Ruling 29): typed, never thrown', () => {
+describe('replay errors (Rulings 69, 70, 75): typed, never thrown', () => {
   const good = (): BattleLog => simulate(gridlessSetup(), SEED, DEFAULTS).log;
   const malformed = { error: { code: 'malformed' } };
 

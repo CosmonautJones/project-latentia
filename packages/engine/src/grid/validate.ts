@@ -86,7 +86,59 @@ function shapeError(piece: PlacedPiece): string | undefined {
   return undefined;
 }
 
-export function validateGrid(grid: GridLayout, level: number): ValidationResult {
+type Rec = Record<string, unknown>;
+
+const isRecord = (v: unknown): v is Rec => typeof v === 'object' && v !== null && !Array.isArray(v);
+const optionalString = (v: unknown): boolean => v === undefined || typeof v === 'string';
+
+/**
+ * Type-level problems with untrusted grid data (Ruling 75), as code `shape` with a path relative to the
+ * grid ('' is the grid itself): the grid must be an object with number `width` and `height` and an array
+ * `pieces` (no holes) of objects with a string `id` and `kind` and, when present, a string `moveId` and
+ * `subagentId`. A piece's geometry (`shape`, `anchor`, `rotation`, a known kind) is checked by validateGrid
+ * itself. Messages never print the offending value. Shared with validateSetup.
+ */
+export function gridShapeErrors(grid: unknown): GridError[] {
+  const errors: GridError[] = [];
+  const add = (path: string, message: string): void => {
+    errors.push({ code: 'shape', path, message });
+  };
+  if (!isRecord(grid)) {
+    add('', 'grid must be an object');
+    return errors;
+  }
+  if (typeof grid.width !== 'number') add('width', 'width must be a number');
+  if (typeof grid.height !== 'number') add('height', 'height must be a number');
+  const pieces = grid.pieces;
+  if (!Array.isArray(pieces)) {
+    add('pieces', 'pieces must be an array');
+    return errors;
+  }
+  for (let p = 0; p < pieces.length; p++) {
+    const piece: unknown = pieces[p];
+    const path = `pieces[${p}]`;
+    if (!isRecord(piece)) {
+      add(path, 'a piece must be an object');
+      continue;
+    }
+    if (typeof piece.id !== 'string') add(`${path}.id`, 'id must be a string');
+    if (typeof piece.kind !== 'string') add(`${path}.kind`, 'kind must be a string');
+    if (!optionalString(piece.moveId)) add(`${path}.moveId`, 'moveId must be a string when present');
+    if (!optionalString(piece.subagentId)) add(`${path}.subagentId`, 'subagentId must be a string when present');
+  }
+  return errors;
+}
+
+/**
+ * Every problem with a grid for an orchestrator of `level`, as `{ code, path, message }` (spec §7). Safe on
+ * untrusted data (Ruling 75): type-level problems (gridShapeErrors, or a level that is not a number) are
+ * reported alone, as code `shape`, since nothing else can be checked on a grid of the wrong shape; never throws.
+ */
+export function validateGrid(input: unknown, level: number): ValidationResult {
+  const shape = gridShapeErrors(input);
+  if (typeof level !== 'number') shape.push({ code: 'shape', path: 'level', message: 'level must be a number' });
+  if (shape.length > 0) return { ok: false, errors: shape };
+  const grid = input as GridLayout;
   const errors: GridError[] = [];
   const add = (code: string, path: string, message: string): void => {
     errors.push({ code, path, message });
