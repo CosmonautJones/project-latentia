@@ -35,3 +35,8 @@ export const LAUNCH_MOVE_IDS: readonly MoveId[] = deepFreeze(Object.keys(LAUNCH)
 
 /** One signature per slice species. */
 export const SIGNATURE_MOVE_IDS: readonly MoveId[] = deepFreeze(Object.keys(SIGNATURE_MOVES) as MoveId[]);
+
+/** The move with this id, or null for an id that is not a move (lever names, typos, prototype keys). */
+export function moveDef(moveId: string): MoveDef | null {
+  return Object.prototype.hasOwnProperty.call(MOVES, moveId) ? MOVES[moveId as MoveId] : null;
+}

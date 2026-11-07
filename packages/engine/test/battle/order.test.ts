@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { EngineInvariantError } from '../../src/math/bp.js';
 import { effectiveStat } from '../../src/math/stats.js';
 import { defaultIntent, planEntries, sortActions, type ActionEntry } from '../../src/battle/order.js';
-import type { BattleState } from '../../src/battle/state.js';
+import type { OrchestratorAction } from '../../src/battle/log.js';
+import type { BattleState, Card } from '../../src/battle/state.js';
 import { at, battle, faint } from './helpers.js';
 
 const entry = (actor: number, priority: number, latency: number, tieBreak: number): ActionEntry => ({
@@ -84,6 +85,24 @@ describe('defaultIntent', () => {
     expect(defaultIntent(s, 2)).toEqual({ moveId: 'hard-fork', target: 7 });
   });
 
+  it('falls back to the foe orchestrator when no foe on the field is alive, even with a living bench', () => {
+    const s = battle();
+    faint(at(s, 6));
+    faint(at(s, 7));
+    faint(at(s, 8));
+    expect(defaultIntent(s, 1).target).toBe(6);
+  });
+
+  it('ignores a foe in a removed slot', () => {
+    const s = battle();
+    at(s, 7).hp = 1;
+    const slot = s.sides.b.slots[0];
+    if (slot === undefined) throw new Error('slot');
+    slot.pieceId = 'slot1';
+    at(s, 6).context.removedSlots.push('slot1');
+    expect(defaultIntent(s, 1).target).not.toBe(7);
+  });
+
   it('skips universal moves even when they are listed first', () => {
     const s = battle();
     at(s, 1).moves = ['compact', 'guardrail', 'token-burst', 'clear'];
@@ -134,13 +153,40 @@ describe('planEntries', () => {
     expect(entries.find((x) => x.actor === 0)).toMatchObject({ moveId: 'guardrail', target: 0, priority: 4 });
   });
 
-  it("marks a 'none' command as a lever entry and a swap at priority +3", () => {
+  it('normalizes the target of a self or none move to the actor', () => {
     const s = withRoundStart(battle());
-    const entries = planEntries(s, {
-      a: { temperature: 2, action: { kind: 'none' } },
-      b: { temperature: 2, action: { kind: 'swap', out: 7, in: 9 } },
-    });
-    expect(entries.find((x) => x.actor === 0)).toMatchObject({ lever: 'none', priority: 0 });
-    expect(entries.find((x) => x.actor === 6)).toMatchObject({ lever: 'swap', priority: 3 });
+    const entries = planEntries(s, { a: { temperature: 2, action: { kind: 'move', moveId: 'step-back-prompt', target: 99 } } });
+    expect(entries.find((x) => x.actor === 0)).toMatchObject({ moveId: 'step-back-prompt', target: 0 });
+  });
+
+  it("carries a move command's injection choice", () => {
+    const s = withRoundStart(battle());
+    const injection = { moveId: 'ship-it', target: 2 };
+    const entries = planEntries(s, { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 7, injection } } });
+    expect(entries.find((x) => x.actor === 0)).toMatchObject({ moveId: 'chain-of-thought', target: 7, injection });
+  });
+
+  it('carries the whole lever action: none at 0, Directive and Policy Update at 0, Swap at +3', () => {
+    const card = { id: 'c1' } as unknown as Card;
+    const cases: [OrchestratorAction, number][] = [
+      [{ kind: 'none' }, 0],
+      [{ kind: 'directive', subagent: 1, moveId: 'token-burst', target: 8 }, 0],
+      [{ kind: 'policyUpdate', card }, 0],
+      [{ kind: 'swap', out: 2, in: 4 }, 3],
+    ];
+    for (const [action, priority] of cases) {
+      const s = withRoundStart(battle());
+      const e = planEntries(s, { a: { temperature: 2, action } }).find((x) => x.actor === 0);
+      expect(e?.lever).toEqual(action);
+      expect(e?.priority).toBe(priority);
+    }
+  });
+
+  it("ignores a headless (KO'd) orchestrator's command; its entry still exists", () => {
+    const s = withRoundStart(battle());
+    faint(at(s, 0));
+    const e = planEntries(s, { a: { temperature: 2, action: { kind: 'swap', out: 1, in: 3 } } }).find((x) => x.actor === 0);
+    expect(e).toBeDefined();
+    expect(e?.lever).toBeUndefined();
   });
 });

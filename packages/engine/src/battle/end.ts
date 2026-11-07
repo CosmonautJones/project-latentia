@@ -62,26 +62,19 @@ export function autofillBench(state: BattleState, round: number): BattleEvent[] 
   return events;
 }
 
-function finish(state: BattleState, result: Outcome, reason: 'knockout' | 'cap'): BattleEvent[] {
-  state.ended = true;
-  state.result = result;
-  return [{ round: state.round, type: 'BattleEnd', winner: result === 'draw' ? null : sideNumber(result), reason }];
-}
-
 function wiped(state: BattleState, side: SideId): boolean {
   return state.creatures.every((c) => c.side !== side || c.fainted);
 }
 
 /**
- * Win check (spec §5): a side loses when every creature on it is KO'd; both wiped → draw. Sets
- * `ended`/`result` and returns the single BattleEnd, or nothing while both sides stand.
+ * The win decision (spec §5, Ruling 32), without emitting anything: a side loses when every creature on
+ * it is KO'd; both wiped → draw; null while both sides stand. Checked after every action and at end of round.
  */
-export function checkEnd(state: BattleState): BattleEvent[] {
-  if (state.ended) return [];
+export function winOutcome(state: BattleState): Outcome | null {
   const a = wiped(state, 'a');
   const b = wiped(state, 'b');
-  if (!a && !b) return [];
-  return finish(state, a && b ? 'draw' : a ? 'b' : 'a', 'knockout');
+  if (a && b) return 'draw';
+  return a ? 'b' : b ? 'a' : null;
 }
 
 function sums(state: BattleState, side: SideId): { hp: number; max: number } {
@@ -96,14 +89,29 @@ function sums(state: BattleState, side: SideId): { hp: number; max: number } {
 }
 
 /**
- * Round cap (spec §5 "Cap"): once round 50 has ended with no winner, A wins if ΣhpA × ΣmaxB > ΣhpB × ΣmaxA,
- * B if less, draw if equal (every creature counts, benched and KO'd included).
+ * The cap decision (spec §5 "Cap"), without emitting anything: from round 50 on, A wins if
+ * ΣhpA × ΣmaxB > ΣhpB × ΣmaxA, B if less, draw if equal (every creature counts, benched and KO'd
+ * included); null before the cap.
  */
-export function checkCap(state: BattleState): BattleEvent[] {
-  if (state.ended || state.round < ROUND_CAP) return [];
+export function capOutcome(state: BattleState): Outcome | null {
+  if (state.round < ROUND_CAP) return null;
   const a = sums(state, 'a');
   const b = sums(state, 'b');
   const left = assertSafe(a.hp * b.max, 'cap ΣhpA×ΣmaxB');
   const right = assertSafe(b.hp * a.max, 'cap ΣhpB×ΣmaxA');
-  return finish(state, left > right ? 'a' : left < right ? 'b' : 'draw', 'cap');
+  return left > right ? 'a' : left < right ? 'b' : 'draw';
+}
+
+/**
+ * Ends the battle if it is decided — a knockout first, then the round-50 cap — setting `ended`/`result`
+ * and returning the single BattleEnd; nothing while undecided or once already ended. Called after RoundEnd.
+ */
+export function checkEnd(state: BattleState): BattleEvent[] {
+  if (state.ended) return [];
+  const knockout = winOutcome(state);
+  const result = knockout ?? capOutcome(state);
+  if (result === null) return [];
+  state.ended = true;
+  state.result = result;
+  return [{ round: state.round, type: 'BattleEnd', winner: result === 'draw' ? null : sideNumber(result), reason: knockout === null ? 'cap' : 'knockout' }];
 }

@@ -1,10 +1,11 @@
 import type { BattleEvent, SkipReason } from '../events/types.js';
+import { EngineInvariantError } from '../math/bp.js';
 import { drawAction, drawRoundStart } from '../rng/draws.js';
-import { autofillBench, checkCap, checkEnd } from './end.js';
+import { autofillBench, checkEnd, winOutcome } from './end.js';
 import { validateCommand, type CommandError } from './errors.js';
 import { assertInvariants } from './invariants.js';
 import type { RoundCommand } from './log.js';
-import { holdsLiveSlot, planEntries, sortActions, type ActionEntry } from './order.js';
+import { holdsLiveSlot, isHeadless, planEntries, sortActions, type ActionEntry } from './order.js';
 import { resolveAction } from './resolve.js';
 import type { BattleState, SideId } from './state.js';
 
@@ -12,7 +13,8 @@ const SIDES: readonly SideId[] = ['a', 'b'];
 
 /**
  * Round start (spec §5 step 1): advance the round, emit RoundStart, take R1/R2 for every creature in
- * canonical order (alive or not) and keep them on the creature; store each command's temperature on its side.
+ * canonical order (alive or not) and keep them on the creature; store each command's temperature on its
+ * side, except a headless side's (its command is ignored, Ruling 36).
  */
 function startRound(state: BattleState, cmd: RoundCommand, events: BattleEvent[]): void {
   state.round += 1;
@@ -20,14 +22,14 @@ function startRound(state: BattleState, cmd: RoundCommand, events: BattleEvent[]
   for (const c of state.creatures) c.roundStart = drawRoundStart(state.rng);
   for (const side of SIDES) {
     const sc = cmd[side];
-    if (sc !== undefined) state.sides[side].temperature = sc.temperature;
+    if (sc !== undefined && !isHeadless(state, side)) state.sides[side].temperature = sc.temperature;
   }
 }
 
 /** Why a planned entry cannot act now: a KO'd orchestrator is headless; a subagent may be KO'd or off the field. */
 function skipReason(state: BattleState, entry: ActionEntry): SkipReason | null {
   const c = state.creatures[entry.actor];
-  if (c === undefined) return 'fainted';
+  if (c === undefined) throw new EngineInvariantError(`entry for unknown creature ${entry.actor}`, { round: state.round, actor: entry.actor, seed: state.seed });
   if (c.isOrchestrator) return c.fainted ? 'headless' : null;
   if (c.fainted) return 'fainted';
   return holdsLiveSlot(state, c) ? null : 'leftField';
@@ -51,12 +53,26 @@ function resolveEntry(state: BattleState, entry: ActionEntry, events: BattleEven
   resolveAction(state, entry, draws, events);
 }
 
-/** End of round (spec §5 steps 5-6): bench auto-fill, win check, RoundEnd, then the round-50 cap. */
-function endRound(state: BattleState, events: BattleEvent[]): void {
-  events.push(...autofillBench(state, state.round));
-  events.push(...checkEnd(state));
+/**
+ * Resolve the sorted entries, checking for a win after every one (Ruling 32). Once a side is wiped the
+ * remaining entries are not resolved and draw nothing. Returns whether the round was cut short.
+ */
+function resolveAll(state: BattleState, entries: readonly ActionEntry[], events: BattleEvent[]): boolean {
+  for (const entry of entries) {
+    resolveEntry(state, entry, events);
+    if (winOutcome(state) !== null) return true;
+  }
+  return false;
+}
+
+/**
+ * End of round (spec §5 steps 5-6): bench auto-fill (skipped when the round was cut short by a wipe),
+ * RoundEnd, then the win check and round-50 cap, which emit at most one BattleEnd.
+ */
+function endRound(state: BattleState, cutShort: boolean, events: BattleEvent[]): void {
+  if (!cutShort) events.push(...autofillBench(state, state.round));
   events.push({ round: state.round, type: 'RoundEnd' });
-  events.push(...checkCap(state));
+  events.push(...checkEnd(state));
 }
 
 /**
@@ -69,8 +85,8 @@ export function submitRound(state: BattleState, cmd: RoundCommand): { state: Bat
   const next = structuredClone(state);
   const events: BattleEvent[] = [];
   startRound(next, cmd, events);
-  for (const entry of sortActions(planEntries(next, cmd))) resolveEntry(next, entry, events);
-  endRound(next, events);
+  const cutShort = resolveAll(next, sortActions(planEntries(next, cmd)), events);
+  endRound(next, cutShort, events);
   assertInvariants(next);
   return { state: next, events };
 }

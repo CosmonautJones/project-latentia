@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BattleEvent } from '../../src/events/types.js';
 import { drawAction, drawRoundStart } from '../../src/rng/draws.js';
 import type { RoundCommand } from '../../src/battle/log.js';
 import { submitRound } from '../../src/battle/round.js';
 import type { BattleState } from '../../src/battle/state.js';
 import { at, battle, faint } from './helpers.js';
+
+// Test seam: resolveAction is a no-op stub until A12a; individual tests script it to fake a KO.
+const seam = vi.hoisted(() => ({ resolveAction: vi.fn() }));
+vi.mock('../../src/battle/resolve.js', () => seam);
+afterEach(() => seam.resolveAction.mockReset());
 
 function ok(state: BattleState, cmd: RoundCommand): { state: BattleState; events: BattleEvent[] } {
   const r = submitRound(state, cmd);
@@ -117,11 +122,12 @@ describe('submitRound: end of round', () => {
     expect(state.sides.a.slots[0]?.occupant).toBe(3);
   });
 
-  it('ends a battle whose side is wiped with exactly one BattleEnd', () => {
+  it('ends a battle whose side is wiped with RoundEnd then exactly one BattleEnd', () => {
     const s = battle();
     s.creatures.filter((c) => c.side === 'b').forEach(faint);
     const { state, events } = ok(s, {});
     expect(events.filter((e) => e.type === 'BattleEnd')).toEqual([{ round: 1, type: 'BattleEnd', winner: 0, reason: 'knockout' }]);
+    expect(events.slice(-2).map((e) => e.type)).toEqual(['RoundEnd', 'BattleEnd']);
     expect(state.ended).toBe(true);
     expect(state.result).toBe('a');
   });
@@ -133,7 +139,7 @@ describe('submitRound: end of round', () => {
     const { state, events } = ok(s, {});
     expect(state.round).toBe(50);
     expect(events.filter((e) => e.type === 'BattleEnd')).toEqual([{ round: 50, type: 'BattleEnd', winner: 0, reason: 'cap' }]);
-    expect(events.at(-1)?.type).toBe('BattleEnd');
+    expect(events.slice(-2).map((e) => e.type)).toEqual(['RoundEnd', 'BattleEnd']);
     expect(state.ended).toBe(true);
     expect(state.result).toBe('a');
   });
@@ -145,6 +151,67 @@ describe('submitRound: end of round', () => {
     const { state, events } = ok(s, {});
     expect(events.filter((e) => e.type === 'BattleEnd')).toEqual([]);
     expect(state.ended).toBe(false);
+  });
+});
+
+describe('submitRound: win check after every action (Ruling 32)', () => {
+  /** a-orch's Guardrail (+4) is the first entry; the scripted resolveAction KOs `victims` during it. */
+  const firstEntryKOs = (victims: (s: BattleState) => number[]) => {
+    seam.resolveAction.mockImplementation((st: BattleState, entry: { actor: number }) => {
+      if (entry.actor === 0) for (const i of victims(st)) faint(at(st, i));
+    });
+  };
+  const cmd: RoundCommand = { a: { temperature: 2, action: { kind: 'move', moveId: 'guardrail', target: 0 } } };
+
+  it('stops resolving once a side is wiped: later entries draw nothing, no auto-fill, RoundEnd then one BattleEnd', () => {
+    const s = battle();
+    firstEntryKOs((st) => st.creatures.filter((c) => c.side === 'b').map((c) => c.index));
+    const ref = structuredClone(s.rng);
+    const { state, events } = ok(s, cmd);
+    for (let k = 0; k < 12; k++) drawRoundStart(ref);
+    drawAction(ref); // the first entry only
+    expect(state.rng).toEqual(ref);
+    expect(started(events).map((e) => e.actor)).toEqual([0]);
+    expect(events.map((e) => e.type)).toEqual(['RoundStart', 'ActionStarted', 'RoundEnd', 'BattleEnd']);
+    expect(events.at(-1)).toEqual({ round: 1, type: 'BattleEnd', winner: 0, reason: 'knockout' });
+    expect(seam.resolveAction).toHaveBeenCalledTimes(1);
+    expect(state.result).toBe('a');
+  });
+
+  it('both sides wiped by the same action is a draw with exactly one BattleEnd', () => {
+    const s = battle();
+    firstEntryKOs((st) => st.creatures.map((c) => c.index));
+    const { state, events } = ok(s, cmd);
+    expect(events.filter((e) => e.type === 'BattleEnd')).toEqual([{ round: 1, type: 'BattleEnd', winner: null, reason: 'knockout' }]);
+    expect(events.slice(-2).map((e) => e.type)).toEqual(['RoundEnd', 'BattleEnd']);
+    expect(state.result).toBe('draw');
+  });
+
+  it('keeps resolving while both sides stand, and auto-fills at end of round', () => {
+    const s = battle();
+    firstEntryKOs(() => [7]);
+    const { state, events } = ok(s, cmd);
+    expect(started(events)).toHaveLength(6);
+    expect(events.find((e) => e.type === 'Swapped')).toEqual({ round: 1, type: 'Swapped', side: 1, outIndex: 7, inIndex: 9 });
+    expect(state.ended).toBe(false);
+  });
+});
+
+describe('submitRound: headless sides (Ruling 36)', () => {
+  it("accepts and ignores a headless side's command, keeping its temperature", () => {
+    const s = battle();
+    faint(at(s, 0));
+    const before = s.sides.a.temperature;
+    const { state, events } = ok(s, { a: { temperature: 4, action: { kind: 'move', moveId: 'no-such-move', target: 99 } } });
+    expect(state.sides.a.temperature).toBe(before);
+    const i = events.findIndex((e) => e.type === 'ActionStarted' && e.actor === 0);
+    expect(events[i + 1]).toEqual({ round: 1, type: 'ActionSkipped', actor: 0, reason: 'headless' });
+  });
+
+  it("still rejects a malformed headless command", () => {
+    const s = battle();
+    faint(at(s, 0));
+    expect(errorCode(s, { a: { temperature: 9 as never, action: { kind: 'none' } } })).toBe('invalidCommand');
   });
 });
 
@@ -172,6 +239,64 @@ describe('submitRound: command errors leave the input untouched', () => {
     rejects(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 12 } } }, 'illegalTarget');
     rejects(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: -1 } } }, 'illegalTarget');
     rejects(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 1.5 } } }, 'illegalTarget');
+  });
+
+  it('illegalTarget: a living foe on the bench is off the field', () => {
+    rejects(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 9 } } }, 'illegalTarget');
+  });
+
+  it('illegalTarget: a foe in a removed slot is off the field', () => {
+    const s = battle();
+    const slot = s.sides.b.slots[0];
+    if (slot === undefined) throw new Error('slot');
+    slot.pieceId = 'slot1';
+    at(s, 6).context.removedSlots.push('slot1');
+    rejects(s, { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 7 } } }, 'illegalTarget');
+  });
+
+  it('illegalTarget: a foe-kind move aimed at an ally (or the user)', () => {
+    rejects(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 1 } } }, 'illegalTarget');
+    rejects(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 0 } } }, 'illegalTarget');
+  });
+
+  it('ally-kind moves need an on-field ally (the user included)', () => {
+    const directive = (target: number): RoundCommand => ({ a: { temperature: 2, action: { kind: 'directive', subagent: 2, moveId: 'community-patch', target } } });
+    rejects(battle(), directive(7), 'illegalTarget');
+    rejects(battle(), directive(3), 'illegalTarget');
+    ok(battle(), directive(1));
+    ok(battle(), directive(2));
+  });
+
+  it('a self move accepts any submitted target', () => {
+    ok(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'step-back-prompt', target: 99 } } });
+    ok(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'guardrail', target: -5 } } });
+  });
+
+  it('illegalTarget: a Directive aimed at a non-subagent, including its own orchestrator', () => {
+    rejects(battle(), { a: { temperature: 2, action: { kind: 'directive', subagent: 0, moveId: 'chain-of-thought', target: 7 } } }, 'illegalTarget');
+  });
+
+  it('invalidCommand: temperature outside the integers 0..4', () => {
+    for (const t of [-1, 5, 1.5, Number.NaN, '2']) {
+      rejects(battle(), { a: { temperature: t as never, action: { kind: 'none' } } }, 'invalidCommand');
+    }
+  });
+
+  it('invalidCommand: an unknown action kind or missing fields', () => {
+    const bad: unknown[] = [
+      undefined,
+      { kind: 'dance' },
+      { kind: 'move', target: 7 },
+      { kind: 'move', moveId: 'chain-of-thought' },
+      { kind: 'move', moveId: 'chain-of-thought', target: 7, injection: { moveId: 'ship-it' } },
+      { kind: 'directive', subagent: 1, moveId: 'ship-it' },
+      { kind: 'directive', moveId: 'ship-it', target: 7 },
+      { kind: 'policyUpdate' },
+      { kind: 'swap', out: 1 },
+      { kind: 'swap', in: 4 },
+    ];
+    for (const action of bad) rejects(battle(), { a: { temperature: 2, action: action as never } }, 'invalidCommand');
+    rejects(battle(), { b: null as never }, 'invalidCommand');
   });
 
   it('directiveOnFainted: a Directive aimed at a KO\'d subagent', () => {
