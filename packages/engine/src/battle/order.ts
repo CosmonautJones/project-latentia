@@ -92,7 +92,7 @@ export function legalTarget(state: BattleState, user: CreatureState, def: MoveDe
 }
 
 /** Lowest HP first, then lowest canonical index, among living on-field creatures that pass `keep`. */
-function lowestHpOnField(state: BattleState, keep: (c: CreatureState) => boolean): CreatureState | undefined {
+export function lowestHpOnField(state: BattleState, keep: (c: CreatureState) => boolean): CreatureState | undefined {
   let best: CreatureState | undefined;
   for (const c of state.creatures) if (keep(c) && !c.fainted && onField(state, c) && (best === undefined || c.hp < best.hp)) best = c;
   return best;

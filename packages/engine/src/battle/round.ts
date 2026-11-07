@@ -3,6 +3,7 @@ import { EngineInvariantError } from '../math/bp.js';
 import { drawAction, drawRoundStart } from '../rng/draws.js';
 import { autofillBench, checkEnd, winOutcome } from './end.js';
 import { validateCommand, type CommandError } from './errors.js';
+import { breakEnemyChains } from './handoff.js';
 import { assertInvariants } from './invariants.js';
 import type { RoundCommand } from './log.js';
 import { holdsLiveSlot, isHeadless, planEntries, sortActions, type ActionEntry } from './order.js';
@@ -12,12 +13,13 @@ import type { BattleState, SideId } from './state.js';
 const SIDES: readonly SideId[] = ['a', 'b'];
 
 /**
- * Round start (spec §5 step 1): advance the round, emit RoundStart, take R1/R2 for every creature in
+ * Round start (spec §5 step 1): advance the round, clear the Handoff chains, emit RoundStart, take R1/R2 for every creature in
  * canonical order (alive or not) and keep them on the creature; store each command's temperature on its
  * side, except a headless side's (its command is ignored, Ruling 36).
  */
 function startRound(state: BattleState, cmd: RoundCommand, events: BattleEvent[]): void {
   state.round += 1;
+  state.handoff = [];
   events.push({ round: state.round, type: 'RoundStart' });
   for (const c of state.creatures) c.roundStart = drawRoundStart(state.rng);
   for (const side of SIDES) {
@@ -49,7 +51,12 @@ function resolveEntry(state: BattleState, entry: ActionEntry, events: BattleEven
     events.push({ round: state.round, type: 'ActionSkipped', actor: entry.actor, reason });
     return;
   }
-  if (entry.lever !== undefined) return;
+  if (entry.lever !== undefined) {
+    // A lever is still an action in the order: it breaks the enemy's Handoff chains (bible Handoff Chain).
+    const c = state.creatures[entry.actor];
+    if (entry.lever.kind !== 'none' && c !== undefined) breakEnemyChains(state, c.side);
+    return;
+  }
   resolveAction(state, entry, draws, events);
 }
 

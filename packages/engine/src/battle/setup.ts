@@ -243,6 +243,9 @@ function buildCreature(c: CreatureSetup, index: number, side: SideId, place: Pla
     nextActionMods: [],
     actedThisBattle: false,
     lastMoveId: null,
+    moveHistory: [],
+    seenMoves: [],
+    observedMoves: [],
     roundStart: null,
   };
 }
@@ -304,5 +307,5 @@ export function createBattle(setup: BattleSetup, seed: SeedHex): BattleState {
   const creatures: CreatureState[] = [];
   const a = addSide(creatures, setup.a, 'a');
   const b = addSide(creatures, setup.b, 'b');
-  return { round: 0, seed, rng: seedRng(parsed.words), creatures, sides: { a, b }, fields: [], ended: false, result: null };
+  return { round: 0, seed, rng: seedRng(parsed.words), creatures, sides: { a, b }, fields: [], handoff: [], ended: false, result: null };
 }

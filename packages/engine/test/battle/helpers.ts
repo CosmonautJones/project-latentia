@@ -1,7 +1,9 @@
 import { SPECIES } from '../../src/content/species.js';
 import { createBattle } from '../../src/battle/setup.js';
 import type { BattleSetup, CreatureSetup, SideSetup } from '../../src/battle/setup.js';
+import type { ActionEntry } from '../../src/battle/order.js';
 import type { BattleState, CreatureState } from '../../src/battle/state.js';
+import type { ActionDraws } from '../../src/rng/draws.js';
 
 export const SEED = '0123456789abcdef0123456789abcdef';
 
@@ -47,3 +49,28 @@ export function at(state: BattleState, i: number): CreatureState {
   if (c === undefined) throw new Error(`no creature ${i}`);
   return c;
 }
+
+/** A draw word from its high and low 16-bit halves. */
+export const word = (hiV: number, loV: number): number => ((hiV << 16) | loV) >>> 0;
+
+export type DrawHalves = Partial<Record<'d1lo' | 'd1hi' | 'd2lo' | 'd2hi' | 'd3lo' | 'd3hi' | 'd4lo' | 'd4hi' | 'd5lo' | 'd5hi' | 'd6lo' | 'd6hi', number>>;
+
+/**
+ * Six action draws from their halves. Defaults trigger nothing: obedience and Drift miss (99), no Rate
+ * Limited skip or hallucination (99), accuracy hits (0), no crit below stage 6 (47), roll 100% at T2
+ * (lo 15 → 85 + 15), no multi-hit extra (0), riders miss (99).
+ */
+export function draws(h: DrawHalves = {}): ActionDraws {
+  const v = { d1lo: 0, d1hi: 99, d2lo: 99, d2hi: 99, d3lo: 0, d3hi: 0, d4lo: 47, d4hi: 0, d5lo: 15, d5hi: 0, d6lo: 99, d6hi: 0, ...h };
+  return {
+    d1: word(v.d1hi, v.d1lo),
+    d2: word(v.d2hi, v.d2lo),
+    d3: word(v.d3hi, v.d3lo),
+    d4: word(v.d4hi, v.d4lo),
+    d5: word(v.d5hi, v.d5lo),
+    d6: word(v.d6hi, v.d6lo),
+  };
+}
+
+/** A move entry for `actor` (priority/latency/tie-break do not matter once sorted). */
+export const entry = (actor: number, moveId: string, target: number): ActionEntry => ({ actor, priority: 0, latency: 0, tieBreak: 0, moveId, target });

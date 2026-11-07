@@ -24,6 +24,9 @@ export type SideId = 'a' | 'b';
 /** Raw stats at the creature's level, before stages (spec §5 "Stats"). */
 export type Stats = { compute: number; robustness: number; latency: number };
 
+/** One resolved move of a creature (see CreatureState.moveHistory). */
+export type MoveRecord = { round: number; moveId: string; damaged: number[] };
+
 /** A move being charged (e.g. Deliberate); its remaining effects resolve when `remaining` reaches 0. */
 export type ChargingState = { moveId: string; target: number; remaining: number; powerDelta: number };
 
@@ -67,6 +70,16 @@ export type CreatureState = StatusHolder & {
   actedThisBattle: boolean;
   lastMoveId: string | null;
   /**
+   * Every move this creature resolved (not skipped), oldest first: the round, the move actually used
+   * (after hallucination or Drift) and the canonical indices it damaged. Feeds the damage conditions
+   * (targetActedThisRound, targetLastRound, userConsecutiveRoundsUsingType, hitsTakenFromTarget).
+   */
+  moveHistory: MoveRecord[];
+  /** Enemy move ids this creature has been targeted by (first sightings, spec §5 Context). */
+  seenMoves: string[];
+  /** Enemy move ids it holds an Observation against: their hits on it take the 9000 modifier. */
+  observedMoves: string[];
+  /**
    * This round's R1/R2 (spec §5 draw table), taken for every creature at round start; null before round 1.
    * R1 low 16 bits = tie-break, `hi(r1, 2)` = seeded coin; `lo(r2, n)` = random-foe pick, `hi(r2, 100)` = passive proc.
    */
@@ -100,6 +113,13 @@ export type FieldState = never;
 
 export type Outcome = SideId | 'draw';
 
+/**
+ * A Handoff Chain (spec §5 damage step 4): consecutive hits on `target` by creatures of `side` this
+ * round, `actors` in hit order (a multi-hit move appears once). Cleared at round start and by any
+ * action of a creature not on `side`.
+ */
+export type HandoffChain = { target: number; side: SideId; actors: number[] };
+
 export type BattleState = {
   /** 0 before the first round. */
   round: number;
@@ -110,6 +130,8 @@ export type BattleState = {
   creatures: CreatureState[];
   sides: { a: SideState; b: SideState };
   fields: FieldState[];
+  /** This round's Handoff Chains, at most one per target. */
+  handoff: HandoffChain[];
   ended: boolean;
   result: Outcome | null;
 };

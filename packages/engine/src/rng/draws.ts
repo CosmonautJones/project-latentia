@@ -1,13 +1,22 @@
+import { EngineInvariantError } from '../math/bp.js';
 import { nextU32, type RngState } from './sfc32.js';
 
-/** Low 16 bits of `d` modulo `a` (a <= 65536). */
-export function lo(d: number, a: number): number {
-  return (d & 0xffff) % a;
+/** A draw half is reduced by a modulus that is a safe integer in 1..65536 (spec §5); anything else is an engine bug. */
+function modulus(m: number): number {
+  if (!Number.isSafeInteger(m) || m < 1 || m > 65536) {
+    throw new EngineInvariantError(`draw modulus must be an integer in 1..65536, got ${String(m)}`);
+  }
+  return m;
 }
 
-/** High 16 bits of `d` modulo `b` (b <= 65536). */
+/** Low 16 bits of `d` modulo `a` (1 <= a <= 65536). */
+export function lo(d: number, a: number): number {
+  return (d & 0xffff) % modulus(a);
+}
+
+/** High 16 bits of `d` modulo `b` (1 <= b <= 65536). */
 export function hi(d: number, b: number): number {
-  return (d >>> 16) % b;
+  return (d >>> 16) % modulus(b);
 }
 
 export type ActionDraws = { d1: number; d2: number; d3: number; d4: number; d5: number; d6: number };
