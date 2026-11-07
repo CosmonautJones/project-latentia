@@ -4,9 +4,11 @@ import type { RoundCommand } from '../../../src/battle/log.js';
 import { resolveEntry, submitRound } from '../../../src/battle/round.js';
 import { createBattle } from '../../../src/battle/setup.js';
 import type { BattleState } from '../../../src/battle/state.js';
+import type { ActionEntry } from '../../../src/battle/order.js';
 import type { BattleEvent } from '../../../src/events/types.js';
+import { drawAction, lo } from '../../../src/rng/draws.js';
 import { grid, piece } from '../../grid/helpers.js';
-import { at, battle, entry, gridlessSide, mon, SEED, withoutPassives } from '../helpers.js';
+import { at, battle, entry, gridlessSide, mon, rngWhere, SEED, withoutPassives } from '../helpers.js';
 import { fresh, ofType, run } from './kit.js';
 
 function ok(s: BattleState, cmd: RoundCommand): { state: BattleState; events: BattleEvent[] } {
@@ -70,6 +72,40 @@ describe('Swap (orchestrator lever, priority +3)', () => {
     expect(ofType(events, 'Swapped')).toEqual([{ round: 1, type: 'Swapped', side: 0, outIndex: 1, inIndex: 3 }]);
     expect(state.sides.a.slots.map((x) => x.occupant)).toEqual([3, 2]);
     assertInvariants(state);
+  });
+});
+
+describe('a Rate Limited orchestrator’s lever (Ruling 74)', () => {
+  const swapEntry: ActionEntry = { actor: 0, priority: 3, latency: 0, tieBreak: 0, moveId: 'swap', target: 3, lever: { kind: 'swap', out: 1, in: 3 } };
+
+  /** Resolves the Swap entry from an rng whose next d2 has `lo(d2, 100)` passing `want`. */
+  function swapWith(want: (d2lo: number) => boolean): { s: BattleState; events: BattleEvent[]; drawn: ReturnType<typeof drawAction> } {
+    const s = sturdy();
+    s.round = 1;
+    at(s, 0).statuses.push({ id: 'rateLimited', remaining: 3 });
+    s.rng = rngWhere((d) => want(lo(d.d2, 100)));
+    const ref = structuredClone(s.rng);
+    const drawn = drawAction(ref);
+    const events: BattleEvent[] = [];
+    resolveEntry(s, structuredClone(swapEntry), events);
+    expect(s.rng).toEqual(ref); // exactly six draws, skipped or not
+    return { s, events, drawn };
+  }
+
+  it('is skipped (ActionSkipped rateLimited) when lo(D2, 100) < 25: no Swapped, the slots are unchanged', () => {
+    const { s, events, drawn } = swapWith((v) => v === 24);
+    expect(events).toEqual([
+      { round: 1, type: 'ActionStarted', actor: 0, draws: drawn },
+      { round: 1, type: 'ActionSkipped', actor: 0, reason: 'rateLimited' },
+    ]);
+    expect(s.sides.a.slots[0]?.occupant).toBe(1);
+  });
+
+  it('goes ahead when lo(D2, 100) >= 25', () => {
+    const { s, events } = swapWith((v) => v === 25);
+    expect(ofType(events, 'Swapped')).toEqual([{ round: 1, type: 'Swapped', side: 0, outIndex: 1, inIndex: 3 }]);
+    expect(ofType(events, 'ActionSkipped')).toEqual([]);
+    expect(s.sides.a.slots[0]?.occupant).toBe(3);
   });
 });
 

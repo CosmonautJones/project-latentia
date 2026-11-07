@@ -3,8 +3,10 @@ import type { BattleEvent } from '../../src/events/types.js';
 import { computeDamage, type DamageMods } from '../../src/math/damage.js';
 import { effectiveStat } from '../../src/math/stats.js';
 import { resolveAction } from '../../src/battle/resolve.js';
+import { resolveEntry } from '../../src/battle/round.js';
+import { lo } from '../../src/rng/draws.js';
 import type { BattleState } from '../../src/battle/state.js';
-import { at, battle, draws, entry, type DrawHalves } from './helpers.js';
+import { at, battle, draws, entry, rngWhere, type DrawHalves } from './helpers.js';
 
 // Canonical indices (helpers.battle): 0 a-orch sagelet, 1 a-act1 blitzr, 2 a-act2 forkling,
 // 6 b-orch sagelet, 7 b-act1 blitzr, 8 b-act2 forkling. Subagents with no trained temperature act at T2.
@@ -203,13 +205,20 @@ describe('resolveAction: Wild effect lists', () => {
 });
 
 describe('resolveAction: Rate Limited, hallucination and Drift', () => {
-  it('a Rate Limited creature loses its turn when lo(d2, 100) < 25: ActionSkipped only, nothing paid', () => {
-    const s = fresh();
-    at(s, 1).statuses.push({ id: 'rateLimited', remaining: 3 });
-    expect(run(s, 1, 'ship-it', 7, { d2lo: 24 })).toEqual([{ round: 1, type: 'ActionSkipped', actor: 1, reason: 'rateLimited' }]);
-    expect(at(s, 1).context.tokens).toEqual([]);
-    expect(at(s, 1)).toMatchObject({ actedThisBattle: false, lastMoveId: null, moveHistory: [] });
-    expect(dealt(run(s, 1, 'ship-it', 7, { d2lo: 25 }))).toHaveLength(1);
+  it('a Rate Limited creature loses its turn when lo(d2, 100) < 25: ActionSkipped only, nothing paid (resolveEntry, Ruling 74)', () => {
+    const entryWith = (d2lo: number): { s: BattleState; events: BattleEvent[] } => {
+      const s = fresh();
+      at(s, 1).statuses.push({ id: 'rateLimited', remaining: 3 });
+      s.rng = rngWhere((d) => lo(d.d2, 100) === d2lo);
+      const events: BattleEvent[] = [];
+      resolveEntry(s, entry(1, 'ship-it', 7), events);
+      return { s, events };
+    };
+    const skipped = entryWith(24);
+    expect(skipped.events.slice(1)).toEqual([{ round: 1, type: 'ActionSkipped', actor: 1, reason: 'rateLimited' }]);
+    expect(at(skipped.s, 1).context.tokens).toEqual([]);
+    expect(at(skipped.s, 1)).toMatchObject({ actedThisBattle: false, lastMoveId: null, moveHistory: [] });
+    expect(ofType(entryWith(25).events, 'MoveUsed')).toHaveLength(1);
   });
 
   it('Hallucinating: hi(d2, 100) < chance swaps in moves[hi(d4, n)] aimed at living combatants (excluding the user)[hi(d3, n)]', () => {

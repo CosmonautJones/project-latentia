@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultIntent, planEntries } from '../../../src/battle/order.js';
-import { submitRound } from '../../../src/battle/round.js';
-import { drawRoundStart } from '../../../src/rng/draws.js';
+import { resolveEntry, submitRound } from '../../../src/battle/round.js';
+import type { BattleEvent } from '../../../src/events/types.js';
+import { drawRoundStart, lo } from '../../../src/rng/draws.js';
 import type { RoundCommand } from '../../../src/battle/log.js';
 import type { BattleState } from '../../../src/battle/state.js';
-import { at, battle } from '../helpers.js';
+import { at, battle, entry, rngWhere } from '../helpers.js';
 import { dealt, fresh, ofType, run } from './kit.js';
 
 describe('applyStatus', () => {
@@ -70,7 +71,10 @@ describe('Prompt Injected (Ruling 19)', () => {
     const s = fresh();
     run(s, 1, 'deepfake-call', 7);
     at(s, 7).statuses.push({ id: 'rateLimited', remaining: 3 });
-    expect(run(s, 7, 'ship-it', 1, { d2lo: 0 })).toEqual([{ round: 1, type: 'ActionSkipped', actor: 7, reason: 'rateLimited' }]);
+    s.rng = rngWhere((d) => lo(d.d2, 100) === 0); // resolveEntry owns the Rate Limited skip (Ruling 74)
+    const events: BattleEvent[] = [];
+    resolveEntry(s, entry(7, 'ship-it', 1), events);
+    expect(events.slice(1)).toEqual([{ round: 1, type: 'ActionSkipped', actor: 7, reason: 'rateLimited' }]);
     expect(at(s, 7).statuses.map((x) => x.id)).toContain('promptInjected');
   });
 

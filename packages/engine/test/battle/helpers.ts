@@ -3,7 +3,8 @@ import { createBattle } from '../../src/battle/setup.js';
 import type { BattleSetup, CreatureSetup, SideSetup } from '../../src/battle/setup.js';
 import type { ActionEntry } from '../../src/battle/order.js';
 import type { BattleState, CreatureState } from '../../src/battle/state.js';
-import type { ActionDraws } from '../../src/rng/draws.js';
+import { drawAction, type ActionDraws } from '../../src/rng/draws.js';
+import { seedRng, type RngState } from '../../src/rng/sfc32.js';
 
 export const SEED = '0123456789abcdef0123456789abcdef';
 
@@ -92,6 +93,18 @@ export function draws(h: DrawHalves = {}): ActionDraws {
     d5: word(v.d5hi, v.d5lo),
     d6: word(v.d6hi, v.d6lo),
   };
+}
+
+/**
+ * An rng state whose next drawAction satisfies `want` (searched over seedRng words), for tests that drive
+ * resolveEntry — which takes its six draws from `state.rng` — towards one outcome.
+ */
+export function rngWhere(want: (d: ActionDraws) => boolean): RngState {
+  for (let i = 1; i < 100_000; i++) {
+    const rng = seedRng([i, 0x9e3779b9, i * 7, 1]);
+    if (want(drawAction(structuredClone(rng)))) return rng;
+  }
+  throw new Error('no rng state found');
 }
 
 /** A move entry for `actor` (priority/latency/tie-break do not matter once sorted). */

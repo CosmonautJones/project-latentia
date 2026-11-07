@@ -1,7 +1,7 @@
 import { pay } from '../context/store.js';
 import type { BattleEvent } from '../events/types.js';
-import { lo, type ActionDraws } from '../rng/draws.js';
-import { consumeInjection, hasStatus, moveCost } from '../status/apply.js';
+import type { ActionDraws } from '../rng/draws.js';
+import { consumeInjection, moveCost } from '../status/apply.js';
 import { applyEffect, bookkeeping, effectList, resolveEffects, runTrigger } from './effects/apply.js';
 import { chargesFirst, releaseEffects } from './effects/charge.js';
 import { creature, effectContext } from './effects/context.js';
@@ -17,9 +17,6 @@ import { aimInjected, aimMove, chooseAction, temperatureOf, type Choice } from '
 
 export type { EffectContext } from './effects/context.js';
 export { applyEffect, ROBUST_ACCURACY_BONUS, ROBUST_MIN_GENERALIZATION } from './effects/apply.js';
-
-/** Rate Limited loses the turn when lo(D2, 100) is below this (spec §5 D2 lo). */
-export const RATE_LIMITED_SKIP_PCT = 25;
 
 /** What the entry does, before MoveUsed: a released charge, a hijacked (Prompt Injected) action, or its own move. */
 type Plan = { choice: Choice; release: { powerDelta: number } | null } | 'charging';
@@ -45,8 +42,8 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
 }
 
 /**
- * Resolves one acting entry after its six draws are taken and ActionStarted is emitted (spec §5 step 4):
- * Rate Limited skip check (lo D2) → a charge's countdown / release, a Prompt Injected hijack, or
+ * Resolves one acting entry after its six draws are taken, ActionStarted is emitted and resolveEntry's skip
+ * checks (including Rate Limited) have passed (spec §5 step 4): a charge's countdown / release, a Prompt Injected hijack, or
  * hallucination / Drift substitution and re-targeting → MoveUsed → pay context (costSet / costAdd, then
  * cost − 1 while Quantized; overflow → Drift; a buff move's tokens carry its buff tag; a release pays
  * nothing) → a charge round stops here (no accuracy, Ruling 13; no Observation, history or lastMoveId,
@@ -60,10 +57,6 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
 export function resolveAction(state: BattleState, entry: ActionEntry, draws: ActionDraws, events: BattleEvent[]): void {
   const round = state.round;
   const user = creature({ state, round }, entry.actor);
-  if (hasStatus(user, 'rateLimited') && lo(draws.d2, 100) < RATE_LIMITED_SKIP_PCT) {
-    events.push({ round, type: 'ActionSkipped', actor: user.index, reason: 'rateLimited' });
-    return;
-  }
   const temperature = temperatureOf(state, user);
   const plan = planAction(state, user, entry, draws, temperature, events);
   if (plan === 'charging' || plan.choice === null) {

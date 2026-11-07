@@ -1,7 +1,8 @@
 import { recover } from '../context/store.js';
 import type { BattleEvent, SkipReason } from '../events/types.js';
 import { EngineInvariantError } from '../math/bp.js';
-import { drawAction, drawRoundStart } from '../rng/draws.js';
+import { drawAction, drawRoundStart, lo, type ActionDraws } from '../rng/draws.js';
+import { hasStatus } from '../status/apply.js';
 import { tickStatuses } from '../status/tick.js';
 import { knockOut } from './effects/damage.js';
 import { takeSortPriority } from './effects/nextActionModifier.js';
@@ -51,6 +52,14 @@ function skipReason(state: BattleState, entry: ActionEntry): SkipReason | null {
   return holdsLiveSlot(state, c) && c.leftFieldRound !== state.round ? null : 'leftField';
 }
 
+/** Rate Limited loses the turn when lo(D2, 100) is below this (spec §5 D2 lo). */
+export const RATE_LIMITED_SKIP_PCT = 25;
+
+/** A Rate Limited creature loses this entry when lo(D2, 100) < 25, from the entry's own draws (Ruling 74). */
+function rateLimitedSkip(c: CreatureState, draws: ActionDraws): boolean {
+  return hasStatus(c, 'rateLimited') && lo(draws.d2, 100) < RATE_LIMITED_SKIP_PCT;
+}
+
 /** /clear (Ruling 11): an orchestrator holding the `skip` modifier loses this entry, which uses the modifier up. */
 function takeClearedSkip(c: CreatureState): boolean {
   const at = c.nextActionMods.findIndex((m) => m.kind === 'skip');
@@ -62,21 +71,24 @@ function takeClearedSkip(c: CreatureState): boolean {
 /**
  * Resolve one entry (spec §5 step 4): the six action draws are taken before anything is decided and
  * recorded on ActionStarted, whether or not the creature acts. A skipped creature (headless, KO'd, off
- * the field, or an orchestrator cleared by /clear) then emits ActionSkipped. An orchestrator holding Prompt
- * Injected goes to resolveAction whatever it was commanded — a move, any lever or `none` — where (unless
- * Rate Limited skips it) the hijack replaces the action and consumes the status (Ruling 53). Otherwise a
- * lever other than `none` breaks the enemy's Handoff chains and resets the guard streak; Swap exchanges
- * its creatures (a no-op if they are no longer in place); Directive and Policy Update (B3) are not yet
- * executed. A `none` command emits nothing further. Everything else goes to resolveAction.
- * Exported for tests that drive entries one at a time.
+ * the field, an orchestrator cleared by /clear, or a Rate Limited creature whose lo(D2, 100) < 25 — checked
+ * before the lever branch, so a lever is rate-limited like a move, Ruling 74) then emits ActionSkipped. An
+ * orchestrator holding Prompt Injected goes to resolveAction whatever it was commanded — a move, any lever
+ * or `none` — where the hijack replaces the action and consumes the status (Ruling 53). A hijacked lever
+ * entry keeps the priority it was sorted with (a Swap's +3, say): the entry's place in the turn order is
+ * fixed at Sort, before anyone knows it will be hijacked. Otherwise a lever other than `none` breaks the
+ * enemy's Handoff chains and resets the guard streak; Swap exchanges its creatures (a no-op if they are no
+ * longer in place); Directive and Policy Update (B3) are not yet executed. A `none` command emits nothing
+ * further. Everything else goes to resolveAction. Exported for tests that drive entries one at a time.
  */
 export function resolveEntry(state: BattleState, entry: ActionEntry, events: BattleEvent[]): void {
   const draws = drawAction(state.rng);
   events.push({ round: state.round, type: 'ActionStarted', actor: entry.actor, draws: { ...draws } });
-  const reason = skipReason(state, entry);
+  const skipped = skipReason(state, entry);
   const c = state.creatures[entry.actor] as CreatureState; // skipReason has checked it exists
-  if (reason !== null || takeClearedSkip(c)) {
-    events.push({ round: state.round, type: 'ActionSkipped', actor: entry.actor, reason: reason ?? 'cleared' });
+  const reason = skipped ?? (takeClearedSkip(c) ? 'cleared' : rateLimitedSkip(c, draws) ? 'rateLimited' : null);
+  if (reason !== null) {
+    events.push({ round: state.round, type: 'ActionSkipped', actor: entry.actor, reason });
     return;
   }
   if (entry.lever !== undefined && heldInjection({ state, round: state.round }, c.index) === null) {
