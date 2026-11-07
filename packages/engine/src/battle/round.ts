@@ -177,6 +177,20 @@ function sortRound(state: BattleState, entries: ActionEntry[], events: BattleEve
 }
 
 /**
+ * The round itself, in place: runs one full round on `state` (mutating it), checks the invariants and
+ * returns the round's events. The command must already have passed validateCommand against `state`.
+ * submitRound runs it on a clone; simulate and replay run it on their one battle state (spec §4).
+ */
+export function advanceRound(state: BattleState, cmd: RoundCommand): BattleEvent[] {
+  const events: BattleEvent[] = [];
+  startRound(state, cmd, events);
+  const cutShort = resolveAll(state, sortRound(state, planEntries(state, cmd), events), events);
+  endRound(state, cutShort, events);
+  assertInvariants(state);
+  return events;
+}
+
+/**
  * Advance one round. An illegal command returns `{ error }` before anything is cloned, so the input is
  * untouched; otherwise the input is cloned once and the clone is advanced, invariant-checked and returned.
  */
@@ -184,10 +198,5 @@ export function submitRound(state: BattleState, cmd: RoundCommand): { state: Bat
   const error = validateCommand(state, cmd);
   if (error !== null) return { error };
   const next = structuredClone(state);
-  const events: BattleEvent[] = [];
-  startRound(next, cmd, events);
-  const cutShort = resolveAll(next, sortRound(next, planEntries(next, cmd), events), events);
-  endRound(next, cutShort, events);
-  assertInvariants(next);
-  return { state: next, events };
+  return { state: next, events: advanceRound(next, cmd) };
 }
