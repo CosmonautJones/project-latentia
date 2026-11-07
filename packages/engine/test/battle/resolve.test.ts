@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleEvent } from '../../src/events/types.js';
-import { EngineInvariantError } from '../../src/math/bp.js';
 import { computeDamage, type DamageMods } from '../../src/math/damage.js';
 import { effectiveStat } from '../../src/math/stats.js';
 import { resolveAction } from '../../src/battle/resolve.js';
@@ -79,7 +78,7 @@ describe('resolveAction: accuracy', () => {
     ]);
     expect(dealt(miss)).toEqual([]);
     expect(ofType(miss, 'HandoffChain')).toEqual([]);
-    expect(at(s, 1).moveHistory[1]).toEqual({ round: 1, moveId: 'ship-it', damaged: [] });
+    expect(at(s, 1).moveHistory[1]).toEqual({ round: 1, moveId: 'ship-it', target: 7, damaged: [] });
   });
 
   it('uses the temperature modifier and -8 per Drift stack (Drift counted after paying)', () => {
@@ -278,7 +277,7 @@ describe('resolveAction: knockouts', () => {
 });
 
 describe('resolveAction: dispatcher', () => {
-  it('throws EngineInvariantError for an effect kind not implemented yet', () => {
-    expect(() => run(fresh(), 1, 'save-state', 1)).toThrow(EngineInvariantError); // snapshot arrives in A13
+  it('implements every effect kind since A13 (each content move is resolved in effects/coverage.test.ts)', () => {
+    expect(() => run(fresh(), 1, 'save-state', 1)).not.toThrow();
   });
 });

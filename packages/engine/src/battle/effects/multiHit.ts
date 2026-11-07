@@ -4,6 +4,7 @@ import { onField } from '../order.js';
 import { typesOf } from './conditions.js';
 import { creature, type EffectContext } from './context.js';
 import { announceHit, computeHit, dealDamage, recordHit, takeIncomingBp } from './damage.js';
+import { absorbHit } from './shield.js';
 
 export type MultiHitEffect = Extract<NonPassiveEffect, { kind: 'multiHit' }>;
 
@@ -20,16 +21,22 @@ export function hitCount(ctx: EffectContext, count: HitCount): number {
 
 /**
  * `multiHit` (spec §5 step 7): accuracy (already rolled), crit and roll are shared, so one hit is computed
- * and landed `count` times at the move's per-hit power, stopping when the target faints. Crit and
- * TypeEffect are announced once; the whole move is one Handoff hit and one Efficient Answer check.
+ * and landed `count` times at the move's per-hit power, stopping when the target faints. A hit shield
+ * absorbs single hits (ShieldAbsorbed). Crit and TypeEffect are announced once, before the first hit that
+ * lands; the whole move is one Handoff hit and one Efficient Answer check, if any hit landed.
  */
 export function applyMultiHit(ctx: EffectContext, effect: MultiHitEffect): void {
   const target = creature(ctx, ctx.target);
   if (target.fainted) return;
   const n = hitCount(ctx, effect.count);
   const hit = computeHit(ctx, {}, takeIncomingBp(target));
-  announceHit(ctx, hit);
   let removed = 0;
-  for (let i = 0; i < n && !target.fainted; i++) removed += dealDamage(ctx, target, hit.damage);
-  recordHit(ctx, hit, removed);
+  let landed = false;
+  for (let i = 0; i < n && !target.fainted; i++) {
+    if (absorbHit(target, ctx.round, ctx.events)) continue;
+    if (!landed) announceHit(ctx, hit);
+    landed = true;
+    removed += dealDamage(ctx, target, hit.damage);
+  }
+  if (landed) recordHit(ctx, hit, removed);
 }

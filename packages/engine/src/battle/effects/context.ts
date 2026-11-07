@@ -6,6 +6,11 @@ import { hi, lo, type ActionDraws } from '../../rng/draws.js';
 import { onField } from '../order.js';
 import type { BattleState, CreatureState, Temperature } from '../state.js';
 
+/** The accuracy-step modifiers of one move: it fails, cannot miss, ignores positive evasion, ± accuracy points. */
+export type AccuracyMods = { fail: boolean; cannotMiss: boolean; ignoreEvasion: boolean; accuracy: number };
+
+export const NO_ACCURACY_MODS: AccuracyMods = Object.freeze({ fail: false, cannotMiss: false, ignoreEvasion: false, accuracy: 0 });
+
 /** What the action has done so far; the resolver's bookkeeping reads it after the effect list. */
 export type ActionTally = {
   /** HP this action removed with `damage`/`multiHit` aimed at a target (recoil reads it). */
@@ -26,6 +31,8 @@ export type ActionTally = {
  * modifier against this move (Guardrail, or Captcha Wall vs a non-Speed attack), null when none.
  * `powerAdd` is added to the move's power in damage step 1 (a charge released after a hit: −30).
  * `injection` is the command's Prompt Injected choice for the victim (players), null when none.
+ * `accMods` are the actor's accuracy-step next-action modifiers, taken once per move (none on a charge round).
+ * `copied` is the context a move copy resolved its copied move in (the resolver's bookkeeping follows it).
  */
 export type EffectContext = {
   state: BattleState;
@@ -40,6 +47,8 @@ export type EffectContext = {
   guardBp: number | null;
   powerAdd: number;
   injection: { moveId: string; target: number } | null;
+  accMods: AccuracyMods;
+  copied: EffectContext | null;
   tally: ActionTally;
 };
 
@@ -55,7 +64,7 @@ export function effectContext(
 ): EffectContext {
   return {
     state, actor, target, draws, move, temperature, events, round: state.round, penaltyBp,
-    guardBp: null, powerAdd: 0, injection: null,
+    guardBp: null, powerAdd: 0, injection: null, accMods: NO_ACCURACY_MODS, copied: null,
     tally: { dealt: 0, damaged: [], superEffective: false, halted: false },
   };
 }

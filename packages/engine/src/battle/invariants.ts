@@ -18,8 +18,9 @@ function placementError(c: CreatureState): string | null {
 
 /**
  * Engine-bug checks that run in every build (spec §7). Per creature: canonical index = array position,
- * HP within [0, maxHp], fainted iff HP is 0, tokens within the window, Drift 0..5, stages -3..3, and a
- * slot that agrees with activeSlot / benchOrder / isOrchestrator. Per side: exactly one orchestrator,
+ * HP within [0, maxHp], fainted iff HP is 0, tokens within the window, Drift 0..5, stages -3..3, a slot
+ * that agrees with activeSlot / benchOrder / isOrchestrator, and at most one shield per kind with a positive
+ * count. Timed fields name real creatures and have rounds left; no turn order is pending. Per side: exactly one orchestrator,
  * each activeSlot held at most once, and `slots[i].occupant` is the creature holding activeSlot i.
  * Throws EngineInvariantError with the round, seed and (when one is to blame) the canonical index.
  */
@@ -46,7 +47,16 @@ export function assertInvariants(state: BattleState): void {
     }
     const placement = placementError(c);
     if (placement !== null) bad(placement);
+    const kinds = new Set(c.shields.map((x) => x.against));
+    if (kinds.size !== c.shields.length || c.shields.some((x) => !Number.isSafeInteger(x.count) || x.count < 1)) bad('shields must be one per kind with a positive count');
   }
+
+  for (const f of state.fields) {
+    const known = (i: number) => Number.isSafeInteger(i) && state.creatures[i] !== undefined;
+    if (!known(f.target) || !known(f.source)) fail(`field ${f.effect.kind} names an unknown creature`);
+    if (!Number.isSafeInteger(f.remaining) || f.remaining < 1) fail(`field ${f.effect.kind} on ${f.target} has ${f.remaining} rounds left`, f.target);
+  }
+  if (state.turnOrder.length > 0) fail(`turn order not empty between rounds: ${state.turnOrder.join(',')}`);
 
   const sides: SideId[] = ['a', 'b'];
   for (const id of sides) {

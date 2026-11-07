@@ -6,7 +6,7 @@ import { createBattle } from '../../../src/battle/setup.js';
 import type { BattleState } from '../../../src/battle/state.js';
 import type { PlacedPiece } from '../../../src/grid/model.js';
 import { grid, piece } from '../../grid/helpers.js';
-import { at, gridlessSide, mon, SEED } from '../helpers.js';
+import { at, gridlessSide, mon, SEED, withoutPassives } from '../helpers.js';
 import { fresh, ofType, run } from './kit.js';
 
 const fill = (s: BattleState, i: number, n: number) => {
@@ -41,7 +41,7 @@ describe('tokens: a compacted Subagent Slot (Ruling 25)', () => {
     // Pieces order sp, slot1, slot2: slot1 is the lowest-index compactable piece. 12 cells, headroom 8.
     const g = grid(5, 4, [piece('sp', 'systemPrompt', 0, 0), slot('slot1', 0, 'a-act1'), slot('slot2', 2, 'a-act2'), piece('tl', 'tool', 4, 1)]);
     const orchestrator = { ...mon('a-orch', 'sagelet', 5), moves: [] };
-    const s = createBattle({ a: gridlessSide('a', { orchestrator, grid: g }), b: gridlessSide('b'), kind: 'trainer' }, SEED);
+    const s = withoutPassives(createBattle({ a: gridlessSide('a', { orchestrator, grid: g }), b: gridlessSide('b'), kind: 'trainer' }, SEED));
     s.round = 1;
     for (const c of s.creatures) c.hp = c.maxHp = 500;
     fill(s, 0, at(s, 0).context.window);

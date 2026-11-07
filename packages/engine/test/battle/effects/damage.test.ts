@@ -182,19 +182,19 @@ describe('effective power (step 1)', () => {
 
   it('additive bonuses: Chain of Thought +20 per consecutive Reasoning round (cap +60); Long-Term Recall +10 per hit taken (power cap 120)', () => {
     const s = fresh();
-    at(s, 0).moveHistory.push({ round: 1, moveId: 'happy-to-help', damaged: [] }, { round: 2, moveId: 'proof-by-contradiction', damaged: [] });
+    at(s, 0).moveHistory.push({ round: 1, moveId: 'happy-to-help', target: 0, damaged: [] }, { round: 2, moveId: 'proof-by-contradiction', target: 0, damaged: [] });
     expect(cot(s, 0)).toEqual([expected(s, 0, 8, 100, { type: 20000, native: 12500, roll: 10000 })]);
-    at(s, 0).moveHistory.unshift({ round: 0, moveId: 'happy-to-help', damaged: [] }, { round: -1, moveId: 'chain-of-thought', damaged: [] });
+    at(s, 0).moveHistory.unshift({ round: 0, moveId: 'happy-to-help', target: 0, damaged: [] }, { round: -1, moveId: 'chain-of-thought', target: 0, damaged: [] });
     at(s, 0).moveHistory.sort((x, y) => x.round - y.round);
     expect(cot(s, 0)).toEqual([expected(s, 0, 8, 120, { type: 20000, native: 12500, roll: 10000 })]);
     const gap = fresh();
-    at(gap, 0).moveHistory.push({ round: 1, moveId: 'happy-to-help', damaged: [] }); // round 2 missing → streak 0
+    at(gap, 0).moveHistory.push({ round: 1, moveId: 'happy-to-help', target: 0, damaged: [] }); // round 2 missing → streak 0
     expect(cot(gap, 0)).toEqual([expected(gap, 0, 8, 60, { type: 20000, native: 12500, roll: 10000 })]);
 
     const ltr = (n: number) => {
       const t = fresh();
-      for (let r = 0; r < n; r++) at(t, 7).moveHistory.push({ round: r, moveId: 'ship-it', damaged: [1] });
-      at(t, 7).moveHistory.push({ round: n, moveId: 'ship-it', damaged: [2] }); // hit someone else
+      for (let r = 0; r < n; r++) at(t, 7).moveHistory.push({ round: r, moveId: 'ship-it', target: 1, damaged: [1] });
+      at(t, 7).moveHistory.push({ round: n, moveId: 'ship-it', target: 2, damaged: [2] }); // hit someone else
       const effect = moveDef('long-term-recall')?.effects[0] as DamageEffect;
       return { got: dealt(hit(t, 1, 'long-term-recall', 7, effect)), t };
     };
@@ -217,7 +217,7 @@ describe('effective power (step 1)', () => {
   it('conditional multipliers: Proof by Contradiction ×2 if the target buffed or used a status move last round', () => {
     const proof = (last: string | null, round = 2) => {
       const s = fresh();
-      if (last !== null) at(s, 8).moveHistory.push({ round, moveId: last, damaged: [] });
+      if (last !== null) at(s, 8).moveHistory.push({ round, moveId: last, target: 0, damaged: [] });
       return { got: dealt(run(s, 0, 'proof-by-contradiction', 8)), s };
     };
     const plain = proof(null);
@@ -296,7 +296,7 @@ describe('crit rules and failsIf', () => {
 
   it('Flash Inference fails (Missed, no effects) when the target already acted this round; context is still paid', () => {
     const s = fresh();
-    at(s, 7).moveHistory.push({ round: 3, moveId: 'ship-it', damaged: [] });
+    at(s, 7).moveHistory.push({ round: 3, moveId: 'ship-it', target: 0, damaged: [] });
     const events = run(s, 1, 'flash-inference', 7);
     expect(events).toEqual([
       { round: 3, type: 'MoveUsed', actor: 1, moveId: 'flash-inference', target: 7 },
@@ -305,7 +305,7 @@ describe('crit rules and failsIf', () => {
       { round: 3, type: 'ContextAdded', target: 7, kind: 'observation', tokens: 1, tokensAfter: 1 },
       { round: 3, type: 'ObservationGained', target: 7, observation: 'flash-inference' },
     ]);
-    at(s, 7).moveHistory[0] = { round: 2, moveId: 'ship-it', damaged: [] };
+    at(s, 7).moveHistory[0] = { round: 2, moveId: 'ship-it', target: 0, damaged: [] };
     expect(dealt(run(s, 1, 'flash-inference', 7))).toHaveLength(1);
   });
 });

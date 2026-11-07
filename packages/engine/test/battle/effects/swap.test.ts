@@ -6,7 +6,7 @@ import { createBattle } from '../../../src/battle/setup.js';
 import type { BattleState } from '../../../src/battle/state.js';
 import type { BattleEvent } from '../../../src/events/types.js';
 import { grid, piece } from '../../grid/helpers.js';
-import { at, battle, entry, gridlessSide, mon, SEED } from '../helpers.js';
+import { at, battle, entry, gridlessSide, mon, SEED, withoutPassives } from '../helpers.js';
 import { fresh, ofType, run } from './kit.js';
 
 function ok(s: BattleState, cmd: RoundCommand): { state: BattleState; events: BattleEvent[] } {
@@ -98,7 +98,7 @@ describe('a creature that left the field this round never acts this round (Rulin
     const slot = (id: string, x: number, sub: string) => ({ ...piece(id, 'subagentSlot', x, 1), subagentId: sub });
     const g = grid(5, 4, [piece('sp', 'systemPrompt', 0, 0), slot('slot1', 0, 'a-act1'), slot('slot2', 2, 'a-act2'), piece('tl', 'tool', 4, 1)]);
     const a = gridlessSide('a', { orchestrator: { ...mon('a-orch', 'sagelet'), moves: [] }, active: [mon('a-act1', 'blitzr'), mon('a-act2', 'tokenibble')], bench: [], grid: g });
-    const s = createBattle({ a, b: gridlessSide('b'), kind: 'trainer' }, SEED);
+    const s = withoutPassives(createBattle({ a, b: gridlessSide('b'), kind: 'trainer' }, SEED));
     s.round = 1;
     for (const c of s.creatures) c.hp = c.maxHp = 500;
     for (let k = 0; k < at(s, 0).context.window; k++) at(s, 0).context.tokens.push({ kind: 'cost', seq: k });

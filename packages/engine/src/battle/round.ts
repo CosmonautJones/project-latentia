@@ -4,8 +4,12 @@ import { EngineInvariantError } from '../math/bp.js';
 import { drawAction, drawRoundStart } from '../rng/draws.js';
 import { tickStatuses } from '../status/tick.js';
 import { knockOut } from './effects/damage.js';
+import { takeSortPriority } from './effects/nextActionModifier.js';
+import { notKoPassives, roundEndPassives } from './effects/passive.js';
+import { expireSnapshots, revertKo } from './effects/snapshot.js';
 import { heldInjection } from './effects/status.js';
 import { firstLivingBench, forceBench, swapCreatures } from './effects/swap.js';
+import { roundStartReveals, tickFields } from './effects/timedField.js';
 import { autofillBench, checkEnd, winOutcome } from './end.js';
 import { validateCommand, type CommandError } from './errors.js';
 import { breakEnemyChains } from './handoff.js';
@@ -86,13 +90,21 @@ export function resolveEntry(state: BattleState, entry: ActionEntry, events: Bat
 }
 
 /**
- * Resolve the sorted entries, checking for a win after every one (Ruling 32). Once a side is wiped the
- * remaining entries are not resolved and draw nothing. Returns whether the round was cut short.
+ * Resolve the sorted entries in BattleState.turnOrder (which Rerank may edit), checking for a win after every
+ * one (Ruling 32). Once a side is wiped the remaining entries are not resolved and draw nothing. Returns
+ * whether the round was cut short; turnOrder is empty afterwards.
  */
 function resolveAll(state: BattleState, entries: readonly ActionEntry[], events: BattleEvent[]): boolean {
-  for (const entry of entries) {
+  const byActor = new Map(entries.map((e) => [e.actor, e]));
+  state.turnOrder = entries.map((e) => e.actor);
+  for (let actor = state.turnOrder.shift(); actor !== undefined; actor = state.turnOrder.shift()) {
+    const entry = byActor.get(actor);
+    if (entry === undefined) throw new EngineInvariantError(`turn order names creature ${actor} with no entry`, { round: state.round, actor, seed: state.seed });
     resolveEntry(state, entry, events);
-    if (winOutcome(state) !== null) return true;
+    if (winOutcome(state) !== null) {
+      state.turnOrder = [];
+      return true;
+    }
   }
   return false;
 }
@@ -101,7 +113,8 @@ function resolveAll(state: BattleState, entries: readonly ActionEntry[], events:
  * Status ticks (spec §5 step 5) for every living creature in canonical order. Deprecated at 0 (Ruling 21):
  * a subagent on the field with a living bench creature to replace it is force-benched at 1 HP to the end
  * of the bench (announced by its Swapped); an orchestrator, or a subagent with no living bench creature, is
- * KO'd (announced by Fainted). Neither emits Damage.
+ * KO'd (announced by Fainted) unless a Save State snapshot reverts it (Healed / Damage to the saved HP).
+ * Neither emits a Damage for the tick itself.
  */
 function tickAll(state: BattleState, events: BattleEvent[]): void {
   const round = state.round;
@@ -110,6 +123,8 @@ function tickAll(state: BattleState, events: BattleEvent[]): void {
     const tick = tickStatuses(c, round, firstLivingBench(state, c) !== null);
     events.push(...tick.events);
     if (tick.ko) {
+      // A Save State snapshot reverts the KO from the HP the creature had (the tick itself emits no Damage).
+      if (revertKo(c, round, events)) continue;
       c.hp = 0;
       knockOut(state, c, round, events);
     } else if (tick.forceBench) {
@@ -127,19 +142,38 @@ function recoverBench(state: BattleState, events: BattleEvent[]): void {
 }
 
 /**
- * End of round (spec §5 steps 5-6): status ticks and Deprecated, bench recovery, bench auto-fill — all
- * skipped when the round was cut short by a wipe — then every guard is cleared, then RoundEnd, then the win check and round-50 cap,
- * which emit at most one BattleEnd. (Timed field effects tick here from A13.)
+ * End of round (spec §5 steps 5-6, Ruling 57): roundEnd passives, status ticks and Deprecated, timed field
+ * ticks, notKoThisRound passives for every creature still alive, expired snapshots dropped, bench recovery,
+ * bench auto-fill — all skipped when the round was cut short by a wipe — then every guard is cleared, then
+ * RoundEnd, then the win check and round-50 cap, which emit at most one BattleEnd.
  */
 function endRound(state: BattleState, cutShort: boolean, events: BattleEvent[]): void {
   if (!cutShort) {
+    roundEndPassives(state, events);
     tickAll(state, events);
+    tickFields(state, events);
+    notKoPassives(state, events);
+    expireSnapshots(state);
     recoverBench(state, events);
     events.push(...autofillBench(state, state.round));
   }
   for (const c of state.creatures) c.guard = null; // guards last only the round they were raised in
   events.push({ round: state.round, type: 'RoundEnd' });
   events.push(...checkEnd(state));
+}
+
+/**
+ * Sort (spec §5 step 3): the entries in resolution order; each creature with an entry uses up its pending
+ * `priority` modifiers (Move Fast: its first Sort). Then the reveal fields show their holders (Revealed).
+ */
+function sortRound(state: BattleState, entries: ActionEntry[], events: BattleEvent[]): ActionEntry[] {
+  const sorted = sortActions(entries);
+  for (const e of sorted) {
+    const c = state.creatures[e.actor];
+    if (c !== undefined) takeSortPriority(c);
+  }
+  roundStartReveals(state, events);
+  return sorted;
 }
 
 /**
@@ -152,7 +186,7 @@ export function submitRound(state: BattleState, cmd: RoundCommand): { state: Bat
   const next = structuredClone(state);
   const events: BattleEvent[] = [];
   startRound(next, cmd, events);
-  const cutShort = resolveAll(next, sortActions(planEntries(next, cmd)), events);
+  const cutShort = resolveAll(next, sortRound(next, planEntries(next, cmd), events), events);
   endRound(next, cutShort, events);
   assertInvariants(next);
   return { state: next, events };

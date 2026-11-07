@@ -462,10 +462,14 @@ describe('createBattle', () => {
       recordedFoes: null,
       charging: null,
       nextActionMods: [],
+      shields: [{ against: 'status', count: 1 }], // Sagelet's Disclaimer, a battleStart passive
+      snapshots: [],
+      passivesUsed: [],
       actedThisBattle: false,
       lastMoveId: null,
     });
-    expect(extra).toMatchObject({ generalization: 72, trainedTemperature: 3, recordedFoes: ['b-act1'] });
+    // Blitzr's Move Fast queues +1 priority for its first Sort.
+    expect(extra).toMatchObject({ generalization: 72, trainedTemperature: 3, recordedFoes: ['b-act1'], nextActionMods: [{ kind: 'priority', delta: 1 }], shields: [] });
   });
 
   it('builds side state: grid copy, default temperature T2 or the Autopilot temperature, not headless', () => {
@@ -481,7 +485,10 @@ describe('createBattle', () => {
         { pieceId: 'slot1', occupant: 1 },
         { pieceId: 'slot2', occupant: 2 },
       ],
+      lastMove: null,
     });
+    expect(state.fields).toEqual([]);
+    expect(state.turnOrder).toEqual([]);
     expect(state.sides.b.temperature).toBe(4);
     expect(state.sides.b.autopilot).toEqual({ deck: { cards: [] }, temperature: 4 });
   });

@@ -32,10 +32,29 @@ export const gridlessSetup = (a: Partial<SideSetup> = {}, b: Partial<SideSetup> 
 });
 
 /**
+ * Undoes what the battleStart passives set up at createBattle (Sagelet's status shield, Forkling's hit
+ * shield, Blitzr's +1 priority) and gives every creature round-start draws whose passive-proc value
+ * (hi(r2, 100) = 99) fires no chance passive, so tests of other rules see no passive at all. submitRound
+ * redraws R1/R2 every round. Passive tests use `battleWithPassives`.
+ */
+export function withoutPassives(s: BattleState): BattleState {
+  for (const c of s.creatures) {
+    c.shields = [];
+    c.nextActionMods = [];
+    c.roundStart = { r1: 0, r2: word(99, 0) };
+  }
+  return s;
+}
+
+/**
  * Canonical indices of the default gridless battle:
  * 0 a-orch, 1 a-act1, 2 a-act2, 3-5 a-b1..b3, 6 b-orch, 7 b-act1, 8 b-act2, 9-11 b-b1..b3.
+ * Passives are neutralized (see withoutPassives).
  */
-export const battle = (a: Partial<SideSetup> = {}, b: Partial<SideSetup> = {}): BattleState => createBattle(gridlessSetup(a, b), SEED);
+export const battle = (a: Partial<SideSetup> = {}, b: Partial<SideSetup> = {}): BattleState => withoutPassives(createBattle(gridlessSetup(a, b), SEED));
+
+/** The default battle exactly as createBattle builds it, battleStart passives applied. */
+export const battleWithPassives = (a: Partial<SideSetup> = {}, b: Partial<SideSetup> = {}): BattleState => createBattle(gridlessSetup(a, b), SEED);
 
 /** Crafts a KO directly on the state (no damage pipeline yet). */
 export function faint(c: CreatureState | undefined): void {

@@ -1,5 +1,5 @@
 import type { TypeId } from '../content/ids.js';
-import type { GuardKind, NextActionMod } from '../content/primitives.js';
+import type { FieldEffect, GuardKind, NextActionMod } from '../content/primitives.js';
 import type { ContextState } from '../context/store.js';
 import type { GridLayout } from '../grid/model.js';
 import type { RoundStartDraws } from '../rng/draws.js';
@@ -22,11 +22,26 @@ export const VERSIONS: readonly Version[] = ['v1', 'v2', 'v3.5', 'v4'];
 export type Temperature = 0 | 1 | 2 | 3 | 4;
 export type SideId = 'a' | 'b';
 
+/** A side's temperature before its first command, and an untrained subagent's notch (the bible's "Default"). */
+export const DEFAULT_TEMPERATURE: Temperature = 2;
+
 /** Raw stats at the creature's level, before stages (spec §5 "Stats"). */
 export type Stats = { compute: number; robustness: number; latency: number };
 
-/** One resolved move of a creature (see CreatureState.moveHistory). */
-export type MoveRecord = { round: number; moveId: string; damaged: number[] };
+/** One resolved move of a creature (see CreatureState.moveHistory): the move used, the target it was aimed at. */
+export type MoveRecord = { round: number; moveId: string; target: number; damaged: number[] };
+
+/** A shield (spec §6 `shield`): absorbs the holder's next `count` incoming hits or status applications. */
+export type ShieldState = { against: 'hit' | 'status'; count: number };
+
+/**
+ * A saved snapshot held on the creature it describes (spec §6 `snapshot` / `revert`). `owner` took it.
+ * `onKo` snapshots (Save State) restore the HP on the holder's first KO up to the end of `lastRound`;
+ * the others (Screenshot) wait for their owner's next `revert` of the holder (`lastRound` null).
+ */
+export type SnapshotState =
+  | { owner: number; what: 'hp'; hp: number; lastRound: number | null; onKo: boolean }
+  | { owner: number; what: 'stages'; stages: Record<string, number>; lastRound: number | null; onKo: boolean };
 
 /**
  * A move being charged (e.g. Deliberate); its remaining effects resolve at the entry where `remaining`
@@ -94,6 +109,12 @@ export type CreatureState = StatusHolder & {
   charging: ChargingState | null;
   /** Pending modifiers for the creature's next action (or next hit taken, for `incomingDamageBp`). */
   nextActionMods: NextActionMod[];
+  /** Pending shields, at most one per `against`, each with count ≥ 1. */
+  shields: ShieldState[];
+  /** Snapshots of this creature (Save State's HP, Screenshot's stages), oldest first. */
+  snapshots: SnapshotState[];
+  /** Indices into its species' passives of the `oncePerBattle` ones that have fired. */
+  passivesUsed: number[];
   actedThisBattle: boolean;
   lastMoveId: string | null;
   /**
@@ -133,10 +154,19 @@ export type SideState = {
   headless: boolean;
   /** Always length 2. */
   slots: SlotState[];
+  /**
+   * The side's last resolved move that was not a move copy (Episodic Replay reads it): the move, its user and
+   * its final target. A copy records the move it copied, with the copier as `actor`. Null before any.
+   */
+  lastMove: { actor: number; moveId: string; target: number } | null;
 };
 
-/** A timed field effect; the shape is defined when timedField lands (A13). Empty until then. */
-export type FieldState = never;
+/**
+ * A timed effect on one creature (spec §6 `timedField` and `reveal`): a timedField's effect, or a reveal of
+ * the holder's top deck card (a nextIntent reveal is `revealIntents`). `source` started it on `target`;
+ * `remaining` counts end-of-round ticks left, the start round included.
+ */
+export type FieldState = { effect: FieldEffect | { kind: 'revealTopDeckCard' }; source: number; target: number; remaining: number };
 
 export type Outcome = SideId | 'draw';
 
@@ -157,6 +187,11 @@ export type BattleState = {
   creatures: CreatureState[];
   sides: { a: SideState; b: SideState };
   fields: FieldState[];
+  /**
+   * The actors of this round's sorted entries not yet resolved, in resolution order (Rerank edits it);
+   * empty between rounds.
+   */
+  turnOrder: number[];
   /** This round's Handoff Chains, at most one per target. */
   handoff: HandoffChain[];
   ended: boolean;

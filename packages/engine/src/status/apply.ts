@@ -39,6 +39,11 @@ export function hasStatus(h: StatusHolder, id: StatusId): boolean {
   return h.statuses.some((s) => s.id === id);
 }
 
+/** Whether applying `id` would be blocked: the status is already held, or it is major and a major one is held. */
+export function statusBlocked(h: StatusHolder, id: StatusId): boolean {
+  return hasStatus(h, id) || (STATUSES[id].major && h.statuses.some((s) => STATUSES[s.id].major));
+}
+
 /** Apply a status with an already-decided duration. Drift belongs to the context unit and throws here. */
 export function applyStatus(h: StatusHolder, inst: StatusInstance, round: number): BattleEvent[] {
   if (inst.id === 'drift') {
@@ -50,9 +55,7 @@ export function applyStatus(h: StatusHolder, inst: StatusInstance, round: number
       actor: h.index,
     });
   }
-  const blocked =
-    hasStatus(h, inst.id) || (STATUSES[inst.id].major && h.statuses.some((s) => STATUSES[s.id].major));
-  if (blocked) {
+  if (statusBlocked(h, inst.id)) {
     return [{ round, type: 'StatusBlocked', target: h.index, status: inst.id }];
   }
   const copy: StatusInstance = { ...inst };

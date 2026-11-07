@@ -2,11 +2,12 @@ import { moveDef } from '../../content/moves.js';
 import type { NonPassiveEffect } from '../../content/primitives.js';
 import { STATUSES } from '../../content/statuses.js';
 import { changeDrift } from '../../context/store.js';
-import { applyStatus, cureStatus, rollDuration, type StatusInstance } from '../../status/apply.js';
+import { applyStatus, cureStatus, rollDuration, statusBlocked, type StatusInstance } from '../../status/apply.js';
 import { aimsAtUser, lowestHpOnField } from '../order.js';
 import { defaultTarget } from '../targeting.js';
 import type { BattleState, CreatureState } from '../state.js';
 import { creature, recipients, type EffectContext } from './context.js';
+import { absorbStatus } from './shield.js';
 
 export type ApplyStatusEffect = Extract<NonPassiveEffect, { kind: 'applyStatus' }>;
 export type CureEffect = Extract<NonPassiveEffect, { kind: 'cure' }>;
@@ -57,9 +58,17 @@ function instanceFor(ctx: EffectContext, effect: ApplyStatusEffect, victim: Crea
   return inst;
 }
 
-/** `applyStatus` on every living recipient (StatusApplied / StatusBlocked); Drift adds one stack instead. */
-export function applyStatusEffect(ctx: EffectContext, effect: ApplyStatusEffect): void {
+/**
+ * `applyStatus` on every living recipient (StatusApplied / StatusBlocked); Drift adds one stack instead. A
+ * status that would land (not already blocked) first runs `incoming` — the recipient's statusIncoming
+ * passives (Ruling 57) — then meets its status shield (Sagelet's Disclaimer), which stops it (StatusBlocked).
+ */
+export function applyStatusEffect(ctx: EffectContext, effect: ApplyStatusEffect, incoming: (c: CreatureState) => void = () => undefined): void {
   for (const c of recipients(ctx, effect.who)) {
+    if (effect.status === 'drift' || !statusBlocked(c, effect.status)) {
+      incoming(c);
+      if (c.fainted || absorbStatus(c, effect.status, ctx.round, ctx.events)) continue;
+    }
     if (effect.status === 'drift') ctx.events.push(...changeDrift(c.context, 1, ctx.round, c.index));
     else ctx.events.push(...applyStatus(c, instanceFor(ctx, effect, c), ctx.round));
   }

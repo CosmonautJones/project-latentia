@@ -12,6 +12,9 @@ import { handoffBp } from '../handoff.js';
 import type { BattleState, CreatureState } from '../state.js';
 import { holds, powerBonus, typeBpAgainst, typesOf } from './conditions.js';
 import { creature, temperatureRow, type EffectContext } from './context.js';
+import { absorbHit } from './shield.js';
+import { revertKo } from './snapshot.js';
+import { fieldCritStages } from './timedField.js';
 
 export type DamageEffect = Extract<NonPassiveEffect, { kind: 'damage'; who: 'target' }>;
 export type RecoilEffect = Extract<NonPassiveEffect, { kind: 'damage'; who: 'self' }>;
@@ -53,14 +56,16 @@ function power(ctx: EffectContext, user: CreatureState, shape: HitShape): number
 }
 
 /**
- * Crit (spec §5): the temperature's base stage, +1 for a Reasoning move at T0/T1, plus the move's stages,
- * capped at 6; crit when lo(D4, 48) is below the stage's threshold. `never` and `always` (on its condition) override.
+ * Crit (spec §5): the temperature's base stage, +1 for a Reasoning move at T0/T1, plus the move's stages and
+ * the attacker's side's Red Team stages against the target, capped at 6; crit when lo(D4, 48) is below the
+ * stage's threshold. `never` and `always` (on its condition) override.
  */
 function rollsCrit(ctx: EffectContext, rule: CritRule | undefined): boolean {
   if (rule?.kind === 'never') return false;
   if (rule?.kind === 'always' && holds(ctx, rule.when)) return true;
   const reasoning = ctx.move.type === 'reasoning' && ctx.temperature <= 1 ? 1 : 0;
-  const stage = temperatureRow(ctx).baseCritStage + reasoning + (rule?.kind === 'stages' ? rule.stages : 0);
+  const field = fieldCritStages(ctx.state, creature(ctx, ctx.actor), ctx.target);
+  const stage = temperatureRow(ctx).baseCritStage + reasoning + (rule?.kind === 'stages' ? rule.stages : 0) + field;
   return lo(ctx.draws.d4, 48) < critThreshold(Math.min(MAX_CRIT_STAGE, stage));
 }
 
@@ -123,10 +128,12 @@ export function computeHit(ctx: EffectContext, shape: HitShape, incomingBp: numb
 }
 
 /**
- * A KO: HP is already 0. Emits Fainted; Prompt Injected is cleared (Ruling 19), and so are a charge and a
- * raised guard. An orchestrator's side enters Headless Mode (spec §5) and emits HeadlessMode.
+ * A KO: HP is already 0. A live Save State snapshot reverts it instead (Healed, no KO). Otherwise emits
+ * Fainted; Prompt Injected is cleared (Ruling 19), and so are a charge and a raised guard. An orchestrator's
+ * side enters Headless Mode (spec §5) and emits HeadlessMode.
  */
 export function knockOut(state: BattleState, c: CreatureState, round: number, events: BattleEvent[]): void {
+  if (revertKo(c, round, events)) return;
   c.fainted = true;
   c.statuses = c.statuses.filter((s) => s.id !== 'promptInjected');
   c.charging = null;
@@ -166,10 +173,10 @@ export function recordHit(ctx: EffectContext, hit: Hit, removed: number): void {
   for (const s of creature(ctx, ctx.actor).statuses) if (s.id === 'overfit') s.source = ctx.target;
 }
 
-/** `damage` on the target: one hit (nothing if the target is already KO'd). */
+/** `damage` on the target: one hit (nothing if the target is already KO'd; a hit shield absorbs it whole). */
 function damageTarget(ctx: EffectContext, effect: DamageEffect): void {
   const target = creature(ctx, ctx.target);
-  if (target.fainted) return;
+  if (target.fainted || absorbHit(target, ctx.round, ctx.events)) return;
   const hit = computeHit(ctx, effect, takeIncomingBp(target));
   announceHit(ctx, hit);
   recordHit(ctx, hit, dealDamage(ctx, target, hit.damage));

@@ -139,7 +139,7 @@ describe('Unit Test', () => {
   it('reflects at 50% a move that hit the user last round; other moves pass through', () => {
     const s = fresh();
     s.round = 2;
-    at(s, 7).moveHistory.push({ round: 1, moveId: 'ship-it', damaged: [1] });
+    at(s, 7).moveHistory.push({ round: 1, moveId: 'ship-it', target: 1, damaged: [1] });
     run(s, 1, 'unit-test', 1);
     const full = expected(s, 7, 1, 65, { type: SPEED_ON_SPEED, native: 12500, roll: 10000 });
     const reflected = run(s, 7, 'ship-it', 1);

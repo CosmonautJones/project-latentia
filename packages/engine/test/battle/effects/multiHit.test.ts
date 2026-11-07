@@ -37,7 +37,7 @@ describe('multiHit', () => {
     const per = expected(s, 1, 7, 22, { type: 10000, native: 12500, crit: 15000, roll: 9500 });
     expect(events.filter((e) => e.type === 'Crit')).toHaveLength(1);
     expect(damages(events).map((e) => [e.amount, e.hpAfter])).toEqual([1, 2, 3, 4].map((k) => [per, 500 - k * per]));
-    expect(at(s, 1).moveHistory).toEqual([{ round: 2, moveId: 'speculative-decoding', damaged: [7] }]);
+    expect(at(s, 1).moveHistory).toEqual([{ round: 2, moveId: 'speculative-decoding', target: 7, damaged: [7] }]);
   });
 
   it('hi(d5, span) wraps the span: 2–5 has span 4', () => {

@@ -26,7 +26,7 @@ describe('applyStatus', () => {
     const s = fresh();
     run(s, 1, 'flattery', 7);
     expect(at(s, 7).statuses).toEqual([{ id: 'glazed', remaining: 3, source: 1 }]);
-    at(s, 8).moveHistory.push({ round: 0, moveId: 'hard-fork', damaged: [2] });
+    at(s, 8).moveHistory.push({ round: 0, moveId: 'hard-fork', target: 2, damaged: [2] });
     run(s, 1, 'infinite-loop', 8);
     expect(at(s, 8).statuses).toEqual([{ id: 'overfit', remaining: 2, source: 2 }]);
   });

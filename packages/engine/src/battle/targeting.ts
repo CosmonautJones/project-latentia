@@ -8,17 +8,20 @@ import { effectiveStat } from '../math/stats.js';
 import { hasStatus, moveDisabledByStatus, statStage } from '../status/apply.js';
 import { typeBpAgainst, typesOf } from './effects/conditions.js';
 import { aimsAtUser, legalTarget, lowestHpOnField, onField, type ActionEntry } from './order.js';
-import { DEFAULT_TEMPERATURE } from './setup.js';
-import type { BattleState, CreatureState, Temperature } from './state.js';
+import { forcedTemperature } from './effects/timedField.js';
+import { DEFAULT_TEMPERATURE, type BattleState, type CreatureState, type Temperature } from './state.js';
 
 /** Drift adds this many percent of random-move chance per stack (spec §5 D1 hi). */
 export const DRIFT_RANDOM_MOVE_PCT_PER_STACK = 5;
 
 /**
- * The notch a creature acts at: an orchestrator uses its side's temperature (the command's, or the
- * Autopilot's); a subagent its trained temperature, or the Default notch (T2) when it has none.
+ * The notch a creature acts at: a forced temperature on it (Temperature Spike) first; otherwise an
+ * orchestrator uses its side's temperature (the command's, or the Autopilot's) and a subagent its trained
+ * temperature, or the Default notch (T2) when it has none.
  */
 export function temperatureOf(state: BattleState, c: CreatureState): Temperature {
+  const forced = forcedTemperature(state, c.index);
+  if (forced !== null) return forced;
   return c.isOrchestrator ? state.sides[c.side].temperature : (c.trainedTemperature ?? DEFAULT_TEMPERATURE);
 }
 

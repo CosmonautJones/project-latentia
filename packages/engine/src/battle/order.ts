@@ -168,6 +168,11 @@ function planFor(state: BattleState, c: CreatureState, cmd: RoundCommand): Plann
   return action.injection === undefined ? entry : { ...entry, injection: { ...action.injection } };
 }
 
+/** The creature's pending `priority` next-action modifiers (Move Fast), summed; read at Sort, used up after it. */
+function pendingPriority(c: CreatureState): number {
+  return c.nextActionMods.reduce((n, m) => (m.kind === 'priority' ? n + m.delta : n), 0);
+}
+
 /** Effective Latency for Sort: the stat with its stage (after Quantized), halved while Rate Limited. */
 function sortLatency(c: CreatureState): number {
   const latency = effectiveStat(c.stats.latency, statStage(c, 'latency'));
@@ -177,7 +182,9 @@ function sortLatency(c: CreatureState): number {
 /**
  * Plan (spec §5 step 2, Ruling 31): one entry per on-field position — each side's orchestrator always
  * (even when KO'd: its entry resolves as a headless skip), plus each living subagent in a non-removed
- * active slot. Bench creatures never get entries. Requires this round's round-start draws.
+ * active slot. Bench creatures never get entries. An entry's priority includes the creature's pending
+ * `priority` next-action modifiers (Move Fast); this reads them without using them up (the round loop does,
+ * after Sort). Requires this round's round-start draws.
  */
 export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[] {
   const entries: ActionEntry[] = [];
@@ -186,11 +193,13 @@ export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[
     if (c.roundStart === null) {
       throw new EngineInvariantError('planning before round-start draws', { round: state.round, actor: c.index, seed: state.seed });
     }
+    const planned = planFor(state, c, cmd);
     entries.push({
       actor: c.index,
       latency: sortLatency(c),
       tieBreak: c.roundStart.r1 & 0xffff,
-      ...planFor(state, c, cmd),
+      ...planned,
+      priority: planned.priority + pendingPriority(c),
     });
   }
   return entries;
