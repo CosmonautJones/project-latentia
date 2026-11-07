@@ -1,10 +1,11 @@
 import type { BattleEvent } from '../events/types.js';
-import { changeDrift, type ContextState, type Token } from './store.js';
+import type { ContextState, Token } from './store.js';
 
 /**
- * Compact: pairs the six oldest tokens (1,2),(3,4),(5,6) into summaries (an odd last token stays as is),
- * clears 1 Drift. Never emits StageChanged: `summarizedBuffs` lists one entry per summarized buff-tagged token
- * so the battle unit can emit accurate StageChanged events.
+ * Compact: pairs the six oldest tokens (1,2),(3,4),(5,6) into summaries (an odd last token stays as is).
+ * The move's "clears 1 Drift" is its own `cure drift` effect (content/moves/system.ts), so it is not done
+ * here (it would clear twice). Never emits StageChanged: `summarizedBuffs` lists one entry per summarized
+ * buff-tagged token so the battle unit can emit accurate StageChanged events.
  */
 export function compact(
   ctx: ContextState,
@@ -29,6 +30,5 @@ export function compact(
   for (let k = i; k < before; k++) next.push(ctx.tokens[k] as Token);
   ctx.tokens = next;
   events.push({ type: 'Compacted', round, target: actor, tokensBefore: before, tokensAfter: next.length });
-  events.push(...changeDrift(ctx, -1, round, actor));
   return { events, summarizedBuffs };
 }

@@ -1,4 +1,5 @@
-import type { NextActionMod } from '../content/primitives.js';
+import type { TypeId } from '../content/ids.js';
+import type { GuardKind, NextActionMod } from '../content/primitives.js';
 import type { ContextState } from '../context/store.js';
 import type { GridLayout } from '../grid/model.js';
 import type { RoundStartDraws } from '../rng/draws.js';
@@ -27,8 +28,27 @@ export type Stats = { compute: number; robustness: number; latency: number };
 /** One resolved move of a creature (see CreatureState.moveHistory). */
 export type MoveRecord = { round: number; moveId: string; damaged: number[] };
 
-/** A move being charged (e.g. Deliberate); its remaining effects resolve when `remaining` reaches 0. */
-export type ChargingState = { moveId: string; target: number; remaining: number; powerDelta: number };
+/**
+ * A move being charged (e.g. Deliberate); its remaining effects resolve at the entry where `remaining`
+ * reaches 0. `hitPower` is the power delta a hit while charging sets (Deliberate −30); `powerDelta` is
+ * what the release adds to the move's power (0 until the charger is hit).
+ */
+export type ChargingState = { moveId: string; target: number; remaining: number; powerDelta: number; hitPower: number };
+
+/**
+ * A guard raised this round (spec §5 "Guards"); it protects against foes' moves until the round ends.
+ * `damageBp` is the step-4 Guard modifier on foes' attacks (Captcha Wall: only non-`blockOfType` ones);
+ * `blockAttacks` fully blocks foes' attacks (only of `ofType` when set; only the next `remaining` when
+ * set); `reflectBp` reflects a move that hit the holder last round.
+ */
+export type GuardState = {
+  kind: GuardKind;
+  round: number;
+  damageBp: number | null;
+  blockStatusMoves: boolean;
+  blockAttacks: { ofType: TypeId | null; remaining: number | null } | null;
+  reflectBp: number | null;
+};
 
 /**
  * One creature. `index` (from StatusHolder) is its canonical index and equals its position in
@@ -59,6 +79,8 @@ export type CreatureState = StatusHolder & {
   context: ContextState;
   /** Consecutive guard uses before the next action (spec §5 "Guards"). */
   guardStreak: number;
+  /** The guard raised this round, if any (stale once `guard.round` is past). */
+  guard: GuardState | null;
   fainted: boolean;
   deck: Deck | null;
   generalization: number | null;

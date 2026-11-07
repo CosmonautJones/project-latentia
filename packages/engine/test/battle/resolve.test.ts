@@ -279,6 +279,6 @@ describe('resolveAction: knockouts', () => {
 
 describe('resolveAction: dispatcher', () => {
   it('throws EngineInvariantError for an effect kind not implemented yet', () => {
-    expect(() => run(fresh(), 1, 'low-latency', 1)).toThrow(EngineInvariantError);
+    expect(() => run(fresh(), 1, 'save-state', 1)).toThrow(EngineInvariantError); // snapshot arrives in A13
   });
 });

@@ -117,6 +117,25 @@ function moveAt(state: BattleState, user: CreatureState, d4: number): MoveDef {
  * - Otherwise the entry's move; a target that fainted or left the field is re-picked by the default selector.
  * The hallucination check comes first; when it fires the Drift check is ignored (Ruling 45).
  */
+/** Aims a known move (a released charge) at its intended target, or re-picks it like any other move (Ruling 35). */
+export function aimMove(state: BattleState, user: CreatureState, moveId: string, intended: number): Choice {
+  return keepOrDefault(state, user, known(state, user, moveId), intended);
+}
+
+/**
+ * Aims a Prompt Injected choice (Ruling 19): the stored target as-is while it is a living on-field creature
+ * of either side — the point is to hit the victim's ally — else the move's default selector; a self/none
+ * move aims at the victim. No hallucination or Drift substitution applies to a hijacked action.
+ */
+export function aimInjected(state: BattleState, user: CreatureState, injected: { moveId: string; target: number }): Choice {
+  const def = known(state, user, injected.moveId);
+  if (aimsAtUser(def)) return { move: def, target: user.index };
+  const t = Number.isSafeInteger(injected.target) ? state.creatures[injected.target] : undefined;
+  if (t !== undefined && !t.fainted && onField(state, t)) return { move: def, target: t.index };
+  const fallback = defaultTarget(state, user, def);
+  return fallback === null ? null : { move: def, target: fallback };
+}
+
 export function chooseAction(state: BattleState, user: CreatureState, entry: ActionEntry, draws: ActionDraws, temperature: Temperature): Choice {
   if (hi(draws.d2, 100) < hallucinationChancePct(temperature, hasStatus(user, 'hallucinating'))) {
     const def = moveAt(state, user, draws.d4);

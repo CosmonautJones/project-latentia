@@ -32,7 +32,7 @@ export type Hit = { damage: number; crit: boolean; typeBp: number | null };
  * Tool steps and Compaction Summary for the move (spec §5 Context): only an orchestrator's move that comes
  * from a grid piece. A Skill gets one step per adjacent Tool; a Skill or Graft that was compacted deals 50%.
  */
-function pieceBonus(state: BattleState, user: CreatureState, moveId: string): { toolSteps: number; summary: boolean } {
+export function pieceBonus(state: BattleState, user: CreatureState, moveId: string): { toolSteps: number; summary: boolean } {
   const grid = state.sides[user.side].grid;
   if (!user.isOrchestrator || grid === null) return { toolSteps: 0, summary: false };
   const piece = grid.pieces.find((p) => (p.kind === 'skill' || p.kind === 'graft') && p.moveId === moveId);
@@ -40,12 +40,16 @@ function pieceBonus(state: BattleState, user: CreatureState, moveId: string): { 
   return { toolSteps: piece.kind === 'skill' ? toolStepsFor(grid, piece.id) : 0, summary: user.context.summarizedPieces.includes(piece.id) };
 }
 
-/** Effective power `P` (spec §5 damage step 1): base + additive bonus → conditional multipliers → Tool steps → Summary. */
+/**
+ * Effective power `P` (spec §5 damage step 1): base + additive bonus (and a released charge's `powerAdd`)
+ * → conditional multipliers → Tool steps → Summary.
+ */
 function power(ctx: EffectContext, user: CreatureState, shape: HitShape): number {
   const base = ctx.move.power;
   if (base === null) throw new EngineInvariantError(`damage from powerless move ${ctx.move.id}`, { round: ctx.round, actor: ctx.actor, seed: ctx.state.seed });
   const conditional = (shape.mult ?? []).filter((m) => m.when === undefined || holds(ctx, m.when)).map((m) => m.bp);
-  return effectivePower({ base, additive: powerBonus(ctx, shape.bonus, base), conditional, ...pieceBonus(ctx.state, user, ctx.move.id) });
+  const additive = powerBonus(ctx, shape.bonus, base) + ctx.powerAdd;
+  return effectivePower({ base, additive, conditional, ...pieceBonus(ctx.state, user, ctx.move.id) });
 }
 
 /**
@@ -105,6 +109,7 @@ export function computeHit(ctx: EffectContext, shape: HitShape, incomingBp: numb
   if (crit) mods.crit = CRIT_BP;
   Object.assign(mods, statusDamageMods(user, target.index));
   if (target.side !== user.side && target.observedMoves.includes(ctx.move.id)) mods.observation = OBSERVATION_BP;
+  if (ctx.guardBp !== null) mods.guard = ctx.guardBp;
   const ra = refusalOrApology(ctx.penaltyBp, incomingBp);
   if (ra !== null) mods.refusalOrApology = ra;
   const damage = computeDamage({
@@ -118,12 +123,14 @@ export function computeHit(ctx: EffectContext, shape: HitShape, incomingBp: numb
 }
 
 /**
- * A KO: HP is already 0. Emits Fainted; Prompt Injected is cleared (Ruling 19). An orchestrator's side
- * enters Headless Mode (spec §5) and emits HeadlessMode.
+ * A KO: HP is already 0. Emits Fainted; Prompt Injected is cleared (Ruling 19), and so are a charge and a
+ * raised guard. An orchestrator's side enters Headless Mode (spec §5) and emits HeadlessMode.
  */
-function knockOut(state: BattleState, c: CreatureState, round: number, events: BattleEvent[]): void {
+export function knockOut(state: BattleState, c: CreatureState, round: number, events: BattleEvent[]): void {
   c.fainted = true;
   c.statuses = c.statuses.filter((s) => s.id !== 'promptInjected');
+  c.charging = null;
+  c.guard = null;
   events.push({ round, type: 'Fainted', target: c.index });
   if (c.isOrchestrator) {
     state.sides[c.side].headless = true;
@@ -131,10 +138,14 @@ function knockOut(state: BattleState, c: CreatureState, round: number, events: B
   }
 }
 
-/** Removes up to `amount` HP from `victim` (never below 0), emits Damage (and Fainted at 0). Returns the HP removed. */
+/**
+ * Removes up to `amount` HP from `victim` (never below 0), emits Damage (and Fainted at 0). Returns the HP
+ * removed. A hit from another creature on a charging victim sets the release's power delta (Deliberate −30, once).
+ */
 export function dealDamage(ctx: EffectContext, victim: CreatureState, amount: number): number {
   const removed = Math.min(amount, victim.hp);
   victim.hp -= removed;
+  if (victim.charging !== null && victim.index !== ctx.actor) victim.charging.powerDelta = victim.charging.hitPower;
   ctx.events.push({ round: ctx.round, type: 'Damage', actor: ctx.actor, target: victim.index, amount: removed, hpAfter: victim.hp });
   if (victim.hp === 0) knockOut(ctx.state, victim, ctx.round, ctx.events);
   return removed;

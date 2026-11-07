@@ -4,15 +4,23 @@ import type { BattleEvent } from '../events/types.js';
 import { hitChance } from '../math/accuracy.js';
 import { EngineInvariantError, mulBp } from '../math/bp.js';
 import { lo, type ActionDraws } from '../rng/draws.js';
-import { hasStatus, moveCost } from '../status/apply.js';
+import { consumeInjection, hasStatus, moveCost } from '../status/apply.js';
+import { applyCharge, chargesFirst, releaseEffects } from './effects/charge.js';
 import { holds } from './effects/conditions.js';
 import { chancePasses, creature, effectContext, temperatureRow, type EffectContext } from './effects/context.js';
 import { applyDamage } from './effects/damage.js';
+import { applyGuard, guardCheck, isGuardMove } from './effects/guard.js';
+import { applyHeal } from './effects/heal.js';
 import { applyMultiHit } from './effects/multiHit.js';
+import { applyNextActionModifier } from './effects/nextActionModifier.js';
+import { applyStage, buffTag } from './effects/stage.js';
+import { applyCure, applyStatusEffect, heldInjection } from './effects/status.js';
+import { applySwap } from './effects/swap.js';
+import { applyTokens } from './effects/tokens.js';
 import { breakEnemyChains, extendChain } from './handoff.js';
 import type { ActionEntry } from './order.js';
 import type { BattleState, CreatureState, Temperature } from './state.js';
-import { chooseAction, temperatureOf } from './targeting.js';
+import { aimInjected, aimMove, chooseAction, temperatureOf, type Choice } from './targeting.js';
 
 export type { EffectContext } from './effects/context.js';
 
@@ -24,19 +32,39 @@ export const ROBUST_ACCURACY_BONUS = 5;
 
 /**
  * Applies one effect of the move (the dispatcher). Its optional chance gate is checked first. Kinds that
- * later tasks implement (A12b, A13) throw EngineInvariantError until then.
+ * A13 implements (timedField, snapshot, revert, reveal, reorder turnOrder, copy, shield, stealStage) throw
+ * EngineInvariantError until then.
  */
 export function applyEffect(ctx: EffectContext, effect: NonPassiveEffect): void {
+  if (!chancePasses(ctx, effect.chance)) return;
   switch (effect.kind) {
     case 'damage':
-      if (chancePasses(ctx, effect.chance)) applyDamage(ctx, effect);
-      return;
+      return applyDamage(ctx, effect);
     case 'multiHit':
-      if (chancePasses(ctx, effect.chance)) applyMultiHit(ctx, effect);
-      return;
+      return applyMultiHit(ctx, effect);
+    case 'charge':
+      return applyCharge(ctx, effect);
+    case 'heal':
+      return applyHeal(ctx, effect);
+    case 'stage':
+      return applyStage(ctx, effect);
+    case 'applyStatus':
+      return applyStatusEffect(ctx, effect);
+    case 'cure':
+      return applyCure(ctx, effect);
+    case 'tokens':
+      return applyTokens(ctx, effect);
+    case 'guard':
+      return applyGuard(ctx, effect);
+    case 'nextActionModifier':
+      return applyNextActionModifier(ctx, effect);
+    case 'reorder':
+      if (effect.what === 'fieldSlot') return applySwap(ctx, effect);
+      break;
     default:
-      throw new EngineInvariantError(`unimplemented effect kind ${effect.kind}`, { round: ctx.round, actor: ctx.actor, seed: ctx.state.seed });
+      break;
   }
+  throw new EngineInvariantError(`unimplemented effect kind ${effect.kind}`, { round: ctx.round, actor: ctx.actor, seed: ctx.state.seed });
 }
 
 /** Ruling 8: Wild lists replace the move's effects (wildT4 at T4, else wild at T3+). */
@@ -103,11 +131,52 @@ function bookkeeping(ctx: EffectContext, user: CreatureState, target: CreatureSt
 }
 
 /**
+ * Accuracy, then the target's guard, then the effect list in order (stopping early when an effect halts the
+ * move, e.g. a failed guard). A miss or a full guard block skips the whole list (Ruling 13).
+ */
+function resolveEffects(ctx: EffectContext, effects: readonly NonPassiveEffect[], user: CreatureState, target: CreatureState): void {
+  if (fails(ctx, effects) || !accuracyHits(ctx, user, target)) {
+    ctx.events.push({ round: ctx.round, type: 'Missed', actor: user.index, target: target.index });
+    return;
+  }
+  if (!guardCheck(ctx, effects, user, target)) return;
+  for (const e of effects) {
+    applyEffect(ctx, e);
+    if (ctx.tally.halted) return;
+  }
+}
+
+/** What the entry does, before MoveUsed: a released charge, a hijacked (Prompt Injected) action, or its own move. */
+type Plan = { choice: Choice; release: { powerDelta: number } | null } | 'charging';
+
+/**
+ * A charging user counts one entry down: above 0 it waits ('charging'); at 0 the charged move is released at
+ * its stored target (no substitution). Otherwise a held Prompt Injected choice replaces the action, and is
+ * consumed (StatusExpired) only if the action goes ahead; else hallucination / Drift / the entry's move.
+ */
+function planAction(state: BattleState, user: CreatureState, entry: ActionEntry, draws: ActionDraws, temperature: Temperature, events: BattleEvent[]): Plan {
+  const charge = user.charging;
+  if (charge !== null) {
+    charge.remaining -= 1;
+    if (charge.remaining > 0) return 'charging';
+    user.charging = null;
+    return { choice: aimMove(state, user, charge.moveId, charge.target), release: { powerDelta: charge.powerDelta } };
+  }
+  const injected = heldInjection({ state, round: state.round }, user.index);
+  if (injected === null) return { choice: chooseAction(state, user, entry, draws, temperature), release: null };
+  const choice = aimInjected(state, user, injected);
+  if (choice !== null) events.push(...consumeInjection(user, state.round).events);
+  return { choice, release: null };
+}
+
+/**
  * Resolves one acting entry after its six draws are taken and ActionStarted is emitted (spec §5 step 4):
- * Rate Limited skip check (lo D2) → hallucination / Drift substitution and re-targeting → MoveUsed → pay
- * context (cost − 1 while Quantized; overflow → Drift) → failsIf / accuracy (lo D3; a miss skips the whole effect list, Ruling 13)
- * → effects in list order (crit lo D4, roll lo D5, hit count hi D5, riders D6) → bookkeeping → history.
- * An action that gets past the skip checks breaks the enemy's Handoff chains. Uses only the six given draws.
+ * Rate Limited skip check (lo D2) → a charge's countdown / release, a Prompt Injected hijack, or
+ * hallucination / Drift substitution and re-targeting → MoveUsed → pay context (cost − 1 while Quantized;
+ * overflow → Drift; a buff move's tokens carry its buff tag; a release pays nothing) → a charge round stops
+ * here (no accuracy, Ruling 13) → failsIf / accuracy (lo D3) → the target's guard → effects in list order
+ * (crit lo D4, roll lo D5, hit count hi D5, riders D6) → bookkeeping → guard streak → history. An action
+ * that gets past the skip checks breaks the enemy's Handoff chains. Uses only the six given draws.
  */
 export function resolveAction(state: BattleState, entry: ActionEntry, draws: ActionDraws, events: BattleEvent[]): void {
   const round = state.round;
@@ -117,24 +186,29 @@ export function resolveAction(state: BattleState, entry: ActionEntry, draws: Act
     return;
   }
   const temperature = temperatureOf(state, user);
-  const choice = chooseAction(state, user, entry, draws, temperature);
-  if (choice === null) {
-    events.push({ round, type: 'ActionSkipped', actor: user.index, reason: 'fainted' });
+  const plan = planAction(state, user, entry, draws, temperature, events);
+  if (plan === 'charging' || plan.choice === null) {
+    events.push({ round, type: 'ActionSkipped', actor: user.index, reason: plan === 'charging' ? 'charging' : 'fainted' });
     return;
   }
-  const { move } = choice;
+  const { move, target: targetIndex } = plan.choice;
   breakEnemyChains(state, user.side);
-  events.push({ round, type: 'MoveUsed', actor: user.index, moveId: move.id, target: choice.target });
-  events.push(...pay(user.context, moveCost(user, move.cost), round, user.index));
-  const ctx = effectContext(state, user.index, choice.target, move, draws, temperature, events, takePenaltyBp(user));
-  const target = creature(ctx, choice.target);
-  const effects = effectList(move, temperature);
-  if (fails(ctx, effects) || !accuracyHits(ctx, user, target)) {
-    events.push({ round, type: 'Missed', actor: user.index, target: target.index });
+  events.push({ round, type: 'MoveUsed', actor: user.index, moveId: move.id, target: targetIndex });
+  const listed = effectList(move, temperature);
+  const chargeRound = plan.release === null && chargesFirst(listed);
+  if (plan.release === null) events.push(...pay(user.context, moveCost(user, move.cost), round, user.index, buffTag(listed)));
+  // A charge round does not spend Refusal's penalty: the release is the move that deals the damage.
+  const ctx = effectContext(state, user.index, targetIndex, move, draws, temperature, events, chargeRound ? null : takePenaltyBp(user));
+  ctx.injection = entry.injection ?? null;
+  if (plan.release !== null) ctx.powerAdd = plan.release.powerDelta;
+  const target = creature(ctx, targetIndex);
+  if (chargeRound) {
+    for (const e of listed) if (e.kind === 'charge') applyEffect(ctx, e);
   } else {
-    for (const e of effects) applyEffect(ctx, e);
+    resolveEffects(ctx, plan.release === null ? listed : releaseEffects(listed), user, target);
   }
   bookkeeping(ctx, user, target);
+  user.guardStreak = isGuardMove(listed) ? user.guardStreak + 1 : 0;
   user.actedThisBattle = true;
   user.lastMoveId = move.id;
   user.moveHistory.push({ round, moveId: move.id, damaged: [...ctx.tally.damaged] });

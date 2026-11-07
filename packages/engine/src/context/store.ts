@@ -12,6 +12,7 @@ export const DRIFT_CAP = 5;
  */
 export const KIND_CLEARED = 'cleared';
 export const KIND_RECOVERED = 'recovered';
+export const KIND_FREED = 'freed';
 
 export type Token = {
   kind: 'cost' | 'junk' | 'observation' | 'summary';
@@ -135,10 +136,19 @@ export function freeOldestNonJunk(ctx: ContextState, round: number, actor: numbe
   return [];
 }
 
-/** Bench recovery: removes the n oldest tokens, never below 0. */
-export function recover(ctx: ContextState, n: number, round: number, actor: number): BattleEvent[] {
+function removeOldest(ctx: ContextState, n: number, kind: string, round: number, actor: number): BattleEvent[] {
   const count = n < ctx.tokens.length ? n : ctx.tokens.length;
   if (count <= 0) return [];
   ctx.tokens.splice(0, count);
-  return [added(ctx, KIND_RECOVERED, -count, round, actor)];
+  return [added(ctx, kind, -count, round, actor)];
+}
+
+/** Bench recovery: removes the n oldest tokens, never below 0. */
+export function recover(ctx: ContextState, n: number, round: number, actor: number): BattleEvent[] {
+  return removeOldest(ctx, n, KIND_RECOVERED, round, actor);
+}
+
+/** A move that frees cells (Refactor): removes the n oldest tokens of any kind, never below 0. */
+export function freeOldest(ctx: ContextState, n: number, round: number, actor: number): BattleEvent[] {
+  return removeOldest(ctx, n, KIND_FREED, round, actor);
 }

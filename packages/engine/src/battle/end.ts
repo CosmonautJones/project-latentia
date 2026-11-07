@@ -13,14 +13,15 @@ export function sideNumber(side: SideId): number {
   return side === 'a' ? 0 : 1;
 }
 
-function benchOf(state: BattleState, side: SideId): CreatureState[] {
+/** A side's bench creatures in bench order (KO'd ones included). */
+export function benchOf(state: BattleState, side: SideId): CreatureState[] {
   return state.creatures
     .filter((c) => c.side === side && c.slot === 'bench')
     .sort((x, y) => (x.benchOrder ?? 0) - (y.benchOrder ?? 0) || x.index - y.index);
 }
 
 /** Bench orders become 0..n-1 in the given order. */
-function renumber(bench: readonly CreatureState[]): void {
+export function renumber(bench: readonly CreatureState[]): void {
   bench.forEach((c, i) => {
     c.benchOrder = i;
   });

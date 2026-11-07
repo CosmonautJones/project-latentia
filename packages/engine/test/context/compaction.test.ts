@@ -5,14 +5,14 @@ import { newContext, pay } from '../../src/context/store.js';
 const kinds = (c: ReturnType<typeof newContext>) => c.tokens.map((t) => t.kind);
 
 describe('compact', () => {
-  it('pairs the six oldest into 3 summaries and clears 1 Drift', () => {
+  it('pairs the six oldest into 3 summaries and leaves Drift to the move\'s own cure effect', () => {
     const c = newContext(8);
     pay(c, 8, 1, 0);
     pay(c, 3, 1, 0); // drift 3
     const { events: ev } = compact(c, 2, 0);
     expect(kinds(c)).toEqual(['summary', 'summary', 'summary', 'cost', 'cost']);
-    expect(c.drift).toBe(2);
-    expect(ev.map((e) => e.type)).toEqual(['Compacted', 'DriftChanged']);
+    expect(c.drift).toBe(3);
+    expect(ev.map((e) => e.type)).toEqual(['Compacted']);
     expect(ev[0]).toEqual({ type: 'Compacted', round: 2, target: 0, tokensBefore: 8, tokensAfter: 5 });
   });
   it('with 5 tokens pairs (1,2),(3,4) and leaves the odd one', () => {
@@ -52,10 +52,5 @@ describe('compact', () => {
     expect(kinds(c)).toEqual(['cost']);
     expect(r.events).toEqual([{ type: 'Compacted', round: 1, target: 0, tokensBefore: 1, tokensAfter: 1 }]);
     expect(r.summarizedBuffs).toEqual([]);
-  });
-  it('emits no DriftChanged at zero Drift', () => {
-    const c = newContext(4);
-    pay(c, 2, 1, 0);
-    expect(compact(c, 1, 0).events.map((e) => e.type)).toEqual(['Compacted']);
   });
 });

@@ -1,15 +1,18 @@
 import { moveDef } from '../content/moves.js';
+import { moveDisabledByStatus } from '../status/apply.js';
 import type { OrchestratorAction, RoundCommand, SideCommand } from './log.js';
 import { holdsLiveSlot, isHeadless, legalTarget } from './order.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
 
 /**
  * A caller mistake in a RoundCommand (spec §7). `submitRound` returns it as `{ error }` and leaves the
- * input state untouched; it never throws for these. `actorSkipped` (commanding a creature that must
- * skip, e.g. one charging a move) is raised by the tasks that add those skips (A12b).
+ * input state untouched; it never throws for these. `actorSkipped`: any action but `none` for an
+ * orchestrator that is charging a move (its entry is the release, Ruling 13). `moveDisabled`: a move a
+ * held status forbids (Glazed / Overfit, Ruling 50). An orchestrator cleared by /clear is not an error:
+ * its command is accepted and skipped (Ruling 11).
  */
 export type CommandError = {
-  code: 'invalidCommand' | 'unknownMove' | 'illegalTarget' | 'actorSkipped' | 'directiveOnFainted' | 'notOrchestratorMove' | 'battleEnded';
+  code: 'invalidCommand' | 'unknownMove' | 'illegalTarget' | 'actorSkipped' | 'moveDisabled' | 'directiveOnFainted' | 'notOrchestratorMove' | 'battleEnded';
   message: string;
 };
 
@@ -70,12 +73,18 @@ function checkMove(state: BattleState, user: CreatureState, moveId: string, targ
 }
 
 function checkAction(state: BattleState, side: SideId, orch: CreatureState, action: OrchestratorAction): CommandError | null {
+  if (orch.charging !== null && action.kind !== 'none') {
+    return err('actorSkipped', `${orch.id} is charging ${orch.charging.moveId}: its action this round is the release (send none)`);
+  }
   switch (action.kind) {
     case 'move': {
-      if (moveDef(action.moveId)?.orchestratorOnly === true) {
+      const def = moveDef(action.moveId);
+      if (def?.orchestratorOnly === true) {
         return err('notOrchestratorMove', `${action.moveId} is a lever: send it as its own command kind, not as a move`);
       }
-      return checkMove(state, orch, action.moveId, action.target);
+      const bad = checkMove(state, orch, action.moveId, action.target);
+      if (bad !== null || def === null) return bad;
+      return moveDisabledByStatus(orch, def, orch.lastMoveId) ? err('moveDisabled', `${orch.id}: a held status forbids ${action.moveId}`) : null;
     }
     case 'directive': {
       const sub = creatureAt(state, action.subagent);

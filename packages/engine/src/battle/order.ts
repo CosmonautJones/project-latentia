@@ -1,13 +1,15 @@
 import { moveDef } from '../content/moves.js';
 import type { MoveDef } from '../content/primitives.js';
-import { EngineInvariantError } from '../math/bp.js';
+import { EngineInvariantError, mulBp } from '../math/bp.js';
 import { effectiveStat } from '../math/stats.js';
-import { statStage } from '../status/apply.js';
+import { hasStatus, moveDisabledByStatus, statStage } from '../status/apply.js';
 import type { OrchestratorAction, RoundCommand } from './log.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
 
 /** Swap and Early Exit resolve at this priority bracket (spec §5 "Orchestrator levers"). */
 export const SWAP_PRIORITY = 3;
+/** Rate Limited: Speed ×0.5 (bible status table), applied to effective Latency at Sort. */
+export const RATE_LIMITED_LATENCY_BP = 5000;
 
 export type LeverAction = Exclude<OrchestratorAction, { kind: 'move' }>;
 
@@ -101,7 +103,8 @@ export function lowestHpOnField(state: BattleState, keep: (c: CreatureState) => 
 
 /**
  * The intent of a creature with no command and no deck (decks replace this in B2, Autopilot in B4): the
- * first move in its list that is neither universal nor orchestrator-only (its first move if none is).
+ * first move in its list that is neither universal nor orchestrator-only nor disabled by a held status
+ * (Glazed / Overfit, Ruling 50); failing that its first move a status allows; failing that its first move.
  * Its target follows the move's target kind (Ruling 38): self/none → the actor; `ally` → the lowest-HP
  * on-field ally, possibly itself; foe kinds and `other` → the lowest-HP on-field foe, or the foe
  * orchestrator when no foe on the field is alive. HP ties go to the lowest canonical index.
@@ -109,11 +112,15 @@ export function lowestHpOnField(state: BattleState, keep: (c: CreatureState) => 
 export function defaultIntent(state: BattleState, actor: number): { moveId: string; target: number } {
   const c = state.creatures[actor];
   if (c === undefined) throw new EngineInvariantError(`no creature ${actor}`, { round: state.round, actor, seed: state.seed });
-  const usable = c.moves.find((m) => {
+  const allowed = c.moves.filter((m) => {
+    const def = moveDef(m);
+    return def !== null && !moveDisabledByStatus(c, def, c.lastMoveId);
+  });
+  const usable = allowed.find((m) => {
     const def = moveDef(m);
     return def !== null && def.universal !== true && def.orchestratorOnly !== true;
   });
-  const moveId = usable ?? c.moves[0] ?? 'compact';
+  const moveId = usable ?? allowed[0] ?? c.moves[0] ?? 'compact';
   const def = moveDef(moveId);
   if (def === null || aimsAtUser(def)) return { moveId, target: actor };
   if (def.target === 'ally') return { moveId, target: (lowestHpOnField(state, (f) => f.side === c.side) ?? c).index };
@@ -145,10 +152,12 @@ function leverEntry(actor: number, command: LeverAction): Planned {
 }
 
 /**
- * A non-headless orchestrator follows its side's command; everything else (an uncommanded or headless
- * orchestrator, every subagent) uses its default intent.
+ * A charging creature's entry is its charged move at its stored target (the command, if any, is not used:
+ * Ruling 13). Otherwise a non-headless orchestrator follows its side's command; everything else (an
+ * uncommanded or headless orchestrator, every subagent) uses its default intent.
  */
 function planFor(state: BattleState, c: CreatureState, cmd: RoundCommand): Planned {
+  if (c.charging !== null) return moveEntry(c.index, c.charging.moveId, c.charging.target);
   const action = c.isOrchestrator && !isHeadless(state, c.side) ? cmd[c.side]?.action : undefined;
   if (action === undefined) {
     const intent = defaultIntent(state, c.index);
@@ -157,6 +166,12 @@ function planFor(state: BattleState, c: CreatureState, cmd: RoundCommand): Plann
   if (action.kind !== 'move') return leverEntry(c.index, action);
   const entry = moveEntry(c.index, action.moveId, action.target);
   return action.injection === undefined ? entry : { ...entry, injection: { ...action.injection } };
+}
+
+/** Effective Latency for Sort: the stat with its stage (after Quantized), halved while Rate Limited. */
+function sortLatency(c: CreatureState): number {
+  const latency = effectiveStat(c.stats.latency, statStage(c, 'latency'));
+  return hasStatus(c, 'rateLimited') ? mulBp(latency, RATE_LIMITED_LATENCY_BP) : latency;
 }
 
 /**
@@ -173,7 +188,7 @@ export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[
     }
     entries.push({
       actor: c.index,
-      latency: effectiveStat(c.stats.latency, statStage(c, 'latency')),
+      latency: sortLatency(c),
       tieBreak: c.roundStart.r1 & 0xffff,
       ...planFor(state, c, cmd),
     });

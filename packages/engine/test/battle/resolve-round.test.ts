@@ -21,7 +21,8 @@ describe('through submitRound (the real pipeline)', () => {
     let found: { state: BattleState; events: BattleEvent[]; before: BattleState } | null = null;
     for (let i = 1; i < 4000 && found === null; i++) {
       const s = createBattle(gridlessSetup({ bench: [] }), seedOf(i) as SeedHex);
-      for (const c of s.creatures) if (c.side === 'a') c.statuses.push({ id: 'rateLimited', remaining: 3 });
+      // Rate Limited halves Latency, so side A acts last: sturdy HP keeps side B from KO'ing it first.
+      for (const c of s.creatures) if (c.side === 'a') Object.assign(c, { hp: 500, maxHp: 500, statuses: [{ id: 'rateLimited', remaining: 3 }] });
       const r = ok(s);
       const skips = r.events.filter((e) => e.type === 'ActionSkipped' && e.reason === 'rateLimited');
       if (skips.length === 3) found = { ...r, before: s };

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { assertInvariants } from '../../src/battle/invariants.js';
 import { autofillBench, checkEnd, ROUND_CAP, winOutcome } from '../../src/battle/end.js';
+import { submitRound } from '../../src/battle/round.js';
+import type { BattleEvent } from '../../src/events/types.js';
 import type { BattleState, SideId } from '../../src/battle/state.js';
 import { at, battle, faint, mon } from './helpers.js';
 
@@ -194,5 +196,70 @@ describe('checkEnd: round-50 cap', () => {
     s.result = 'b';
     expect(checkEnd(s)).toEqual([]);
     expect(s.result).toBe('b');
+  });
+});
+
+describe('end of round: status ticks and Deprecated (Ruling 21)', () => {
+  /** Every creature at 500/500 HP; every orchestrator does nothing. */
+  const sturdy = (...args: Parameters<typeof battle>): BattleState => {
+    const s = battle(...args);
+    for (const c of s.creatures) c.hp = c.maxHp = 500;
+    return s;
+  };
+  const round = (s: BattleState): { state: BattleState; events: BattleEvent[] } => {
+    const none = { temperature: 2 as const, action: { kind: 'none' as const } };
+    const r = submitRound(s, { a: none, b: none });
+    if ('error' in r) throw new Error(r.error.message);
+    return r;
+  };
+  const after = (events: BattleEvent[], type: BattleEvent['type']) => events.slice(events.map((e) => e.type).lastIndexOf('ActionStarted')).filter((e) => e.type === type);
+
+  it('ticks statuses after the last action, before RoundEnd', () => {
+    const s = sturdy();
+    at(s, 7).statuses.push({ id: 'glazed', remaining: 1, source: 1 }, { id: 'quantized', remaining: 2 });
+    const { state, events } = round(s);
+    expect(after(events, 'StatusExpired')).toEqual([{ round: 1, type: 'StatusExpired', target: 7, status: 'glazed' }]);
+    expect(at(state, 7).statuses).toEqual([{ id: 'quantized', remaining: 1 }]);
+    expect(events.findIndex((e) => e.type === 'StatusExpired')).toBeLessThan(events.findIndex((e) => e.type === 'RoundEnd'));
+  });
+
+  it('Deprecated at 0 force-benches a subagent at 1 HP to the END of the bench; auto-fill brings in the first living one', () => {
+    const s = sturdy();
+    at(s, 1).statuses.push({ id: 'deprecated', remaining: 1 });
+    const { state, events } = round(s);
+    expect(after(events, 'Swapped')).toEqual([
+      { round: 1, type: 'Swapped', side: 0, outIndex: 1, inIndex: -1 },
+      { round: 1, type: 'Swapped', side: 0, outIndex: -1, inIndex: 3 },
+    ]);
+    expect(after(events, 'StatusExpired')).toEqual([]);
+    expect(at(state, 1)).toMatchObject({ hp: 1, fainted: false, slot: 'bench', benchOrder: 2, statuses: [] });
+    expect([4, 5].map((i) => at(state, i).benchOrder)).toEqual([0, 1]);
+    expect(state.sides.a.slots[0]?.occupant).toBe(3);
+    assertInvariants(state);
+  });
+
+  it('Deprecated at 0 KOs a subagent with no living bench creature, and an orchestrator (Headless Mode)', () => {
+    const noBench = sturdy({ bench: [] });
+    at(noBench, 1).statuses.push({ id: 'deprecated', remaining: 1 });
+    const r1 = round(noBench);
+    expect(after(r1.events, 'Fainted')).toEqual([{ round: 1, type: 'Fainted', target: 1 }]);
+    expect(at(r1.state, 1)).toMatchObject({ hp: 0, fainted: true, slot: 'active' });
+
+    const orch = sturdy();
+    at(orch, 6).statuses.push({ id: 'deprecated', remaining: 1 });
+    const r2 = round(orch);
+    expect(after(r2.events, 'Fainted')).toEqual([{ round: 1, type: 'Fainted', target: 6 }]);
+    expect(after(r2.events, 'HeadlessMode')).toEqual([{ round: 1, type: 'HeadlessMode', side: 1, active: true }]);
+    expect(r2.state.sides.b.headless).toBe(true);
+  });
+
+  it('a Deprecated KO that wipes a side ends the battle after RoundEnd', () => {
+    const s = sturdy({}, { active: [], bench: [] });
+    at(s, 6).statuses.push({ id: 'deprecated', remaining: 1 }); // b is its orchestrator alone (index 6)
+    const { events } = round(s);
+    expect(events.slice(-2)).toEqual([
+      { round: 1, type: 'RoundEnd' },
+      { round: 1, type: 'BattleEnd', winner: 0, reason: 'knockout' },
+    ]);
   });
 });
