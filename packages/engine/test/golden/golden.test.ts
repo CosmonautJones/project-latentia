@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ENGINE_VERSION, type BattleLog } from '../../src/battle/log.js';
 import { replay } from '../../src/battle/replay.js';
-import { UNIVERSAL_MOVES } from '../../src/battle/setup.js';
+import { ROBUST_MIN_GENERALIZATION } from '../../src/battle/resolve.js';
+import { createBattle, UNIVERSAL_MOVES } from '../../src/battle/setup.js';
 import { simulate, type BattleResult } from '../../src/battle/simulate.js';
 import type { Outcome } from '../../src/battle/state.js';
 import { STATUS_IDS, type StatusId } from '../../src/content/ids.js';
@@ -141,6 +142,20 @@ describe('golden coverage', () => {
     const seen = new Set(replays().flatMap((r) => r.events.map((e) => e.type)));
     const expected = (Object.keys(EVENT_TYPES) as BattleEventType[]).filter((t) => !PHASE_B_EVENTS.includes(t));
     expect(expected.filter((t) => !seen.has(t))).toEqual([]);
+  });
+
+  it('a T4-trained subagent uses a move with a wildT4 list, a Robust subagent has recordedFoes, and a side starts with no active subagent (Ruling 77)', () => {
+    let wildT4 = false;
+    GOLDENS.forEach(({ golden }, g) => {
+      const state = createBattle(golden.log.setup, golden.log.seed);
+      const t4 = state.creatures.filter((c) => !c.isOrchestrator && c.trainedTemperature === 4).map((c) => c.index);
+      const used = (replays()[g]?.events ?? []).filter((e) => e.type === 'MoveUsed' && t4.includes(e.actor));
+      if (used.some((e) => e.type === 'MoveUsed' && moveDef(e.moveId)?.wildT4 !== undefined)) wildT4 = true;
+    });
+    expect(wildT4).toBe(true);
+    const subagents = GOLDENS.flatMap((g) => [g.golden.log.setup.a, g.golden.log.setup.b]).flatMap((s) => [...s.active, ...s.bench]);
+    expect(subagents.some((c) => (c.generalization ?? 0) >= ROBUST_MIN_GENERALIZATION && (c.recordedFoes ?? []).length > 0)).toBe(true);
+    expect(GOLDENS.some((g) => g.golden.log.setup.a.active.length === 0 || g.golden.log.setup.b.active.length === 0)).toBe(true);
   });
 
   it('the logs pull every Phase A lever at every temperature, and the outcomes include a cap and a draw', () => {

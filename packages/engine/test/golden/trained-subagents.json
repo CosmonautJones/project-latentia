@@ -1,0 +1,172 @@
+{
+  "name": "trained-subagents",
+  "log": {
+    "engineVersion": "0.1.0",
+    "seed": "35f972a691deec58529467c3e15b45a9",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 14,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-parrot",
+            "species": "stochastiparrot",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hot-take",
+              "flattery"
+            ],
+            "trainedTemperature": 4
+          },
+          {
+            "id": "a-embeddingo",
+            "species": "embeddingo",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "cosine-sniff",
+              "citation-needed",
+              "retrieval-strike",
+              "ground-truth"
+            ],
+            "generalization": 80,
+            "recordedFoes": [
+              "b-cobolt"
+            ]
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-cobolt",
+          "species": "cobolt",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [],
+        "bench": [
+          {
+            "id": "b-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ]
+          },
+          {
+            "id": "b-heisenmoth",
+            "species": "heisenmoth",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "observer-effect",
+              "refactor",
+              "bounding-box",
+              "flash-inference"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "none"
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "48bce8ca4236a982",
+  "rounds": 4,
+  "winner": "a"
+}

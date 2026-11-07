@@ -94,6 +94,36 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
     expect(gridded).toBeGreaterThan(100);
   });
 
+  it('arbLegalSetup trains subagents and builds sides with no active subagent (Ruling 77)', () => {
+    const seen = { temps: new Set<number>(), untrained: 0, robustWithFoes: 0, generalizationUnset: 0, noActives: 0, griddedNoActives: 0 };
+    fc.assert(
+      fc.property(arbLegalSetup, (setup) => {
+        for (const [own, foe] of [[setup.a, setup.b], [setup.b, setup.a]] as const) {
+          const foeIds = new Set([foe.orchestrator, ...foe.active, ...foe.bench].map((c) => c.id));
+          expect(own.orchestrator.trainedTemperature ?? own.orchestrator.generalization ?? own.orchestrator.recordedFoes).toBeUndefined();
+          if (own.active.length === 0) {
+            seen.noActives++;
+            if (own.grid !== null) seen.griddedNoActives++;
+          }
+          for (const c of [...own.active, ...own.bench]) {
+            if (c.trainedTemperature === undefined) seen.untrained++;
+            else seen.temps.add(c.trainedTemperature);
+            if (c.generalization === undefined) seen.generalizationUnset++;
+            for (const id of c.recordedFoes ?? []) expect(foeIds.has(id)).toBe(true);
+            if ((c.generalization ?? 0) >= 70 && (c.recordedFoes ?? []).length > 0) seen.robustWithFoes++;
+          }
+        }
+      }),
+      { numRuns: 500 },
+    );
+    expect([...seen.temps].sort()).toEqual([0, 1, 2, 3, 4]);
+    expect(seen.untrained).toBeGreaterThan(0);
+    expect(seen.generalizationUnset).toBeGreaterThan(0);
+    expect(seen.robustWithFoes).toBeGreaterThan(20);
+    expect(seen.noActives).toBeGreaterThan(20);
+    expect(seen.griddedNoActives).toBeGreaterThan(0);
+  });
+
   it(`${RUNS} battles: HP in [0, max], tokens ≤ window, ≤ ${ROUND_CAP} rounds, exactly six draws per ActionStarted`, () => {
     fc.assert(
       fc.property(arbLegalSetup, arbSeed, arbScriptedCommands, (setup, seed, source) => {

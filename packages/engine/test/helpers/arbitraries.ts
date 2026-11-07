@@ -54,6 +54,40 @@ const arbDraft = (minLevel: number, maxLevel: number): fc.Arbitrary<Draft> =>
 
 const named = (id: string, d: Draft): CreatureSetup => ({ id, species: d.species, level: d.level, version: d.version, moves: d.moves });
 
+/**
+ * A subagent's training (Ruling 77), each part present or absent: trainedTemperature 0-4, generalization
+ * 0-100, and `foeMask`, which picks its recordedFoes from the opposing creature ids once both sides exist
+ * (bit i = the i-th opposing creature in canonical order; see withRecordedFoes).
+ */
+type Training = { trainedTemperature: Temperature | undefined; generalization: number | undefined; foeMask: number | undefined };
+type SubDraft = Draft & { training: Training };
+
+const arbTraining: fc.Arbitrary<Training> = fc.record({
+  trainedTemperature: fc.option(fc.constantFrom<Temperature>(0, 1, 2, 3, 4), { nil: undefined }),
+  generalization: fc.option(fc.integer({ min: 0, max: 100 }), { nil: undefined }),
+  foeMask: fc.option(fc.integer({ min: 0, max: 0x3f }), { nil: undefined }),
+});
+
+const arbSubDraft = (minLevel: number, maxLevel: number): fc.Arbitrary<SubDraft> =>
+  fc.tuple(arbDraft(minLevel, maxLevel), arbTraining).map(([d, training]) => ({ ...d, training }));
+
+/** A subagent with its trainedTemperature and generalization; its recordedFoes come later (withRecordedFoes). */
+function subagent(id: string, d: SubDraft): CreatureSetup {
+  const c = named(id, d);
+  if (d.training.trainedTemperature !== undefined) c.trainedTemperature = d.training.trainedTemperature;
+  if (d.training.generalization !== undefined) c.generalization = d.training.generalization;
+  return c;
+}
+
+/** Each subagent's foeMask by creature id, carried from the drafts to withRecordedFoes. */
+type FoeMasks = Map<string, number>;
+
+function masksOf(tagged: readonly [string, SubDraft][]): FoeMasks {
+  const out: FoeMasks = new Map();
+  for (const [id, d] of tagged) if (d.training.foeMask !== undefined) out.set(id, d.training.foeMask);
+  return out;
+}
+
 // --- grids -------------------------------------------------------------------------------------
 
 const SP: [number, number][] = [[0, 0], [1, 0], [2, 0]];
@@ -111,57 +145,72 @@ export function buildGrid(t: Template, orchSpecies: string, activeIds: readonly 
 
 // --- sides and setups --------------------------------------------------------------------------
 
-const arbBench = arbDraft(1, 100);
+const arbActive = fc.array(arbSubDraft(1, 100), { maxLength: 2 });
+const arbBench = fc.array(arbSubDraft(1, 100), { maxLength: 3 });
 
-/** A gridless side: orchestrator at any level, 1-2 active, 0-3 bench. */
-const arbGridless = (tag: SideId): fc.Arbitrary<SideSetup> =>
-  fc
-    .record({
-      orch: arbDraft(1, 100),
-      active: fc.array(arbDraft(1, 100), { minLength: 1, maxLength: 2 }),
-      bench: fc.array(arbBench, { maxLength: 3 }),
-    })
-    .map(({ orch, active, bench }) => ({
-      orchestrator: named(`${tag}-orch`, orch),
-      active: active.map((d, i) => named(`${tag}-act${i}`, d)),
-      bench: bench.map((d, i) => named(`${tag}-b${i}`, d)),
-      grid: null,
-      opponentId: tag === 'a' ? 'b' : 'a',
-    }));
+type DraftSide = { side: SideSetup; masks: FoeMasks };
 
-/** A gridded side: a template for its orchestrator's level, its moves from the grid. */
-const arbGridded = (tag: SideId): fc.Arbitrary<SideSetup> =>
+/** The side's subagents, named in canonical order, with the foe masks their recordedFoes are picked by. */
+function subagents(tag: SideId, active: readonly SubDraft[], bench: readonly SubDraft[]): { active: CreatureSetup[]; bench: CreatureSetup[]; masks: FoeMasks } {
+  const a = active.map((d, i): [string, SubDraft] => [`${tag}-act${i}`, d]);
+  const b = bench.map((d, i): [string, SubDraft] => [`${tag}-b${i}`, d]);
+  return { active: a.map(([id, d]) => subagent(id, d)), bench: b.map(([id, d]) => subagent(id, d)), masks: masksOf([...a, ...b]) };
+}
+
+/** A gridless side: orchestrator at any level, 0-2 active (Ruling 77), 0-3 bench. */
+const arbGridless = (tag: SideId): fc.Arbitrary<DraftSide> =>
+  fc.record({ orch: arbDraft(1, 100), active: arbActive, bench: arbBench }).map(({ orch, active, bench }) => {
+    const subs = subagents(tag, active, bench);
+    return {
+      side: { orchestrator: named(`${tag}-orch`, orch), active: subs.active, bench: subs.bench, grid: null, opponentId: tag === 'a' ? 'b' : 'a' },
+      masks: subs.masks,
+    };
+  });
+
+/** A gridded side: a template for its orchestrator's level, its moves from the grid; 0-2 active, 0-3 bench. */
+const arbGridded = (tag: SideId): fc.Arbitrary<DraftSide> =>
   fc
-    .record({
-      template: fc.constantFrom(...GRID_TEMPLATES),
-      orch: arbDraft(1, 1),
-      levelPick: fc.nat(),
-      pick: fc.nat(),
-      active: fc.array(arbDraft(1, 100), { minLength: 1, maxLength: 2 }),
-      bench: fc.array(arbBench, { maxLength: 3 }),
-    })
+    .record({ template: fc.constantFrom(...GRID_TEMPLATES), orch: arbDraft(1, 1), levelPick: fc.nat(), pick: fc.nat(), active: arbActive, bench: arbBench })
     .map(({ template, orch, levelPick, pick, active, bench }) => {
       const level = template.minLevel + (levelPick % (template.maxLevel - template.minLevel + 1));
-      const actives = active.map((d, i) => named(`${tag}-act${i}`, d));
+      const subs = subagents(tag, active, bench);
       return {
-        orchestrator: { ...named(`${tag}-orch`, orch), level, moves: [] },
-        active: actives,
-        bench: bench.map((d, i) => named(`${tag}-b${i}`, d)),
-        grid: buildGrid(template, orch.species, actives.map((c) => c.id), pick),
-        opponentId: tag === 'a' ? 'b' : 'a',
+        side: {
+          orchestrator: { ...named(`${tag}-orch`, orch), level, moves: [] },
+          active: subs.active,
+          bench: subs.bench,
+          grid: buildGrid(template, orch.species, subs.active.map((c) => c.id), pick),
+          opponentId: tag === 'a' ? 'b' : 'a',
+        },
+        masks: subs.masks,
       };
     });
 
 /** Mostly gridless sides (1 in 3 gridded). */
-const arbSide = (tag: SideId): fc.Arbitrary<SideSetup> =>
+const arbSide = (tag: SideId): fc.Arbitrary<DraftSide> =>
   fc.oneof({ arbitrary: arbGridless(tag), weight: 2 }, { arbitrary: arbGridded(tag), weight: 1 });
 
-/** A legal setup from the slice species (validateSetup passes). */
-export const arbLegalSetup: fc.Arbitrary<BattleSetup> = fc.record({
-  a: arbSide('a'),
-  b: arbSide('b'),
-  kind: fc.constantFrom('trainer' as const, 'wild' as const, 'ghost' as const),
-});
+/** Every creature id on a side, in canonical order (orchestrator, active, bench). */
+const idsOf = (side: SideSetup): string[] => [side.orchestrator, ...side.active, ...side.bench].map((c) => c.id);
+
+/** Gives each masked subagent its recordedFoes: the opposing ids whose bit is set in its mask (possibly none). */
+function withRecordedFoes(own: DraftSide, foe: SideSetup): SideSetup {
+  const foes = idsOf(foe);
+  const pick = (c: CreatureSetup): CreatureSetup => {
+    const mask = own.masks.get(c.id);
+    return mask === undefined ? c : { ...c, recordedFoes: foes.filter((_, i) => (mask >>> i) & 1) };
+  };
+  return { ...own.side, active: own.side.active.map(pick), bench: own.side.bench.map(pick) };
+}
+
+/**
+ * A legal setup from the slice species (validateSetup passes). Subagents carry trainedTemperature,
+ * generalization and recordedFoes (subsets of the opposing creature ids), each sometimes absent, and a side
+ * may have no active subagent (Ruling 77).
+ */
+export const arbLegalSetup: fc.Arbitrary<BattleSetup> = fc
+  .record({ a: arbSide('a'), b: arbSide('b'), kind: fc.constantFrom('trainer' as const, 'wild' as const, 'ghost' as const) })
+  .map(({ a, b, kind }) => ({ a: withRecordedFoes(a, b.side), b: withRecordedFoes(b, a.side), kind }));
 
 // --- commands ----------------------------------------------------------------------------------
 
