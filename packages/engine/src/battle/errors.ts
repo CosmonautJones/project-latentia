@@ -138,8 +138,8 @@ function semanticError(state: BattleState, side: SideId, sc: SideCommand): Comma
  * (Ruling 78). Side A is checked first.
  */
 export function validateCommand(state: BattleState, cmd: RoundCommand): CommandError | null {
-  const raw: unknown = cmd;
-  if (!isObject(raw) || Array.isArray(raw)) return err('invalidCommand', 'a round command must be an object');
+  const given: unknown = cmd;
+  if (!isObject(given) || Array.isArray(given)) return err('invalidCommand', 'a round command must be an object');
   if (state.ended) return err('battleEnded', `the battle ended in round ${state.round}`);
   for (const side of SIDES) {
     const raw: unknown = cmd[side];

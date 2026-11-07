@@ -42,9 +42,9 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
 }
 
 /**
- * Resolves one acting entry after its six draws are taken, ActionStarted is emitted and resolveEntry's skip
- * checks (including Rate Limited) have passed (spec §5 step 4): a charge's countdown / release, a Prompt Injected hijack, or
- * hallucination / Drift substitution and re-targeting → MoveUsed → pay context (costSet / costAdd, then
+ * Resolves one acting entry after its six draws are taken, ActionStarted is emitted and resolveEntry's
+ * skip checks (including Rate Limited, Ruling 74) have passed (spec §5 step 4): a charge's countdown /
+ * release, a Prompt Injected hijack, or hallucination / Drift substitution and re-targeting → MoveUsed → pay context (costSet / costAdd, then
  * cost − 1 while Quantized; overflow → Drift; a buff move's tokens carry its buff tag; a release pays
  * nothing) → a charge round stops here (no accuracy, Ruling 13; no Observation, history or lastMoveId,
  * Ruling 55) → the accuracy-step modifiers are taken → fail / failsIf / accuracy (lo D3) → the target's

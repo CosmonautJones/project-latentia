@@ -102,11 +102,6 @@ export function resolveEntry(state: BattleState, entry: ActionEntry, events: Bat
 }
 
 /**
- * Resolve the sorted entries in BattleState.turnOrder (which Rerank may edit), checking for a win after every
- * one (Ruling 32). Once a side is wiped the remaining entries are not resolved and draw nothing. Returns
- * whether the round was cut short; turnOrder is empty afterwards.
- */
-/**
  * resolveEntry, with any EngineInvariantError that escapes it completed by the entry's context (Ruling 78):
  * `action` (its lever kind, else its move id), round, actor and seed, each only where the raiser left it unset.
  */
@@ -124,6 +119,11 @@ function resolveWithContext(state: BattleState, entry: ActionEntry, events: Batt
   }
 }
 
+/**
+ * Resolve the sorted entries in BattleState.turnOrder (which Rerank may edit), checking for a win after every
+ * one (Ruling 32). Once a side is wiped the remaining entries are not resolved and draw nothing. Returns
+ * whether the round was cut short; turnOrder is empty afterwards.
+ */
 function resolveAll(state: BattleState, entries: readonly ActionEntry[], events: BattleEvent[]): boolean {
   const byActor = new Map(entries.map((e) => [e.actor, e]));
   state.turnOrder = entries.map((e) => e.actor);
