@@ -1,15 +1,22 @@
-/** Raised when an engine invariant is violated (unsafe integer, division by zero, ...). */
+/**
+ * Raised when an engine invariant is violated (unsafe integer, division by zero, ...), with the context
+ * spec §7 asks for when known: round, `action` (the resolving entry's move id or lever kind), actor
+ * (canonical index) and seed. Fields the raiser left unset are filled in by the round loop when the error
+ * escapes an entry's resolution (Ruling 78).
+ */
 export class EngineInvariantError extends Error {
   round?: number;
   actor?: number;
   seed?: string;
+  action?: string;
 
-  constructor(message: string, ctx: { round?: number; actor?: number; seed?: string } = {}) {
+  constructor(message: string, ctx: { round?: number; actor?: number; seed?: string; action?: string } = {}) {
     super(message);
     this.name = 'EngineInvariantError';
     if (ctx.round !== undefined) this.round = ctx.round;
     if (ctx.actor !== undefined) this.actor = ctx.actor;
     if (ctx.seed !== undefined) this.seed = ctx.seed;
+    if (ctx.action !== undefined) this.action = ctx.action;
   }
 }
 

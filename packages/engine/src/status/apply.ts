@@ -1,6 +1,6 @@
 import { STATUSES } from '../content/statuses.js';
 import type { StatusId } from '../content/ids.js';
-import type { MoveDef } from '../content/primitives.js';
+import type { MoveDef, StageStat } from '../content/primitives.js';
 import type { BattleEvent } from '../events/types.js';
 import { EngineInvariantError } from '../math/bp.js';
 import { hi } from '../rng/draws.js';
@@ -108,8 +108,11 @@ export function quantizedAdjust(h: StatusHolder): { stageDelta: -1; costDelta: -
   return hasStatus(h, 'quantized') ? { stageDelta: -1, costDelta: -1 } : null;
 }
 
-/** The stage a stat is computed with: the held stage, −1 while Quantized, never below −3. */
-export function statStage(h: StatusHolder, stat: 'compute' | 'robustness' | 'latency'): number {
+/**
+ * The stage a stat is computed with: the held stage, −1 while Quantized (all stats: Compute, Robustness,
+ * Latency, accuracy and evasion, Ruling 78), never below −3.
+ */
+export function statStage(h: StatusHolder, stat: StageStat): number {
   const stage = (h.stages[stat] ?? 0) + (quantizedAdjust(h)?.stageDelta ?? 0);
   return Math.max(-3, stage);
 }

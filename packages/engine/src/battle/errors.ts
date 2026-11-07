@@ -132,8 +132,14 @@ function semanticError(state: BattleState, side: SideId, sc: SideCommand): Comma
   return orch === undefined ? null : checkAction(state, side, orch, sc.action);
 }
 
-/** The first problem with a RoundCommand against `state` (not modified), or null when it is legal. Side A is checked first. */
+/**
+ * The first problem with a RoundCommand against `state` (not modified), or null when it is legal. A round
+ * command that is not a plain object (null, undefined, a number, a string, an array) is `invalidCommand`
+ * (Ruling 78). Side A is checked first.
+ */
 export function validateCommand(state: BattleState, cmd: RoundCommand): CommandError | null {
+  const raw: unknown = cmd;
+  if (!isObject(raw) || Array.isArray(raw)) return err('invalidCommand', 'a round command must be an object');
   if (state.ended) return err('battleEnded', `the battle ended in round ${state.round}`);
   for (const side of SIDES) {
     const raw: unknown = cmd[side];

@@ -6,7 +6,7 @@ import type { BattleEvent } from '../../events/types.js';
 import { hitChance } from '../../math/accuracy.js';
 import { EngineInvariantError } from '../../math/bp.js';
 import { lo, type ActionDraws } from '../../rng/draws.js';
-import { moveCost } from '../../status/apply.js';
+import { moveCost, statStage } from '../../status/apply.js';
 import { extendChain } from '../handoff.js';
 import type { BattleState, CreatureState, Temperature } from '../state.js';
 import { legalTarget } from '../order.js';
@@ -97,8 +97,9 @@ export function effectList(move: MoveDef, t: Temperature): readonly NonPassiveEf
 /**
  * Accuracy (spec §5): a move with accuracy hits when lo(D3, 100) < clamp(MoveAcc ± `accuracy` modifiers +
  * TempMod − 8 × Drift + 10 × (AccStages − EvaStages) [+ 5 Robust vs a foe not in recordedFoes], 30, 100).
- * AccStages include Saliency Map's field stages (combined, clamped −3…+3); `ignoreEvasion` ignores a positive
- * evasion stage; `cannotMiss` always hits. Drift is read after paying.
+ * Both stages are taken after Quantized's −1 (statStage, Ruling 78) — stages are combined first, then the
+ * special rules apply (Ruling 49): AccStages add Saliency Map's field stages (clamped −3…+3);
+ * `ignoreEvasion` ignores a positive evasion stage; `cannotMiss` always hits. Drift is read after paying.
  */
 function accuracyHits(ctx: EffectContext, user: CreatureState, target: CreatureState): boolean {
   if (ctx.move.accuracy === null || ctx.accMods.cannotMiss) return true;
@@ -107,12 +108,12 @@ function accuracyHits(ctx: EffectContext, user: CreatureState, target: CreatureS
     user.generalization >= ROBUST_MIN_GENERALIZATION &&
     target.side !== user.side &&
     !(user.recordedFoes ?? []).includes(target.id);
-  const evasion = target.stages.evasion ?? 0;
+  const evasion = statStage(target, 'evasion');
   const chance = hitChance({
     moveAcc: ctx.move.accuracy + ctx.accMods.accuracy,
     tempMod: temperatureRow(ctx).accMod,
     drift: user.context.drift,
-    accStages: Math.max(STAGE_MIN, Math.min(STAGE_MAX, (user.stages.accuracy ?? 0) + fieldAccuracyStages(ctx.state, user.index))),
+    accStages: Math.max(STAGE_MIN, Math.min(STAGE_MAX, statStage(user, 'accuracy') + fieldAccuracyStages(ctx.state, user.index))),
     evaStages: ctx.accMods.ignoreEvasion ? Math.min(0, evasion) : evasion,
     robustBonus: robust ? ROBUST_ACCURACY_BONUS : 0,
   });

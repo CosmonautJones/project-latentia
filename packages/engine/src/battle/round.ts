@@ -106,13 +106,31 @@ export function resolveEntry(state: BattleState, entry: ActionEntry, events: Bat
  * one (Ruling 32). Once a side is wiped the remaining entries are not resolved and draw nothing. Returns
  * whether the round was cut short; turnOrder is empty afterwards.
  */
+/**
+ * resolveEntry, with any EngineInvariantError that escapes it completed by the entry's context (Ruling 78):
+ * `action` (its lever kind, else its move id), round, actor and seed, each only where the raiser left it unset.
+ */
+function resolveWithContext(state: BattleState, entry: ActionEntry, events: BattleEvent[]): void {
+  try {
+    resolveEntry(state, entry, events);
+  } catch (e) {
+    if (e instanceof EngineInvariantError) {
+      e.action ??= entry.lever?.kind ?? entry.moveId;
+      e.round ??= state.round;
+      e.actor ??= entry.actor;
+      e.seed ??= state.seed;
+    }
+    throw e;
+  }
+}
+
 function resolveAll(state: BattleState, entries: readonly ActionEntry[], events: BattleEvent[]): boolean {
   const byActor = new Map(entries.map((e) => [e.actor, e]));
   state.turnOrder = entries.map((e) => e.actor);
   for (let actor = state.turnOrder.shift(); actor !== undefined; actor = state.turnOrder.shift()) {
     const entry = byActor.get(actor);
     if (entry === undefined) throw new EngineInvariantError(`turn order names creature ${actor} with no entry`, { round: state.round, actor, seed: state.seed });
-    resolveEntry(state, entry, events);
+    resolveWithContext(state, entry, events);
     if (winOutcome(state) !== null) {
       state.turnOrder = [];
       return true;

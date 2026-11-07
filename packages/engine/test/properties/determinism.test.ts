@@ -78,6 +78,21 @@ describe('simulate', () => {
     expect(r.log.rounds.slice(1).every((c) => Object.keys(c).length === 0)).toBe(true);
   });
 
+  it('calls a scripted source as a method, so a class-based source keeps `this` (Ruling 78)', () => {
+    class Counting {
+      readonly kind = 'scripted' as const;
+      calls = 0;
+      next(): RoundCommand {
+        this.calls += 1;
+        return {};
+      }
+    }
+    const source = new Counting();
+    const r = simulate(gridlessSetup(), SEED, source);
+    expect(source.calls).toBe(r.rounds);
+    expect(r.hash).toBe(simulate(gridlessSetup(), SEED, DEFAULTS).hash);
+  });
+
   it('throws SimulateError for autopilot (until B4) and for a command submitRound rejects', () => {
     expect(() => simulate(gridlessSetup(), SEED, { kind: 'autopilot' })).toThrow(SimulateError);
     try {

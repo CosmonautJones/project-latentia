@@ -83,7 +83,8 @@ export function runBattle(
  */
 export function simulate(setup: BattleSetup, seed: SeedHex, commands: CommandSource): BattleResult {
   if (commands.kind === 'autopilot') throw new SimulateError('autopilotUnavailable');
-  const next = commands.kind === 'recorded' ? (state: BattleState) => commands.rounds[state.round] ?? {} : commands.next;
+  // A scripted source is called as a method, so a class-based source keeps its `this` (Ruling 78).
+  const next = commands.kind === 'recorded' ? (state: BattleState) => commands.rounds[state.round] ?? {} : (state: BattleState) => commands.next(state);
   const result = runBattle(setup, seed, next);
   if (!('error' in result)) return result;
   // Neither source runs out (recorded pads with `{}`), so the error is a rejected command.

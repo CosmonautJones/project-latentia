@@ -273,6 +273,24 @@ describe('Quantized', () => {
     expect(softer).toBe(shipIt(d, {}));
   });
 
+  it('its −1 also applies to the accuracy and evasion stages (all stats, Ruling 78)', () => {
+    // Distilled Strike: accuracy 95 at T2 (TempMod 0). Hit when lo(d3, 100) < 95 + 10 × (AccStages − EvaStages).
+    const missed = (s: BattleState, d3lo: number): boolean => run(s, 1, 'distilled-strike', 7, { d3lo }).some((e) => e.type === 'Missed');
+    const quantized = (s: BattleState, i: number): BattleState => {
+      at(s, i).statuses.push({ id: 'quantized', remaining: 4 });
+      return s;
+    };
+    expect(missed(fresh(), 90)).toBe(false);
+    expect(missed(quantized(fresh(), 1), 90)).toBe(true); // a Quantized attacker: AccStage −1 → 85
+    expect(missed(quantized(fresh(), 1), 84)).toBe(false);
+    expect(missed(fresh(), 97)).toBe(true);
+    expect(missed(quantized(fresh(), 7), 97)).toBe(false); // a Quantized target: EvaStage −1 → 105, clamped to 100
+    const floored = quantized(fresh(), 1);
+    at(floored, 1).stages.accuracy = -3; // already at the floor: stays −3 → 65
+    expect(missed(floored, 64)).toBe(false);
+    expect(missed(floored, 65)).toBe(true);
+  });
+
   it('every move cost it pays is cost − 1, never below 0', () => {
     const s = fresh();
     at(s, 2).statuses.push({ id: 'quantized', remaining: 4 });

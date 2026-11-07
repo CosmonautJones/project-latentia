@@ -4,6 +4,7 @@ import { drawAction, drawRoundStart } from '../../src/rng/draws.js';
 import type { RoundCommand } from '../../src/battle/log.js';
 import { submitRound } from '../../src/battle/round.js';
 import type { BattleState } from '../../src/battle/state.js';
+import { EngineInvariantError } from '../../src/math/bp.js';
 import { at, battle, faint } from './helpers.js';
 
 // Test seam: resolveAction is a no-op stub until A12a; individual tests script it to fake a KO.
@@ -222,6 +223,16 @@ describe('submitRound: command errors leave the input untouched', () => {
     expect(s).toEqual(before);
   };
 
+  it.each<[string, unknown]>([
+    ['null', null],
+    ['undefined', undefined],
+    ['a number', 5],
+    ['a string', 'x'],
+    ['an array', []],
+  ])('invalidCommand: a round command that is %s (Ruling 78)', (_name, cmd) => {
+    rejects(battle(), cmd as RoundCommand, 'invalidCommand');
+  });
+
   it('unknownMove: a move the orchestrator does not know', () => {
     rejects(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'ship-it', target: 7 } } }, 'unknownMove');
     rejects(battle(), { b: { temperature: 2, action: { kind: 'move', moveId: 'no-such-move', target: 1 } } }, 'unknownMove');
@@ -335,5 +346,38 @@ describe('submitRound: command errors leave the input untouched', () => {
   it('accepts a legal Directive, Policy Update and Swap (execution arrives in B3 and A12b)', () => {
     ok(battle(), { a: { temperature: 2, action: { kind: 'directive', subagent: 1, moveId: 'ship-it', target: 7 } } });
     ok(battle(), { a: { temperature: 2, action: { kind: 'swap', out: 1, in: 4 } } });
+  });
+});
+
+describe('EngineInvariantError raised while an entry resolves (Ruling 78)', () => {
+  const thrown = (s: BattleState, cmd: RoundCommand): EngineInvariantError => {
+    seam.resolveAction.mockImplementation((_state: BattleState, entry: { actor: number }) => {
+      if (entry.actor === 0) throw new EngineInvariantError('boom'); // raised with no context, like idiv's
+    });
+    try {
+      submitRound(s, cmd);
+    } catch (e) {
+      if (e instanceof EngineInvariantError) return e;
+      throw e;
+    }
+    throw new Error('expected an EngineInvariantError');
+  };
+
+  it('carries the entry\'s move as `action`, with its round, actor and seed', () => {
+    const e = thrown(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'chain-of-thought', target: 7 } } });
+    expect(e).toMatchObject({ action: 'chain-of-thought', round: 1, actor: 0, seed: battle().seed });
+  });
+
+  it('carries a lever entry\'s kind (a Prompt Injected orchestrator\'s Swap goes to resolveAction)', () => {
+    const s = battle();
+    at(s, 0).statuses.push({ id: 'promptInjected', remaining: 1, injected: { moveId: 'chain-of-thought', target: 7 } });
+    expect(thrown(s, { a: { temperature: 2, action: { kind: 'swap', out: 1, in: 3 } } })).toMatchObject({ action: 'swap', actor: 0 });
+  });
+
+  it('keeps an `action` the raiser already set', () => {
+    seam.resolveAction.mockImplementation(() => {
+      throw new EngineInvariantError('boom', { action: 'inner' });
+    });
+    expect(() => submitRound(battle(), {})).toThrow(expect.objectContaining({ action: 'inner' }));
   });
 });
