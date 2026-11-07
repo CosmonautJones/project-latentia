@@ -9,7 +9,7 @@ describe('compact', () => {
     const c = newContext(8);
     pay(c, 8, 1, 0);
     pay(c, 3, 1, 0); // drift 3
-    const ev = compact(c, 2, 0);
+    const { events: ev } = compact(c, 2, 0);
     expect(kinds(c)).toEqual(['summary', 'summary', 'summary', 'cost', 'cost']);
     expect(c.drift).toBe(2);
     expect(ev.map((e) => e.type)).toEqual(['Compacted', 'DriftChanged']);
@@ -28,22 +28,34 @@ describe('compact', () => {
     compact(c, 1, 0);
     expect(kinds(c)).toEqual(['summary', 'summary']);
   });
-  it('emits StageChanged -1 for each summarized buff-tagged token only', () => {
+  it('reports summarized buffs (never emits StageChanged), leaving unsummarized tags alone', () => {
     const c = newContext(8);
     pay(c, 2, 1, 0, { stat: 'atk', stages: 1 });
     pay(c, 4, 1, 0);
     pay(c, 1, 1, 0, { stat: 'spd', stages: 1 }); // 7th: not summarized
-    const ev = compact(c, 3, 1);
-    const stages = ev.filter((e) => e.type === 'StageChanged');
-    expect(stages).toEqual([
-      { type: 'StageChanged', round: 3, target: 1, stat: 'atk', delta: -1, stageAfter: 0 },
-      { type: 'StageChanged', round: 3, target: 1, stat: 'atk', delta: -1, stageAfter: 0 },
-    ]);
+    const r = compact(c, 3, 1);
+    expect(r.events.some((e) => e.type === 'StageChanged')).toBe(false);
+    expect(r.summarizedBuffs).toEqual([{ stat: 'atk', stages: 1 }, { stat: 'atk', stages: 1 }]);
     expect(c.tokens[c.tokens.length - 1]?.buff?.stat).toBe('spd');
+  });
+  it('with 0 tokens emits Compacted 0 -> 0 and changes nothing', () => {
+    const c = newContext(4);
+    const r = compact(c, 1, 0);
+    expect(r.events).toEqual([{ type: 'Compacted', round: 1, target: 0, tokensBefore: 0, tokensAfter: 0 }]);
+    expect(r.summarizedBuffs).toEqual([]);
+    expect(c.tokens).toEqual([]);
+  });
+  it('with 1 token leaves it as is', () => {
+    const c = newContext(4);
+    pay(c, 1, 1, 0, { stat: 'atk', stages: 1 });
+    const r = compact(c, 1, 0);
+    expect(kinds(c)).toEqual(['cost']);
+    expect(r.events).toEqual([{ type: 'Compacted', round: 1, target: 0, tokensBefore: 1, tokensAfter: 1 }]);
+    expect(r.summarizedBuffs).toEqual([]);
   });
   it('emits no DriftChanged at zero Drift', () => {
     const c = newContext(4);
     pay(c, 2, 1, 0);
-    expect(compact(c, 1, 0).map((e) => e.type)).toEqual(['Compacted']);
+    expect(compact(c, 1, 0).events.map((e) => e.type)).toEqual(['Compacted']);
   });
 });

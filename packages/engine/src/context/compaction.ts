@@ -3,11 +3,16 @@ import { changeDrift, type ContextState, type Token } from './store.js';
 
 /**
  * Compact: pairs the six oldest tokens (1,2),(3,4),(5,6) into summaries (an odd last token stays as is),
- * clears 1 Drift. A summarized buff-tagged token emits StageChanged -1 for its stat; `stageAfter` is 0 here
- * because this unit does not track stages (the battle unit applies the delta).
+ * clears 1 Drift. Never emits StageChanged: `summarizedBuffs` lists one entry per summarized buff-tagged token
+ * so the battle unit can emit accurate StageChanged events.
  */
-export function compact(ctx: ContextState, round: number, actor: number): BattleEvent[] {
+export function compact(
+  ctx: ContextState,
+  round: number,
+  actor: number,
+): { events: BattleEvent[]; summarizedBuffs: { stat: string; stages: number }[] } {
   const events: BattleEvent[] = [];
+  const summarizedBuffs: { stat: string; stages: number }[] = [];
   const before = ctx.tokens.length;
   const span = before < 6 ? before : 6;
   const next: Token[] = [];
@@ -15,9 +20,7 @@ export function compact(ctx: ContextState, round: number, actor: number): Battle
   while (i + 1 < span) {
     for (let j = i; j <= i + 1; j++) {
       const buff = (ctx.tokens[j] as Token).buff;
-      if (buff !== undefined) {
-        events.push({ type: 'StageChanged', round, target: actor, stat: buff.stat, delta: -1, stageAfter: 0 });
-      }
+      if (buff !== undefined) summarizedBuffs.push({ stat: buff.stat, stages: buff.stages });
     }
     next.push({ kind: 'summary', seq: ctx.nextSeq });
     ctx.nextSeq += 1;
@@ -27,5 +30,5 @@ export function compact(ctx: ContextState, round: number, actor: number): Battle
   ctx.tokens = next;
   events.push({ type: 'Compacted', round, target: actor, tokensBefore: before, tokensAfter: next.length });
   events.push(...changeDrift(ctx, -1, round, actor));
-  return events;
+  return { events, summarizedBuffs };
 }

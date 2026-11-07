@@ -59,7 +59,7 @@ export type BattleEvent =
   | (Base & { type: 'FieldEffectEnded'; effect: string; side: number })
   | (Base & { type: 'Revealed'; actor: number; target: number; what: string })
   | (Base & { type: 'ContextAdded'; target: number; kind: string; tokens: number; tokensAfter: number })
-  | (Base & { type: 'DriftChanged'; target: number; driftBp: number })
+  | (Base & { type: 'DriftChanged'; target: number; drift: number })
   | (Base & { type: 'Compacted'; target: number; tokensBefore: number; tokensAfter: number })
   | (Base & { type: 'PieceCompacted'; target: number; pieceId: string })
   | (Base & { type: 'ObservationGained'; target: number; observation: string })

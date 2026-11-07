@@ -5,6 +5,14 @@ import { isCompactable } from '../grid/adjacency.js';
 
 export const DRIFT_CAP = 5;
 
+/**
+ * Removal convention: there is no dedicated removal event, so removals emit ContextAdded with a NEGATIVE
+ * `tokens` (the count removed) and one of these kinds. Efficient Answer (freeOldestNonJunk) uses the removed
+ * token's own kind ('cost' | 'observation' | 'summary'). Additions use 'cost' | 'junk' | 'observation'.
+ */
+export const KIND_CLEARED = 'cleared';
+export const KIND_RECOVERED = 'recovered';
+
 export type Token = {
   kind: 'cost' | 'junk' | 'observation' | 'summary';
   buff?: { stat: string; stages: number };
@@ -30,14 +38,14 @@ export function newContext(window: number): ContextState {
   return { window, tokens: [], drift: 0, summarizedPieces: [], removedSlots: [], nextSeq: 0 };
 }
 
-/** Changes Drift by delta (clamped 0..DRIFT_CAP). Emits one DriftChanged only if the value changed. `driftBp` carries the new stack count. */
+/** Changes Drift by delta (clamped 0..DRIFT_CAP). Emits one DriftChanged only if the value changed. `drift` carries the new stack count. */
 export function changeDrift(ctx: ContextState, delta: number, round: number, actor: number): BattleEvent[] {
   let next = ctx.drift + delta;
   if (next > DRIFT_CAP) next = DRIFT_CAP;
   if (next < 0) next = 0;
   if (next === ctx.drift) return [];
   ctx.drift = next;
-  return [{ type: 'DriftChanged', round, target: actor, driftBp: next }];
+  return [{ type: 'DriftChanged', round, target: actor, drift: next }];
 }
 
 export function pushToken(ctx: ContextState, kind: Token['kind'], buff?: Token['buff']): void {
@@ -110,7 +118,7 @@ export function clearAll(ctx: ContextState, round: number, actor: number): Battl
   const events: BattleEvent[] = [];
   const count = ctx.tokens.length;
   ctx.tokens = [];
-  if (count > 0) events.push(added(ctx, 'cleared', -count, round, actor));
+  if (count > 0) events.push(added(ctx, KIND_CLEARED, -count, round, actor));
   events.push(...changeDrift(ctx, -ctx.drift, round, actor));
   return events;
 }
@@ -132,5 +140,5 @@ export function recover(ctx: ContextState, n: number, round: number, actor: numb
   const count = n < ctx.tokens.length ? n : ctx.tokens.length;
   if (count <= 0) return [];
   ctx.tokens.splice(0, count);
-  return [added(ctx, 'recovered', -count, round, actor)];
+  return [added(ctx, KIND_RECOVERED, -count, round, actor)];
 }
