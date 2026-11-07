@@ -1,7 +1,7 @@
 {
   "name": "stochastiparrot-glazed",
   "log": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.2.0",
     "seed": "a5b0b8ebd3ca1eb493139e2561ace9c5",
     "setup": {
       "a": {

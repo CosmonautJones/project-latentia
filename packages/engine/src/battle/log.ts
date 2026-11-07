@@ -16,7 +16,7 @@ export type SideCommand = { temperature: Temperature; action: OrchestratorAction
 export type RoundCommand = { a?: SideCommand; b?: SideCommand };
 
 /** Semver of the rules and content; bumps on any change to them (spec §4). A log records the version that wrote it. */
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 
 /** Inputs only; events are derived by replay (spec §5 "Events, logs and hashing"). */
 export type BattleLog = { engineVersion: string; seed: SeedHex; setup: BattleSetup; rounds: RoundCommand[] };

@@ -214,7 +214,7 @@ describe('replay errors (Rulings 69, 70, 75): typed, never thrown', () => {
     const version = { error: { code: 'version' } };
     expect(replay({ engineVersion: '9.9.9' } as unknown as BattleLog)).toEqual(version);
     expect(replay({ engineVersion: '0.0.9', seed: 4, setup: [], rounds: 'x' } as unknown as BattleLog)).toEqual(version);
-    expect(replay({ ...good(), engineVersion: '0.2.0', setup: { a: 1 } } as unknown as BattleLog)).toEqual(version);
+    expect(replay({ ...good(), engineVersion: '0.1.0', setup: { a: 1 } } as unknown as BattleLog)).toEqual(version);
   });
 
   it('a log whose rounds run out before the battle ends → malformed, never padded (Ruling 70)', () => {

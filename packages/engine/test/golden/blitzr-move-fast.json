@@ -1,7 +1,7 @@
 {
   "name": "blitzr-move-fast",
   "log": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.2.0",
     "seed": "14cc4c5ddaac116ad7e96d46bb74cddb",
     "setup": {
       "a": {

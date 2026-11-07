@@ -1,7 +1,7 @@
 {
   "name": "off-by-wasp-stack-trace",
   "log": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.2.0",
     "seed": "62472151b258f0b4543467ec4ec28bc5",
     "setup": {
       "a": {

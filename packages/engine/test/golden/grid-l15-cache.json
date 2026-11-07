@@ -1,7 +1,7 @@
 {
   "name": "grid-l15-cache",
   "log": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.2.0",
     "seed": "3e6c10aa64ee3c369399d8a5e1981fc7",
     "setup": {
       "a": {

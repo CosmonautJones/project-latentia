@@ -1,7 +1,7 @@
 {
   "name": "nullbeetle-overfit",
   "log": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.2.0",
     "seed": "c82e3bd70ccfdc14ec881b6d15fcbba5",
     "setup": {
       "a": {

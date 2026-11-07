@@ -1,7 +1,7 @@
 {
   "name": "trained-subagents",
   "log": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.2.0",
     "seed": "35f972a691deec58529467c3e15b45a9",
     "setup": {
       "a": {

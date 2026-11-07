@@ -20,7 +20,7 @@ describe('public surface (spec §4, Phase A subset)', () => {
         'validateSetup',
       ].sort(),
     );
-    expect(engine.ENGINE_VERSION).toBe('0.1.0');
+    expect(engine.ENGINE_VERSION).toBe('0.2.0');
   });
 
   it('runs and replays a battle through the public surface alone', () => {

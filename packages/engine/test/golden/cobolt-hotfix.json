@@ -1,7 +1,7 @@
 {
   "name": "cobolt-hotfix",
   "log": {
-    "engineVersion": "0.1.0",
+    "engineVersion": "0.2.0",
     "seed": "515ff8c8027597ecb5718321da0f8efd",
     "setup": {
       "a": {
