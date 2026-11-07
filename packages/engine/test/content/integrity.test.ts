@@ -184,7 +184,7 @@ describe('move data shape', () => {
   it('every primitive kind is used by some move or species passive', () => {
     const used = new Set<string>();
     for (const id of ids) for (const l of [MOVES[id].effects, MOVES[id].wild, MOVES[id].wildT4]) for (const e of allEffects(l)) used.add(e.kind as string);
-    for (const s of SPECIES_IDS) for (const e of allEffects(SPECIES[s].passive ? [SPECIES[s].passive] : [])) used.add(e.kind as string);
+    for (const s of SPECIES_IDS) for (const e of allEffects(SPECIES[s].passives)) used.add(e.kind as string);
     expect([...used].sort()).toEqual([...EFFECT_KINDS].sort());
   });
 
@@ -210,7 +210,7 @@ describe('draw slots', () => {
       }
     }
     for (const s of SPECIES_IDS) {
-      for (const { path, obj } of walk(SPECIES[s].passive ?? [], s)) {
+      for (const { path, obj } of walk(SPECIES[s].passives, s)) {
         if ('chance' in obj) expect((obj.chance as { slot: string }).slot, path).toBe('r2hi');
       }
     }
@@ -272,6 +272,39 @@ describe('bible effect values', () => {
   it('secondary chances', () => {
     expect(MOVES.segfault.effects[1]).toMatchObject({ kind: 'nextActionModifier', who: 'target', modifier: { kind: 'fail' }, chance: { pct: 20, slot: 'd6lo' } });
     expect(MOVES['adversarial-patch'].effects[1]).toMatchObject({ kind: 'applyStatus', status: 'hallucinating', chance: { pct: 30, slot: 'd6lo' }, durationSlot: 'd6hi' });
+  });
+});
+
+describe('review fixes', () => {
+  it('every Search move that deals damage also cures Hallucinating on the target (bible status table)', () => {
+    const search = ids.filter((id) => MOVES[id].type === 'search' && MOVES[id].effects.some((e) => (e.kind === 'damage' && e.who === 'target') || e.kind === 'multiHit'));
+    expect(search.sort()).toEqual(['citation-needed', 'cosine-sniff', 'deep-research', 'retrieval-strike', 'scrape']);
+    for (const id of search) {
+      const cures = MOVES[id].effects.filter((e) => e.kind === 'cure' && e.who === 'target' && e.statuses.includes('hallucinating'));
+      expect(cures, id).toHaveLength(1);
+    }
+  });
+
+  it("/clear skips only the orchestrator's next command", () => {
+    expect(MOVES.clear.effects).toContainEqual({ kind: 'nextActionModifier', who: 'self', modifier: { kind: 'skip', reason: 'cleared', scope: 'orchestratorCommand' } });
+  });
+
+  it('passives are a flat array per species with no nested passives', () => {
+    for (const s of SPECIES_IDS) {
+      expect(Array.isArray(SPECIES[s].passives), s).toBe(true);
+      for (const p of SPECIES[s].passives) {
+        expect(p.kind, s).toBe('passive');
+        for (const e of p.effects) expect(e.kind as string, s).not.toBe('passive');
+      }
+    }
+    expect(SPECIES.tokenibble.passives).toEqual([]);
+  });
+
+  it('Blitzr Move Fast splits into a battleStart priority and an afterFirstAction recoil proc', () => {
+    expect(SPECIES.blitzr.passives).toEqual([
+      { kind: 'passive', trigger: 'battleStart', effects: [{ kind: 'nextActionModifier', who: 'self', modifier: { kind: 'priority', delta: 1 } }] },
+      { kind: 'passive', trigger: 'afterFirstAction', effects: [{ kind: 'damage', who: 'self', pctOfDealt: 10, chance: { pct: 15, slot: 'r2hi' } }] },
+    ]);
   });
 });
 

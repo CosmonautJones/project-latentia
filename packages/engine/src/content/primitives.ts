@@ -85,18 +85,29 @@ export type NextActionMod =
   | { readonly kind: 'priority'; readonly delta: number }
   | { readonly kind: 'costSet'; readonly cells: number }
   | { readonly kind: 'costAdd'; readonly cells: number }
-  | { readonly kind: 'skip'; readonly reason: 'cleared' };
+  /** Skips the holder's next orchestrator command (spec §5 /clear); a no-op when the holder is not an orchestrator. */
+  | { readonly kind: 'skip'; readonly reason: 'cleared'; readonly scope: 'orchestratorCommand' };
 
 export type GuardKind = 'guardrail' | 'refusal' | 'unitTest' | 'captchaWall';
 
-export type PassiveTrigger = 'battleStart' | 'firstMove' | 'roundEnd' | 'statusIncoming' | 'notKoThisRound';
+/**
+ * When a species passive fires.
+ * - `battleStart`: at battle creation. A `nextActionModifier` it applies (e.g. `priority`) is consumed by
+ *   that creature's first action, so a priority modifier takes effect at its first Sort.
+ * - `afterFirstAction`: after the creature's first action of the battle resolves; its effects can read
+ *   that action's dealt damage, and its chance procs read that round's `r2hi`.
+ * - `roundEnd`: at end of every round. `statusIncoming`: when a status is about to be applied to the
+ *   creature. `notKoThisRound`: at end of every round in which the creature was not KO'd.
+ */
+export type PassiveTrigger = 'battleStart' | 'afterFirstAction' | 'roundEnd' | 'statusIncoming' | 'notKoThisRound';
 
 /** Optional on every effect except `passive`: the effect applies only if the check passes. */
 interface Base {
   readonly chance?: Chance;
 }
 
-export type Effect =
+/** Every effect a move or a passive can apply (moves never carry passives). */
+export type NonPassiveEffect =
   /** Damage from the move's power (spec §5 damage), with typed conditional power. */
   | (Base & {
       readonly kind: 'damage';
@@ -167,9 +178,17 @@ export type Effect =
   /** Absorbs the next `count` incoming hits or status applications. */
   | (Base & { readonly kind: 'shield'; readonly who: Who; readonly against: 'hit' | 'status'; readonly count: number })
   /** Moves `stages` of the target's highest positive stage (ties: StageStat order) to the user. */
-  | (Base & { readonly kind: 'stealStage'; readonly who: 'target'; readonly pick: 'highest'; readonly stages: number })
-  /** Species passive: runs `effects` on the trigger (procs carry chance on slot r2hi). */
-  | { readonly kind: 'passive'; readonly trigger: PassiveTrigger; readonly oncePerBattle?: true; readonly effects: readonly Effect[] };
+  | (Base & { readonly kind: 'stealStage'; readonly who: 'target'; readonly pick: 'highest'; readonly stages: number });
+
+/** Species passive: runs `effects` on the trigger (chance procs use slot r2hi). Passives never nest. */
+export interface Passive {
+  readonly kind: 'passive';
+  readonly trigger: PassiveTrigger;
+  readonly oncePerBattle?: true;
+  readonly effects: readonly Exclude<Effect, { kind: 'passive' }>[];
+}
+
+export type Effect = NonPassiveEffect | Passive;
 
 export type EffectKind = Effect['kind'];
 
@@ -205,9 +224,9 @@ export interface MoveDef {
   readonly cost: number;
   readonly accuracy: number | null;
   readonly priority: number;
-  readonly effects: readonly Effect[];
-  readonly wild?: readonly Effect[];
-  readonly wildT4?: readonly Effect[];
+  readonly effects: readonly NonPassiveEffect[];
+  readonly wild?: readonly NonPassiveEffect[];
+  readonly wildT4?: readonly NonPassiveEffect[];
   readonly universal?: true;
   readonly orchestratorOnly?: true;
 }

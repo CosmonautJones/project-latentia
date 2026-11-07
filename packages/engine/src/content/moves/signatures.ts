@@ -62,7 +62,10 @@ export const SIGNATURE_MOVES = {
   'cosine-sniff': {
     id: 'cosine-sniff', name: 'Cosine Sniff', type: 'search', target: 'foeMostDamage',
     power: 70, cost: 2, accuracy: 90, priority: 0,
-    effects: [{ kind: 'damage', who: 'target' }],
+    effects: [
+      { kind: 'damage', who: 'target' },
+      { kind: 'cure', who: 'target', statuses: ['hallucinating'] }, // any Search hit cures Hallucinating
+    ],
   },
   // placeholder signature — Slopling: "six-fingered images"
   'six-fingers': {
@@ -98,6 +101,7 @@ export const SIGNATURE_MOVES = {
     effects: [
       { kind: 'damage', who: 'target' },
       { kind: 'stealStage', who: 'target', pick: 'highest', stages: 1 },
+      { kind: 'cure', who: 'target', statuses: ['hallucinating'] }, // any Search hit cures Hallucinating
     ],
   },
   // placeholder signature — Vibrat: Accept All "massive damage, then spawns a wild bug" (v1: Junk tokens, spec §3)

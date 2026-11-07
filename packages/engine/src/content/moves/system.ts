@@ -19,7 +19,7 @@ export const SYSTEM_MOVES = {
       { kind: 'tokens', who: 'self', op: 'clear' },
       { kind: 'stage', who: 'self', op: 'clear', which: 'all' },
       { kind: 'cure', who: 'self', statuses: ['drift'] },
-      { kind: 'nextActionModifier', who: 'self', modifier: { kind: 'skip', reason: 'cleared' } },
+      { kind: 'nextActionModifier', who: 'self', modifier: { kind: 'skip', reason: 'cleared', scope: 'orchestratorCommand' } },
     ],
   },
   guardrail: {

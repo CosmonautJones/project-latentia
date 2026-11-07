@@ -1,6 +1,6 @@
 import type { MoveDef } from '../primitives.js';
 
-// Search — bible "57-move launch list".
+// Search — bible "57-move launch list". Every Search hit also cures Hallucinating (bible status table).
 export const SEARCH_MOVES = {
   'ground-truth': {
     id: 'ground-truth', name: 'Ground Truth', type: 'search', target: 'none',
@@ -16,6 +16,7 @@ export const SEARCH_MOVES = {
     effects: [
       { kind: 'charge', who: 'self', rounds: 1, telegraphed: false, hitWhileChargingPower: 0 },
       { kind: 'damage', who: 'target', crit: { kind: 'always', when: { kind: 'targetWeakToMove' } } },
+      { kind: 'cure', who: 'target', statuses: ['hallucinating'] },
     ],
   },
   'citation-needed': {
@@ -34,7 +35,10 @@ export const SEARCH_MOVES = {
   'retrieval-strike': {
     id: 'retrieval-strike', name: 'Retrieval Strike', type: 'search', target: 'foe',
     power: 70, cost: 1, accuracy: 100, priority: 0,
-    effects: [{ kind: 'damage', who: 'target', ignoreUserComputeDrops: true }],
+    effects: [
+      { kind: 'damage', who: 'target', ignoreUserComputeDrops: true },
+      { kind: 'cure', who: 'target', statuses: ['hallucinating'] },
+    ],
   },
   'fact-check': {
     id: 'fact-check', name: 'Fact Check', type: 'search', target: 'foe',
