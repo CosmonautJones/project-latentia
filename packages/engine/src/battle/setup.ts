@@ -243,6 +243,7 @@ function buildCreature(c: CreatureSetup, index: number, side: SideId, place: Pla
     nextActionMods: [],
     actedThisBattle: false,
     lastMoveId: null,
+    roundStart: null,
   };
 }
 

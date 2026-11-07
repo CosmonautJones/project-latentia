@@ -1,6 +1,7 @@
 import type { NextActionMod } from '../content/primitives.js';
 import type { ContextState } from '../context/store.js';
 import type { GridLayout } from '../grid/model.js';
+import type { RoundStartDraws } from '../rng/draws.js';
 import type { SeedHex } from '../rng/seed.js';
 import type { RngState } from '../rng/sfc32.js';
 import type { StatusHolder } from '../status/apply.js';
@@ -65,6 +66,11 @@ export type CreatureState = StatusHolder & {
   nextActionMods: NextActionMod[];
   actedThisBattle: boolean;
   lastMoveId: string | null;
+  /**
+   * This round's R1/R2 (spec §5 draw table), taken for every creature at round start; null before round 1.
+   * R1 low 16 bits = tie-break, `hi(r1, 2)` = seeded coin; `lo(r2, n)` = random-foe pick, `hi(r2, 100)` = passive proc.
+   */
+  roundStart: RoundStartDraws | null;
 };
 
 /**
