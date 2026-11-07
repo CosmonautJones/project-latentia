@@ -41,7 +41,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm --filter @latentia/engine exec playwright install --with-deps ${{ matrix.browser }}
       - run: pnpm test:browser --passWithNoTests
         env:
           BROWSER: ${{ matrix.browser }}
