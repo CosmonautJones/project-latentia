@@ -1,6 +1,7 @@
 import type { NextActionMod } from '../content/primitives.js';
 import type { ContextState } from '../context/store.js';
 import type { GridLayout } from '../grid/model.js';
+import type { SeedHex } from '../rng/seed.js';
 import type { RngState } from '../rng/sfc32.js';
 import type { StatusHolder } from '../status/apply.js';
 
@@ -44,7 +45,11 @@ export type CreatureState = StatusHolder & {
   hp: number;
   maxHp: number;
   stats: Stats;
-  /** Known move ids, in setup order. */
+  /**
+   * Usable move ids: the listed moves (a gridded orchestrator's come from its grid: species signature,
+   * then each Skill and graft piece's moveId in pieces order), then the universals compact, clear,
+   * guardrail. Directive and Policy Update are command levers, never moves.
+   */
   moves: string[];
   /** Orchestrator: window = grid headroom (species Ctx when the side has no grid). Subagent: window = species Ctx. */
   context: ContextState;
@@ -62,6 +67,16 @@ export type CreatureState = StatusHolder & {
   lastMoveId: string | null;
 };
 
+/**
+ * One active slot, indexed by `CreatureState.activeSlot`. `occupant` is the canonical index of the
+ * creature in it, or null when empty. On a gridded side `pieceId` is the bound Subagent Slot piece; a
+ * gridded slot with `pieceId: null` has no piece and does not exist (it is never filled). On a gridless
+ * side every `pieceId` is null and both slots exist. A slot is removed for the rest of the battle iff its
+ * `pieceId` is in the orchestrator's `context.removedSlots` (the single source of truth). Later tasks
+ * update `occupant` on Swap, Early Exit and force-bench; bench auto-fill skips removed and absent slots.
+ */
+export type SlotState = { pieceId: string | null; occupant: number | null };
+
 export type SideState = {
   /** A copy of the setup grid; loadout pieces are fixed at battle start. */
   grid: GridLayout | null;
@@ -70,8 +85,8 @@ export type SideState = {
   opponentId: string;
   /** True once the orchestrator is KO'd (spec §5 Headless Mode). */
   headless: boolean;
-  /** Subagent Slot piece ids removed from the active slots for the rest of the battle. */
-  removedSlots: string[];
+  /** Always length 2. */
+  slots: SlotState[];
 };
 
 /** A timed field effect; the shape is defined when timedField lands (A13). Empty until then. */
@@ -82,6 +97,8 @@ export type Outcome = SideId | 'draw';
 export type BattleState = {
   /** 0 before the first round. */
   round: number;
+  /** The battle seed, kept for EngineInvariantError reports. */
+  seed: SeedHex;
   rng: RngState;
   /** Index = canonical index. */
   creatures: CreatureState[];
