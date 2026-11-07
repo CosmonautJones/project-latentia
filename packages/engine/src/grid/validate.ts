@@ -1,4 +1,4 @@
-import { cellsOf, HEADROOM_FLOOR, rotateShape, type GridLayout, type PieceKind, type PlacedPiece, type Rotation } from './model.js';
+import { cellsOf, gridSizeFor, HEADROOM_FLOOR, rotateShape, type GridLayout, type PieceKind, type PlacedPiece, type Rotation } from './model.js';
 
 export interface GridError {
   readonly code: string;
@@ -64,10 +64,14 @@ function isConnected(shape: Shape): boolean {
 }
 
 function shapeError(piece: PlacedPiece): string | undefined {
+  // Inputs may be untyped data: guard before touching any field.
+  if (piece.kind !== 'graft' && !Object.prototype.hasOwnProperty.call(CANONICAL, piece.kind)) return `unknown piece kind ${String(piece.kind)}`;
+  if (!Array.isArray(piece.shape)) return 'shape must be an array of cells';
+  if (!Array.isArray(piece.anchor) || piece.anchor.length !== 2) return 'anchor must be an [x, y] array';
   if (piece.shape.length === 0) return 'shape has no cells';
   for (let i = 0; i < piece.shape.length; i++) {
-    const c = piece.shape[i] as readonly [number, number];
-    if (!Number.isSafeInteger(c[0]) || !Number.isSafeInteger(c[1])) return 'shape offsets must be integers';
+    const c = piece.shape[i] as readonly [number, number] | undefined;
+    if (!Array.isArray(c) || c.length !== 2 || !Number.isSafeInteger(c[0]) || !Number.isSafeInteger(c[1])) return 'shape offsets must be integer [x, y] pairs';
   }
   if (!Number.isSafeInteger(piece.anchor[0]) || !Number.isSafeInteger(piece.anchor[1])) return 'anchor must be integers';
   if (piece.rotation !== 0 && piece.rotation !== 90 && piece.rotation !== 180 && piece.rotation !== 270) {
@@ -88,7 +92,13 @@ export function validateGrid(grid: GridLayout, level: number): ValidationResult 
     errors.push({ code, path, message });
   };
 
-  void level; // size is supplied by the caller; the level is accepted for interface stability.
+  const isDim = (n: number): boolean => Number.isSafeInteger(n) && n > 0;
+  if (!isDim(grid.width)) add('gridSize', 'width', `width must be a positive integer, got ${String(grid.width)}`);
+  if (!isDim(grid.height)) add('gridSize', 'height', `height must be a positive integer, got ${String(grid.height)}`);
+  const expected = gridSizeFor(level);
+  if (isDim(grid.width) && isDim(grid.height) && (grid.width !== expected.width || grid.height !== expected.height)) {
+    add('gridSize', 'width', `level ${level} requires a ${expected.width}x${expected.height} grid, got ${grid.width}x${grid.height}`);
+  }
   const occupied = new Map<string, string>();
   const seenIds = new Set<string>();
   const reported = new Set<string>();

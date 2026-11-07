@@ -25,6 +25,19 @@ describe('grid sizes', () => {
   });
 });
 
+describe('validateGrid grid size', () => {
+  it('enforces the size for the level', () => {
+    expect(codes(validateGrid(grid(6, 6, [piece('sp', 'systemPrompt', 0, 0)]), 1))).toEqual(['gridSize']);
+    expect(validateGrid(grid(5, 4, [piece('sp', 'systemPrompt', 0, 0)]), 4).ok).toBe(true);
+    expect(codes(validateGrid(grid(50, 50, [piece('sp', 'systemPrompt', 0, 0)]), 1))).toEqual(['gridSize']);
+  });
+  it('rejects non-positive-integer dimensions', () => {
+    expect(codes(validateGrid(grid(Number.NaN, 4, [piece('sp', 'systemPrompt', 0, 0)]), 1))).toContain('gridSize');
+    expect(codes(validateGrid(grid(4, 0, [piece('sp', 'systemPrompt', 0, 0)]), 1))).toContain('gridSize');
+    expect(codes(validateGrid(grid(4.5, 4, [piece('sp', 'systemPrompt', 0, 0)]), 1))).toContain('gridSize');
+  });
+});
+
 describe('validateGrid', () => {
   it('accepts a legal 4x4 loadout with headroom 5', () => {
     expect(validateGrid(grid(4, 4, base()), 1)).toEqual({ ok: true, errors: [] });
@@ -87,6 +100,24 @@ describe('validateGrid', () => {
     expect(validateGrid(grid(4, 4, [piece('sp', 'systemPrompt', 0, 0), vertical]), 1).ok).toBe(true);
     const odd = { ...piece('k', 'skill', 0, 1), rotation: 45 } as unknown as PlacedPiece;
     expect(codes(validateGrid(grid(4, 4, [piece('sp', 'systemPrompt', 0, 0), odd]), 1))).toEqual(['shape']);
+  });
+
+  it('does not throw on malformed pieces; reports a shape error and keeps validating', () => {
+    const sp = piece('sp', 'systemPrompt', 0, 0);
+    const mk = (over: Record<string, unknown>) => ({ ...piece('k', 'tool', 0, 1), ...over }) as unknown as PlacedPiece;
+    const cases: PlacedPiece[] = [
+      mk({ kind: 'banana' }),
+      mk({ kind: 'toString' }),
+      mk({ shape: undefined }),
+      mk({ anchor: undefined }),
+    ];
+    for (const bad of cases) {
+      const r = validateGrid(grid(4, 4, [sp, bad]), 1);
+      expect(codes(r)).toEqual(['shape']);
+    }
+    // the rest of the grid is still validated: a second System Prompt is reported alongside the shape error
+    const both = validateGrid(grid(4, 4, [sp, mk({ kind: 'banana' }), piece('sp2', 'systemPrompt', 0, 2)]), 1);
+    expect(codes(both)).toEqual(['shape', 'systemPromptCount']);
   });
 
   it('validates every species graft shape and rejects disconnected or oversize grafts', () => {
