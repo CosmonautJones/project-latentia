@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { moveDef } from '../../../src/content/moves.js';
+import type { MoveDef } from '../../../src/content/primitives.js';
 import { typeMultiplierBp } from '../../../src/content/types.js';
-import { at } from '../helpers.js';
+import { effectContext } from '../../../src/battle/effects/context.js';
+import { guardCheck } from '../../../src/battle/effects/guard.js';
+import { submitRound } from '../../../src/battle/round.js';
+import type { BattleEvent } from '../../../src/events/types.js';
+import { at, battle, draws } from '../helpers.js';
 import { dealt, expected, fresh, ofType, run } from './kit.js';
 
 // 1 a-act1 blitzr (speed) guards; 7 b-act1 blitzr and 8 b-act2 forkling (open) attack it.
@@ -23,6 +29,33 @@ describe('Captcha Wall', () => {
     const other = run(s, 8, 'hard-fork', 1);
     expect(ofType(other, 'GuardResolved')).toEqual([{ round: 1, type: 'GuardResolved', actor: 8, target: 1, kind: 'captchaWall', blocked: false }]);
     expect(dealt(other)).toEqual([expected(s, 8, 1, 70, { type: OPEN_ON_SPEED, native: 12500, roll: 10000, guard: 5000 })]);
+  });
+});
+
+describe('Captcha Wall blocks every Speed-type move, of any power (Ruling 56)', () => {
+  it('a crafted Speed status move aimed at the guarded creature is blocked as a miss', () => {
+    const s = fresh();
+    run(s, 1, 'captcha-wall', 1);
+    const throttle = moveDef('throttle') as MoveDef;
+    const speedStatus: MoveDef = { ...throttle, id: 'speed-throttle', type: 'speed' };
+    const events: BattleEvent[] = [];
+    const ctx = effectContext(s, 7, 1, speedStatus, draws(), 2, events);
+    expect(guardCheck(ctx, speedStatus.effects, at(s, 7), at(s, 1))).toBe(false);
+    expect(events).toEqual([
+      { round: 1, type: 'GuardResolved', actor: 7, target: 1, kind: 'captchaWall', blocked: true },
+      { round: 1, type: 'Missed', actor: 7, target: 1 },
+    ]);
+    const plainStatus = effectContext(s, 7, 1, throttle, draws(), 2, []);
+    expect(guardCheck(plainStatus, throttle.effects, at(s, 7), at(s, 1))).toBe(true); // a non-Speed status move passes
+  });
+});
+
+describe('guards are cleared at end of round (Ruling 56)', () => {
+  it('leaves no guard object on any creature after the round', () => {
+    const r = submitRound(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'guardrail', target: 0 } } });
+    if ('error' in r) throw new Error(r.error.message);
+    expect(r.events.some((e) => e.type === 'MoveUsed' && e.actor === 0 && e.moveId === 'guardrail')).toBe(true);
+    expect(r.state.creatures.map((c) => c.guard)).toEqual(r.state.creatures.map(() => null));
   });
 });
 

@@ -454,6 +454,7 @@ describe('createBattle', () => {
       stages: { compute: 0, robustness: 0, latency: 0, accuracy: 0, evasion: 0 },
       guardStreak: 0,
       guard: null,
+      leftFieldRound: null,
       fainted: false,
       deck: null,
       generalization: null,

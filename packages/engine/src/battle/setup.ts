@@ -235,6 +235,7 @@ function buildCreature(c: CreatureSetup, index: number, side: SideId, place: Pla
     context: newContext(window),
     guardStreak: 0,
     guard: null,
+    leftFieldRound: null,
     fainted: false,
     deck: c.deck === undefined ? null : structuredClone(c.deck),
     generalization: c.generalization ?? null,

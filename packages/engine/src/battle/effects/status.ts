@@ -4,6 +4,7 @@ import { STATUSES } from '../../content/statuses.js';
 import { changeDrift } from '../../context/store.js';
 import { applyStatus, cureStatus, rollDuration, type StatusInstance } from '../../status/apply.js';
 import { aimsAtUser, lowestHpOnField } from '../order.js';
+import { defaultTarget } from '../targeting.js';
 import type { BattleState, CreatureState } from '../state.js';
 import { creature, recipients, type EffectContext } from './context.js';
 
@@ -13,7 +14,8 @@ export type CureEffect = Extract<NonPassiveEffect, { kind: 'cure' }>;
 /**
  * The default Prompt Injected choice (spec §5 Statuses): the victim's highest-power move (ties → first in
  * its moveset; its first move when none has power) aimed at its lowest-HP on-field ally other than itself
- * (HP ties → lowest index), or at itself when it has none on the field; a self/none move aims at the victim.
+ * (HP ties → lowest index). With no such ally, the move's own default selector picks (Ruling 56), and only
+ * if that finds nobody the victim itself; a self/none move aims at the victim.
  */
 export function defaultInjection(state: BattleState, victim: CreatureState): { moveId: string; target: number } {
   let moveId = victim.moves[0] ?? 'compact';
@@ -25,9 +27,10 @@ export function defaultInjection(state: BattleState, victim: CreatureState): { m
       moveId = id;
     }
   }
-  if (aimsAtUser(moveDef(moveId))) return { moveId, target: victim.index };
+  const def = moveDef(moveId);
+  if (def === null || aimsAtUser(def)) return { moveId, target: victim.index };
   const ally = lowestHpOnField(state, (c) => c.side === victim.side && c.index !== victim.index);
-  return { moveId, target: (ally ?? victim).index };
+  return { moveId, target: ally?.index ?? defaultTarget(state, victim, def) ?? victim.index };
 }
 
 /** The inflicter's choice: the command's `injection` when the victim knows its move, otherwise the default. */

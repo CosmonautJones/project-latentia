@@ -111,6 +111,20 @@ function checkAction(state: BattleState, side: SideId, orch: CreatureState, acti
   }
 }
 
+/**
+ * invalidCommand (Ruling 54): a move command's `injection` must name a known move and a canonical index
+ * (a safe integer within the roster). Checked for headless sides too, so NaN or fractions never reach state.
+ */
+function injectionError(state: BattleState, sc: SideCommand): CommandError | null {
+  if (sc.action.kind !== 'move' || sc.action.injection === undefined) return null;
+  const { moveId, target } = sc.action.injection;
+  if (moveDef(moveId) === null) return err('invalidCommand', `injection: unknown move ${moveId}`);
+  if (!Number.isSafeInteger(target) || target < 0 || target >= state.creatures.length) {
+    return err('invalidCommand', `injection: target ${String(target)} is not a canonical index`);
+  }
+  return null;
+}
+
 /** A headless side's command is accepted and ignored entirely (Ruling 36): only its shape is checked. */
 function semanticError(state: BattleState, side: SideId, sc: SideCommand): CommandError | null {
   if (isHeadless(state, side)) return null;
@@ -124,7 +138,7 @@ export function validateCommand(state: BattleState, cmd: RoundCommand): CommandE
   for (const side of SIDES) {
     const raw: unknown = cmd[side];
     if (raw === undefined) continue;
-    const e = shapeError(raw) ?? semanticError(state, side, raw as SideCommand);
+    const e = shapeError(raw) ?? injectionError(state, raw as SideCommand) ?? semanticError(state, side, raw as SideCommand);
     if (e !== null) return { code: e.code, message: `side ${side}: ${e.message}` };
   }
   return null;

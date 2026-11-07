@@ -79,8 +79,13 @@ export type CreatureState = StatusHolder & {
   context: ContextState;
   /** Consecutive guard uses before the next action (spec §5 "Guards"). */
   guardStreak: number;
-  /** The guard raised this round, if any (stale once `guard.round` is past). */
+  /** The guard raised this round, if any; cleared at end of round. */
   guard: GuardState | null;
+  /**
+   * The round this creature last left the field (Swap, Early Exit, force-bench), or null. Its entry that
+   * round is skipped as 'leftField' even if it is brought back before the entry resolves (Ruling 52).
+   */
+  leftFieldRound: number | null;
   fainted: boolean;
   deck: Deck | null;
   generalization: number | null;

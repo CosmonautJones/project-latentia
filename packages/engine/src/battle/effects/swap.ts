@@ -13,11 +13,15 @@ export type FieldSlotEffect = Extract<NonPassiveEffect, { kind: 'reorder'; what:
 /** Leaving the field cures these (bible: Overfit "switching out cures it", Deprecated "swapping out clears it"; Ruling 19). */
 const CURED_ON_LEAVING: readonly StatusId[] = ['overfit', 'deprecated', 'promptInjected'];
 
-/** A creature leaving the field: the statuses above are cured (StatusCured), and its charge and guard drop. */
+/**
+ * A creature leaving the field: the statuses above are cured (StatusCured), its charge and guard drop, and
+ * `leftFieldRound` records the round so it cannot act again this round if brought back (Ruling 52).
+ */
 function leaveField(c: CreatureState, round: number, events: BattleEvent[]): void {
   for (const id of CURED_ON_LEAVING) events.push(...cureStatus(c, id, round));
   c.charging = null;
   c.guard = null;
+  c.leftFieldRound = round;
 }
 
 function slotIndexOf(state: BattleState, c: CreatureState): 0 | 1 {

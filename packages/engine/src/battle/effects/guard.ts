@@ -36,7 +36,7 @@ export function applyGuard(ctx: EffectContext, effect: GuardEffect): void {
   };
 }
 
-/** The holder's guard if it is up this round and `user` is a foe; null otherwise (guards ignore allies). */
+/** The holder's guard if it was raised this round and `user` is a foe; null otherwise (guards ignore allies). */
 function activeGuard(ctx: EffectContext, user: CreatureState, holder: CreatureState): GuardState | null {
   const g = holder.guard;
   return g !== null && g.round === ctx.round && holder.side !== user.side && !holder.fainted ? g : null;
@@ -62,7 +62,8 @@ function reflect(ctx: EffectContext, effects: readonly NonPassiveEffect[], user:
  * The target's guard meets a landed move from a foe (after accuracy, before the effect list). Returns
  * whether the effect list still applies. GuardResolved { actor: attacker, target: holder, blocked } is
  * emitted whenever the guard acts:
- * - Captcha Wall vs an attack of its blocked type (Speed): blocked, and it counts as a miss (Missed).
+ * - Captcha Wall vs any move of its blocked type (Speed), whatever its power: blocked, and it counts as a
+ *   miss (Missed).
  * - Refusal vs an attack while its limit lasts: blocked (the limit is used up).
  * - Guardrail vs a status move: blocked (Prompt Injected included).
  * - Unit Test vs a move that hit the holder last round: blocked, and reflected at reflectBp to the attacker.
@@ -75,7 +76,9 @@ export function guardCheck(ctx: EffectContext, effects: readonly NonPassiveEffec
   const resolved = (blocked: boolean) => ctx.events.push({ round: ctx.round, type: 'GuardResolved', actor: user.index, target: holder.index, kind: g.kind, blocked });
   const attack = isAttack(ctx.move);
   const block = g.blockAttacks;
-  if (attack && block !== null && (block.ofType === null || block.ofType === ctx.move.type) && block.remaining !== 0) {
+  // A typed block (Captcha Wall) stops every move of that type, any power (Ruling 56); an untyped one (Refusal) only attacks.
+  const blockable = block !== null && (block.ofType === null ? attack : block.ofType === ctx.move.type);
+  if (block !== null && blockable && block.remaining !== 0) {
     if (block.remaining !== null) block.remaining -= 1;
     resolved(true);
     if (block.ofType !== null) ctx.events.push({ round: ctx.round, type: 'Missed', actor: user.index, target: holder.index });

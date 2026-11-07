@@ -4,6 +4,7 @@ import { EngineInvariantError } from '../math/bp.js';
 import { drawAction, drawRoundStart } from '../rng/draws.js';
 import { tickStatuses } from '../status/tick.js';
 import { knockOut } from './effects/damage.js';
+import { heldInjection } from './effects/status.js';
 import { firstLivingBench, forceBench, swapCreatures } from './effects/swap.js';
 import { autofillBench, checkEnd, winOutcome } from './end.js';
 import { validateCommand, type CommandError } from './errors.js';
@@ -34,13 +35,16 @@ function startRound(state: BattleState, cmd: RoundCommand, events: BattleEvent[]
   }
 }
 
-/** Why a planned entry cannot act now: a KO'd orchestrator is headless; a subagent may be KO'd or off the field. */
+/**
+ * Why a planned entry cannot act now: a KO'd orchestrator is headless; a subagent may be KO'd, off the
+ * field, or have left the field earlier this round (even if since brought back, Ruling 52).
+ */
 function skipReason(state: BattleState, entry: ActionEntry): SkipReason | null {
   const c = state.creatures[entry.actor];
   if (c === undefined) throw new EngineInvariantError(`entry for unknown creature ${entry.actor}`, { round: state.round, actor: entry.actor, seed: state.seed });
   if (c.isOrchestrator) return c.fainted ? 'headless' : null;
   if (c.fainted) return 'fainted';
-  return holdsLiveSlot(state, c) ? null : 'leftField';
+  return holdsLiveSlot(state, c) && c.leftFieldRound !== state.round ? null : 'leftField';
 }
 
 /** /clear (Ruling 11): an orchestrator holding the `skip` modifier loses this entry, which uses the modifier up. */
@@ -54,12 +58,15 @@ function takeClearedSkip(c: CreatureState): boolean {
 /**
  * Resolve one entry (spec §5 step 4): the six action draws are taken before anything is decided and
  * recorded on ActionStarted, whether or not the creature acts. A skipped creature (headless, KO'd, off
- * the field, or an orchestrator cleared by /clear) then emits ActionSkipped. A lever other than `none`
- * breaks the enemy's Handoff chains and resets the guard streak; Swap exchanges its creatures (a no-op if
- * they are no longer in place); Directive and Policy Update (B3) are not yet executed. A `none` command
- * emits nothing further. Everything else goes to resolveAction.
+ * the field, or an orchestrator cleared by /clear) then emits ActionSkipped. An orchestrator holding Prompt
+ * Injected goes to resolveAction whatever it was commanded — a move, any lever or `none` — where (unless
+ * Rate Limited skips it) the hijack replaces the action and consumes the status (Ruling 53). Otherwise a
+ * lever other than `none` breaks the enemy's Handoff chains and resets the guard streak; Swap exchanges
+ * its creatures (a no-op if they are no longer in place); Directive and Policy Update (B3) are not yet
+ * executed. A `none` command emits nothing further. Everything else goes to resolveAction.
+ * Exported for tests that drive entries one at a time.
  */
-function resolveEntry(state: BattleState, entry: ActionEntry, events: BattleEvent[]): void {
+export function resolveEntry(state: BattleState, entry: ActionEntry, events: BattleEvent[]): void {
   const draws = drawAction(state.rng);
   events.push({ round: state.round, type: 'ActionStarted', actor: entry.actor, draws: { ...draws } });
   const reason = skipReason(state, entry);
@@ -68,7 +75,7 @@ function resolveEntry(state: BattleState, entry: ActionEntry, events: BattleEven
     events.push({ round: state.round, type: 'ActionSkipped', actor: entry.actor, reason: reason ?? 'cleared' });
     return;
   }
-  if (entry.lever !== undefined) {
+  if (entry.lever !== undefined && heldInjection({ state, round: state.round }, c.index) === null) {
     if (entry.lever.kind === 'none') return;
     breakEnemyChains(state, c.side);
     c.guardStreak = 0;
@@ -121,7 +128,7 @@ function recoverBench(state: BattleState, events: BattleEvent[]): void {
 
 /**
  * End of round (spec §5 steps 5-6): status ticks and Deprecated, bench recovery, bench auto-fill — all
- * skipped when the round was cut short by a wipe — then RoundEnd, then the win check and round-50 cap,
+ * skipped when the round was cut short by a wipe — then every guard is cleared, then RoundEnd, then the win check and round-50 cap,
  * which emit at most one BattleEnd. (Timed field effects tick here from A13.)
  */
 function endRound(state: BattleState, cutShort: boolean, events: BattleEvent[]): void {
@@ -130,6 +137,7 @@ function endRound(state: BattleState, cutShort: boolean, events: BattleEvent[]):
     recoverBench(state, events);
     events.push(...autofillBench(state, state.round));
   }
+  for (const c of state.creatures) c.guard = null; // guards last only the round they were raised in
   events.push({ round: state.round, type: 'RoundEnd' });
   events.push(...checkEnd(state));
 }

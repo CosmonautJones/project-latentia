@@ -174,7 +174,7 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
  * Rate Limited skip check (lo D2) → a charge's countdown / release, a Prompt Injected hijack, or
  * hallucination / Drift substitution and re-targeting → MoveUsed → pay context (cost − 1 while Quantized;
  * overflow → Drift; a buff move's tokens carry its buff tag; a release pays nothing) → a charge round stops
- * here (no accuracy, Ruling 13) → failsIf / accuracy (lo D3) → the target's guard → effects in list order
+ * here (no accuracy, Ruling 13; no Observation, history or lastMoveId, Ruling 55) → failsIf / accuracy (lo D3) → the target's guard → effects in list order
  * (crit lo D4, roll lo D5, hit count hi D5, riders D6) → bookkeeping → guard streak → history. An action
  * that gets past the skip checks breaks the enemy's Handoff chains. Uses only the six given draws.
  */
@@ -203,10 +203,13 @@ export function resolveAction(state: BattleState, entry: ActionEntry, draws: Act
   if (plan.release !== null) ctx.powerAdd = plan.release.powerDelta;
   const target = creature(ctx, targetIndex);
   if (chargeRound) {
+    // Ruling 55: a charge round is not a sighting and not a resolved move — no Observation, no history.
     for (const e of listed) if (e.kind === 'charge') applyEffect(ctx, e);
-  } else {
-    resolveEffects(ctx, plan.release === null ? listed : releaseEffects(listed), user, target);
+    user.guardStreak = 0;
+    user.actedThisBattle = true;
+    return;
   }
+  resolveEffects(ctx, plan.release === null ? listed : releaseEffects(listed), user, target);
   bookkeeping(ctx, user, target);
   user.guardStreak = isGuardMove(listed) ? user.guardStreak + 1 : 0;
   user.actedThisBattle = true;

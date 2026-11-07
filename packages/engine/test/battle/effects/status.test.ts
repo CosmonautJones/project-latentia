@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultIntent, planEntries } from '../../../src/battle/order.js';
 import { submitRound } from '../../../src/battle/round.js';
 import { drawRoundStart } from '../../../src/rng/draws.js';
+import type { RoundCommand } from '../../../src/battle/log.js';
+import type { BattleState } from '../../../src/battle/state.js';
 import { at, battle } from '../helpers.js';
 import { dealt, fresh, ofType, run } from './kit.js';
 
@@ -72,6 +74,14 @@ describe('Prompt Injected (Ruling 19)', () => {
     expect(at(s, 7).statuses.map((x) => x.id)).toContain('promptInjected');
   });
 
+  it('with no on-field ally, the default aims the injected move by its default selector (not at the victim)', () => {
+    const s = fresh();
+    for (const i of [6, 8]) Object.assign(at(s, i), { hp: 0, fainted: true }); // b-act1 has no living ally on the field
+    at(s, 2).hp = 100; // the lowest-HP foe of b-act1
+    run(s, 1, 'deepfake-call', 7);
+    expect(at(s, 7).statuses[0]?.injected).toEqual({ moveId: 'distilled-strike', target: 2 });
+  });
+
   it('Guardrail blocks it', () => {
     const s = fresh();
     run(s, 7, 'guardrail', 7);
@@ -133,5 +143,54 @@ describe('moves disabled by status (Ruling 50)', () => {
     expect(defaultIntent(s, 1).moveId).toBe('distilled-strike');
     at(s, 1).lastMoveId = 'guardrail'; // a universal last move: nothing else is allowed
     expect(defaultIntent(s, 1).moveId).toBe('guardrail');
+  });
+});
+
+describe('Prompt Injected on an orchestrator overrides any command (Ruling 53)', () => {
+  const injected = (): BattleState => {
+    const s = battle();
+    for (const c of s.creatures) c.hp = c.maxHp = 500;
+    at(s, 0).statuses.push({ id: 'promptInjected', remaining: 1, injected: { moveId: 'happy-to-help', target: 1 } });
+    return s;
+  };
+  const hijack = (action: RoundCommand['a']) => {
+    const r = submitRound(injected(), action === undefined ? {} : { a: action });
+    if ('error' in r) throw new Error(r.error.message);
+    const i = r.events.findIndex((e) => e.type === 'ActionStarted' && e.actor === 0);
+    return { r, after: r.events.slice(i + 1, i + 3) };
+  };
+  const HIJACKED = [
+    { round: 1, type: 'StatusExpired', target: 0, status: 'promptInjected' },
+    { round: 1, type: 'MoveUsed', actor: 0, moveId: 'happy-to-help', target: 1 },
+  ];
+
+  it('a none command is hijacked, and the injection is consumed', () => {
+    const { r, after } = hijack({ temperature: 2, action: { kind: 'none' } });
+    expect(after).toEqual(HIJACKED);
+    expect(at(r.state, 0).statuses).toEqual([]);
+  });
+
+  it('a Swap command is hijacked: no swap happens, and the injection is consumed', () => {
+    const { r, after } = hijack({ temperature: 2, action: { kind: 'swap', out: 1, in: 3 } });
+    expect(after).toEqual(HIJACKED);
+    expect(ofType(r.events, 'Swapped')).toEqual([]);
+    expect(r.state.sides.a.slots[0]?.occupant).toBe(1);
+    expect(at(r.state, 0).statuses).toEqual([]);
+  });
+});
+
+describe('command injection validation (Ruling 54)', () => {
+  const code = (injection: { moveId: string; target: number }) => {
+    const r = submitRound(battle(), { a: { temperature: 2, action: { kind: 'move', moveId: 'happy-to-help', target: 7, injection } } });
+    return 'error' in r ? r.error.code : null;
+  };
+
+  it('rejects an injection with a non-canonical target or an unknown move as invalidCommand', () => {
+    expect(code({ moveId: 'ship-it', target: Number.NaN })).toBe('invalidCommand');
+    expect(code({ moveId: 'ship-it', target: 1.5 })).toBe('invalidCommand');
+    expect(code({ moveId: 'ship-it', target: -1 })).toBe('invalidCommand');
+    expect(code({ moveId: 'ship-it', target: 12 })).toBe('invalidCommand');
+    expect(code({ moveId: 'no-such-move', target: 8 })).toBe('invalidCommand');
+    expect(code({ moveId: 'ship-it', target: 8 })).toBeNull();
   });
 });

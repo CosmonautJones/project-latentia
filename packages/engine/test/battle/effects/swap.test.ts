@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { assertInvariants } from '../../../src/battle/invariants.js';
 import type { RoundCommand } from '../../../src/battle/log.js';
-import { submitRound } from '../../../src/battle/round.js';
+import { resolveEntry, submitRound } from '../../../src/battle/round.js';
+import { createBattle } from '../../../src/battle/setup.js';
 import type { BattleState } from '../../../src/battle/state.js';
 import type { BattleEvent } from '../../../src/events/types.js';
-import { at, battle, mon } from '../helpers.js';
+import { grid, piece } from '../../grid/helpers.js';
+import { at, battle, entry, gridlessSide, mon, SEED } from '../helpers.js';
 import { fresh, ofType, run } from './kit.js';
 
 function ok(s: BattleState, cmd: RoundCommand): { state: BattleState; events: BattleEvent[] } {
@@ -68,6 +70,50 @@ describe('Swap (orchestrator lever, priority +3)', () => {
     expect(ofType(events, 'Swapped')).toEqual([{ round: 1, type: 'Swapped', side: 0, outIndex: 1, inIndex: 3 }]);
     expect(state.sides.a.slots.map((x) => x.occupant)).toEqual([3, 2]);
     assertInvariants(state);
+  });
+});
+
+describe('a creature that left the field this round never acts this round (Ruling 52)', () => {
+  const UNIVERSALS = ['compact', 'clear', 'guardrail'];
+
+  it('Swap sends a-act1 out, then an ally’s Early Exit brings it back: its entry is still skipped (leftField)', () => {
+    const s = sturdy({ active: [mon('a-act1', 'blitzr'), mon('a-act2', 'tokenibble')] });
+    at(s, 2).moves = ['early-exit', ...UNIVERSALS];
+    at(s, 3).moves = ['token-burst', ...UNIVERSALS]; // a-b1 Tokenibble's signature needs A13's costAdd
+    at(s, 0).stats.latency = 50; // the orchestrator's Swap (+3) resolves before a-act2's Early Exit (+3)
+    const { state, events } = ok(s, swap(1, 3));
+    expect(ofType(events, 'Swapped')).toEqual([
+      { round: 1, type: 'Swapped', side: 0, outIndex: 1, inIndex: 3 },
+      { round: 1, type: 'Swapped', side: 0, outIndex: 2, inIndex: 1 },
+    ]);
+    const mine = events.findIndex((e) => e.type === 'ActionStarted' && e.actor === 1);
+    expect(mine).toBeGreaterThan(-1); // it still consumes its draws
+    expect(events[mine + 1]).toEqual({ round: 1, type: 'ActionSkipped', actor: 1, reason: 'leftField' });
+    expect(ofType(events, 'MoveUsed').filter((e) => e.actor === 1)).toEqual([]);
+    expect(state.sides.a.slots[1]?.occupant).toBe(1);
+    expect(ofType(ok(state, {}).events, 'MoveUsed').filter((e) => e.actor === 1)).toHaveLength(1); // it acts next round
+  });
+
+  it('a compacted Slot force-benches a-act1, then an ally’s Early Exit brings it back: still skipped', () => {
+    const slot = (id: string, x: number, sub: string) => ({ ...piece(id, 'subagentSlot', x, 1), subagentId: sub });
+    const g = grid(5, 4, [piece('sp', 'systemPrompt', 0, 0), slot('slot1', 0, 'a-act1'), slot('slot2', 2, 'a-act2'), piece('tl', 'tool', 4, 1)]);
+    const a = gridlessSide('a', { orchestrator: { ...mon('a-orch', 'sagelet'), moves: [] }, active: [mon('a-act1', 'blitzr'), mon('a-act2', 'tokenibble')], bench: [], grid: g });
+    const s = createBattle({ a, b: gridlessSide('b'), kind: 'trainer' }, SEED);
+    s.round = 1;
+    for (const c of s.creatures) c.hp = c.maxHp = 500;
+    for (let k = 0; k < at(s, 0).context.window; k++) at(s, 0).context.tokens.push({ kind: 'cost', seq: k });
+    const events: BattleEvent[] = [];
+    // Indices: 0 a-orch, 1 a-act1, 2 a-act2, 3 b-orch, 4 b-act1, 5 b-act2.
+    resolveEntry(s, entry(4, 'filibuster', 0), events); // forces Junk: slot1 compacts, a-act1 is force-benched
+    resolveEntry(s, entry(2, 'early-exit', 4), events); // a-act2 swaps out for the first living bench creature: a-act1
+    expect(ofType(events, 'Swapped')).toEqual([
+      { round: 1, type: 'Swapped', side: 0, outIndex: 1, inIndex: -1 },
+      { round: 1, type: 'Swapped', side: 0, outIndex: 2, inIndex: 1 },
+    ]);
+    const tail: BattleEvent[] = [];
+    resolveEntry(s, entry(1, 'ship-it', 4), tail);
+    expect(tail.map((e) => e.type)).toEqual(['ActionStarted', 'ActionSkipped']);
+    expect(tail[1]).toEqual({ round: 1, type: 'ActionSkipped', actor: 1, reason: 'leftField' });
   });
 });
 

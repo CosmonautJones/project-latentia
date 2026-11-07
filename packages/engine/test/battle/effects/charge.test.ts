@@ -20,10 +20,19 @@ describe('charge: the charge round', () => {
       { round: 1, type: 'MoveUsed', actor: 1, moveId: 'deliberate', target: 7 },
       { round: 1, type: 'ContextAdded', target: 1, kind: 'cost', tokens: 4, tokensAfter: 4 },
       { round: 1, type: 'Revealed', actor: 1, target: 7, what: 'telegraph' },
-      { round: 1, type: 'ContextAdded', target: 7, kind: 'observation', tokens: 1, tokensAfter: 1 },
-      { round: 1, type: 'ObservationGained', target: 7, observation: 'deliberate' },
     ]);
     expect(at(s, 1).charging).toEqual({ moveId: 'deliberate', target: 7, remaining: 1, powerDelta: 0, hitPower: -30 });
+  });
+
+  it('is not a sighting (Ruling 55): no Observation, no moveHistory, no lastMoveId until the release', () => {
+    const s = fresh();
+    run(s, 1, 'deliberate', 7);
+    expect(at(s, 7)).toMatchObject({ seenMoves: [], observedMoves: [] });
+    expect(at(s, 1)).toMatchObject({ moveHistory: [], lastMoveId: null });
+    s.round = 2;
+    const release = run(s, 1, 'deliberate', 7);
+    expect(ofType(release, 'ObservationGained')).toEqual([{ round: 2, type: 'ObservationGained', target: 7, observation: 'deliberate' }]);
+    expect(at(s, 1)).toMatchObject({ moveHistory: [{ round: 2, moveId: 'deliberate', damaged: [7] }], lastMoveId: 'deliberate' });
   });
 
   it('Deep Research charges without a telegraph', () => {
@@ -41,8 +50,16 @@ describe('charge: the release', () => {
     const release = run(s, 1, 'ship-it', 8);
     expect(release[0]).toEqual({ round: 2, type: 'MoveUsed', actor: 1, moveId: 'deliberate', target: 7 });
     expect(ofType(release, 'ContextAdded').filter((e) => e.target === 1)).toEqual([]);
-    expect(dealt(release)).toEqual([expected(s, 1, 7, 130, { type: REASONING_ON_SPEED, roll: 10000, observation: 9000 })]);
+    expect(dealt(release)).toEqual([expected(s, 1, 7, 130, { type: REASONING_ON_SPEED, roll: 10000 })]); // a first sighting: no 9000
     expect(at(s, 1).charging).toBeNull();
+  });
+
+  it('takes the 9000 Observation modifier only if the target had already observed the move', () => {
+    const s = fresh();
+    at(s, 7).seenMoves.push('deliberate');
+    at(s, 7).observedMoves.push('deliberate');
+    run(s, 1, 'deliberate', 7);
+    expect(dealt(run(s, 1, 'deliberate', 7))).toEqual([expected(s, 1, 7, 130, { type: REASONING_ON_SPEED, roll: 10000, observation: 9000 })]);
   });
 
   it('rolls accuracy on release (a miss there loses the move)', () => {
@@ -59,11 +76,11 @@ describe('charge: the release', () => {
     run(s, 8, 'hard-fork', 1);
     run(s, 8, 'hard-fork', 1);
     expect(at(s, 1).charging?.powerDelta).toBe(-30);
-    expect(dealt(run(s, 1, 'deliberate', 7))).toEqual([expected(s, 1, 7, 100, { type: REASONING_ON_SPEED, roll: 10000, observation: 9000 })]);
+    expect(dealt(run(s, 1, 'deliberate', 7))).toEqual([expected(s, 1, 7, 100, { type: REASONING_ON_SPEED, roll: 10000 })]);
     const t = fresh();
     run(t, 1, 'deep-research', 7);
     run(t, 8, 'hard-fork', 1);
-    expect(dealt(run(t, 1, 'deep-research', 7))).toEqual([expected(t, 1, 7, 140, { type: SEARCH_ON_SPEED, roll: 10000, observation: 9000 })]);
+    expect(dealt(run(t, 1, 'deep-research', 7))).toEqual([expected(t, 1, 7, 140, { type: SEARCH_ON_SPEED, roll: 10000 })]);
   });
 
   it("a longer charge skips its user's entries with ActionSkipped { reason: 'charging' } until the release", () => {
