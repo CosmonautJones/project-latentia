@@ -3,7 +3,7 @@ import type { BattleEvent } from '../events/types.js';
 import type { StatusHolder, StatusInstance } from './apply.js';
 
 /**
- * End-of-round countdown for timed statuses (Drift has no duration and is skipped). At 0 a status expires and
+ * End-of-round countdown for timed statuses (Drift has no duration and is skipped; Prompt Injected is consumed by its victim's next action via consumeInjection, never ticked). At 0 a status expires and
  * is removed. Deprecated instead reports `forceBench` (a subagent with a bench) or `ko` (an orchestrator, or
  * no bench) and is removed without a StatusExpired event; the caller emits the resulting Swapped/Fainted.
  */
@@ -17,7 +17,7 @@ export function tickStatuses(
   let forceBench = false;
   let ko = false;
   for (const s of h.statuses) {
-    if (STATUSES[s.id].durationMax === 0) {
+    if (STATUSES[s.id].durationMax === 0 || s.id === 'promptInjected') {
       kept.push(s);
       continue;
     }

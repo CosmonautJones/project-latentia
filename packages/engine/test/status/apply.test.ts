@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EngineInvariantError } from '../../src/math/bp.js';
-import { applyStatus, cureStatus, quantizedAdjust, rollDuration, statusDamageMods } from '../../src/status/apply.js';
+import { tickStatuses } from '../../src/status/tick.js';
+import { applyStatus, consumeInjection, cureStatus, quantizedAdjust, rollDuration, statusDamageMods } from '../../src/status/apply.js';
 import type { StatusHolder, StatusInstance } from '../../src/status/apply.js';
 
 const holder = (statuses: StatusInstance[] = [], extra: Partial<StatusHolder> = {}): StatusHolder => ({
@@ -104,5 +105,51 @@ describe('quantizedAdjust', () => {
   it('is -1/-1 while held, else null', () => {
     expect(quantizedAdjust(holder([inst('quantized', 4)]))).toEqual({ stageDelta: -1, costDelta: -1 });
     expect(quantizedAdjust(holder())).toBeNull();
+  });
+});
+
+describe('applyStatus copies and validates', () => {
+  it('stores a copy so one literal can be reused on two holders', () => {
+    const shared = inst('hallucinating', 3);
+    const a = holder();
+    const b = holder();
+    applyStatus(a, shared, 1);
+    applyStatus(b, shared, 1);
+    tickStatuses(a, 1, true);
+    expect(a.statuses[0]?.remaining).toBe(2);
+    expect(b.statuses[0]?.remaining).toBe(3);
+    expect(shared.remaining).toBe(3);
+  });
+  it('copies injected data', () => {
+    const shared: StatusInstance = { id: 'promptInjected', remaining: 1, injected: { moveId: 'm', target: 1 } };
+    const a = holder();
+    applyStatus(a, shared, 1);
+    expect(a.statuses[0]?.injected).toEqual({ moveId: 'm', target: 1 });
+    expect(a.statuses[0]?.injected).not.toBe(shared.injected);
+  });
+  it('rejects non-positive or non-integer remaining', () => {
+    for (const r of [0, -1, 1.5, Number.NaN]) {
+      expect(() => applyStatus(holder(), inst('hallucinating', r), 1)).toThrow(EngineInvariantError);
+    }
+  });
+});
+
+describe('Prompt Injected', () => {
+  const injected = (): StatusInstance => ({ id: 'promptInjected', remaining: 1, injected: { moveId: 'zap', target: 3 } });
+  it('survives end-of-round ticks', () => {
+    const h = holder();
+    applyStatus(h, injected(), 1);
+    for (let r = 1; r <= 3; r++) expect(tickStatuses(h, r, true).events).toEqual([]);
+    expect(h.statuses[0]?.injected).toEqual({ moveId: 'zap', target: 3 });
+  });
+  it('consumeInjection returns the choice, expires once, then returns null', () => {
+    const h = holder();
+    applyStatus(h, injected(), 1);
+    expect(consumeInjection(h, 2)).toEqual({
+      injected: { moveId: 'zap', target: 3 },
+      events: [{ round: 2, type: 'StatusExpired', target: 2, status: 'promptInjected' }],
+    });
+    expect(h.statuses).toEqual([]);
+    expect(consumeInjection(h, 2)).toEqual({ injected: null, events: [] });
   });
 });
