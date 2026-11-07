@@ -91,11 +91,19 @@ export function legalTarget(state: BattleState, user: CreatureState, def: MoveDe
   }
 }
 
+/** Lowest HP first, then lowest canonical index, among living on-field creatures that pass `keep`. */
+function lowestHpOnField(state: BattleState, keep: (c: CreatureState) => boolean): CreatureState | undefined {
+  let best: CreatureState | undefined;
+  for (const c of state.creatures) if (keep(c) && !c.fainted && onField(state, c) && (best === undefined || c.hp < best.hp)) best = c;
+  return best;
+}
+
 /**
  * The intent of a creature with no command and no deck (decks replace this in B2, Autopilot in B4): the
- * first move in its list that is neither universal nor orchestrator-only (its first move if none is),
- * aimed at the lowest-HP living foe on the field (ties: lowest canonical index), or at the foe
- * orchestrator when no foe on the field is alive.
+ * first move in its list that is neither universal nor orchestrator-only (its first move if none is).
+ * Its target follows the move's target kind (Ruling 38): self/none → the actor; `ally` → the lowest-HP
+ * on-field ally, possibly itself; foe kinds and `other` → the lowest-HP on-field foe, or the foe
+ * orchestrator when no foe on the field is alive. HP ties go to the lowest canonical index.
  */
 export function defaultIntent(state: BattleState, actor: number): { moveId: string; target: number } {
   const c = state.creatures[actor];
@@ -105,10 +113,10 @@ export function defaultIntent(state: BattleState, actor: number): { moveId: stri
     return def !== null && def.universal !== true && def.orchestratorOnly !== true;
   });
   const moveId = usable ?? c.moves[0] ?? 'compact';
-  const foes = state.creatures.filter((f) => f.side !== c.side);
-  let best: CreatureState | undefined;
-  for (const f of foes) if (!f.fainted && onField(state, f) && (best === undefined || f.hp < best.hp)) best = f;
-  const target = best ?? foes.find((f) => f.isOrchestrator);
+  const def = moveDef(moveId);
+  if (def === null || aimsAtUser(def)) return { moveId, target: actor };
+  if (def.target === 'ally') return { moveId, target: (lowestHpOnField(state, (f) => f.side === c.side) ?? c).index };
+  const target = lowestHpOnField(state, (f) => f.side !== c.side) ?? state.creatures.find((f) => f.side !== c.side && f.isOrchestrator);
   if (target === undefined) throw new EngineInvariantError('the foe side has no orchestrator', { round: state.round, actor, seed: state.seed });
   return { moveId, target: target.index };
 }

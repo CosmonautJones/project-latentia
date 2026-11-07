@@ -103,6 +103,40 @@ describe('defaultIntent', () => {
     expect(defaultIntent(s, 1).target).not.toBe(7);
   });
 
+  it('ally-kind move: aims at the lowest-HP on-field ally, ties to lowest index, possibly itself', () => {
+    const s = battle();
+    at(s, 2).moves = ['community-patch', 'compact'];
+    at(s, 3).hp = 1; // bench ally: off the field
+    expect(defaultIntent(s, 2)).toEqual({ moveId: 'community-patch', target: 1 }); // 20 HP vs 21/21
+    at(s, 1).hp = 21;
+    expect(defaultIntent(s, 2).target).toBe(0); // three-way tie at 21 → lowest index
+    at(s, 2).hp = 4;
+    expect(defaultIntent(s, 2).target).toBe(2); // itself
+    faint(at(s, 7)); // foes are irrelevant to an ally move
+    expect(defaultIntent(s, 2).target).toBe(2);
+  });
+
+  it('self-kind move: aims at the actor', () => {
+    const s = battle();
+    at(s, 1).moves = ['low-latency', 'ship-it'];
+    expect(defaultIntent(s, 1)).toEqual({ moveId: 'low-latency', target: 1 });
+  });
+
+  it('none-kind move: aims at the actor', () => {
+    const s = battle();
+    at(s, 8).moves = ['ground-truth'];
+    expect(defaultIntent(s, 8)).toEqual({ moveId: 'ground-truth', target: 8 });
+  });
+
+  it('foe-kind moves of every flavour aim at the lowest-HP on-field foe', () => {
+    const s = battle();
+    at(s, 6).hp = 3;
+    for (const m of ['ship-it', 'off-by-one', 'cosine-sniff']) {
+      at(s, 1).moves = [m];
+      expect(defaultIntent(s, 1)).toEqual({ moveId: m, target: 6 });
+    }
+  });
+
   it('skips universal moves even when they are listed first', () => {
     const s = battle();
     at(s, 1).moves = ['compact', 'guardrail', 'token-burst', 'clear'];
