@@ -1,7 +1,7 @@
 {
   "name": "tokenibble-early-exit",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "575520a4444ccd6abb82af78a4e6e9db",
     "setup": {
       "a": {

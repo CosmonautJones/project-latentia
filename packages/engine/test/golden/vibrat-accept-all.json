@@ -1,7 +1,7 @@
 {
   "name": "vibrat-accept-all",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "dc476ef2794ef56fd256f3045bbf9562",
     "setup": {
       "a": {

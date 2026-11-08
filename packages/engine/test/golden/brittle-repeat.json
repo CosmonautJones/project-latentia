@@ -1,7 +1,7 @@
 {
   "name": "brittle-repeat",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "859269810b567abaefa62d6574c0f88b",
     "setup": {
       "a": {

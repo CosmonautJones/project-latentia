@@ -1,7 +1,7 @@
 {
   "name": "temperature-sweep",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "e9ff92156085f0a16bfbd50f1abaac3c",
     "setup": {
       "a": {

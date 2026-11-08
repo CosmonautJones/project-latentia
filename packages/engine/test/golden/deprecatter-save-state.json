@@ -1,7 +1,7 @@
 {
   "name": "deprecatter-save-state",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "a3235ce8b880a6ed6cbdefe0ee1faf28",
     "setup": {
       "a": {

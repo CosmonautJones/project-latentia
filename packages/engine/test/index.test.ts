@@ -43,7 +43,7 @@ describe('public surface (spec §4, so far)', () => {
         'bandFor',
       ].sort(),
     );
-    expect(engine.ENGINE_VERSION).toBe('0.2.0');
+    expect(engine.ENGINE_VERSION).toBe('0.3.0');
   });
 
   it('runs and replays a battle through the public surface alone', () => {
