@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { EngineInvariantError } from '../../src/math/bp.js';
 import { effectiveStat } from '../../src/math/stats.js';
-import { defaultIntent, planEntries, sortActions, type ActionEntry } from '../../src/battle/order.js';
+import { defaultIntent, sortActions, type ActionEntry } from '../../src/battle/order.js';
+import { planEntries } from '../../src/battle/plan.js';
 import type { OrchestratorAction } from '../../src/battle/log.js';
 import type { BattleState } from '../../src/battle/state.js';
 import type { Card } from '../../src/cards/model.js';

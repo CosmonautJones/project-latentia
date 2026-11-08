@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { firePassives } from '../../../src/battle/effects/apply.js';
 import type { RoundCommand } from '../../../src/battle/log.js';
-import { planEntries } from '../../../src/battle/order.js';
+import { planEntries } from '../../../src/battle/plan.js';
 import { submitRound } from '../../../src/battle/round.js';
 import { createBattle } from '../../../src/battle/setup.js';
 import type { BattleState } from '../../../src/battle/state.js';

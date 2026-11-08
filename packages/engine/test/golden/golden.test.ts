@@ -9,7 +9,7 @@ import { STATUS_IDS, type StatusId } from '../../src/content/ids.js';
 import { moveDef } from '../../src/content/moves.js';
 import type { Effect } from '../../src/content/primitives.js';
 import { SPECIES } from '../../src/content/species.js';
-import type { BattleEventType } from '../../src/events/types.js';
+import type { BattleEventType, CardSkipReason } from '../../src/events/types.js';
 import { SCENARIOS } from './scenarios.js';
 import { scriptedSource } from './script.js';
 
@@ -70,8 +70,8 @@ describe('golden files', () => {
 // --- coverage ----------------------------------------------------------------------------------
 
 /**
- * Moves a Phase A battle can only reach through a deck (none: subagents use their default intent and every
- * species move is also usable by a gridless orchestrator of that species, so commands reach them all).
+ * Moves a battle can only reach through a deck (none: every species move is also usable by a gridless
+ * orchestrator of that species, so commands reach them all).
  */
 const DECK_ONLY_MOVES: readonly string[] = [];
 
@@ -118,8 +118,8 @@ const EVENT_TYPES: Record<BattleEventType, true> = {
   HandoffChain: true, Swapped: true, Fainted: true, HeadlessMode: true, BrittleRepeat: true, RoundEnd: true, BattleEnd: true,
 };
 
-/** Event types the Phase A engine never emits: decks, intents and traces arrive in B2/B3, Brittle generalization in B5. */
-const PHASE_B_EVENTS: readonly BattleEventType[] = ['IntentsPlanned', 'CardTrace', 'BrittleRepeat'];
+/** Every reason a card can be skipped, so the list below is checked complete by the type checker. */
+const SKIP_REASONS: Record<CardSkipReason, true> = { conditionFalse: true, insufficientContext: true, moveDisabled: true, notActive: true, disobeyed: true };
 
 describe('golden coverage', () => {
   it('every reachable move is used in some golden battle', () => {
@@ -138,10 +138,16 @@ describe('golden coverage', () => {
     expect(reachable.filter((s) => !applied.has(s))).toEqual([]);
   });
 
-  it('every event type the Phase A engine emits occurs in some golden battle', () => {
+  it('every event type occurs in some golden battle', () => {
     const seen = new Set(replays().flatMap((r) => r.events.map((e) => e.type)));
-    const expected = (Object.keys(EVENT_TYPES) as BattleEventType[]).filter((t) => !PHASE_B_EVENTS.includes(t));
-    expect(expected.filter((t) => !seen.has(t))).toEqual([]);
+    expect((Object.keys(EVENT_TYPES) as BattleEventType[]).filter((t) => !seen.has(t))).toEqual([]);
+  });
+
+  it('deck battles trace every skip reason, and IntentsPlanned names deck cards (B2)', () => {
+    const events = replays().flatMap((r) => r.events);
+    const traced = new Set(events.flatMap((e) => (e.type === 'CardTrace' ? e.skipped.map((s) => s.reason) : [])));
+    expect((Object.keys(SKIP_REASONS) as CardSkipReason[]).filter((r) => !traced.has(r))).toEqual([]);
+    expect(events.some((e) => e.type === 'IntentsPlanned' && e.intents.some((i) => i.cardId !== null))).toBe(true);
   });
 
   it('a T4-trained subagent uses a move with a wildT4 list, a Robust subagent has recordedFoes, and a side starts with no active subagent (Ruling 77)', () => {

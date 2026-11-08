@@ -12,6 +12,7 @@ import { buffTag } from './effects/stage.js';
 import { heldInjection } from './effects/status.js';
 import { breakEnemyChains } from './handoff.js';
 import type { ActionEntry } from './order.js';
+import { deckAction } from './plan.js';
 import type { BattleState, CreatureState, Temperature } from './state.js';
 import { aimInjected, aimMove, chooseAction, temperatureOf, type Choice } from './targeting.js';
 
@@ -22,9 +23,23 @@ export { applyEffect, ROBUST_ACCURACY_BONUS, ROBUST_MIN_GENERALIZATION } from '.
 type Plan = { choice: Choice; release: { powerDelta: number } | null } | 'charging';
 
 /**
+ * The entry's own move and target: a deck-driven entry is re-planned now (re-validation and obedience, plan.ts
+ * deckAction) and emits its CardTrace, then BrittleRepeat when the Default move was replaced; any other entry is
+ * used as planned.
+ */
+function ownAction(state: BattleState, user: CreatureState, entry: ActionEntry, draws: ActionDraws, events: BattleEvent[]): ActionEntry {
+  if (entry.cardId === undefined) return entry;
+  const r = deckAction(state, user, entry, draws.d1);
+  events.push({ round: state.round, type: 'CardTrace', actor: user.index, firedCardId: r.trace.firedCardId, skipped: r.trace.skipped });
+  if (r.brittleRepeat) events.push({ round: state.round, type: 'BrittleRepeat', actor: user.index, moveId: r.intent.moveId });
+  return { ...entry, moveId: r.intent.moveId, target: r.intent.target, cardId: r.trace.firedCardId, replanned: r.intent.replanned };
+}
+
+/**
  * A charging user counts one entry down: above 0 it waits ('charging'); at 0 the charged move is released at
  * its stored target (no substitution). Otherwise a held Prompt Injected choice replaces the action, and is
- * consumed (StatusExpired) only if the action goes ahead; else hallucination / Drift / the entry's move.
+ * consumed (StatusExpired) only if the action goes ahead; else the entry's own move (re-planned from its deck
+ * when deck-driven), then hallucination / Drift substitution.
  */
 function planAction(state: BattleState, user: CreatureState, entry: ActionEntry, draws: ActionDraws, temperature: Temperature, events: BattleEvent[]): Plan {
   const charge = user.charging;
@@ -35,7 +50,7 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
     return { choice: aimMove(state, user, charge.moveId, charge.target), release: { powerDelta: charge.powerDelta } };
   }
   const injected = heldInjection({ state, round: state.round }, user.index);
-  if (injected === null) return { choice: chooseAction(state, user, entry, draws, temperature), release: null };
+  if (injected === null) return { choice: chooseAction(state, user, ownAction(state, user, entry, draws, events), draws, temperature), release: null };
   const choice = aimInjected(state, user, injected);
   if (choice !== null) events.push(...consumeInjection(user, state.round).events);
   return { choice, release: null };
@@ -44,7 +59,8 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
 /**
  * Resolves one acting entry after its six draws are taken, ActionStarted is emitted and resolveEntry's
  * skip checks (including Rate Limited, Ruling 74) have passed (spec §5 step 4): a charge's countdown /
- * release, a Prompt Injected hijack, or hallucination / Drift substitution and re-targeting → MoveUsed → pay context (costSet / costAdd, then
+ * release, a Prompt Injected hijack, or the entry's own move (a deck-driven entry is re-planned: CardTrace,
+ * BrittleRepeat) with hallucination / Drift substitution and re-targeting → MoveUsed → pay context (costSet / costAdd, then
  * cost − 1 while Quantized; overflow → Drift; a buff move's tokens carry its buff tag; a release pays
  * nothing) → a charge round stops here (no accuracy, Ruling 13; no Observation, history or lastMoveId,
  * Ruling 55) → the accuracy-step modifiers are taken → fail / failsIf / accuracy (lo D3) → the target's

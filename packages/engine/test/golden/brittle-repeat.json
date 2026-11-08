@@ -1,0 +1,310 @@
+{
+  "name": "brittle-repeat",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "859269810b567abaefa62d6574c0f88b",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-cobolt",
+          "species": "cobolt",
+          "level": 12,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "coin",
+                  "subject": "self",
+                  "condition": {
+                    "category": "coin"
+                  },
+                  "move": "ship-it",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "low",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 25
+                  },
+                  "move": "distilled-strike",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "opener",
+                  "subject": "self",
+                  "condition": {
+                    "category": "turn",
+                    "op": "below",
+                    "round": 2
+                  },
+                  "move": "token-burst",
+                  "target": "randomFoe"
+                },
+                {
+                  "id": "desperate",
+                  "subject": "self",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 25
+                  },
+                  "move": "token-burst",
+                  "target": "highestAtkFoe"
+                }
+              ],
+              "default": {
+                "id": "buff",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "low-latency",
+                "target": "self"
+              }
+            },
+            "generalization": 20
+          },
+          {
+            "id": "a-parrot",
+            "species": "stochastiparrot",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "stochastic-repeat",
+              "hype-train",
+              "flattery",
+              "hot-take"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "flatter",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "foeBuffed"
+                  },
+                  "move": "flattery",
+                  "target": "highestAtkFoe"
+                },
+                {
+                  "id": "full",
+                  "subject": "self",
+                  "condition": {
+                    "category": "contextFill",
+                    "op": "atLeast",
+                    "pct": 75
+                  },
+                  "move": "hot-take",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "punish",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "telegraphing"
+                  },
+                  "move": "hot-take",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "hype",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "hype-train",
+                "target": "self"
+              }
+            },
+            "generalization": 10
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-hallucinat",
+          "species": "hallucinat",
+          "level": 12,
+          "version": "v1",
+          "moves": [
+            "confident-citation",
+            "proof-by-contradiction",
+            "adversarial-patch",
+            "socratic-method"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "coin",
+                  "subject": "self",
+                  "condition": {
+                    "category": "coin"
+                  },
+                  "move": "swarm-of-fine-tunes",
+                  "target": "randomFoe"
+                },
+                {
+                  "id": "mend",
+                  "subject": "self",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "community-patch",
+                  "target": "self"
+                }
+              ],
+              "default": {
+                "id": "fork",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "hard-fork",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 30
+          },
+          {
+            "id": "b-wasp",
+            "species": "off-by-wasp",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 2
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "34f2fd39450fc4c0",
+  "rounds": 4,
+  "winner": "b"
+}

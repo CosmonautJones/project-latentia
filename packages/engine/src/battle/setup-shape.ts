@@ -1,5 +1,6 @@
 import { gridShapeErrors } from '../grid/validate.js';
 import type { ValidationError } from './setup.js';
+import { deckShapeErrors } from './validate-deck.js';
 
 // Shape checks for untrusted JSON (Ruling 75, reversing Ruling 29): validateSetup runs these first and
 // replay reuses them, so no malformed setup or log can make a validator, createBattle or replay throw.
@@ -54,6 +55,7 @@ function creatureShape(c: unknown, path: string, errors: Errors): void {
       if (!isStr(f)) shape(errors, at, 'a recorded foe id must be a string');
     });
   }
+  if (c.deck !== undefined) deckShapeErrors(c.deck, join(path, 'deck'), errors);
 }
 
 function sideShape(s: unknown, path: string, errors: Errors): void {

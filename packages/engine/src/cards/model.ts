@@ -11,8 +11,21 @@ export type Threshold = { op: 'below' | 'atLeast'; pct: 25 | 50 | 75 };
 /** Who a condition reads: the actor, its side's orchestrator, or any living on-field foe. */
 export type Subject = 'self' | 'orchestrator' | 'foe';
 
+export const SUBJECTS: readonly Subject[] = ['self', 'orchestrator', 'foe'];
+
 /** The kind of a timed field effect a creature can hold (FieldState.effect.kind). */
 export type FieldKind = FieldEffect['kind'] | 'revealTopDeckCard';
+
+/** Every FieldKind, for shape checks; the record makes the type checker keep it complete. */
+const FIELD_KIND_SET: Record<FieldKind, true> = {
+  junkPerRound: true,
+  revealIntents: true,
+  accuracyStages: true,
+  forceTemperature: true,
+  critStagesAgainst: true,
+  revealTopDeckCard: true,
+};
+export const FIELD_KINDS = Object.keys(FIELD_KIND_SET) as readonly FieldKind[];
 
 /**
  * The bible's 12 condition categories. Subject categories read the subject creature (for `foe`: true when ANY
@@ -26,13 +39,17 @@ export type Condition =
   | { category: 'status'; status: StatusId }
   /** Subject: has the type, or (`weakToMove`) the card's move is super effective against it (> 10000 bp; a typeless move never is). */
   | { category: 'foeType'; is: TypeId | 'weakToMove' }
-  /** Subject: the most recent move it resolved this battle (any round) is `move` — the move that actually ran. */
+  /**
+   * Subject: the most recent move it resolved this battle (any round) is `move` — the move that actually ran
+   * (its moveHistory: after hallucination or Drift, a copy's copied move; Ruling 84).
+   */
   | { category: 'foeLastMove'; move: string }
   /** Actor: the round being planned is below / atLeast `round` (a positive integer, not a percentage). */
   | { category: 'turn'; op: 'below' | 'atLeast'; round: number }
   /**
    * Actor: the engine has no move cooldowns, so a card imposes its own — true when the actor has not resolved the
-   * card's move in any of the last `rounds` rounds (round − rounds … round − 1), or ever.
+   * card's move in any of the last `rounds` rounds (round − rounds … round − 1), or ever. It reads moveHistory, the
+   * moves that actually ran (Ruling 84).
    */
   | { category: 'cooldown'; rounds: 1 | 2 | 3 }
   /** Actor: any living on-field ally other than the actor (its orchestrator included) has hp × 100 against maxHp × pct. */
@@ -95,8 +112,15 @@ export type Card = {
   injection?: { moveId: string; target: TargetSelector };
 };
 
-/** Active cards in priority order, then the non-removable Default card. */
+/**
+ * Active cards in priority order, then the non-removable Default card. Default fires whenever no card above it
+ * does: its condition is not read, and it fires with too few free cells (overflow becomes Drift) or a move a
+ * status forbids — a subagent never idles (bible "Training is example cards").
+ */
 export type Deck = { cards: Card[]; default: Card };
+
+/** A pending cost modifier of the actor's next move (Embedding Cache's costSet, Token Nibble's costAdd). */
+export type PendingCost = { readonly kind: 'costSet' | 'costAdd'; readonly cells: number };
 
 /** One living creature as a card sees it: a plain-data projection (no references into the state). */
 export type ViewCreature = {
@@ -139,8 +163,12 @@ export type BattleView = {
   readonly allies: readonly ViewCreature[];
   /** Living on-field foes, orchestrator included. */
   readonly foes: readonly ViewCreature[];
-  /** The canonical index the allied orchestrator is aiming at (a living on-field creature), or null. */
+  /** The canonical index the allied orchestrator is aiming at (a living on-field foe), or null. */
   readonly orchestratorTarget: number | null;
-  /** The last round the actor resolved each move, one entry per move, in first-use order (cooldown). */
+  /** The last round the actor resolved each move (moveHistory), one entry per move, in first-use order (cooldown). */
   readonly selfLastUsed: readonly { readonly moveId: string; readonly round: number }[];
+  /** The move the actor itself last chose (CreatureState.lastMoveId: the copy move, not the copied one), which Overfit locks. */
+  readonly lastMoveId: string | null;
+  /** The actor's pending costSet / costAdd modifiers, oldest first: its next move pays with them (Ruling 84). */
+  readonly pendingCost: readonly PendingCost[];
 };

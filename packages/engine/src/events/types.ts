@@ -32,7 +32,7 @@ interface Base {
 
 export type BattleEvent =
   | (Base & { type: 'RoundStart' })
-  | (Base & { type: 'IntentsPlanned'; intents: { actor: number; moveId: string; target: number }[] })
+  | (Base & { type: 'IntentsPlanned'; intents: { actor: number; moveId: string; target: number; cardId: string | null }[] })
   | (Base & { type: 'ActionStarted'; actor: number; draws: RawDraws })
   | (Base & {
       type: 'CardTrace';

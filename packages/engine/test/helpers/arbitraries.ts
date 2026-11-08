@@ -6,8 +6,10 @@ import type { CommandSource } from '../../src/battle/simulate.js';
 import { VERSIONS, type BattleState, type SideId, type Temperature } from '../../src/battle/state.js';
 import { moveDef, SIGNATURE_MOVE_IDS } from '../../src/content/moves.js';
 import { SPECIES, type SpeciesDef } from '../../src/content/species.js';
+import type { Deck } from '../../src/cards/model.js';
 import type { GridLayout, PlacedPiece } from '../../src/grid/model.js';
 import type { SeedHex } from '../../src/rng/seed.js';
+import { arbDeck } from './decks.js';
 
 // fast-check arbitraries for the property and fuzz suites. Every value they produce is LEGAL:
 // setups pass validateSetup, seeds pass parseSeed, scripted commands pass validateCommand, so the
@@ -56,10 +58,10 @@ const named = (id: string, d: Draft): CreatureSetup => ({ id, species: d.species
 
 /**
  * A subagent's training (Ruling 77), each part present or absent: trainedTemperature 0-4, generalization
- * 0-100, and `foeMask`, which picks its recordedFoes from opponent ids once the side exists (bit i = the i-th of
- * recordedFoeCandidates; see withRecordedFoes).
+ * 0-100, `foeMask`, which picks its recordedFoes from opponent ids once the side exists (bit i = the i-th of
+ * recordedFoeCandidates; see withRecordedFoes), and a deck (added by arbSubDraft).
  */
-type Training = { trainedTemperature: Temperature | undefined; generalization: number | undefined; foeMask: number | undefined };
+type Training = { trainedTemperature: Temperature | undefined; generalization: number | undefined; foeMask: number | undefined; deck?: Deck | undefined };
 type SubDraft = Draft & { training: Training };
 
 const arbTraining: fc.Arbitrary<Training> = fc.record({
@@ -68,14 +70,18 @@ const arbTraining: fc.Arbitrary<Training> = fc.record({
   foeMask: fc.option(fc.integer({ min: 0, max: 0x7 }), { nil: undefined }),
 });
 
+/** A subagent draft with its training, and sometimes a deck over its moves (B2). */
 const arbSubDraft = (minLevel: number, maxLevel: number): fc.Arbitrary<SubDraft> =>
-  fc.tuple(arbDraft(minLevel, maxLevel), arbTraining).map(([d, training]) => ({ ...d, training }));
+  fc
+    .tuple(arbDraft(minLevel, maxLevel), arbTraining)
+    .chain(([d, training]) => fc.option(arbDeck(d.moves), { nil: undefined }).map((deck) => ({ ...d, training: { ...training, deck } })));
 
 /** A subagent with its trainedTemperature and generalization; its recordedFoes come later (withRecordedFoes). */
 function subagent(id: string, d: SubDraft): CreatureSetup {
   const c = named(id, d);
   if (d.training.trainedTemperature !== undefined) c.trainedTemperature = d.training.trainedTemperature;
   if (d.training.generalization !== undefined) c.generalization = d.training.generalization;
+  if (d.training.deck !== undefined) c.deck = d.training.deck;
   return c;
 }
 

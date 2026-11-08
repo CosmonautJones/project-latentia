@@ -95,7 +95,7 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
   });
 
   it('arbLegalSetup trains subagents and builds sides with no active subagent (Ruling 77)', () => {
-    const seen = { temps: new Set<number>(), untrained: 0, robustWithFoes: 0, robustVsRecorded: 0, robustVsUnseen: 0, generalizationUnset: 0, noActives: 0, griddedNoActives: 0 };
+    const seen = { temps: new Set<number>(), untrained: 0, robustWithFoes: 0, robustVsRecorded: 0, robustVsUnseen: 0, generalizationUnset: 0, noActives: 0, griddedNoActives: 0, decks: 0, noDeck: 0 };
     fc.assert(
       fc.property(arbLegalSetup, (setup) => {
         for (const own of [setup.a, setup.b]) {
@@ -109,6 +109,8 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
             if (c.trainedTemperature === undefined) seen.untrained++;
             else seen.temps.add(c.trainedTemperature);
             if (c.generalization === undefined) seen.generalizationUnset++;
+            if (c.deck === undefined) seen.noDeck++;
+            else seen.decks++;
             for (const id of c.recordedFoes ?? []) expect(candidates.has(id)).toBe(true);
             if ((c.generalization ?? 0) >= 70 && (c.recordedFoes ?? []).length > 0) {
               seen.robustWithFoes++;
@@ -128,6 +130,8 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
     expect(seen.robustVsUnseen).toBeGreaterThan(5); // and on
     expect(seen.noActives).toBeGreaterThan(20);
     expect(seen.griddedNoActives).toBeGreaterThan(0);
+    expect(seen.decks).toBeGreaterThan(100); // B2: subagents acting from decks
+    expect(seen.noDeck).toBeGreaterThan(100);
   });
 
   it(`${RUNS} battles: HP in [0, max], tokens ≤ window, ≤ ${ROUND_CAP} rounds, exactly six draws per ActionStarted`, () => {

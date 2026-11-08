@@ -1,0 +1,530 @@
+{
+  "name": "deck-subagents",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "ddd078a7b000920e43741fecd60efb3f",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 6,
+          "version": "v1",
+          "moves": []
+        },
+        "active": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 10,
+            "version": "v2",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "finish",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "distilled-strike",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "buff",
+                  "subject": "self",
+                  "condition": {
+                    "category": "cooldown",
+                    "rounds": 3
+                  },
+                  "move": "low-latency",
+                  "target": "self"
+                },
+                {
+                  "id": "coin",
+                  "subject": "self",
+                  "condition": {
+                    "category": "coin"
+                  },
+                  "move": "token-burst",
+                  "target": "randomFoe"
+                },
+                {
+                  "id": "late",
+                  "subject": "self",
+                  "condition": {
+                    "category": "turn",
+                    "op": "atLeast",
+                    "round": 2
+                  },
+                  "move": "ship-it",
+                  "target": "orchestratorTarget"
+                }
+              ],
+              "default": {
+                "id": "ship",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "ship-it",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 75
+          },
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "batch",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "batch-job",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "grind",
+                  "subject": "self",
+                  "condition": {
+                    "category": "hp",
+                    "op": "atLeast",
+                    "pct": 25
+                  },
+                  "move": "batch-job",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "fix",
+                  "subject": "self",
+                  "condition": {
+                    "category": "allyHp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "hotfix",
+                  "target": "lowestHpAlly"
+                }
+              ],
+              "default": {
+                "id": "compact",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "compact",
+                "target": "self"
+              }
+            },
+            "generalization": 50
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-tokenibble",
+            "species": "tokenibble",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "grid": {
+          "width": 5,
+          "height": 4,
+          "pieces": [
+            {
+              "id": "sp",
+              "kind": "systemPrompt",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                0
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "slot0",
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "anchor": [
+                0,
+                1
+              ],
+              "rotation": 0,
+              "subagentId": "a-blitzr"
+            },
+            {
+              "id": "slot1",
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "anchor": [
+                3,
+                1
+              ],
+              "rotation": 0,
+              "subagentId": "a-cobolt"
+            },
+            {
+              "id": "ex0",
+              "kind": "exampleCard",
+              "shape": [
+                [
+                  0,
+                  0
+                ]
+              ],
+              "anchor": [
+                2,
+                1
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "ex1",
+              "kind": "exampleCard",
+              "shape": [
+                [
+                  0,
+                  0
+                ]
+              ],
+              "anchor": [
+                2,
+                2
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "ex2",
+              "kind": "exampleCard",
+              "shape": [
+                [
+                  0,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                3
+              ],
+              "rotation": 0
+            }
+          ]
+        },
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-parrot",
+          "species": "stochastiparrot",
+          "level": 12,
+          "version": "v1",
+          "moves": [
+            "stochastic-repeat",
+            "hype-train",
+            "flattery",
+            "hot-take"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-nullbeetle",
+            "species": "nullbeetle",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "chomp",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "status",
+                    "status": "overfit"
+                  },
+                  "move": "null-chomp",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "follow",
+                  "subject": "self",
+                  "condition": {
+                    "category": "hp",
+                    "op": "atLeast",
+                    "pct": 25
+                  },
+                  "move": "infinite-loop",
+                  "target": "orchestratorTarget"
+                }
+              ],
+              "default": {
+                "id": "loop",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "infinite-loop",
+                "target": "highestAtkFoe"
+              }
+            },
+            "generalization": 45
+          },
+          {
+            "id": "b-wasp",
+            "species": "off-by-wasp",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 10,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "flattery",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hot-take",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hot-take",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 7
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "flattery",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hot-take",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hot-take",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "flattery",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hot-take",
+            "target": 3
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "2a4f4fd68c803694",
+  "rounds": 8,
+  "winner": "b"
+}

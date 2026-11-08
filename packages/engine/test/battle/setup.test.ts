@@ -1,3 +1,4 @@
+import type { Deck } from '../../src/cards/model.js';
 import { describe, expect, it } from 'vitest';
 import { SPECIES } from '../../src/content/species.js';
 import { canonicalJson } from '../../src/events/canonical.js';
@@ -504,7 +505,7 @@ describe('createBattle', () => {
   });
 
   it('is plain data: survives canonicalJson and deep-equals its structuredClone', () => {
-    const deck = { cards: [{ id: 'default' }] } as never;
+    const deck: Deck = { cards: [], default: { id: 'default', subject: 'self', condition: { category: 'coin' }, move: 'ship-it', target: 'lowestHpFoe' } };
     const state = createBattle(setupOf({ active: [{ ...mon('a-act1', 'blitzr'), deck }, mon('a-act2', 'forkling')] }, { grid: null }), SEED);
     expect(() => canonicalJson(state)).not.toThrow();
     expect(structuredClone(state)).toStrictEqual(state);

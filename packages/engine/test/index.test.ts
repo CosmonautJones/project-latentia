@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import * as engine from '../src/index.js';
 
-describe('public surface (spec §4, Phase A subset)', () => {
-  it('exports exactly the Phase A values', () => {
+describe('public surface (spec §4, so far)', () => {
+  it('exports exactly the Phase A values plus getIntents (B2)', () => {
     expect(Object.keys(engine).sort()).toEqual(
       [
         'ENGINE_VERSION',
@@ -13,6 +13,7 @@ describe('public surface (spec §4, Phase A subset)', () => {
         'createBattle',
         'eventStreamHash',
         'fnv1a64Hex',
+        'getIntents',
         'replay',
         'simulate',
         'submitRound',

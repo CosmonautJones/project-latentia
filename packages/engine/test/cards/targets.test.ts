@@ -18,6 +18,11 @@ describe('resolveTarget', () => {
     expect(resolveTarget('orchestratorTarget', view(), 'ship-it')).toBeNull();
   });
 
+  it('every pick is a living member of the view (Ruling 85): an orchestratorTarget outside it, or KO’d, is null', () => {
+    expect(resolveTarget('orchestratorTarget', view({ orchestratorTarget: 99 }), 'ship-it')).toBeNull();
+    expect(resolveTarget('orchestratorTarget', view({ orchestratorTarget: 7, foes: [vc(6), vc(7, { hp: 0 }), vc(8)] }), 'ship-it')).toBeNull();
+  });
+
   it('lowestHpAlly counts the actor itself; HP ties go to the lowest canonical index', () => {
     expect(resolveTarget('lowestHpAlly', view({ self: vc(1, { hp: 30 }), allies: [vc(0, { hp: 40 }), vc(2, { hp: 50 })] }), 'hotfix')).toBe(1);
     expect(resolveTarget('lowestHpAlly', view({ self: vc(1, { hp: 30 }), allies: [vc(0, { hp: 40 }), vc(2, { hp: 20 })] }), 'hotfix')).toBe(2);

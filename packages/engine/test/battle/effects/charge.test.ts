@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { typeMultiplierBp } from '../../../src/content/types.js';
 import type { RoundCommand } from '../../../src/battle/log.js';
-import { planEntries } from '../../../src/battle/order.js';
+import { planEntries } from '../../../src/battle/plan.js';
 import { drawRoundStart } from '../../../src/rng/draws.js';
 import { submitRound } from '../../../src/battle/round.js';
 import type { BattleState } from '../../../src/battle/state.js';

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { defaultIntent, planEntries } from '../../../src/battle/order.js';
+import { defaultIntent } from '../../../src/battle/order.js';
+import { planEntries } from '../../../src/battle/plan.js';
 import { resolveEntry, submitRound } from '../../../src/battle/round.js';
 import type { BattleEvent } from '../../../src/events/types.js';
 import { drawRoundStart, lo } from '../../../src/rng/draws.js';

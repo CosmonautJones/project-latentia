@@ -1,4 +1,4 @@
-import type { BattleView, FieldKind, ViewCreature } from '../cards/model.js';
+import type { BattleView, FieldKind, PendingCost, ViewCreature } from '../cards/model.js';
 import { moveDef } from '../content/moves.js';
 import type { MoveDef, StageStat } from '../content/primitives.js';
 import { EngineInvariantError } from '../math/bp.js';
@@ -53,14 +53,21 @@ function lastUsed(c: CreatureState): { moveId: string; round: number }[] {
   return out;
 }
 
+/** The actor's pending costSet / costAdd modifiers, copied, oldest first. */
+function pendingCost(c: CreatureState): PendingCost[] {
+  const out: PendingCost[] = [];
+  for (const m of c.nextActionMods) if (m.kind === 'costSet' || m.kind === 'costAdd') out.push({ kind: m.kind, cells: m.cells });
+  return out;
+}
+
 /**
- * The view of `actor` for planning `round` (default `state.round`, the current round once round start has run).
- * `roundStart` is the actor's R1/R2 for that round, passed explicitly so that intents can be previewed before
- * submitRound draws them (Ruling 79: peeked from a cloned rng); null when none are available.
- * `orchestratorTarget` is the target of the allied orchestrator's most recent resolved move while that target is a
- * living on-field creature (the state holds no current command); a caller that knows the command may override it.
+ * The view of `actor` for planning `round` — `state.round` once round start has run, `state.round + 1` for a
+ * preview before it (Ruling 82). `roundStart` is the actor's R1/R2 for that round, passed explicitly so that
+ * intents can be previewed before submitRound draws them (Ruling 79: peeked from a cloned rng); null when none
+ * are available. `orchestratorTarget` is the target of the allied orchestrator's most recent resolved move, only
+ * while that target is a living on-field foe (Ruling 83).
  */
-export function viewFor(state: BattleState, actor: number, roundStart: RoundStartDraws | null, round: number = state.round): BattleView {
+export function viewFor(state: BattleState, actor: number, roundStart: RoundStartDraws | null, round: number): BattleView {
   const self = state.creatures[actor];
   if (self === undefined) throw new EngineInvariantError(`viewFor: no creature ${actor}`, { round: state.round, actor, seed: state.seed });
   const orch = state.creatures.find((c) => c.side === self.side && c.isOrchestrator && !c.fainted);
@@ -73,7 +80,9 @@ export function viewFor(state: BattleState, actor: number, roundStart: RoundStar
     orchestrator: orch === undefined ? null : project(state, orch),
     allies: state.creatures.filter((c) => c.side === self.side && c.index !== actor && livingOnField(state, c)).map((c) => project(state, c)),
     foes: state.creatures.filter((c) => c.side !== self.side && livingOnField(state, c)).map((c) => project(state, c)),
-    orchestratorTarget: aimedAt !== undefined && livingOnField(state, aimedAt) ? aimedAt.index : null,
+    orchestratorTarget: aimedAt !== undefined && aimedAt.side !== self.side && livingOnField(state, aimedAt) ? aimedAt.index : null,
     selfLastUsed: lastUsed(self),
+    lastMoveId: self.lastMoveId,
+    pendingCost: pendingCost(self),
   };
 }

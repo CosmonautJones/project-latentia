@@ -1,3 +1,4 @@
+import { BAND_MIN } from '../../cards/evaluate.js';
 import type { MoveDef, NonPassiveEffect, Passive, PassiveTrigger } from '../../content/primitives.js';
 import { deepFreeze } from '../../content/primitives.js';
 import { SPECIES, type SpeciesId } from '../../content/species.js';
@@ -39,7 +40,7 @@ import { applyTokens } from './tokens.js';
  * examples were not recorded from: `recordedFoes` holds opponent ids, matched against the id of the opponent its
  * side faces (`SideState.opponentId`), like Specialist's `recordedFrom` (Ruling 80).
  */
-export const ROBUST_MIN_GENERALIZATION = 70;
+export const ROBUST_MIN_GENERALIZATION = BAND_MIN.robust;
 export const ROBUST_ACCURACY_BONUS = 5;
 const STAGE_MIN = -3;
 const STAGE_MAX = 3;

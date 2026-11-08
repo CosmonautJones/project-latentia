@@ -1,24 +1,21 @@
+import type { CardSkip } from '../cards/evaluate.js';
 import { moveDef } from '../content/moves.js';
 import type { MoveDef } from '../content/primitives.js';
-import { EngineInvariantError, mulBp } from '../math/bp.js';
-import { effectiveStat } from '../math/stats.js';
-import { hasStatus, moveDisabledByStatus, statStage } from '../status/apply.js';
-import type { OrchestratorAction, RoundCommand } from './log.js';
+import { EngineInvariantError } from '../math/bp.js';
+import { moveDisabledByStatus } from '../status/apply.js';
+import type { OrchestratorAction } from './log.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
-
-/** Swap and Early Exit resolve at this priority bracket (spec §5 "Orchestrator levers"). */
-export const SWAP_PRIORITY = 3;
-/** Rate Limited: Speed ×0.5 (bible status table), applied to effective Latency at Sort. */
-export const RATE_LIMITED_LATENCY_BP = 5000;
 
 export type LeverAction = Exclude<OrchestratorAction, { kind: 'move' }>;
 
 /**
  * One creature's action for the round (spec §5 "Round structure", Sort). Entries belong to creatures,
  * not slots. `latency` is effective Latency (stat with its stage); `tieBreak` is the creature's R1 low
- * 16 bits. A self or none move's `target` is the actor. `injection` is a move command's Deepfake Call
- * choice. `lever` is the whole command on an orchestrator entry whose command is not a move: its
- * `moveId` is then the lever name (`directive`, `policy-update`, `swap`, `none`), never resolved as a move.
+ * 16 bits. A self or none move's `target` is the actor. A deck-driven entry (plan.ts) carries the fired
+ * `cardId` and the cards `skipped` above it at plan time, which resolution re-validates (spec §5 "Re-planning").
+ * `injection` is a move command's Deepfake Call choice. `lever` is the whole command on an orchestrator entry
+ * whose command is not a move: its `moveId` is then the lever name (`directive`, `policy-update`, `swap`, `none`),
+ * never resolved as a move.
  */
 export type ActionEntry = {
   actor: number;
@@ -28,6 +25,8 @@ export type ActionEntry = {
   moveId: string;
   target: number;
   cardId?: string;
+  skipped?: CardSkip[];
+  /** Set on the copy resolution acts on when re-planning changed the intent (spec §5 "Re-planning"). */
   replanned?: boolean;
   injection?: { moveId: string; target: number };
   lever?: LeverAction;
@@ -102,12 +101,24 @@ export function lowestHpOnField(state: BattleState, keep: (c: CreatureState) => 
 }
 
 /**
- * The intent of a creature with no command and no deck (decks replace this in B2, Autopilot in B4): the
- * first move in its list that is neither universal nor orchestrator-only nor disabled by a held status
- * (Glazed / Overfit, Ruling 50); failing that its first move a status allows; failing that its first move.
- * Its target follows the move's target kind (Ruling 38): self/none → the actor; `ally` → the lowest-HP
- * on-field ally, possibly itself; foe kinds and `other` → the lowest-HP on-field foe, or the foe
- * orchestrator when no foe on the field is alive. HP ties go to the lowest canonical index.
+ * Where a creature's default aims `moveId` (Ruling 38): self/none → the actor; `ally` → the lowest-HP on-field
+ * ally, possibly itself; foe kinds and `other` → the lowest-HP on-field foe, or the foe orchestrator when no foe
+ * on the field is alive. HP ties go to the lowest canonical index.
+ */
+export function intentTarget(state: BattleState, c: CreatureState, moveId: string): number {
+  const def = moveDef(moveId);
+  if (def === null || aimsAtUser(def)) return c.index;
+  if (def.target === 'ally') return (lowestHpOnField(state, (f) => f.side === c.side) ?? c).index;
+  const target = lowestHpOnField(state, (f) => f.side !== c.side) ?? state.creatures.find((f) => f.side !== c.side && f.isOrchestrator);
+  if (target === undefined) throw new EngineInvariantError('the foe side has no orchestrator', { round: state.round, actor: c.index, seed: state.seed });
+  return target.index;
+}
+
+/**
+ * The intent of a creature with no command and no deck (a subagent with a deck evaluates it, plan.ts; Autopilot
+ * arrives in B4): the first move in its list that is neither universal nor orchestrator-only nor disabled by a
+ * held status (Glazed / Overfit, Ruling 50); failing that its first move a status allows; failing that its first
+ * move. Its target is intentTarget's.
  */
 export function defaultIntent(state: BattleState, actor: number): { moveId: string; target: number } {
   const c = state.creatures[actor];
@@ -121,86 +132,5 @@ export function defaultIntent(state: BattleState, actor: number): { moveId: stri
     return def !== null && def.universal !== true && def.orchestratorOnly !== true;
   });
   const moveId = usable ?? allowed[0] ?? c.moves[0] ?? 'compact';
-  const def = moveDef(moveId);
-  if (def === null || aimsAtUser(def)) return { moveId, target: actor };
-  if (def.target === 'ally') return { moveId, target: (lowestHpOnField(state, (f) => f.side === c.side) ?? c).index };
-  const target = lowestHpOnField(state, (f) => f.side !== c.side) ?? state.creatures.find((f) => f.side !== c.side && f.isOrchestrator);
-  if (target === undefined) throw new EngineInvariantError('the foe side has no orchestrator', { round: state.round, actor, seed: state.seed });
-  return { moveId, target: target.index };
-}
-
-type Planned = Pick<ActionEntry, 'moveId' | 'target' | 'priority' | 'injection' | 'lever'>;
-
-function moveEntry(actor: number, moveId: string, target: number): Planned {
-  const def = moveDef(moveId);
-  return { moveId, target: aimsAtUser(def) ? actor : target, priority: def?.priority ?? 0 };
-}
-
-/** Directive and Policy Update carry their move's priority (0); Swap resolves at +3; `none` at 0. */
-function leverEntry(actor: number, command: LeverAction): Planned {
-  const action = structuredClone(command); // the entry never shares objects with the caller's command
-  switch (action.kind) {
-    case 'directive':
-      return { moveId: 'directive', target: action.subagent, priority: moveDef('directive')?.priority ?? 0, lever: action };
-    case 'policyUpdate':
-      return { moveId: 'policy-update', target: actor, priority: moveDef('policy-update')?.priority ?? 0, lever: action };
-    case 'swap':
-      return { moveId: 'swap', target: action.in, priority: SWAP_PRIORITY, lever: action };
-    case 'none':
-      return { moveId: 'none', target: actor, priority: 0, lever: action };
-  }
-}
-
-/**
- * A charging creature's entry is its charged move at its stored target (the command, if any, is not used:
- * Ruling 13). Otherwise a non-headless orchestrator follows its side's command; everything else (an
- * uncommanded or headless orchestrator, every subagent) uses its default intent.
- */
-function planFor(state: BattleState, c: CreatureState, cmd: RoundCommand): Planned {
-  if (c.charging !== null) return moveEntry(c.index, c.charging.moveId, c.charging.target);
-  const action = c.isOrchestrator && !isHeadless(state, c.side) ? cmd[c.side]?.action : undefined;
-  if (action === undefined) {
-    const intent = defaultIntent(state, c.index);
-    return moveEntry(c.index, intent.moveId, intent.target);
-  }
-  if (action.kind !== 'move') return leverEntry(c.index, action);
-  const entry = moveEntry(c.index, action.moveId, action.target);
-  return action.injection === undefined ? entry : { ...entry, injection: { ...action.injection } };
-}
-
-/** The creature's pending `priority` next-action modifiers (Move Fast), summed; read at Sort, used up after it. */
-function pendingPriority(c: CreatureState): number {
-  return c.nextActionMods.reduce((n, m) => (m.kind === 'priority' ? n + m.delta : n), 0);
-}
-
-/** Effective Latency for Sort: the stat with its stage (after Quantized), halved while Rate Limited. */
-function sortLatency(c: CreatureState): number {
-  const latency = effectiveStat(c.stats.latency, statStage(c, 'latency'));
-  return hasStatus(c, 'rateLimited') ? mulBp(latency, RATE_LIMITED_LATENCY_BP) : latency;
-}
-
-/**
- * Plan (spec §5 step 2, Ruling 31): one entry per on-field position — each side's orchestrator always
- * (even when KO'd: its entry resolves as a headless skip), plus each living subagent in a non-removed
- * active slot. Bench creatures never get entries. An entry's priority includes the creature's pending
- * `priority` next-action modifiers (Move Fast); this reads them without using them up (the round loop does,
- * after Sort). Requires this round's round-start draws.
- */
-export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[] {
-  const entries: ActionEntry[] = [];
-  for (const c of state.creatures) {
-    if (!c.isOrchestrator && (c.fainted || !holdsLiveSlot(state, c))) continue;
-    if (c.roundStart === null) {
-      throw new EngineInvariantError('planning before round-start draws', { round: state.round, actor: c.index, seed: state.seed });
-    }
-    const planned = planFor(state, c, cmd);
-    entries.push({
-      actor: c.index,
-      latency: sortLatency(c),
-      tieBreak: c.roundStart.r1 & 0xffff,
-      ...planned,
-      priority: planned.priority + pendingPriority(c),
-    });
-  }
-  return entries;
+  return { moveId, target: intentTarget(state, c, moveId) };
 }

@@ -4,6 +4,7 @@ import type { GridLayout, PlacedPiece } from '../grid/model.js';
 import { validateGrid, type ValidationResult } from '../grid/validate.js';
 import type { BattleSetup, CreatureSetup, SideSetup, ValidationError } from './setup.js';
 import { setupShapeErrors } from './setup-shape.js';
+import { deckErrors } from './validate-deck.js';
 import { VERSIONS, type SideId } from './state.js';
 
 // validateSetup (spec §7 "Invalid setup or grid"): every problem as { code, path, message }.
@@ -127,6 +128,23 @@ function validateSlots(side: SideSetup, grid: GridLayout, id: SideId, errors: Er
   }
 }
 
+/**
+ * Each creature's deck against its stored moveset (Ruling 82): a gridded orchestrator's comes from its grid
+ * (species signature, then its Skill and graft moves); everyone else's is its listed moves. Universals are known.
+ */
+function validateDecks(side: SideSetup, id: SideId, errors: Errors): void {
+  const orch = side.orchestrator;
+  const orchSpecies = speciesOf(orch.species);
+  const orchMoves =
+    side.grid === null ? orch.moves : [...(orchSpecies === null ? [] : [orchSpecies.signature]), ...side.grid.pieces.flatMap((p) => (isGridMovePiece(p) && p.moveId !== undefined ? [p.moveId] : []))];
+  const all: [CreatureSetup, string, readonly string[]][] = [
+    [orch, `${id}.orchestrator`, orchMoves],
+    ...side.active.map((c, i): [CreatureSetup, string, readonly string[]] => [c, `${id}.active[${i}]`, c.moves]),
+    ...side.bench.map((c, i): [CreatureSetup, string, readonly string[]] => [c, `${id}.bench[${i}]`, c.moves]),
+  ];
+  for (const [c, path, known] of all) if (c.deck !== undefined) deckErrors(c.deck, `${path}.deck`, known, errors);
+}
+
 function validateSide(side: SideSetup, id: SideId, ids: Set<string>, errors: Errors): void {
   const gridded = side.grid !== null;
   validateCreature(side.orchestrator, `${id}.orchestrator`, 'orchestrator', gridded, ids, errors);
@@ -145,6 +163,7 @@ function validateSide(side: SideSetup, id: SideId, ids: Set<string>, errors: Err
     validateGridMoves(speciesOf(side.orchestrator.species), side.grid, id, errors);
     validateSlots(side, side.grid, id, errors);
   }
+  validateDecks(side, id, errors);
   if (side.autopilot !== undefined && !inRange(side.autopilot.temperature, 0, 4)) {
     errors.push({ code: 'range', path: `${id}.autopilot.temperature`, message: `temperature must be an integer in 0..4, got ${String(side.autopilot.temperature)}` });
   }

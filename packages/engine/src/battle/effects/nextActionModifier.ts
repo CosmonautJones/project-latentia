@@ -1,3 +1,4 @@
+import { cellsWithPending } from '../../cards/evaluate.js';
 import type { NextActionMod, NonPassiveEffect } from '../../content/primitives.js';
 import { mulBp } from '../../math/bp.js';
 import type { CreatureState } from '../state.js';
@@ -36,21 +37,17 @@ function take<K extends NextActionMod['kind']>(c: CreatureState, kinds: readonly
   return taken;
 }
 
-/** Uses up the pending `priority` modifiers (Sort has read them: order.ts planEntries). */
+/** Uses up the pending `priority` modifiers (Sort has read them: plan.ts planEntries). */
 export function takeSortPriority(c: CreatureState): void {
   take(c, ['priority']);
 }
 
 /**
  * The cells the holder's move pays before Quantized: `costSet` replaces the move's cost (the last one wins),
- * then each `costAdd` adds. Uses both kinds up.
+ * then each `costAdd` adds — the same rule deck evaluation plans with (cellsWithPending). Uses both kinds up.
  */
 export function takeCost(c: CreatureState, cost: number): number {
-  let cells = cost;
-  const mods = take(c, ['costSet', 'costAdd']);
-  for (const m of mods) if (m.kind === 'costSet') cells = m.cells;
-  for (const m of mods) if (m.kind === 'costAdd') cells += m.cells;
-  return cells;
+  return cellsWithPending(cost, take(c, ['costSet', 'costAdd']));
 }
 
 /** Uses up the holder's `fail`, `cannotMiss`, `ignoreEvasion` and `accuracy` modifiers and combines them. */

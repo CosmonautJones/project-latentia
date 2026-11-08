@@ -28,6 +28,8 @@ export const view = (over: Partial<BattleView> = {}): BattleView => ({
   foes: [vc(6, { isOrchestrator: true }), vc(7), vc(8)],
   orchestratorTarget: null,
   selfLastUsed: [],
+  lastMoveId: null,
+  pendingCost: [],
   ...over,
 });
 

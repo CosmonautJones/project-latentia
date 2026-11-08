@@ -16,7 +16,8 @@ import { validateCommand, type CommandError } from './errors.js';
 import { breakEnemyChains } from './handoff.js';
 import { assertInvariants } from './invariants.js';
 import type { RoundCommand } from './log.js';
-import { holdsLiveSlot, isHeadless, planEntries, sortActions, type ActionEntry } from './order.js';
+import { holdsLiveSlot, isHeadless, sortActions, type ActionEntry } from './order.js';
+import { intentsPlanned, planEntries } from './plan.js';
 import { resolveAction } from './resolve.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
 
@@ -222,7 +223,9 @@ export function playRound(
   const next = into(state);
   const events: BattleEvent[] = [];
   startRound(next, cmd, events);
-  const cutShort = resolveAll(next, sortRound(next, planEntries(next, cmd), events), events);
+  const entries = planEntries(next, cmd);
+  events.push(intentsPlanned(next, entries));
+  const cutShort = resolveAll(next, sortRound(next, entries, events), events);
   endRound(next, cutShort, events);
   assertInvariants(next);
   return { state: next, events };
