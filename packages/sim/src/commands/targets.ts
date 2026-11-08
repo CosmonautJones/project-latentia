@@ -38,7 +38,7 @@ export function targetsReport(run: TargetsRun, cli: { date: string; args: readon
       {
         heading: 'Verdicts',
         text: [
-          `Starter triangle: each starter at L8 on its standard grid with Tokenibble L8, vs the starter it beats; the favoured side's score. Temperature dial: the T0 side's score. Graft vs spin-up: ${GRAFT_STARTER} at L8 with ${GRAFT_SPECIES.join(', ')} grafted (G) or spun up (S); G's score. First mover: side A's score over every archetype against its mirror. Worst matchup: each archetype's worst pairing (its score, both orderings pooled), then the overall worst.`,
+          `Starter triangle: each starter at L8 on its standard grid with Tokenibble L8, vs the starter it beats; the favoured side's score. Temperature dial: the T0 side's score. Graft vs spin-up: the base team ${GRAFT_STARTER} L8 + Tokenibble L8 on the standard grid; G adds the signature of ${GRAFT_SPECIES.join(', ')} as a graft piece, S adds the species as a second subagent in a 2×2 slot (the L8 grid only holds it sharing slot A's two Example Cards: 2 active cards); G's score. First mover: side A's score over every archetype against its mirror. Worst matchup: each archetype's worst pairing (its score, both orderings pooled), then the overall worst.`,
         ],
         table: {
           columns: ['target', 'subject', 'battles', 'point', '95% interval', 'verdict'],

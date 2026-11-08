@@ -1,11 +1,11 @@
-import { moveDef, SPECIES, SPECIES_IDS, type Card, type Condition, type Deck, type GridLayout, type PlacedPiece, type SpeciesId, type Subject, type TargetSelector, type Temperature } from '@latentia/engine';
-import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, FULL, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './archetypes/build.js';
+import { activeCardCount, moveDef, SPECIES, SPECIES_IDS, type Card, type Condition, type Deck, type GridLayout, type PlacedPiece, type SpeciesId, type Subject, type TargetSelector, type Temperature } from '@latentia/engine';
+import { ALWAYS, archetype, card, cooldown, deck, FULL, OPENER, orchestrator, subagent, versionFor, WEAK_TO_MOVE } from './archetypes/build.js';
 import { ARCHETYPES, mirrorOf, starterGrid, type StarterId } from './archetypes/index.js';
-import { STARTER_SKILLS } from './archetypes/starter-grids.js';
 import type { Archetype } from './types.js';
 
-// The balance targets' own setups (spec §9 table, Ruling 133). Ruling 130's 1 + 2 + 1 team rule is for ARCHETYPES
-// and does not apply here; every setup still passes validateSetup (targets.test.ts). All creatures are L8 (v2).
+// The balance targets' own setups (spec §9 table, Rulings 133–134). Ruling 130's 1 + 2 + 1 team rule is for ARCHETYPES
+// and does not apply here; every setup still passes validateSetup, and each has a "setup is live" test
+// (target-setups.test.ts). All creatures are L8 (v2). Decks are built by role from move data, never by move index.
 
 const LEVEL = 8;
 const STARTERS: readonly StarterId[] = ['sagelet', 'blitzr', 'forkling'];
@@ -23,47 +23,64 @@ function aim(move: string, foe: TargetSelector): TargetSelector {
 
 const aimed = (id: string, subject: Subject, condition: Condition, move: string, foe: TargetSelector): Card => card(id, subject, condition, move, aim(move, foe));
 
-/** The moves an Autopilot template is instantiated with: the signature, the three Skills, and the coin card's move. */
-export type TemplateMoves = { sig: string; K: string; M: string; L: string; coin: string };
+// --- role templates (Ruling 134) --------------------------------------------------------------------------------
 
 /**
- * The one fixed 8-card Autopilot template every target orchestrator plays (Ruling 133), so no starter gets a
- * hand-tuned edge: the Default card is the signature; then L to open, M to finish a weak foe, the signature where it
- * is super effective, L again on a cooldown, K to punish a buff, Guardrail when weak, Compact when full, and a coin
- * card. The coin card holds K, except in graft-vs-spin-up variant G, where it aims the graft.
+ * A creature's moves by role, read off the move data so no creature gets a hand-picked deck:
+ * - `power`: its strongest damaging move (power × accuracy; ties go to the earlier move in species order);
+ * - `affordable`: its strongest damaging move among those of the lowest cost (the Default card's move);
+ * - `setup`: its first self-buff move (a self-target move raising one of its own stages), else `power`;
+ * - `sig`: its signature.
  */
-export function autopilotTemplate(m: TemplateMoves): Deck {
-  return deck(
-    aimed('default', 'self', ALWAYS, m.sig, 'lowestHpFoe'),
-    aimed('opener', 'self', OPENER, m.L, 'highestAtkFoe'),
-    aimed('finish', 'foe', WEAK, m.M, 'lowestHpFoe'),
-    aimed('weak', 'foe', WEAK_TO_MOVE, m.sig, 'foeWeakToMove'),
-    aimed('ramp', 'self', cooldown(3), m.L, 'highestAtkFoe'),
-    aimed('punish', 'foe', BUFFED, m.K, 'highestAtkFoe'),
-    aimed('guard', 'self', WEAK, 'guardrail', 'self'),
-    aimed('tidy', 'self', FULL, 'compact', 'self'),
-    aimed('coin', 'self', COIN, m.coin, 'randomFoe'),
-  );
-}
+export type Roles = { power: string; affordable: string; setup: string; sig: string };
 
-const starterMoves = (s: StarterId, coin?: string): TemplateMoves => {
-  const k = STARTER_SKILLS[s];
-  return { sig: SPECIES[s].signature, K: k.K, M: k.M, L: k.L, coin: coin ?? k.K };
+const strength = (m: string): number => {
+  const d = moveDef(m);
+  return d === null || d.power === null || d.power === undefined ? -1 : d.power * (d.accuracy ?? 100);
+};
+const costOf = (m: string): number => moveDef(m)?.cost ?? Infinity;
+const strongest = (ms: readonly string[]): string | undefined => ms.reduce<string | undefined>((best, m) => (best === undefined || strength(m) > strength(best) ? m : best), undefined);
+const isBuff = (m: string): boolean => {
+  const d = moveDef(m);
+  return d !== null && d.target === 'self' && d.effects.some((e) => e.kind === 'stage' && e.who === 'self' && e.op === 'add' && e.delta > 0);
 };
 
+export function rolesOf(species: SpeciesId): Roles {
+  const moves = SPECIES[species].moves;
+  const damaging = moves.filter((m) => strength(m) >= 0);
+  const power = strongest(damaging);
+  if (power === undefined) throw new Error(`${species} has no damaging move`);
+  const cheapest = Math.min(...damaging.map(costOf));
+  const affordable = strongest(damaging.filter((m) => costOf(m) === cheapest)) as string;
+  return { power, affordable, setup: moves.find(isBuff) ?? power, sig: SPECIES[species].signature };
+}
+
 /**
- * The one fixed subagent deck template (3 cards, the active-card count of the starter grid's slot at v2): the Default
- * card is the signature; then its second move on a weak foe, its third to open, its fourth on a cooldown.
+ * The one Autopilot role template every target orchestrator plays (Rulings 133–134): its setup move on turn 1, its
+ * signature where it is super effective, then (G only) the graft every other round, its strongest damaging move every
+ * round, Compact when context is 75% full (the strongest move is then skipped for want of room), and Default its
+ * strongest affordable damaging move.
  */
-export function subagentTemplate(species: SpeciesId): Deck {
-  const [sig, m1, m2, m3] = SPECIES[species].moves as readonly [string, string, string, string];
+export function autopilotTemplate(r: Roles, graft?: string): Deck {
   return deck(
-    aimed('default', 'self', ALWAYS, sig, 'lowestHpFoe'),
-    aimed('finish', 'foe', WEAK, m1, 'lowestHpFoe'),
-    aimed('opener', 'self', OPENER, m2, 'randomFoe'),
-    aimed('ramp', 'self', cooldown(3), m3, 'highestAtkFoe'),
+    aimed('default', 'self', ALWAYS, r.affordable, 'lowestHpFoe'),
+    aimed('setup', 'self', OPENER, r.setup, 'highestAtkFoe'),
+    aimed('sig', 'foe', WEAK_TO_MOVE, r.sig, 'foeWeakToMove'),
+    ...(graft === undefined ? [] : [aimed('graft', 'self', cooldown(1), graft, 'lowestHpFoe')]),
+    aimed('power', 'self', ALWAYS, r.power, 'lowestHpFoe'),
+    aimed('tidy', 'self', FULL, 'compact', 'self'),
   );
 }
+
+/** The subagent role template: setup on turn 1, signature where super effective, strongest move, Default affordable — cut to the slot's `activeCards`. */
+export function subagentTemplate(species: SpeciesId, activeCards: number): Deck {
+  const r = rolesOf(species);
+  const cards = [aimed('setup', 'self', OPENER, r.setup, 'highestAtkFoe'), aimed('sig', 'foe', WEAK_TO_MOVE, r.sig, 'foeWeakToMove'), aimed('power', 'self', ALWAYS, r.power, 'lowestHpFoe')];
+  return deck(aimed('default', 'self', ALWAYS, r.affordable, 'lowestHpFoe'), ...cards.slice(0, activeCards));
+}
+
+/** Tokenibble L8, the starter's bundled intern, on the subagent template for the starter grid's slot (3 active cards at v2). */
+const intern = () => subagent('tokenibble', 'tokenibble', LEVEL, { deck: subagentTemplate('tokenibble', 3), ...SUBAGENT_TRAINING });
 
 // --- starter triangle -------------------------------------------------------------------------------------------
 
@@ -74,63 +91,143 @@ export const TRIANGLE: readonly (readonly [StarterId, StarterId])[] = Object.fre
   Object.freeze(['forkling', 'blitzr'] as const),
 ]);
 
-/** A starter at L8 on its standard grid with Tokenibble L8 in its slot, both on the templates. */
+/** A starter at L8 on its standard grid with Tokenibble L8 in its slot, both on the role templates. */
 export function starterSide(s: StarterId): Archetype {
   return archetype(`starter-${s}`, {
     orchestrator: orchestrator(s, s, LEVEL),
-    active: [subagent('tokenibble', 'tokenibble', LEVEL, { deck: subagentTemplate('tokenibble'), ...SUBAGENT_TRAINING })],
+    active: [intern()],
     grid: starterGrid(s, LEVEL, 'tokenibble'),
-    autopilot: autopilotTemplate(starterMoves(s)),
+    autopilot: autopilotTemplate(rolesOf(s)),
     temperature: TEMPLATE_TEMPERATURE,
   });
 }
 
-// --- graft vs spin-up -------------------------------------------------------------------------------------------
+// --- graft vs spin-up (Ruling 134: Ruling 133 literally) --------------------------------------------------------
 
 /** The starter both graft-vs-spin-up variants are built on. */
 export const GRAFT_STARTER: StarterId = 'sagelet';
 
-/** Whether a graft shape (unrotated) fits the starter grid's 2×2 Subagent Slot footprint. */
-const fitsSlot = (shape: readonly (readonly [number, number])[]): boolean => shape.every(([x, y]) => x <= 1 && y <= 1);
+type XY = readonly [number, number];
+const key = ([x, y]: XY): string => `${x},${y}`;
+const turn = (cells: readonly XY[]): XY[] => cells.map(([x, y]): XY => [-y, x]);
+const normalize = (cells: readonly XY[]): XY[] => {
+  const mx = Math.min(...cells.map((c) => c[0]));
+  const my = Math.min(...cells.map((c) => c[1]));
+  return cells.map(([x, y]): XY => [x - mx, y - my]);
+};
 
-/** The first three non-starter slice species (SPECIES_IDS order) whose graft shape fits where the slot sits. */
-export const GRAFT_SPECIES: readonly SpeciesId[] = Object.freeze(
-  SPECIES_IDS.filter((s) => !(STARTERS as readonly string[]).includes(s) && fitsSlot(SPECIES[s].graftShape)).slice(0, 3),
-);
+/** The base grid's occupied cells (its pieces are drawn unrotated, so a piece's cells are anchor + shape). */
+function occupied(grid: GridLayout): Set<string> {
+  const out = new Set<string>();
+  for (const p of grid.pieces) {
+    if (p.rotation !== 0) throw new Error(`piece ${p.id} is rotated`);
+    for (const [x, y] of p.shape) out.add(key([p.anchor[0] + x, p.anchor[1] + y]));
+  }
+  return out;
+}
+
+/** The first placement (anchors in reading order, then quarter turns) of `shape` on free cells of `grid`, as drawn cells and anchor. */
+function firstFit(grid: GridLayout, shape: readonly XY[]): { shape: XY[]; anchor: XY } | null {
+  const taken = occupied(grid);
+  const turns: XY[][] = [];
+  for (let t = normalize(shape), i = 0; i < 4; i++, t = normalize(turn(t))) turns.push(t);
+  for (let y = 0; y < grid.height; y++) {
+    for (let x = 0; x < grid.width; x++) {
+      for (const t of turns) {
+        const cells = t.map(([dx, dy]): XY => [x + dx, y + dy]);
+        if (cells.every(([cx, cy]) => cx < grid.width && cy < grid.height && !taken.has(key([cx, cy])))) return { shape: t, anchor: [x, y] };
+      }
+    }
+  }
+  return null;
+}
+
+/** Empty cells beyond the headroom floor (4): what a variant may add to the base grid. */
+const spare = (grid: GridLayout): number => grid.width * grid.height - occupied(grid).size - 4;
+
+/** Inserts `piece` after the base grid's Subagent Slot (the multi-cell pieces come first in compaction order, then the 1×1s). */
+function withPiece(grid: GridLayout, piece: PlacedPiece): GridLayout {
+  const at = grid.pieces.findIndex((p) => p.kind === 'subagentSlot') + 1;
+  return { ...grid, pieces: [...grid.pieces.slice(0, at), piece, ...grid.pieces.slice(at)] };
+}
+
+/** The base team's grid: the starter's standard L8 grid with Tokenibble in its slot. */
+const baseGrid = (): GridLayout => starterGrid(GRAFT_STARTER, LEVEL, 'tokenibble');
+
+/** G's grid: the base grid plus `species`' signature as a graft piece, at its first legal fit (null when none fits). */
+function graftGrid(species: SpeciesId): GridLayout | null {
+  const base = baseGrid();
+  const fit = firstFit(base, SPECIES[species].graftShape);
+  if (fit === null || spare(base) < fit.shape.length) return null;
+  const sig = SPECIES[species].signature;
+  return withPiece(base, { id: `graft:${sig}`, kind: 'graft', moveId: sig, shape: fit.shape, anchor: fit.anchor, rotation: 0 });
+}
+
+const orth = ([x, y]: XY): XY[] => [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
 
 /**
- * Variant S (spin up): the starter on its standard grid with `species` L8 as its one subagent, in the 2×2 slot with its
- * three Example Cards, on the subagent template.
+ * S's grid: the base grid plus a second 2×2 Subagent Slot for `species`, with 3 adjacent Example Cards when the grid
+ * can hold them. The 5×5 L8 grid cannot (base 17 cells + a slot leaves exactly the headroom floor of 4), so the slot
+ * goes where it touches the most existing Example Cards (reading order on ties) and Example Cards are added beside it
+ * only while the floor allows: on the starter grid, slot B at (3,1) shares the two Example Cards at (2,1) and (2,2)
+ * with slot A, giving 2 active cards and no new cell (the largest legal layout).
  */
-export function spinUpVariant(species: SpeciesId): Archetype {
-  return archetype(`graft-${species}-s`, {
-    orchestrator: orchestrator(GRAFT_STARTER, GRAFT_STARTER, LEVEL),
-    active: [subagent(species, species, LEVEL, { deck: subagentTemplate(species), ...SUBAGENT_TRAINING })],
-    grid: starterGrid(GRAFT_STARTER, LEVEL, species),
-    autopilot: autopilotTemplate(starterMoves(GRAFT_STARTER)),
+export function spinUpGrid(species: string): GridLayout {
+  const base = baseGrid();
+  const taken = occupied(base);
+  const cards = base.pieces.filter((p) => p.kind === 'exampleCard').map((p) => key(p.anchor));
+  let best: { anchor: XY; touching: number } | null = null;
+  for (let y = 0; y + 1 < base.height; y++) {
+    for (let x = 0; x + 1 < base.width; x++) {
+      const cells: XY[] = [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]];
+      if (cells.some((c) => taken.has(key(c)))) continue;
+      const touching = new Set(cells.flatMap(orth).map(key).filter((k) => cards.includes(k))).size;
+      if (best === null || touching > best.touching) best = { anchor: [x, y], touching };
+    }
+  }
+  if (best === null) throw new Error('no room for a second Subagent Slot');
+  let grid = withPiece(base, { id: 'slot-B', kind: 'subagentSlot', subagentId: species, shape: [[0, 0], [1, 0], [0, 1], [1, 1]], anchor: best.anchor, rotation: 0 });
+  const [ax, ay] = best.anchor;
+  const slotCells: XY[] = [[ax, ay], [ax + 1, ay], [ax, ay + 1], [ax + 1, ay + 1]];
+  for (let touching = best.touching, n = 1; touching < 3 && spare(grid) >= 1; touching++, n++) {
+    const now = occupied(grid);
+    const free = slotCells.flatMap(orth).find(([x, y]) => x >= 0 && y >= 0 && x < grid.width && y < grid.height && !now.has(key([x, y])));
+    if (free === undefined) break;
+    grid = { ...grid, pieces: [...grid.pieces, { id: `exampleCard-b${n}`, kind: 'exampleCard', shape: [[0, 0]], anchor: free, rotation: 0 }] };
+  }
+  return grid;
+}
+
+/** The first three slice species, in SPECIES_IDS order, that are neither a starter nor the base team's Tokenibble and whose graft fits the base grid. */
+export const GRAFT_SPECIES: readonly SpeciesId[] = Object.freeze(
+  SPECIES_IDS.filter((s) => !(STARTERS as readonly string[]).includes(s) && s !== 'tokenibble' && graftGrid(s) !== null).slice(0, 3),
+);
+
+/** The Sagelet orchestrator both variants share. */
+const graftOrchestrator = () => orchestrator(GRAFT_STARTER, GRAFT_STARTER, LEVEL);
+
+/** Variant G (graft): the base team (Sagelet + Tokenibble), its grid plus the graft; the Autopilot adds a graft card. */
+export function graftVariant(species: SpeciesId): Archetype {
+  const grid = graftGrid(species);
+  if (grid === null) throw new Error(`${species}'s graft does not fit`);
+  return archetype(`graft-${species}-g`, {
+    orchestrator: graftOrchestrator(),
+    active: [intern()],
+    grid,
+    autopilot: autopilotTemplate(rolesOf(GRAFT_STARTER), SPECIES[species].signature),
     temperature: TEMPLATE_TEMPERATURE,
   });
 }
 
-/**
- * Variant G (graft): the same grid with the slot and its three Example Cards (the spin-up's space, bible "Graft or
- * spin up") replaced by `species`' signature as a graft piece in the slot's place (its graftShape, unrotated, at the
- * slot's anchor and compaction position); no subagent; the Autopilot's coin card aims the graft instead of K.
- */
-export function graftVariant(species: SpeciesId): Archetype {
-  const base = starterGrid(GRAFT_STARTER, LEVEL, species);
-  const sig = SPECIES[species].signature;
-  const pieces = base.pieces.flatMap((p): PlacedPiece[] => {
-    if (p.kind === 'exampleCard') return [];
-    if (p.kind !== 'subagentSlot') return [p];
-    return [{ id: `graft:${sig}`, kind: 'graft', moveId: sig, shape: SPECIES[species].graftShape, anchor: p.anchor, rotation: 0 }];
-  });
-  const grid: GridLayout = { ...base, pieces };
-  return archetype(`graft-${species}-g`, {
-    orchestrator: orchestrator(GRAFT_STARTER, GRAFT_STARTER, LEVEL),
-    active: [],
+/** Variant S (spin up): the base team plus `species` L8 as a second subagent in slot B, on the subagent template cut to its active cards. */
+export function spinUpVariant(species: SpeciesId): Archetype {
+  const grid = spinUpGrid(species);
+  const active = activeCardCount(grid, 'slot-B', versionFor(LEVEL));
+  return archetype(`graft-${species}-s`, {
+    orchestrator: graftOrchestrator(),
+    active: [intern(), subagent(species, species, LEVEL, { deck: subagentTemplate(species, active), ...SUBAGENT_TRAINING })],
     grid,
-    autopilot: autopilotTemplate(starterMoves(GRAFT_STARTER, sig)),
+    autopilot: autopilotTemplate(rolesOf(GRAFT_STARTER)),
     temperature: TEMPLATE_TEMPERATURE,
   });
 }
