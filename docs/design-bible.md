@@ -390,7 +390,7 @@ The jokes follow the same rule as everything else here: each one is a mechanic. 
 
 ### Moves (candidates)
 
-The 57-move launch list stays the slice baseline. Each candidate below is built from existing engine effect primitives unless marked **new**. Phase C's simulator decides which ones swap in, for balance, before slice content is locked (milestone 9). The three marked ★ are the recommended slice swap-ins.
+The 57-move launch list stays the slice baseline. Each candidate below is built from existing engine effect primitives unless marked **new**. Which ones swap in is evaluated with the simulator in a follow-up after Phase C's first balance pass, because the candidates need new content and some need new primitives (Ruling 122). That evaluation happens before slice content is locked (milestone 9). The three marked ★ are the recommended slice swap-ins.
 
 | Move | Type · stats | Effect | Gag |
 |---|---|---|---|

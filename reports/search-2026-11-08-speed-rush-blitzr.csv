@@ -1,0 +1,33 @@
+evaluation,mutation,score,accepted,best,battles_used
+0,base deck,0.6710526315789473,yes,0.6710526315789473,608
+1,condition of #6 (guard): self hp < 25% → foe is open type,0.6529605263157895,no,0.6710526315789473,1216
+2,move of #2 (drift): compact → token-burst (target self → lowestHpFoe),0.6710526315789473,no,0.6710526315789473,1824
+3,reorder #2 → #4 (drift),0.6710526315789473,no,0.6710526315789473,2432
+4,replace #1 (finish) with search-4: IF orchestrator is buffed THEN guardrail → orchestrator,0.6595394736842105,no,0.6710526315789473,3040
+5,move of #1 (finish): token-burst → compact (target lowestHpFoe → orchestrator),0.6365131578947368,no,0.6710526315789473,3648
+6,move of #8 (coin): distilled-strike → token-burst,0.6430921052631579,no,0.6710526315789473,4256
+7,replace #5 (weak) with search-7: IF foe is telegraphing THEN compact → self,0.6398026315789473,no,0.6710526315789473,4864
+8,replace #6 (guard) with search-8: IF self has not used the move for 1 round THEN token-burst → randomFoe,0.662828947368421,no,0.6710526315789473,5472
+9,move of #3 (tidy): compact → token-burst (target self → lowestHpFoe),0.6776315789473685,no,0.6710526315789473,6080
+10,replace #7 (hurt) with search-10: IF orchestrator is telegraphing THEN token-burst → lowestHpFoe,0.6661184210526315,no,0.6710526315789473,6688
+11,replace #5 (weak) with search-11: IF foe is voice type THEN distilled-strike → orchestratorTarget,0.6381578947368421,no,0.6710526315789473,7296
+12,condition of #3 (tidy): self context ≥ 75% full → self has quantized,0.6842105263157895,yes,0.6842105263157895,7904
+13,replace #1 (finish) with search-13: IF orchestrator is telegraphing THEN token-burst → lowestHpFoe,0.6644736842105263,no,0.6842105263157895,8512
+14,move of #8 (coin): distilled-strike → clear (target randomFoe → self),0.5970394736842105,no,0.6842105263157895,9120
+15,move of #8 (coin): distilled-strike → clear (target randomFoe → orchestrator),0.5970394736842105,no,0.6842105263157895,9728
+16,reorder #2 → #1 (drift),0.6825657894736842,no,0.6842105263157895,10336
+17,reorder #4 → #6 (opener),0.6842105263157895,no,0.6842105263157895,10944
+18,reorder #8 → #1 (coin),0.6825657894736842,no,0.6842105263157895,11552
+19,move of #8 (coin): distilled-strike → compact (target randomFoe → orchestrator),0.6118421052631579,no,0.6842105263157895,12160
+20,condition of #3 (tidy): self has quantized → self context ≥ 50% full,0.6513157894736842,no,0.6842105263157895,12768
+21,move of #7 (hurt): ship-it → distilled-strike,0.6875,no,0.6842105263157895,13376
+22,move of #5 (weak): distilled-strike → clear (target foeWeakToMove → orchestrator),0.6546052631578947,no,0.6842105263157895,13984
+23,reorder #6 → #4 (guard),0.6825657894736842,no,0.6842105263157895,14592
+24,replace #7 (hurt) with search-24: IF orchestrator is buffed THEN guardrail → lowestHpAlly,0.6792763157894737,no,0.6842105263157895,15200
+25,replace #4 (opener) with search-25: IF self has not used the move for 1 round THEN ship-it → highestAtkFoe,0.6694078947368421,no,0.6842105263157895,15808
+26,move of #5 (weak): distilled-strike → guardrail (target foeWeakToMove → self),0.6546052631578947,no,0.6842105263157895,16416
+27,reorder #7 → #6 (hurt),0.6842105263157895,no,0.6842105263157895,17024
+28,replace #4 (opener) with search-28: IF orchestrator hp ≥ 50% THEN distilled-strike → orchestratorTarget,0.694078947368421,no,0.6842105263157895,17632
+29,reorder #1 → #3 (finish),0.6825657894736842,no,0.6842105263157895,18240
+30,replace #2 (drift) with search-30: IF foe is buffed THEN ship-it → orchestratorTarget,0.6792763157894737,no,0.6842105263157895,18848
+31,condition of #6 (guard): self hp < 25% → foe hp ≥ 75%,0.5657894736842105,no,0.6842105263157895,19456
