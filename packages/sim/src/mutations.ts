@@ -75,9 +75,17 @@ export function movePool(side: SideSetup): string[] {
 /** What a mutation draws from: the moves the deck's cards may name, and the moves a foeLastMove condition may name. */
 export type MutationPools = { moves: readonly string[]; foeMoves: readonly string[] };
 
-/** `base`'s pools against `field`: its own movePool, and the union of movePool over the field's sides (Ruling 141). */
+/** Every move a side's creatures can use: its orchestrator's movePool plus each active and bench subagent's moves. */
+function sideMoves(side: SideSetup): string[] {
+  return [...movePool(side), ...[...side.active, ...side.bench].flatMap((c) => c.moves)];
+}
+
+/**
+ * `base`'s pools against `field`: its own movePool, and every move some field creature can use (Ruling 141) — a
+ * foe-subject condition also matches foe subagents, so their moves count too.
+ */
 export function mutationPools(base: Archetype, field: readonly Archetype[]): MutationPools {
-  return { moves: movePool(base.side), foeMoves: [...new Set(field.flatMap((f) => movePool(f.side)))] };
+  return { moves: movePool(base.side), foeMoves: [...new Set(field.flatMap((f) => sideMoves(f.side)))] };
 }
 
 /** Which side a target selector names; the record keeps every selector classified. */

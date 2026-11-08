@@ -178,10 +178,12 @@ describe('mutation draws (Ruling 141)', () => {
     expect(moved).toBeGreaterThan(100);
   });
 
-  it('draws foeLastMove moves from the field’s move pools, and turn rounds a fight can reach (never below 1)', () => {
+  it('draws foeLastMove moves from every field creature (orchestrators and subagents), and turn rounds a fight can reach (never below 1)', () => {
     const pools = mutationPools(BASE, FIELD);
-    const fieldMoves = new Set(FIELD.flatMap((f) => movePool(f.side)));
+    const subagentMoves = FIELD.flatMap((f) => [...f.side.active, ...f.side.bench].flatMap((c) => c.moves));
+    const fieldMoves = new Set([...FIELD.flatMap((f) => movePool(f.side)), ...subagentMoves]);
     expect(new Set(pools.foeMoves)).toEqual(fieldMoves);
+    expect(subagentMoves.some((m) => !FIELD.some((f) => movePool(f.side).includes(m)))).toBe(true);
     const rng = new Sfc32(SEED);
     const lastMoves = new Set<string>();
     const rounds = { below: new Set<number>(), atLeast: new Set<number>() };
