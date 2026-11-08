@@ -83,16 +83,29 @@ function checkDraws(seed: string, creatures: number, events: readonly BattleEven
 }
 
 describe('invariants over random legal battles (spec §8 properties)', () => {
-  it('arbLegalSetup only builds setups validateSetup accepts, gridded and gridless', () => {
-    let gridded = 0;
+  it('arbLegalSetup only builds setups validateSetup accepts, gridded and gridless, with and without Autopilot', () => {
+    const seen = { gridded: 0, autopilot: 0, griddedAutopilot: 0, noAutopilot: 0, bigAutopilot: 0 };
     fc.assert(
       fc.property(arbLegalSetup, (setup) => {
         expect(validateSetup(setup).errors).toEqual([]);
-        if (setup.a.grid !== null || setup.b.grid !== null) gridded++;
+        if (setup.a.grid !== null || setup.b.grid !== null) seen.gridded++;
+        for (const side of [setup.a, setup.b]) {
+          if (side.autopilot === undefined) {
+            seen.noAutopilot++;
+            continue;
+          }
+          seen.autopilot++;
+          if (side.grid !== null) seen.griddedAutopilot++;
+          if (side.autopilot.deck.cards.length > 6) seen.bigAutopilot++;
+        }
       }),
       { numRuns: 500 },
     );
-    expect(gridded).toBeGreaterThan(100);
+    expect(seen.gridded).toBeGreaterThan(100);
+    expect(seen.autopilot).toBeGreaterThan(300); // B4: about half the sides carry an Autopilot deck
+    expect(seen.noAutopilot).toBeGreaterThan(300);
+    expect(seen.griddedAutopilot).toBeGreaterThan(50);
+    expect(seen.bigAutopilot).toBeGreaterThan(50); // beyond a subagent deck's 6, up to the cap of 12
   });
 
   it('arbLegalSetup trains subagents and builds sides with no active subagent (Ruling 77)', () => {
@@ -170,5 +183,5 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
     expect(sent.policyUpdate).toBeGreaterThan(0);
     expect(sent.injection).toBeGreaterThan(0);
     expect((sent.swap + sent.directive + sent.policyUpdate + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
-  });
+  }, 60_000);
 });

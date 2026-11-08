@@ -37,10 +37,10 @@ const arbCard = (moves: readonly string[]): fc.Arbitrary<Omit<Card, 'id'>> =>
       ...(overflow ? { allowOverflow: true as const } : {}),
     }));
 
-/** 0-6 cards and a Default over the listed `moves` and the universal moves; ids c0, c1, … and def. */
-export const arbDeck = (moves: readonly string[]): fc.Arbitrary<Deck> => {
+/** 0-`maxCards` (default 6) cards and a Default over the listed `moves` and the universal moves; ids c0, c1, … and def. */
+export const arbDeck = (moves: readonly string[], maxCards = 6): fc.Arbitrary<Deck> => {
   const known = [...moves, ...UNIVERSAL_MOVES];
-  return fc.record({ cards: fc.array(arbCard(known), { maxLength: 6 }), last: arbCard(known) }).map(({ cards, last }) => ({
+  return fc.record({ cards: fc.array(arbCard(known), { maxLength: maxCards }), last: arbCard(known) }).map(({ cards, last }) => ({
     cards: cards.map((c, i) => ({ id: `c${i}`, ...c })),
     default: { id: 'def', ...last },
   }));

@@ -170,6 +170,19 @@ describe('golden coverage', () => {
     expect(landed).toEqual([false, true]);
   });
 
+  it('autopilot-both-sides: every round is {}, and both orchestrators are listed in IntentsPlanned and traced (B4)', () => {
+    const at = GOLDENS.findIndex((g) => g.file === 'autopilot-both-sides');
+    const golden = GOLDENS[at]?.golden;
+    const events = replays()[at]?.events ?? [];
+    if (golden === undefined) throw new Error('missing golden');
+    expect(golden.log.rounds.every((cmd) => Object.keys(cmd).length === 0)).toBe(true);
+    const orchs = createBattle(golden.log.setup, golden.log.seed).creatures.filter((c) => c.isOrchestrator).map((c) => c.index);
+    for (const o of orchs) {
+      expect(events.some((e) => e.type === 'IntentsPlanned' && e.intents.some((i) => i.actor === o && i.cardId !== null))).toBe(true);
+      expect(new Set(events.flatMap((e) => (e.type === 'CardTrace' && e.actor === o ? [e.firedCardId] : []))).size).toBeGreaterThan(1);
+    }
+  });
+
   it('a T4-trained subagent uses a move with a wildT4 list, a Robust subagent has recordedFoes, and a side starts with no active subagent (Ruling 77)', () => {
     let wildT4 = false;
     GOLDENS.forEach(({ golden }, g) => {

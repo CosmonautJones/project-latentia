@@ -4,7 +4,7 @@ import type { GridLayout, PlacedPiece } from '../grid/model.js';
 import { validateGrid, type ValidationResult } from '../grid/validate.js';
 import type { BattleSetup, CreatureSetup, SideSetup, ValidationError } from './setup.js';
 import { setupShapeErrors } from './setup-shape.js';
-import { deckErrors } from './validate-deck.js';
+import { autopilotDeckErrors, deckErrors } from './validate-deck.js';
 import { VERSIONS, type SideId } from './state.js';
 
 // validateSetup (spec §7 "Invalid setup or grid"): every problem as { code, path, message }.
@@ -131,6 +131,7 @@ function validateSlots(side: SideSetup, grid: GridLayout, id: SideId, errors: Er
 /**
  * Each creature's deck against its stored moveset (Ruling 82): a gridded orchestrator's comes from its grid
  * (species signature, then its Skill and graft moves); everyone else's is its listed moves. Universals are known.
+ * The side's Autopilot deck is checked against the orchestrator's moveset, with its card cap (Ruling 95).
  */
 function validateDecks(side: SideSetup, id: SideId, errors: Errors): void {
   const orch = side.orchestrator;
@@ -143,6 +144,7 @@ function validateDecks(side: SideSetup, id: SideId, errors: Errors): void {
     ...side.bench.map((c, i): [CreatureSetup, string, readonly string[]] => [c, `${id}.bench[${i}]`, c.moves]),
   ];
   for (const [c, path, known] of all) if (c.deck !== undefined) deckErrors(c.deck, `${path}.deck`, known, errors);
+  if (side.autopilot !== undefined) autopilotDeckErrors(side.autopilot.deck, `${id}.autopilot.deck`, orchMoves, errors);
 }
 
 function validateSide(side: SideSetup, id: SideId, ids: Set<string>, errors: Errors): void {

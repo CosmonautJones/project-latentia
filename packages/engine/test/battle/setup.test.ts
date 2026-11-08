@@ -205,7 +205,7 @@ describe('validateSetup', () => {
     const g = (generalization: number): CreatureSetup => ({ ...mon(`g${generalization}`, 'blitzr'), generalization });
     const t = { ...mon('t', 'blitzr'), trainedTemperature: 5 } as unknown as CreatureSetup;
     const ok = { ...mon('ok', 'blitzr'), generalization: 0, trainedTemperature: 4 } as CreatureSetup;
-    const deck = {} as never;
+    const deck: Deck = { cards: [], default: { id: 'd', subject: 'self', condition: { category: 'coin' }, move: 'compact', target: 'self' } };
     const s = setupOf(
       { bench: [g(101), g(-1), g(2.5)] },
       { bench: [t, ok], autopilot: { deck, temperature: 7 as never } },
@@ -474,7 +474,7 @@ describe('createBattle', () => {
   });
 
   it('builds side state: grid copy, default temperature T2 or the Autopilot temperature, not headless, no policy or directive', () => {
-    const deck = { cards: [] } as never;
+    const deck: Deck = { cards: [], default: { id: 'd', subject: 'self', condition: { category: 'coin' }, move: 'compact', target: 'self' } };
     const state = createBattle(setupOf({}, { autopilot: { deck, temperature: 4 } }), SEED);
     expect(state.sides.a).toEqual({
       grid: l5Grid('a'),
@@ -493,7 +493,8 @@ describe('createBattle', () => {
     expect(state.fields).toEqual([]);
     expect(state.turnOrder).toEqual([]);
     expect(state.sides.b.temperature).toBe(4);
-    expect(state.sides.b.autopilot).toEqual({ deck: { cards: [] }, temperature: 4 });
+    expect(state.sides.b.autopilot).toEqual({ deck, temperature: 4 });
+    expect(state.sides.b.autopilot?.deck).not.toBe(deck);
   });
 
   it('never aliases the caller setup', () => {

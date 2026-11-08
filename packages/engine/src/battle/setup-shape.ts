@@ -57,7 +57,10 @@ function sideShape(s: unknown, path: string, errors: Errors): void {
   }
   if (s.autopilot !== undefined) {
     if (!isRecord(s.autopilot)) shape(errors, join(path, 'autopilot'), 'autopilot must be an object when present');
-    else field(s.autopilot, 'temperature', join(path, 'autopilot'), isNum, 'a number', errors);
+    else {
+      deckShapeErrors(s.autopilot.deck, join(join(path, 'autopilot'), 'deck'), errors);
+      field(s.autopilot, 'temperature', join(path, 'autopilot'), isNum, 'a number', errors);
+    }
   }
   field(s, 'opponentId', path, isStr, 'a string', errors);
 }

@@ -1,0 +1,358 @@
+{
+  "name": "autopilot-both-sides",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "92702e15ca13c10e6b7f03d463ce823f",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 14,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "finish",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "distilled-strike",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "ship",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "ship-it",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 60
+          },
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "batch",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "batch-job",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "grind",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "batch-job",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 80
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b",
+        "autopilot": {
+          "deck": {
+            "cards": [
+              {
+                "id": "finish",
+                "subject": "foe",
+                "condition": {
+                  "category": "hp",
+                  "op": "below",
+                  "pct": 50
+                },
+                "move": "proof-by-contradiction",
+                "target": "lowestHpFoe"
+              },
+              {
+                "id": "think",
+                "subject": "self",
+                "condition": {
+                  "category": "cooldown",
+                  "rounds": 3
+                },
+                "move": "step-back-prompt",
+                "target": "self"
+              },
+              {
+                "id": "coin",
+                "subject": "self",
+                "condition": {
+                  "category": "coin"
+                },
+                "move": "chain-of-thought",
+                "target": "randomFoe"
+              }
+            ],
+            "default": {
+              "id": "help",
+              "subject": "self",
+              "condition": {
+                "category": "hp",
+                "op": "atLeast",
+                "pct": 25
+              },
+              "move": "happy-to-help",
+              "target": "lowestHpFoe"
+            }
+          },
+          "temperature": 1
+        }
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-cobolt",
+          "species": "cobolt",
+          "level": 14,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "chomp",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "status",
+                    "status": "overfit"
+                  },
+                  "move": "null-chomp",
+                  "target": "lowestHpFoe"
+                },
+                {
+                  "id": "follow",
+                  "subject": "self",
+                  "condition": {
+                    "category": "hp",
+                    "op": "atLeast",
+                    "pct": 25
+                  },
+                  "move": "infinite-loop",
+                  "target": "orchestratorTarget"
+                }
+              ],
+              "default": {
+                "id": "loop",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "infinite-loop",
+                "target": "highestAtkFoe"
+              }
+            },
+            "generalization": 50
+          },
+          {
+            "id": "b-wasp",
+            "species": "off-by-wasp",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "coin",
+                  "subject": "self",
+                  "condition": {
+                    "category": "coin"
+                  },
+                  "move": "swarm-of-fine-tunes",
+                  "target": "randomFoe"
+                },
+                {
+                  "id": "mend",
+                  "subject": "self",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "community-patch",
+                  "target": "self"
+                }
+              ],
+              "default": {
+                "id": "fork",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "hard-fork",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 30
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a",
+        "autopilot": {
+          "deck": {
+            "cards": [
+              {
+                "id": "patch",
+                "subject": "self",
+                "condition": {
+                  "category": "allyHp",
+                  "op": "below",
+                  "pct": 50
+                },
+                "move": "hotfix",
+                "target": "lowestHpAlly"
+              },
+              {
+                "id": "batch",
+                "subject": "foe",
+                "condition": {
+                  "category": "hp",
+                  "op": "below",
+                  "pct": 50
+                },
+                "move": "batch-job",
+                "target": "lowestHpFoe"
+              },
+              {
+                "id": "clean",
+                "subject": "self",
+                "condition": {
+                  "category": "status",
+                  "status": "glazed"
+                },
+                "move": "refactor",
+                "target": "self"
+              }
+            ],
+            "default": {
+              "id": "recall",
+              "subject": "self",
+              "condition": {
+                "category": "hp",
+                "op": "atLeast",
+                "pct": 25
+              },
+              "move": "long-term-recall",
+              "target": "highestAtkFoe"
+            }
+          },
+          "temperature": 3
+        }
+      },
+      "kind": "ghost"
+    },
+    "rounds": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ]
+  },
+  "expectedHash": "246f6fd1dfefb363",
+  "rounds": 6,
+  "winner": "a"
+}

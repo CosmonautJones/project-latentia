@@ -5,7 +5,7 @@ import { cycle, mon, opened, scenario, setup, side, type GoldenScenario } from '
 
 // The deck battles (Phase B): subagents acting from decks, so the goldens carry IntentsPlanned with card ids,
 // CardTrace with every skip reason, obedience failures and Brittle repeats (B2), then the levers that act on decks:
-// Policy Update and Directive (B3).
+// Policy Update and Directive (B3), then orchestrators driven by Autopilot decks on `{}` rounds (B4).
 
 const card = (id: string, subject: Subject, condition: Condition, move: string, target: TargetSelector): Card => ({ id, subject, condition, move, target });
 /** The actor is at 25% HP or more. */
@@ -109,6 +109,26 @@ const POLICY_BLITZ: Deck = {
 /** The team-wide rule: recall into the weakest foe while at 25% HP or more. */
 const RECALL_POLICY: Card = card('recall', 'self', T, 'long-term-recall', 'lowestHpFoe');
 
+/** An AI trainer's Sagelet Autopilot: finish a weak foe, think on a cooldown, flip a coin for a chain, else help. */
+const SAGE_AUTOPILOT: Deck = {
+  cards: [
+    card('finish', 'foe', { category: 'hp', op: 'below', pct: 50 }, 'proof-by-contradiction', 'lowestHpFoe'),
+    card('think', 'self', { category: 'cooldown', rounds: 3 }, 'step-back-prompt', 'self'),
+    card('coin', 'self', { category: 'coin' }, 'chain-of-thought', 'randomFoe'),
+  ],
+  default: card('help', 'self', T, 'happy-to-help', 'lowestHpFoe'),
+};
+
+/** A ghost's Cobolt Autopilot: patch a hurt ally, batch a weak foe, refactor when Glazed, else recall into the strongest foe. */
+const COBOLT_AUTOPILOT: Deck = {
+  cards: [
+    card('patch', 'self', { category: 'allyHp', op: 'below', pct: 50 }, 'hotfix', 'lowestHpAlly'),
+    card('batch', 'foe', { category: 'hp', op: 'below', pct: 50 }, 'batch-job', 'lowestHpFoe'),
+    card('clean', 'self', { category: 'status', status: 'glazed' }, 'refactor', 'self'),
+  ],
+  default: card('recall', 'self', T, 'long-term-recall', 'highestAtkFoe'),
+};
+
 export const DECK_SCENARIOS: readonly GoldenScenario[] = [
   // Gridded active-card counts (3 and 2), notActive, insufficientContext, moveDisabled (Glazed), orchestratorTarget,
   // randomFoe and coin; side B's Nullbeetle acts from a deck, its Wasp from its default intent.
@@ -166,5 +186,30 @@ export const DECK_SCENARIOS: readonly GoldenScenario[] = [
       a: opened([{ policy: RECALL_POLICY }, { move: 'happy-to-help' }, { directive: { slot: 1, moveId: 'token-burst' } }, { directive: { slot: 0, moveId: 'hotfix' } }], cycle(['chain-of-thought', 'happy-to-help', 'compact'])),
       b: cycle(['refactor', 'batch-job', 'hotfix'], [1], 'foeSub'),
     },
+  ),
+  // A ghost battle with no commands at all: both orchestrators act from their Autopilot decks (T1 and T3), listed in
+  // IntentsPlanned and traced like subagents, beside subagents acting from their own decks (B4, Rulings 93-96).
+  scenario(
+    'autopilot-both-sides',
+    setup(
+      {
+        ...side('a', {
+          orch: mon('a-sagelet', 'sagelet', 14),
+          active: [trained(mon('a-blitzr', 'blitzr', 12), POLICY_BLITZ, 60), trained(mon('a-cobolt', 'cobolt', 12), POLICY_COBOLT, 80)],
+          bench: [mon('a-forkling', 'forkling', 12)],
+        }),
+        autopilot: { deck: SAGE_AUTOPILOT, temperature: 1 },
+      },
+      {
+        ...side('b', {
+          orch: mon('b-cobolt', 'cobolt', 14),
+          active: [trained(mon('b-nullbeetle', 'nullbeetle', 12), BEETLE, 50), mon('b-wasp', 'off-by-wasp', 12)],
+          bench: [trained(mon('b-forkling', 'forkling', 12), BRITTLE_FORK, 30)],
+        }),
+        autopilot: { deck: COBOLT_AUTOPILOT, temperature: 3 },
+      },
+      'ghost',
+    ),
+    {},
   ),
 ];

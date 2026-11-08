@@ -47,7 +47,8 @@ describe('public surface (spec §4, so far)', () => {
     const side = (o: engine.CreatureSetup): engine.SideSetup => ({ orchestrator: o, active: [], bench: [], grid: null, opponentId: 'z' });
     const seed = '0123456789abcdef0123456789abcdef';
     expect(() => engine.createBattle({ a: side(orch('x', 'nope')), b: side(orch('y', 'sagelet')), kind: 'wild' }, seed)).toThrow(engine.SetupError);
-    expect(() => engine.simulate({ a: side(orch('x', 'sagelet')), b: side(orch('y', 'sagelet')), kind: 'wild' }, seed, { kind: 'autopilot' })).toThrow(engine.SimulateError);
+    const bad: engine.RoundCommand = { a: { temperature: 2, action: { kind: 'move', moveId: 'no-such-move', target: 1 } } };
+    expect(() => engine.simulate({ a: side(orch('x', 'sagelet')), b: side(orch('y', 'sagelet')), kind: 'wild' }, seed, { kind: 'recorded', rounds: [bad] })).toThrow(engine.SimulateError);
     expect(new engine.EngineInvariantError('x')).toBeInstanceOf(Error);
   });
 });

@@ -7,9 +7,12 @@ import { field, isRecord, isStr, shape } from './shape.js';
 // Deck validation (Review Focus 3, Rulings 75 and 82). deckShapeErrors is the type-level check setup-shape.ts
 // runs on untrusted JSON (code `shape`; a missing Default is not a shape error). deckErrors is the value check
 // validateSetup runs on a well-shaped deck: `deckDefault`, `duplicateId`, `unknownId`, `moveNotKnown`,
-// `cardSubject` and `range`.
+// `cardSubject` and `range`; an Autopilot deck is also held to MAX_AUTOPILOT_CARDS (`deckSize`, Ruling 95).
 
 type Errors = ValidationError[];
+
+/** An Autopilot deck holds at most this many cards, its Default card aside (spec §5 "Cards, decks and traces"). */
+export const MAX_AUTOPILOT_CARDS = 12;
 
 const oneOf =
   (values: readonly unknown[]) =>
@@ -160,4 +163,15 @@ export function deckErrors(deck: Deck, path: string, known: readonly string[], e
     ids.add(card.id);
     cardErrors(card, at, knows, errors);
   }
+}
+
+/**
+ * Value problems with a well-shaped Autopilot deck at `path` for an orchestrator whose stored moveset is `known`
+ * (Ruling 95): deckSize above MAX_AUTOPILOT_CARDS cards (the Default card aside), then every deckErrors rule.
+ */
+export function autopilotDeckErrors(deck: Deck, path: string, known: readonly string[], errors: Errors): void {
+  if (deck.cards.length > MAX_AUTOPILOT_CARDS) {
+    errors.push({ code: 'deckSize', path: `${path}.cards`, message: `an Autopilot deck holds at most ${MAX_AUTOPILOT_CARDS} cards besides its Default, got ${deck.cards.length}` });
+  }
+  deckErrors(deck, path, known, errors);
 }

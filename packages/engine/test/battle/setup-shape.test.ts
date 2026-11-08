@@ -70,6 +70,8 @@ describe('validateSetup on malformed input (Ruling 75)', () => {
     ['a piece id a number', 'a.grid.pieces[0].id', (s) => (((gridA(s).pieces as Rec[])[0] as Rec).id = 7)],
     ['grid width a string', 'a.grid.width', (s) => (gridA(s).width = '4')],
     ['autopilot null', 'a.autopilot', (s) => (sideA(s).autopilot = null)],
+    ['autopilot deck not an object', 'a.autopilot.deck', (s) => (sideA(s).autopilot = { deck: 3, temperature: 2 })],
+    ['autopilot deck card holding null', 'a.autopilot.deck.cards[0]', (s) => (sideA(s).autopilot = { deck: { cards: [null] }, temperature: 2 })],
     ['autopilot temperature a string', 'a.autopilot.temperature', (s) => (sideA(s).autopilot = { deck: {}, temperature: '2' })],
     ['opponentId a number', 'a.opponentId', (s) => (sideA(s).opponentId = 2)],
   ])('%s → shape at %s', (_name, path, edit) => {

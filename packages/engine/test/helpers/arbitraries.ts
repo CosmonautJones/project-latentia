@@ -189,9 +189,22 @@ const arbGridded = (tag: SideId): fc.Arbitrary<DraftSide> =>
       };
     });
 
-/** Mostly gridless sides (1 in 3 gridded). */
+/** The orchestrator's stored moveset (Ruling 82): its listed moves, or on a gridded side its signature and grid moves. */
+function orchestratorMoves(side: SideSetup): string[] {
+  if (side.grid === null) return side.orchestrator.moves;
+  const grid = side.grid.pieces.flatMap((p) => ((p.kind === 'skill' || p.kind === 'graft') && p.moveId !== undefined ? [p.moveId] : []));
+  return [speciesDef(side.orchestrator.species).signature, ...grid];
+}
+
+/** An Autopilot config (B4): 0-12 cards and a Default over the orchestrator's moves, at temperature 0-4. */
+const arbAutopilot = (side: SideSetup): fc.Arbitrary<NonNullable<SideSetup['autopilot']>> =>
+  fc.record({ deck: arbDeck(orchestratorMoves(side), 12), temperature: fc.constantFrom<Temperature>(0, 1, 2, 3, 4) });
+
+/** Mostly gridless sides (1 in 3 gridded); half of them carry an Autopilot deck (an AI trainer or ghost). */
 const arbSide = (tag: SideId): fc.Arbitrary<DraftSide> =>
-  fc.oneof({ arbitrary: arbGridless(tag), weight: 2 }, { arbitrary: arbGridded(tag), weight: 1 });
+  fc
+    .oneof({ arbitrary: arbGridless(tag), weight: 2 }, { arbitrary: arbGridded(tag), weight: 1 })
+    .chain((d) => fc.oneof(fc.constant(d), arbAutopilot(d.side).map((autopilot) => ({ ...d, side: { ...d.side, autopilot } }))));
 
 /**
  * The opponent ids a subagent's recordedFoes are picked from (Ruling 80: opponent ids, not creature ids): the
@@ -211,8 +224,8 @@ function withRecordedFoes(own: DraftSide): SideSetup {
 
 /**
  * A legal setup from the slice species (validateSetup passes). Subagents carry trainedTemperature,
- * generalization and recordedFoes (subsets of recordedFoeCandidates), each sometimes absent, and a side
- * may have no active subagent (Ruling 77).
+ * generalization and recordedFoes (subsets of recordedFoeCandidates), each sometimes absent, a side
+ * may have no active subagent (Ruling 77), and about half the sides carry an Autopilot deck (B4).
  */
 export const arbLegalSetup: fc.Arbitrary<BattleSetup> = fc
   .record({ a: arbSide('a'), b: arbSide('b'), kind: fc.constantFrom('trainer' as const, 'wild' as const, 'ghost' as const) })

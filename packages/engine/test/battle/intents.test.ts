@@ -276,6 +276,8 @@ describe('resolution: re-plan, obedience and Brittle repeat', () => {
       const trace = ofType(events, 'CardTrace')[0];
       expect(trace?.firedCardId).toBe('def');
       expect(trace?.skipped.at(-1)).toEqual({ cardId: 'def', reason: 'moveDisabled' });
+      // Traced once: the plan-time fallback's own skip is not carried over as a card above the intent's.
+      expect(trace?.skipped.filter((k) => k.cardId === 'def')).toHaveLength(1);
       expect(ofType(events, 'BrittleRepeat')).toEqual([]);
       expect(ofType(events, 'MoveUsed')[0]).toMatchObject({ actor: 1, moveId: 'ship-it', target: fallback.target });
     }

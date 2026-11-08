@@ -115,10 +115,10 @@ export function intentTarget(state: BattleState, c: CreatureState, moveId: strin
 }
 
 /**
- * The intent of a creature with no command and no deck (a subagent with a deck evaluates it, plan.ts; Autopilot
- * arrives in B4): the first move in its list that is neither universal nor orchestrator-only nor disabled by a
- * held status (Glazed / Overfit, Ruling 50); failing that its first move a status allows; failing that its first
- * move. Its target is intentTarget's.
+ * The intent of a creature with no command and no deck (a subagent with a deck, or an orchestrator its side's
+ * Autopilot drives, evaluates it: plan.ts): the first move in its list that is neither universal nor
+ * orchestrator-only nor disabled by a held status (Glazed / Overfit, Ruling 50); failing that its first move a
+ * status allows; failing that its first move. Its target is intentTarget's.
  */
 export function defaultIntent(state: BattleState, actor: number): { moveId: string; target: number } {
   const c = state.creatures[actor];

@@ -91,11 +91,23 @@ export function endRoundLevers(state: BattleState): void {
   }
 }
 
-/** A card of `c`'s deck, or a policy in force for its side this round, by id; null when there is none. */
+/**
+ * The deck a creature's entries are evaluated from: a subagent's own deck; an orchestrator's side's Autopilot deck
+ * (Ruling 93; whether it drives a given round is plan.ts's call). Null when there is none.
+ */
+export function deckOf(state: BattleState, c: CreatureState): Deck | null {
+  return c.isOrchestrator ? (state.sides[c.side].autopilot?.deck ?? null) : c.deck;
+}
+
+/**
+ * A card of `c`'s deck (deckOf), or for a subagent a policy in force for its side this round, by id; null when there
+ * is none. Policies are for subagents: an Autopilot orchestrator never evaluates them (Ruling 93).
+ */
 export function cardOf(state: BattleState, c: CreatureState, id: string): Card | null {
-  const deck = c.deck;
+  const deck = deckOf(state, c);
   if (deck === null) return null;
-  return [...activePolicies(state, c.side, state.round), ...deck.cards, deck.default].find((k) => k.id === id) ?? null;
+  const policies = c.isOrchestrator ? [] : activePolicies(state, c.side, state.round);
+  return [...policies, ...deck.cards, deck.default].find((k) => k.id === id) ?? null;
 }
 
 /** Specialist (spec §5): at least half of the deck's cards, Default excluded, were recorded from `opponentId` (none: false). */

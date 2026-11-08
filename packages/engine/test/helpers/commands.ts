@@ -84,8 +84,9 @@ function withInjection(state: BattleState, side: SideId, move: OrchestratorActio
  * A scripted source from precomputed choices: each round, for each side, a temperature and one legal
  * orchestrator action picked from the current state — a kind among those with a legal action (move, move
  * with an injection, swap, directive, policy update), then one action of that kind; `none` when nothing is legal (e.g.
- * while charging). `next` is a pure function of the state, so the same source replays the same battle
- * every time it is simulated, and it never mutates the state.
+ * while charging). A side with an Autopilot config sends no command about half the rounds (bit 8 of its
+ * temperature choice), so its Autopilot deck drives those rounds (Ruling 94). `next` is a pure function of the
+ * state, so the same source replays the same battle every time it is simulated, and it never mutates the state.
  */
 export function scriptedFrom(choices: readonly number[]): CommandSource {
   const choice = (round: number, k: number): number => choices[(round * PER_ROUND + k) % choices.length] ?? 0;
@@ -95,6 +96,7 @@ export function scriptedFrom(choices: readonly number[]): CommandSource {
       const cmd: RoundCommand = {};
       SIDE_IDS.forEach((side, s) => {
         const c = (k: number): number => choice(state.round, s * PER_SIDE + k);
+        if (state.sides[side].autopilot !== null && ((c(0) >>> 8) & 1) === 0) return;
         const { move, swap, directive, policyUpdate } = legalActions(state, side);
         const kinds = [move, move, swap, directive, policyUpdate].map((list, k) => ({ list, inject: k === 1 })).filter((x) => x.list.length > 0);
         const kind = kinds[c(1) % Math.max(1, kinds.length)];
