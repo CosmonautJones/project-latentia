@@ -16,6 +16,19 @@ const oneOf =
 const OPS = ['below', 'atLeast'] as const;
 const PCTS = [25, 50, 75] as const;
 
+// The field predicates, built once: every card of every deck in every battle setup is shape-checked.
+const isOp = oneOf(OPS);
+const isPct = oneOf(PCTS);
+const isStatusId = oneOf(STATUS_IDS);
+const isTypeOrWeak = oneOf([...TYPES, 'weakToMove']);
+const isRounds = oneOf([1, 2, 3]);
+const isFieldKind = oneOf(FIELD_KINDS);
+const isSubject = oneOf(SUBJECTS);
+const isSelector = oneOf(TARGET_SELECTORS);
+const isNumber = (v: unknown): boolean => typeof v === 'number';
+const isTrueIfPresent = (v: unknown): boolean => v === undefined || v === true;
+const isStrIfPresent = (v: unknown): boolean => v === undefined || isStr(v);
+
 /** The fields each condition category needs (spec §5 card grammar). */
 function conditionShape(c: unknown, path: string, errors: Errors): void {
   if (!isRecord(c)) {
@@ -26,34 +39,31 @@ function conditionShape(c: unknown, path: string, errors: Errors): void {
     shape(errors, `${path}.category`, `category must be one of ${CONDITION_CATEGORIES.join(', ')}`);
     return;
   }
-  const threshold = (): void => {
-    field(c, 'op', path, oneOf(OPS), 'below or atLeast', errors);
-    field(c, 'pct', path, oneOf(PCTS), '25, 50 or 75', errors);
-  };
   switch (c.category as ConditionCategory) {
     case 'hp':
     case 'allyHp':
     case 'contextFill':
-      threshold();
+      field(c, 'op', path, isOp, 'below or atLeast', errors);
+      field(c, 'pct', path, isPct, '25, 50 or 75', errors);
       return;
     case 'status':
-      field(c, 'status', path, oneOf(STATUS_IDS), 'a status id', errors);
+      field(c, 'status', path, isStatusId, 'a status id', errors);
       return;
     case 'foeType':
-      field(c, 'is', path, oneOf([...TYPES, 'weakToMove']), 'a type id or weakToMove', errors);
+      field(c, 'is', path, isTypeOrWeak, 'a type id or weakToMove', errors);
       return;
     case 'foeLastMove':
       field(c, 'move', path, isStr, 'a move id', errors);
       return;
     case 'turn':
-      field(c, 'op', path, oneOf(OPS), 'below or atLeast', errors);
-      field(c, 'round', path, (v) => typeof v === 'number', 'a number', errors);
+      field(c, 'op', path, isOp, 'below or atLeast', errors);
+      field(c, 'round', path, isNumber, 'a number', errors);
       return;
     case 'cooldown':
-      field(c, 'rounds', path, oneOf([1, 2, 3]), '1, 2 or 3', errors);
+      field(c, 'rounds', path, isRounds, '1, 2 or 3', errors);
       return;
     case 'field':
-      field(c, 'effect', path, oneOf(FIELD_KINDS), 'a field effect kind', errors);
+      field(c, 'effect', path, isFieldKind, 'a field effect kind', errors);
       return;
     case 'foeBuffed':
     case 'telegraphing':
@@ -68,18 +78,18 @@ function cardShape(card: unknown, path: string, errors: Errors): void {
     return;
   }
   field(card, 'id', path, isStr, 'a string', errors);
-  field(card, 'subject', path, oneOf(SUBJECTS), 'self, orchestrator or foe', errors);
+  field(card, 'subject', path, isSubject, 'self, orchestrator or foe', errors);
   conditionShape(card.condition, `${path}.condition`, errors);
   field(card, 'move', path, isStr, 'a move id', errors);
-  field(card, 'target', path, oneOf(TARGET_SELECTORS), 'a target selector', errors);
-  field(card, 'allowOverflow', path, (v) => v === undefined || v === true, 'true when present', errors);
-  field(card, 'recordedFrom', path, (v) => v === undefined || isStr(v), 'a string when present', errors);
+  field(card, 'target', path, isSelector, 'a target selector', errors);
+  field(card, 'allowOverflow', path, isTrueIfPresent, 'true when present', errors);
+  field(card, 'recordedFrom', path, isStrIfPresent, 'a string when present', errors);
   const inj = card.injection;
   if (inj === undefined) return;
   if (!isRecord(inj)) shape(errors, `${path}.injection`, 'injection must be an object when present');
   else {
     field(inj, 'moveId', `${path}.injection`, isStr, 'a move id', errors);
-    field(inj, 'target', `${path}.injection`, oneOf(TARGET_SELECTORS), 'a target selector', errors);
+    field(inj, 'target', `${path}.injection`, isSelector, 'a target selector', errors);
   }
 }
 

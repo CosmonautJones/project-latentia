@@ -2,6 +2,7 @@ import { eventStreamHash } from '../events/canonical.js';
 import type { BattleEvent } from '../events/types.js';
 import { EngineInvariantError } from '../math/bp.js';
 import type { SeedHex } from '../rng/seed.js';
+import { clonePlain } from './clone.js';
 import { ROUND_CAP } from './end.js';
 import type { CommandError } from './errors.js';
 import { ENGINE_VERSION, type BattleLog, type RoundCommand } from './log.js';
@@ -61,14 +62,14 @@ export function runBattle(
   next: (state: BattleState) => RoundCommand | null,
 ): BattleResult | { round: number; error: CommandError | 'exhausted' } {
   const state = createBattle(setup, seed);
-  const log: BattleLog = { engineVersion: ENGINE_VERSION, seed, setup: structuredClone(setup), rounds: [] };
+  const log: BattleLog = { engineVersion: ENGINE_VERSION, seed, setup: clonePlain(setup), rounds: [] };
   const events: BattleEvent[] = [];
   const inPlace = (s: BattleState): BattleState => s;
   while (!state.ended) {
     if (state.round >= ROUND_CAP) throw new EngineInvariantError(`battle still running after round ${ROUND_CAP}`, { round: state.round, seed });
     const given = next(state);
     if (given === null) return { round: state.round + 1, error: 'exhausted' };
-    const cmd = structuredClone(given);
+    const cmd = clonePlain(given);
     const out = playRound(state, cmd, inPlace);
     if ('error' in out) return { round: state.round + 1, error: out.error };
     log.rounds.push(cmd);

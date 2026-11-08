@@ -46,8 +46,8 @@ jobs:
         env:
           BROWSER: ${{ matrix.browser }}
 
-  # Micro-benchmark gate (spec §2 criterion 7): mean ms per battle over a fixed 2,000-battle set;
-  # `pnpm bench` exits 1 above 1.2 ms.
+  # Micro-benchmark gate (spec §2 criterion 7): mean ms per battle over two fixed 2,000-battle sets — deck-driven
+  # slice battles with both sides on Autopilot (Ruling 109) and player-commanded ones; `pnpm bench` exits 1 above 1.2 ms.
   bench:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest

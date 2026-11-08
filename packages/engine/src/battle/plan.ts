@@ -10,7 +10,7 @@ import { activePolicies, deckOf, policyAddedThisRound } from './levers.js';
 import type { RoundCommand } from './log.js';
 import { aimsAtUser, defaultIntent, holdsLiveSlot, intentTarget, isHeadless, type ActionEntry, type LeverAction } from './order.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
-import { viewFor } from './view.js';
+import { viewFor, type Projections } from './view.js';
 
 // Plan (spec §5 step 2): one action entry per on-field position, with every subagent's intent from its deck
 // (or its default intent when it has none) and an uncommanded AI orchestrator's from its side's Autopilot deck;
@@ -84,9 +84,12 @@ function deckRun(state: BattleState, c: CreatureState, round: number): DeckRun |
   return { deck, activeN: activeCards(state, c), opts: { band: bandOf(c), policies: policiesFor(state, c, round) }, rollsObedience: true };
 }
 
-/** The deck's obeying choice against the view for `round` (a selector with no legal target falls back to intentTarget). */
-function deckEntry(state: BattleState, c: CreatureState, run: DeckRun, rs: RoundStartDraws | null, round: number): Planned {
-  const e = evaluateDeck(run.deck, viewFor(state, c.index, rs, round), run.activeN, run.opts);
+/**
+ * The deck's obeying choice against the view for `round` (a selector with no legal target falls back to intentTarget).
+ * `projections` are shared by every entry planned from the same state (view.ts Projections).
+ */
+function deckEntry(state: BattleState, c: CreatureState, run: DeckRun, rs: RoundStartDraws | null, round: number, projections?: Projections): Planned {
+  const e = evaluateDeck(run.deck, viewFor(state, c.index, rs, round, projections), run.activeN, run.opts);
   const aim = deckAim(state, c, e);
   return { ...moveEntry(c.index, aim.moveId, aim.target), cardId: e.cardId, skipped: e.trace.skipped };
 }
@@ -96,14 +99,14 @@ function deckEntry(state: BattleState, c: CreatureState, run: DeckRun, rs: Round
  * its stored target (Ruling 13); a creature with a deck evaluates the Policy Update cards in force for `round`,
  * its top activeCards cards, then Default against its view (deckEntry); otherwise its default intent.
  */
-export function subagentEntry(state: BattleState, c: CreatureState, rs: RoundStartDraws | null, round: number): Planned {
+export function subagentEntry(state: BattleState, c: CreatureState, rs: RoundStartDraws | null, round: number, projections?: Projections): Planned {
   if (c.charging !== null) return moveEntry(c.index, c.charging.moveId, c.charging.target);
   const run = deckRun(state, c, round);
   if (run === null) {
     const intent = defaultIntent(state, c.index);
     return moveEntry(c.index, intent.moveId, intent.target);
   }
-  return deckEntry(state, c, run, rs, round);
+  return deckEntry(state, c, run, rs, round, projections);
 }
 
 /**
@@ -134,10 +137,10 @@ export function autopilotDrives(state: BattleState, c: CreatureState, cmd: Round
  * evaluates its side's Autopilot deck (deckEntry, Rulings 93-94); otherwise a non-headless orchestrator follows its
  * side's command, and an uncommanded or headless one its default intent.
  */
-export function orchestratorEntry(state: BattleState, c: CreatureState, cmd: RoundCommand, rs: RoundStartDraws | null, round: number): Planned {
+export function orchestratorEntry(state: BattleState, c: CreatureState, cmd: RoundCommand, rs: RoundStartDraws | null, round: number, projections?: Projections): Planned {
   if (c.charging !== null) return moveEntry(c.index, c.charging.moveId, c.charging.target);
   const run = autopilotDrives(state, c, cmd) ? deckRun(state, c, round) : null;
-  if (run !== null) return { ...deckEntry(state, c, run, rs, round), autopilot: true };
+  if (run !== null) return { ...deckEntry(state, c, run, rs, round, projections), autopilot: true };
   const action = isHeadless(state, c.side) ? undefined : cmd[c.side]?.action;
   if (action === undefined) {
     const intent = defaultIntent(state, c.index);
@@ -171,12 +174,13 @@ export const plansAsSubagent = (state: BattleState, c: CreatureState): boolean =
  */
 export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[] {
   const entries: ActionEntry[] = [];
+  const projections: Projections = new Map(); // planning reads the state and never changes it
   for (const c of state.creatures) {
     if (!c.isOrchestrator && !plansAsSubagent(state, c)) continue;
     if (c.roundStart === null) {
       throw new EngineInvariantError('planning before round-start draws', { round: state.round, actor: c.index, seed: state.seed });
     }
-    const planned = c.isOrchestrator ? orchestratorEntry(state, c, cmd, c.roundStart, state.round) : subagentEntry(state, c, c.roundStart, state.round);
+    const planned = c.isOrchestrator ? orchestratorEntry(state, c, cmd, c.roundStart, state.round, projections) : subagentEntry(state, c, c.roundStart, state.round, projections);
     entries.push({
       actor: c.index,
       latency: sortLatency(c),

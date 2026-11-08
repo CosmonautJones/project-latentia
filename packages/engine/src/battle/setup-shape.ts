@@ -20,6 +20,8 @@ function arrayOf(v: unknown, path: string, what: string, errors: Errors, entry: 
   for (let i = 0; i < v.length; i++) entry(v[i], `${path}[${i}]`);
 }
 
+const isNumIfPresent = (v: unknown): boolean => v === undefined || isNum(v);
+
 function creatureShape(c: unknown, path: string, errors: Errors): void {
   if (!isRecord(c)) {
     shape(errors, path, 'a creature must be an object');
@@ -32,8 +34,8 @@ function creatureShape(c: unknown, path: string, errors: Errors): void {
   arrayOf(c.moves, join(path, 'moves'), 'moves', errors, (m, at) => {
     if (!isStr(m)) shape(errors, at, 'a move id must be a string');
   });
-  field(c, 'generalization', path, (v) => v === undefined || isNum(v), 'a number when present', errors);
-  field(c, 'trainedTemperature', path, (v) => v === undefined || isNum(v), 'a number when present', errors);
+  field(c, 'generalization', path, isNumIfPresent, 'a number when present', errors);
+  field(c, 'trainedTemperature', path, isNumIfPresent, 'a number when present', errors);
   if (c.recordedFoes !== undefined) {
     arrayOf(c.recordedFoes, join(path, 'recordedFoes'), 'recordedFoes', errors, (f, at) => {
       if (!isStr(f)) shape(errors, at, 'a recorded foe id must be a string');

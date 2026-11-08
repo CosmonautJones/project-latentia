@@ -3,6 +3,7 @@ import { drawRoundStart } from '../rng/draws.js';
 import type { ActionEntry } from './order.js';
 import { autopilotDrives, orchestratorEntry, plansAsSubagent, subagentEntry, type Intent } from './plan.js';
 import type { BattleState } from './state.js';
+import type { Projections } from './view.js';
 
 // Intents (spec §4 getIntents, §5 step 2): the listings of planned intents — the IntentsPlanned event and the
 // next-round preview. Planning itself is plan.ts.
@@ -19,8 +20,7 @@ function intentOf(actor: number, p: Pick<ActionEntry, 'moveId' | 'target' | 'car
  * Autopilot, headless or charging orchestrator is not listed.
  */
 export function intentsPlanned(state: BattleState, entries: readonly ActionEntry[]): BattleEvent {
-  const listed = (e: ActionEntry): boolean => state.creatures[e.actor]?.isOrchestrator === false || e.autopilot === true;
-  const intents = entries.filter(listed).map((e) => {
+  const intents = entries.filter((e) => state.creatures[e.actor]?.isOrchestrator === false || e.autopilot === true).map((e) => {
     const { actor, moveId, target, cardId } = intentOf(e.actor, e);
     return { actor, moveId, target, cardId };
   });
@@ -39,10 +39,11 @@ export function getIntents(state: BattleState): Intent[] {
   const rng = structuredClone(state.rng);
   const draws = state.creatures.map(() => drawRoundStart(rng));
   const round = state.round + 1;
+  const projections: Projections = new Map(); // the preview reads the state and never changes it
   return state.creatures
     .filter((c) => plansAsSubagent(state, c) || autopilotDrives(state, c, {}))
     .map((c) => {
       const rs = draws[c.index] ?? null;
-      return intentOf(c.index, c.isOrchestrator ? orchestratorEntry(state, c, {}, rs, round) : subagentEntry(state, c, rs, round));
+      return intentOf(c.index, c.isOrchestrator ? orchestratorEntry(state, c, {}, rs, round, projections) : subagentEntry(state, c, rs, round, projections));
     });
 }

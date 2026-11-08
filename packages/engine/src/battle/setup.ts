@@ -6,6 +6,7 @@ import type { GridError, ValidationResult } from '../grid/validate.js';
 import { hpAt, statAt } from '../math/stats.js';
 import { parseSeed, type SeedHex } from '../rng/seed.js';
 import { seedRng } from '../rng/sfc32.js';
+import { clonePlain } from './clone.js';
 import { applyBattleStartPassives } from './effects/passive.js';
 import { DEFAULT_TEMPERATURE, type BattleState, type CreatureState, type SideId, type SideState, type SlotState, type Temperature, type Version } from './state.js';
 import { MAX_ACTIVE, orchestratorMoves, slotPieces, speciesOf, validateSetup } from './validate-setup.js';
@@ -91,7 +92,7 @@ function buildCreature(c: CreatureSetup, index: number, side: SideId, place: Pla
     guard: null,
     leftFieldRound: null,
     fainted: false,
-    deck: c.deck === undefined ? null : structuredClone(c.deck),
+    deck: c.deck === undefined ? null : clonePlain(c.deck),
     generalization: c.generalization ?? null,
     trainedTemperature: c.trainedTemperature ?? null,
     recordedFoes: c.recordedFoes === undefined ? null : [...c.recordedFoes],
@@ -142,9 +143,9 @@ function addSide(creatures: CreatureState[], side: SideSetup, id: SideId): SideS
     creatures.push(buildCreature(c, creatures.length, id, { slot: 'bench', activeSlot: null, benchOrder: i }, s.ctx, c.moves));
   });
   return {
-    grid: grid === null ? null : structuredClone(grid),
+    grid: grid === null ? null : clonePlain(grid),
     temperature: side.autopilot === undefined ? DEFAULT_TEMPERATURE : side.autopilot.temperature,
-    autopilot: side.autopilot === undefined ? null : { deck: structuredClone(side.autopilot.deck), temperature: side.autopilot.temperature },
+    autopilot: side.autopilot === undefined ? null : { deck: clonePlain(side.autopilot.deck), temperature: side.autopilot.temperature },
     opponentId: side.opponentId,
     headless: false,
     slots: buildSlots(side, firstActive),

@@ -82,13 +82,18 @@ function holderOf(view: BattleView): StatusHolder {
 
 const aimsAtUser = (def: MoveDef): boolean => def.target === 'self' || def.target === 'none';
 
+/** Whether `t` is a living creature among `cs`. */
+function livingIn(cs: BattleView['foes'], t: number): boolean {
+  for (const c of cs) if (c.index === t && c.hp > 0) return true;
+  return false;
+}
+
 /** Whether `t` is a living on-field creature of the kind the move aims at (self/none moves accept anything). */
 function legalIn(view: BattleView, def: MoveDef, t: number): boolean {
-  const among = (cs: BattleView['foes']): boolean => cs.some((c) => c.index === t && c.hp > 0);
   if (aimsAtUser(def)) return true;
-  if (def.target === 'ally') return (t === view.self.index && view.self.hp > 0) || among(view.allies);
-  if (def.target === 'other') return among(view.allies) || among(view.foes);
-  return among(view.foes);
+  if (def.target === 'ally') return (t === view.self.index && view.self.hp > 0) || livingIn(view.allies, t);
+  if (def.target === 'other') return livingIn(view.allies, t) || livingIn(view.foes, t);
+  return livingIn(view.foes, t);
 }
 
 type Verdict = { fires: true; target: number } | { fires: false; reason: CardSkipReason };
@@ -97,11 +102,11 @@ type Verdict = { fires: true; target: number } | { fires: false; reason: CardSki
  * One active card: its condition must hold, its move must not be forbidden by a held status (Overfit reads
  * lastMoveId), its cost (pending modifiers, then Quantized) must fit the free cells unless `allowOverflow`, and it
  * needs a legal target — `keep` when resuming, else its selector's pick (self/none moves aim at the actor).
+ * `holder` is the actor as the status rules see it (holderOf), built once per evaluation.
  */
-function judge(card: Card, view: BattleView, keep: number | undefined): Verdict {
+function judge(card: Card, view: BattleView, holder: StatusHolder, keep: number | undefined): Verdict {
   if (!holds(card, view)) return { fires: false, reason: 'conditionFalse' };
   const def = moveDef(card.move);
-  const holder = holderOf(view);
   if (def === null || moveDisabledByStatus(holder, def, view.lastMoveId)) return { fires: false, reason: 'moveDisabled' };
   const free = view.self.contextWindow - view.self.contextUsed;
   if (card.allowOverflow !== true && moveCost(holder, cellsWithPending(def.cost, view.pendingCost)) > free) return { fires: false, reason: 'insufficientContext' };
@@ -158,13 +163,14 @@ export function evaluateDeck(deck: Deck, view: BattleView, activeN: number, opts
   const active = activeN + policies.length;
   const resumeAt = opts.resume === undefined ? -1 : positionOf(cards, deck, opts.resume.cardId);
   const start = resumeAt >= 0 ? resumeAt : opts.startAfter === undefined ? 0 : positionOf(cards, deck, opts.startAfter) + 1;
+  const holder = holderOf(view);
   let rolled = false;
   let obeying: Evaluation['obeying'] = null;
   for (let i = start; i < cards.length; i++) {
     const card = cards[i] as Card;
     const unknown = i < policies.length && opts.policies?.knownMoves.includes(card.move) !== true;
     const v: Verdict =
-      i >= active ? { fires: false, reason: 'notActive' } : unknown ? { fires: false, reason: 'moveDisabled' } : judge(card, view, i === resumeAt ? opts.resume?.target : undefined);
+      i >= active ? { fires: false, reason: 'notActive' } : unknown ? { fires: false, reason: 'moveDisabled' } : judge(card, view, holder, i === resumeAt ? opts.resume?.target : undefined);
     if (!v.fires) {
       skipped.push({ cardId: card.id, reason: v.reason });
       continue;
@@ -184,7 +190,7 @@ export function evaluateDeck(deck: Deck, view: BattleView, activeN: number, opts
   const moveId = repeat?.move ?? deck.default.move;
   const trace = { firedCardId: deck.default.id, skipped };
   const def = moveDef(moveId);
-  if (def === null || moveDisabledByStatus(holderOf(view), def, view.lastMoveId)) {
+  if (def === null || moveDisabledByStatus(holder, def, view.lastMoveId)) {
     skipped.push({ cardId: deck.default.id, reason: 'moveDisabled' });
     return { cardId: deck.default.id, moveId, target: null, trace, brittleRepeat: false, fallback: true, obeying };
   }
