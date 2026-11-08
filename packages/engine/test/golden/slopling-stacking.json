@@ -1,0 +1,151 @@
+{
+  "name": "slopling-stacking",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "cd19e66c75326965ef14afaf4af79940",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-slopling",
+          "species": "slopling",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "six-fingers",
+            "swarm-of-fine-tunes",
+            "adversarial-patch",
+            "weights-dump"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-slopling2",
+            "species": "slopling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "swarm-of-fine-tunes",
+              "six-fingers"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-forkling",
+          "species": "forkling",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "hard-fork",
+            "community-patch",
+            "swarm-of-fine-tunes",
+            "leaderboard-flex"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-embeddingo",
+            "species": "embeddingo",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "cosine-sniff",
+              "citation-needed",
+              "retrieval-strike",
+              "ground-truth"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "weights-dump",
+            "target": 4
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "adversarial-patch",
+            "target": 4
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "six-fingers",
+            "target": 5
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "swarm-of-fine-tunes",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "weights-dump",
+            "target": 3
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "2c2f2173895068c1",
+  "rounds": 5,
+  "winner": "a"
+}

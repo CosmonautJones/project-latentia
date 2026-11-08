@@ -1,0 +1,54 @@
+{
+  "name": "solo-duel-uncommanded",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "4844fab0df9a7a92afae6fcebfeae783",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-blitzr",
+          "species": "blitzr",
+          "level": 15,
+          "version": "v1",
+          "moves": [
+            "ship-it",
+            "token-burst",
+            "low-latency",
+            "distilled-strike"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-off-by-wasp",
+          "species": "off-by-wasp",
+          "level": 15,
+          "version": "v1",
+          "moves": [
+            "off-by-one",
+            "stack-trace",
+            "token-burst",
+            "unit-test"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "wild"
+    },
+    "rounds": [
+      {},
+      {},
+      {}
+    ]
+  },
+  "expectedHash": "d77ff88a0b578954",
+  "rounds": 3,
+  "winner": "a"
+}

@@ -1,0 +1,162 @@
+{
+  "name": "agentoad-rerank",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "50ca6c6f23b8261b195273e94ed1af2e",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-agentoad",
+          "species": "agentoad",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "tool-call",
+            "token-burst",
+            "stack-trace",
+            "rerank"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-agentoad2",
+            "species": "agentoad",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          },
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-cobolt",
+          "species": "cobolt",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "rerank",
+            "target": 4
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 4
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "stack-trace",
+            "target": 5
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "rerank",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 3
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "250ebd9cdf93e552",
+  "rounds": 6,
+  "winner": "a"
+}

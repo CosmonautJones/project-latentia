@@ -1,0 +1,946 @@
+{
+  "name": "round-cap-tiebreak",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "2356f4fce6d28d5b3ae90cd2c619f86e",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-blitzr",
+          "species": "blitzr",
+          "level": 30,
+          "version": "v1",
+          "moves": [
+            "token-burst",
+            "low-latency"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-parrot",
+          "species": "stochastiparrot",
+          "level": 30,
+          "version": "v1",
+          "moves": [
+            "hype-train"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "clear",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 0
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "bb100c13712d4458",
+  "rounds": 50,
+  "winner": "a"
+}

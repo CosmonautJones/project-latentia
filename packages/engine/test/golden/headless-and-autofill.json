@@ -1,0 +1,253 @@
+{
+  "name": "headless-and-autofill",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "037e428d63a56f2a40af934b8506119b",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-tokenibble",
+          "species": "tokenibble",
+          "level": 3,
+          "version": "v1",
+          "moves": [
+            "token-nibble",
+            "token-burst",
+            "early-exit",
+            "low-latency"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 14,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          },
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          },
+          {
+            "id": "a-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-vibrat",
+          "species": "vibrat",
+          "level": 14,
+          "version": "v1",
+          "moves": [
+            "accept-all",
+            "merge-conflict",
+            "segfault",
+            "hype-train"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-scrapion",
+            "species": "scrapion",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "scrape",
+              "fact-check",
+              "merge-conflict",
+              "retrieval-strike"
+            ]
+          },
+          {
+            "id": "b-spaghettopus",
+            "species": "spaghettopus",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tangle",
+              "infinite-loop",
+              "merge-conflict",
+              "memory-leak"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-agentoad",
+            "species": "agentoad",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "token-burst",
+              "stack-trace",
+              "rerank"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "segfault",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "segfault",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "segfault",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 4
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "3d4d82477cc1a363",
+  "rounds": 7,
+  "winner": "a"
+}

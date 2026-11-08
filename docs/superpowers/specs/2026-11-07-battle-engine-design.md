@@ -3,8 +3,9 @@
 - **Project:** Latentia (working codename; the region name, not a final title)
 - **Sub-project:** 1 of 5 — the headless battle engine and balance simulator
 - **Date:** 2026-11-07
-- **Status:** Revision 3 — incorporates two rounds of independent review
+- **Status:** Revision 3.1 — plus normative rulings in docs/superpowers/notes/phase-a-rulings.md
 - **Source of truth for game rules:** `docs/design-bible.md` (sections "One Context Grid…", "Battles run on eight types…", "Training is example cards…", "Determinism makes ghosts…"). This spec turns those rules into a buildable engine. Where this spec and the bible differ, this spec wins and the bible gets updated.
+- **Normative rulings:** `docs/superpowers/notes/phase-a-rulings.md` holds the rulings made while Phase A was built; they amend this spec, and where a ruling and this spec differ, the ruling wins.
 
 Normative words: **must** / **must not** are requirements; everything marked *tunable* is a starting value the simulator will adjust.
 
@@ -114,11 +115,11 @@ latentia/
 |---|---|---|
 | `rng` | sfc32; `drawAction()` → six draws; `drawRoundStart()` → two draws per creature | — |
 | `math` | Fixed-point and basis-point arithmetic, stat formulas, damage, accuracy, crit | — |
-| `content` | Type chart, moves, statuses, species | — |
+| `content` | Type chart, moves, statuses, species | `math` |
 | `events` | `BattleEvent` union, `BattleLog`, canonical JSON, event-stream hash | — |
 | `grid` | Validate layouts; adjacency; active-card counts | `content` |
 | `context` | Per-creature token store: add, overflow → Drift, compact, clear, forced compaction | `grid`, `events` |
-| `status` | Apply, block, tick, expire, cure | `content`, `events` |
+| `status` | Apply, block, tick, expire, cure | `content`, `events`, `math`, `rng` |
 | `cards` | Evaluate a deck against a read-only battle view → card, move, target, trace | `content`, `math` |
 | `generalization` | C, R, H, G from a deck, an Eval Suite and active slots | `cards`, `content` |
 | `battle` | Setup validation, round loop, actions, win check, `replay` | all units except `generalization` |

@@ -1,0 +1,207 @@
+{
+  "name": "tokenibble-early-exit",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "575520a4444ccd6abb82af78a4e6e9db",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-tokenibble",
+          "species": "tokenibble",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "token-nibble",
+            "token-burst",
+            "early-exit",
+            "low-latency"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-exit",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "early-exit",
+              "token-nibble"
+            ]
+          },
+          {
+            "id": "a-deprecatter",
+            "species": "deprecatter",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "nostalgia-trip",
+              "long-term-recall",
+              "save-state",
+              "episodic-replay"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          },
+          {
+            "id": "a-heisenmoth",
+            "species": "heisenmoth",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "observer-effect",
+              "refactor",
+              "bounding-box",
+              "flash-inference"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-sagelet",
+          "species": "sagelet",
+          "level": 14,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "early-exit",
+            "target": 6
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "token-nibble",
+            "target": 6
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 6
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 6
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "early-exit",
+            "target": 7
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "3719ac4bc4d32ca1",
+  "rounds": 9,
+  "winner": "a"
+}

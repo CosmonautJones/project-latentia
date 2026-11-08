@@ -1,0 +1,209 @@
+{
+  "name": "vibrat-accept-all",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "dc476ef2794ef56fd256f3045bbf9562",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-vibrat",
+          "species": "vibrat",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "accept-all",
+            "merge-conflict",
+            "segfault",
+            "hype-train"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-off-by-wasp",
+          "species": "off-by-wasp",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "off-by-one",
+            "stack-trace",
+            "token-burst",
+            "unit-test"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-parrot",
+            "species": "stochastiparrot",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hype-train",
+              "hot-take"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-slopling",
+            "species": "slopling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "six-fingers",
+              "swarm-of-fine-tunes",
+              "adversarial-patch",
+              "weights-dump"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "unit-test",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "off-by-one",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "stack-trace",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "segfault",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "unit-test",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hype-train",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "off-by-one",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "stack-trace",
+            "target": 1
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "eceaa6b7fb4083b0",
+  "rounds": 6,
+  "winner": "a"
+}

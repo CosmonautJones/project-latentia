@@ -1,0 +1,411 @@
+{
+  "name": "hallucinat-socratic",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "dc244662bd775df4a1e70abfec01cb05",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-hallucinat",
+          "species": "hallucinat",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "confident-citation",
+            "proof-by-contradiction",
+            "adversarial-patch",
+            "socratic-method"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-parrot",
+            "species": "stochastiparrot",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "stochastic-repeat",
+              "hype-train"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-agentoad",
+          "species": "agentoad",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "tool-call",
+            "token-burst",
+            "stack-trace",
+            "rerank"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "rerank",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tool-call",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "adversarial-patch",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "stack-trace",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "adversarial-patch",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "adversarial-patch",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "adversarial-patch",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "proof-by-contradiction",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "socratic-method",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 4,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "adversarial-patch",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "cd2d5e9571cbcb90",
+  "rounds": 19,
+  "winner": "a"
+}

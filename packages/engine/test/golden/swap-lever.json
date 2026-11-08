@@ -1,0 +1,309 @@
+{
+  "name": "swap-lever",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "dd3fce9d12549b1428243f122b9c52a5",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-forkling",
+          "species": "forkling",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "hard-fork",
+            "community-patch",
+            "swarm-of-fine-tunes",
+            "leaderboard-flex"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          },
+          {
+            "id": "a-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          },
+          {
+            "id": "a-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          },
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-spaghettopus",
+          "species": "spaghettopus",
+          "level": 18,
+          "version": "v1",
+          "moves": [
+            "tangle",
+            "infinite-loop",
+            "merge-conflict",
+            "memory-leak"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-parrot",
+            "species": "stochastiparrot",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "flattery",
+              "hot-take"
+            ]
+          },
+          {
+            "id": "b-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "infinite-loop",
+              "null-chomp"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-vibrat",
+            "species": "vibrat",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "accept-all",
+              "merge-conflict",
+              "segfault",
+              "hype-train"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hard-fork",
+            "target": 8
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "swap",
+            "out": 1,
+            "in": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "swarm-of-fine-tunes",
+            "target": 7
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "swap",
+            "out": 1,
+            "in": 5
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "community-patch",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hard-fork",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "swap",
+            "out": 4,
+            "in": 1
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 4
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "swarm-of-fine-tunes",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "hard-fork",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 1
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "4cb020fd2368d2e9",
+  "rounds": 9,
+  "winner": "a"
+}

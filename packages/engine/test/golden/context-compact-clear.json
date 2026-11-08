@@ -1,0 +1,193 @@
+{
+  "name": "context-compact-clear",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "95331a3d2b51554dd24189d7b9a31a08",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-cobolt",
+          "species": "cobolt",
+          "level": 22,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-nullbeetle",
+            "species": "nullbeetle",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "null-chomp",
+              "segfault",
+              "infinite-loop",
+              "unit-test"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-forkling",
+            "species": "forkling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-forkling",
+          "species": "forkling",
+          "level": 22,
+          "version": "v1",
+          "moves": [
+            "hard-fork",
+            "community-patch",
+            "swarm-of-fine-tunes",
+            "leaderboard-flex"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-slopling",
+            "species": "slopling",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "six-fingers",
+              "swarm-of-fine-tunes",
+              "adversarial-patch",
+              "weights-dump"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-sagelet",
+            "species": "sagelet",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "happy-to-help",
+              "chain-of-thought",
+              "step-back-prompt",
+              "proof-by-contradiction"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hard-fork",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "guardrail",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "compact",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "hard-fork",
+            "target": 2
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "76afcffeab8e0d9b",
+  "rounds": 5,
+  "winner": "a"
+}

@@ -1,0 +1,159 @@
+{
+  "name": "spaghettopus-memory-leak",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "b1c97d4fb2edf555ce31554893b04010",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-spaghettopus",
+          "species": "spaghettopus",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "tangle",
+            "infinite-loop",
+            "merge-conflict",
+            "memory-leak"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-agentoad",
+            "species": "agentoad",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "tool-call",
+              "rerank"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-sagelet",
+          "species": "sagelet",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-embeddingo",
+            "species": "embeddingo",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "cosine-sniff",
+              "citation-needed",
+              "retrieval-strike",
+              "ground-truth"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-heisenmoth",
+            "species": "heisenmoth",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "observer-effect",
+              "refactor",
+              "bounding-box",
+              "flash-inference"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "memory-leak",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 3
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 5
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 5
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "memory-leak",
+            "target": 4
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "8a2782fa635d052b",
+  "rounds": 6,
+  "winner": "a"
+}

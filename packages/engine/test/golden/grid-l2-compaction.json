@@ -1,0 +1,377 @@
+{
+  "name": "grid-l2-compaction",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "b5b5499a178feffb9698ddb2476a468e",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-vibrat",
+          "species": "vibrat",
+          "level": 3,
+          "version": "v1",
+          "moves": []
+        },
+        "active": [
+          {
+            "id": "a-wasp",
+            "species": "off-by-wasp",
+            "level": 6,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ]
+          },
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 6,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 6,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ]
+          }
+        ],
+        "grid": {
+          "width": 4,
+          "height": 4,
+          "pieces": [
+            {
+              "id": "sp",
+              "kind": "systemPrompt",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                0
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "slot0",
+              "anchor": [
+                0,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "a-wasp"
+            },
+            {
+              "id": "slot1",
+              "anchor": [
+                2,
+                2
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "a-blitzr"
+            },
+            {
+              "id": "tool2",
+              "anchor": [
+                3,
+                0
+              ],
+              "rotation": 0,
+              "kind": "tool",
+              "shape": [
+                [
+                  0,
+                  0
+                ]
+              ]
+            }
+          ]
+        },
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-sagelet",
+          "species": "sagelet",
+          "level": 3,
+          "version": "v1",
+          "moves": []
+        },
+        "active": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 6,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-tokenibble",
+            "species": "tokenibble",
+            "level": 6,
+            "version": "v1",
+            "moves": [
+              "token-nibble",
+              "token-burst",
+              "early-exit",
+              "low-latency"
+            ]
+          }
+        ],
+        "grid": {
+          "width": 4,
+          "height": 4,
+          "pieces": [
+            {
+              "id": "sp",
+              "kind": "systemPrompt",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  2,
+                  0
+                ]
+              ],
+              "anchor": [
+                0,
+                0
+              ],
+              "rotation": 0
+            },
+            {
+              "id": "slot0",
+              "anchor": [
+                0,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ],
+              "subagentId": "b-forkling"
+            },
+            {
+              "id": "slot1",
+              "anchor": [
+                2,
+                1
+              ],
+              "rotation": 0,
+              "kind": "subagentSlot",
+              "shape": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0
+                ],
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  1
+                ]
+              ]
+            }
+          ]
+        },
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "accept-all",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "08c1c01ce3f63cef",
+  "rounds": 6,
+  "winner": "a"
+}
