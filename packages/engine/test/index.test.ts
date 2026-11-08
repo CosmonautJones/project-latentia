@@ -8,6 +8,7 @@ describe('public surface (spec §4, so far)', () => {
         'DEPRECATED_FOREST_SUITE',
         'ENGINE_VERSION',
         'EngineInvariantError',
+        'GeneralizationError',
         'SetupError',
         'SimulateError',
         'activeCardCount',
@@ -50,6 +51,7 @@ describe('public surface (spec §4, so far)', () => {
     const suite: engine.EvalSuite = engine.DEPRECATED_FOREST_SUITE;
     const report: engine.GeneralizationReport = engine.computeGeneralization(deck, suite, 3);
     expect(report).toEqual({ c: [0, 1], r: [0, 1], h: [0, 1], g: 20, band: 'brittle' });
+    expect(() => engine.computeGeneralization(deck, suite, 9)).toThrow(engine.GeneralizationError);
   });
 
   it('exports the thrown error classes as values, so callers can use instanceof (Ruling 67)', () => {

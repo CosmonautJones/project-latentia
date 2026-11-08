@@ -26,7 +26,6 @@ type Mon = {
   lastMove?: string;
   telegraphing?: true;
   contextUsed?: number;
-  junk?: number;
   fields?: FieldKind[];
 };
 
@@ -65,7 +64,6 @@ function creature(index: number, m: Mon, isOrchestrator: boolean, lastMove: stri
     telegraphing: m.telegraphing === true,
     contextUsed: m.contextUsed ?? 0,
     contextWindow: sp.ctx,
-    junk: m.junk ?? 0,
     fields: m.fields ?? [],
   };
 }
@@ -177,25 +175,26 @@ const SCENARIOS: Spec[] = [
     wasteful: ['healAtFull'],
   },
   // field — Legacy-cache brush: the wild Off-By-Wasp is leaking memory (it holds the Junk field); your context
-  // holds only cost tokens. Trap (compactWhenEmpty): Compact reads "a field is up" as "my context is dirty".
+  // holds one token and no Drift. Trap (compactWhenEmpty): Compact reads "a field is up" as "my context is dirty",
+  // but one token pairs with nothing, so Compact would change nothing.
   {
     id: 'legacy-cache-memory-leak',
     round: 3,
     roundStart: { r1: 0x0002_000a, r2: 0x0001_0001 },
     orchestrator: { species: 'sagelet', level: 5, lastMove: 'chain-of-thought' },
-    actor: { species: 'nullbeetle', level: 4, hp: 16, contextUsed: 2 },
-    history: [{ moveId: 'null-chomp', round: 2 }],
-    foes: [{ species: 'off-by-wasp', level: 5, hp: 13, contextUsed: 3, junk: 2, fields: ['junkPerRound'], lastMove: 'stack-trace' }],
+    actor: { species: 'nullbeetle', level: 4, hp: 16, contextUsed: 1 },
+    history: [{ moveId: 'unit-test', round: 2 }],
+    foes: [{ species: 'off-by-wasp', level: 5, hp: 13, contextUsed: 3, fields: ['junkPerRound'], lastMove: 'stack-trace' }],
     wasteful: ['compactWhenEmpty'],
   },
   // foeBuffed — Legacy-cache brush: a wild Stochastiparrot (mimic) has repeated your Hype Train. Trap (buffAtMax):
-  // your own Compute is already +3.
+  // three Hype Trains in, your Compute is already +3 and your Accuracy already −3, so a fourth changes nothing.
   {
     id: 'legacy-cache-stochastiparrot',
     round: 4,
     roundStart: { r1: 0x000c_0003, r2: 0x0000_0005 },
     orchestrator: { species: 'sagelet', level: 5 },
-    actor: { species: 'stochastiparrot', level: 5, hp: 16, contextUsed: 4, stages: { compute: 3, accuracy: -2 } },
+    actor: { species: 'stochastiparrot', level: 5, hp: 16, contextUsed: 4, stages: { compute: 3, accuracy: -3 } },
     history: [{ moveId: 'hype-train', round: 3 }],
     foes: [{ species: 'stochastiparrot', level: 5, contextUsed: 2, stages: { compute: 2, accuracy: -1 }, lastMove: 'stochastic-repeat' }],
     wasteful: ['buffAtMax'],
@@ -233,13 +232,13 @@ const SCENARIOS: Spec[] = [
     aim: 1,
     wasteful: ['cureWithoutStatus'],
   },
-  // contextFill — Team Scrape camp: Grunt B's patrol has filled your context (10/12) with four Junk tokens.
+  // contextFill — Team Scrape camp: Grunt B's patrol has filled your context (10/12).
   {
     id: 'scrape-camp-grunt-b',
     round: 6,
     roundStart: { r1: 0x0010_0002, r2: 0x0001_0000 },
     orchestrator: { species: 'sagelet', level: 6, hp: 21, lastMove: 'step-back-prompt' },
-    actor: { species: 'forkling', level: 6, hp: 16, contextUsed: 10, junk: 4 },
+    actor: { species: 'forkling', level: 6, hp: 16, contextUsed: 10 },
     history: [{ moveId: 'hard-fork', round: 3 }, { moveId: 'leaderboard-flex', round: 5 }],
     foes: [
       { species: 'nullbeetle', level: 5, hp: 14, lastMove: 'null-chomp' },

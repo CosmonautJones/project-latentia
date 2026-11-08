@@ -25,6 +25,8 @@ export type { BattleView, Card, Condition, Deck, FieldKind, PendingCost, Subject
 export type { Band } from './cards/evaluate.js';
 
 export { computeGeneralization } from './generalization/score.js';
+export { GeneralizationError } from './generalization/errors.js';
+export type { GeneralizationErrorCode } from './generalization/errors.js';
 export { DEPRECATED_FOREST_SUITE } from './generalization/suites/deprecated-forest.js';
 export type { EvalScenario, EvalSuite, GeneralizationReport, WastefulRule } from './generalization/model.js';
 

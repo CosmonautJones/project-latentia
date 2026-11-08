@@ -2,7 +2,7 @@ import { parseSeed } from '../rng/seed.js';
 import { ENGINE_VERSION, type BattleLog } from './log.js';
 import { validateSetup } from './setup.js';
 import { setupShapeErrors } from './setup-shape.js';
-import { isNum, isRecord, isStr, type Rec } from './shape.js';
+import { isNum, isRecord, isStr, type Rec } from '../cards/json.js';
 import { runBattle, type BattleResult } from './simulate.js';
 
 /**

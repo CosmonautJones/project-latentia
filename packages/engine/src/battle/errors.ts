@@ -4,7 +4,8 @@ import type { Card } from '../cards/model.js';
 import type { OrchestratorAction, RoundCommand, SideCommand } from './log.js';
 import { holdsLiveSlot, isHeadless, legalTarget } from './order.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
-import { cardShapeOk, policyCardErrors } from './validate-deck.js';
+import { cardShapeOk } from '../cards/deck-shape.js';
+import { policyCardErrors } from './validate-deck.js';
 
 /**
  * A caller mistake in a RoundCommand (spec §7). `submitRound` returns it as `{ error }` and leaves the

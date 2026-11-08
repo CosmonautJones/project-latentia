@@ -5,11 +5,10 @@ import type { Band } from '../cards/evaluate.js';
 // overfitting legible"). Plain JSON-compatible data: suites are authored as frozen literals.
 
 /**
- * A "wasteful action" rule a scenario applies to the action its fired card takes (Ruling 104):
- * - `healAtFull`: the move heals and every creature it heals is at full HP;
- * - `buffAtMax`: every stage the move raises, on every creature it raises it on, is already +3;
- * - `cureWithoutStatus`: the move cures and no creature it cures holds any status it cures;
- * - `compactWhenEmpty`: the move removes Drift or Junk and no creature it does that for holds either.
+ * A "wasteful action" label a scenario traps (Rulings 104, 106). An action is wasted only when the whole action
+ * achieves nothing in the view (no damage, every effect a no-op); the label that flags it names the kind of effect
+ * that was wasted: `healAtFull` a heal, `buffAtMax` a stage raise, `cureWithoutStatus` a cure, `compactWhenEmpty` a
+ * Drift or token removal (generalization/wasteful.ts).
  */
 export type WastefulRule = { readonly kind: 'healAtFull' | 'buffAtMax' | 'cureWithoutStatus' | 'compactWhenEmpty' };
 

@@ -5,7 +5,7 @@ import { CONDITION_CATEGORIES, FIELD_KINDS, type BattleView, type Card, type Con
 import { STATUS_IDS, TYPES } from '../../src/content/ids.js';
 import { moveDef } from '../../src/content/moves.js';
 import { computeGeneralization, scenarioHit } from '../../src/generalization/score.js';
-import { isWasteful } from '../../src/generalization/wasteful.js';
+import { isWasteful, wasteReason } from '../../src/generalization/wasteful.js';
 import type { EvalScenario, WastefulRule } from '../../src/generalization/model.js';
 import { DEPRECATED_FOREST_SUITE } from '../../src/generalization/suites/deprecated-forest.js';
 
@@ -24,7 +24,7 @@ const deckOf = (...cards: Card[]): Deck => ({ cards, default: DEFAULT });
 
 /** One probe per scenario: the card a well-generalized deck plays there (each from a different category). */
 const PROBES: Record<string, Card> = {
-  'trailhead-wild-nullbeetle': c('hp', 'self', { category: 'hp', op: 'below', pct: 25 }, 'earnest-apology', 'self'),
+  'trailhead-wild-nullbeetle': c('hp', 'self', { category: 'hp', op: 'below', pct: 25 }, 'community-patch', 'self'),
   'first-brush-heisenmoth': c('coin', 'self', { category: 'coin' }, 'pixel-peep', 'randomFoe'),
   'switchbacks-bootcamp-grad': c('turn', 'self', { category: 'turn', op: 'below', round: 2 }, 'step-back-prompt', 'self'),
   'switchbacks-retro-collector': c('foeType', 'foe', { category: 'foeType', is: 'memory' }, 'stack-trace', 'foeWeakToMove'),
@@ -67,7 +67,7 @@ function problems(v: BattleView): string[] {
     if (cr.statuses.includes('drift') && cr.statuses.at(-1) !== 'drift') out.push(`${at}: drift is listed last`);
     if (Object.values(cr.stages).some((s) => !Number.isSafeInteger(s) || s < -3 || s > 3)) out.push(`${at}: stages`);
     if (!(Number.isSafeInteger(cr.compute) && cr.compute > 0)) out.push(`${at}: compute`);
-    if (!(cr.contextUsed >= 0 && cr.contextUsed <= cr.contextWindow && cr.junk >= 0 && cr.junk <= cr.contextUsed)) out.push(`${at}: context`);
+    if (!(Number.isSafeInteger(cr.contextUsed) && cr.contextUsed >= 0 && cr.contextUsed <= cr.contextWindow)) out.push(`${at}: context`);
     if (cr.lastMove !== null && moveDef(cr.lastMove) === null) out.push(`${at}: lastMove`);
     if (cr.fields.some((f) => !FIELD_KINDS.includes(f))) out.push(`${at}: fields`);
     if (cr.telegraphing && cr.index === v.self.index) out.push(`${at}: the actor is planning, not charging`);
@@ -139,6 +139,7 @@ describe('DEPRECATED_FOREST_SUITE: wasteful traps', () => {
     const e = evaluateDeck(deckOf(card), s.view, 1, { band: 'stable' });
     expect(e.cardId).toBe(card.id);
     expect(isWasteful({ kind: rule }, e.moveId, e.target as number, s.view)).toBe(true);
+    expect(wasteReason(s.wasteful, e.moveId, e.target as number, s.view)).toBe(rule);
     expect(scenarioHit(deckOf(card), s, 1)).toBe(false);
   });
 

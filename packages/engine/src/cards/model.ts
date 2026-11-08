@@ -142,8 +142,6 @@ export type ViewCreature = {
   /** Tokens held and the context window. */
   readonly contextUsed: number;
   readonly contextWindow: number;
-  /** Junk tokens among those held (B5's compactWhenEmpty rule, Ruling 104). */
-  readonly junk: number;
   /** Kinds of the live field effects it holds, in the order they started. */
   readonly fields: readonly FieldKind[];
 };

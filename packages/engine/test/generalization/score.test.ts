@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Card, Condition, Deck } from '../../src/cards/model.js';
-import { computeGeneralization, scenarioHit } from '../../src/generalization/score.js';
+import { computeGeneralization, MAX_ACTIVE_SLOTS, scenarioHit } from '../../src/generalization/score.js';
 import type { EvalScenario, EvalSuite, WastefulRule } from '../../src/generalization/model.js';
-import { EngineInvariantError } from '../../src/math/bp.js';
+import { GeneralizationError, type GeneralizationErrorCode } from '../../src/generalization/errors.js';
+import { VERSION_SLOTS } from '../../src/grid/adjacency.js';
 import { card, vc, view } from '../cards/helpers.js';
 
 // Generalization (spec §5 "Generalization"; Ruling 103). A synthetic suite of 12 scenarios at rounds 1…12 lets a
@@ -122,20 +123,21 @@ describe('computeGeneralization: Holdout and wasteful actions', () => {
   const HEAL_AT_FULL: WastefulRule[] = [{ kind: 'healAtFull' }];
   const always = (move: string, target: Card['target'] = 'self'): Card => c('always', { category: 'turn', op: 'atLeast', round: 1 }, { move, target });
 
-  it('healing at full HP is wasteful: Earnest Apology at full HP scores no hit', () => {
+  it('healing at full HP is wasteful: Community Patch on the full-HP actor scores no hit', () => {
     const full = suite(() => ({ wasteful: HEAL_AT_FULL }));
-    expect(computeGeneralization(deck([always('earnest-apology')]), full, 3).h).toEqual([0, 1]);
+    expect(computeGeneralization(deck([always('community-patch')]), full, 3).h).toEqual([0, 1]);
   });
 
   it('the same heal while hurt is a hit; a rule a scenario does not list never applies', () => {
     const hurtIn5 = suite((r) => ({ wasteful: HEAL_AT_FULL, view: view({ round: r, self: vc(1, { hp: r <= 5 ? 40 : 100 }) }) }));
-    expect(computeGeneralization(deck([always('earnest-apology')]), hurtIn5, 3).h).toEqual([5, 12]);
-    expect(computeGeneralization(deck([always('earnest-apology')]), SUITE, 3).h).toEqual([1, 1]);
+    expect(computeGeneralization(deck([always('community-patch')]), hurtIn5, 3).h).toEqual([5, 12]);
+    expect(computeGeneralization(deck([always('community-patch')]), SUITE, 3).h).toEqual([1, 1]);
   });
 
-  it('scenarioHit: a fired non-Default card whose action breaks none of the listed rules', () => {
+  it('scenarioHit: a fired non-Default card whose action no listed rule flags as a whole no-op', () => {
     const s: EvalScenario = { id: 'x', view: view(), wasteful: HEAL_AT_FULL };
-    expect(scenarioHit(deck([always('earnest-apology')]), s, 3)).toBe(false);
+    expect(scenarioHit(deck([always('community-patch')]), s, 3)).toBe(false);
+    expect(scenarioHit(deck([always('earnest-apology')]), s, 3)).toBe(true); // its damage reduction still lands (Ruling 106)
     expect(scenarioHit(deck([always('ship-it', 'lowestHpFoe')]), s, 3)).toBe(true);
     expect(scenarioHit(deck([never.coin('a')]), s, 3)).toBe(false); // only Default fires
   });
@@ -167,9 +169,42 @@ describe('computeGeneralization: exact fractions, determinism, inputs', () => {
     expect({ a, b, SUITE }).toEqual(snapshot);
   });
 
-  it('rejects an activeSlots that is negative or not an integer, and a suite without exactly 12 scenarios', () => {
-    expect(() => computeGeneralization(deck([]), SUITE, -1)).toThrow(EngineInvariantError);
-    expect(() => computeGeneralization(deck([]), SUITE, 1.5)).toThrow(EngineInvariantError);
-    expect(() => computeGeneralization(deck([]), { id: 'short', scenarios: SUITE.scenarios.slice(1) }, 3)).toThrow(EngineInvariantError);
+});
+
+describe('computeGeneralization: caller mistakes throw a typed GeneralizationError (Ruling 107)', () => {
+  const codeOf = (f: () => unknown): GeneralizationErrorCode | null => {
+    try {
+      f();
+      return null;
+    } catch (e) {
+      expect(e).toBeInstanceOf(GeneralizationError);
+      expect((e as GeneralizationError).name).toBe('GeneralizationError');
+      return (e as GeneralizationError).code;
+    }
+  };
+
+  it('activeSlots: not an integer in 0..8, the v4 hard cap', () => {
+    expect(MAX_ACTIVE_SLOTS).toBe(Math.max(...Object.values(VERSION_SLOTS)));
+    for (const bad of [-1, 1.5, 9, Number.NaN, '3' as unknown as number]) expect(codeOf(() => computeGeneralization(deck([]), SUITE, bad))).toBe('activeSlots');
+    expect(codeOf(() => computeGeneralization(deck([]), SUITE, 0))).toBeNull();
+    expect(codeOf(() => computeGeneralization(deck([]), SUITE, 8))).toBeNull();
+  });
+
+  it('suiteSize: not exactly 12 scenarios', () => {
+    expect(codeOf(() => computeGeneralization(deck([]), { id: 'short', scenarios: SUITE.scenarios.slice(1) }, 3))).toBe('suiteSize');
+    expect(codeOf(() => computeGeneralization(deck([]), { id: 'long', scenarios: [...SUITE.scenarios, ...SUITE.scenarios.slice(0, 1)] }, 3))).toBe('suiteSize');
+    expect(codeOf(() => computeGeneralization(deck([]), { id: 'none' } as unknown as EvalSuite, 3))).toBe('suiteSize');
+  });
+
+  it('deck: malformed — not shaped like a deck, no Default card, or a repeated card id', () => {
+    const bad = (d: unknown) => codeOf(() => computeGeneralization(d as Deck, SUITE, 3));
+    expect(bad(null)).toBe('deck');
+    expect(bad({ cards: 'x', default: deck([]).default })).toBe('deck');
+    expect(bad({ cards: [{ ...never.coin('a'), condition: { category: 'mood' } }], default: deck([]).default })).toBe('deck');
+    expect(bad({ cards: [never.coin('a')] })).toBe('deck');
+    expect(bad({ cards: [never.coin('a')], default: null })).toBe('deck');
+    expect(bad(deck([never.coin('a'), never.field('a')]))).toBe('deck');
+    expect(bad(deck([never.coin('default')]))).toBe('deck'); // a card sharing the Default's id would read as Default
+    expect(bad(deck([never.coin('a')]))).toBeNull();
   });
 });

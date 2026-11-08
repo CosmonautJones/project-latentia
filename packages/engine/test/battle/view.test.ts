@@ -41,7 +41,7 @@ describe('viewFor', () => {
     expect(viewFor(s, 1, null, 4)).toMatchObject({ round: 4, roundStart: null });
   });
 
-  it('reads statuses (Drift as a status while it has stacks), stages, effective Compute, context fill and Junk held', () => {
+  it('reads statuses (Drift as a status while it has stacks), stages, effective Compute, and context fill', () => {
     const s = battle();
     const c = at(s, 7);
     c.statuses.push({ id: 'glazed', remaining: 2, source: 1 });
@@ -49,7 +49,7 @@ describe('viewFor', () => {
     c.stages.compute = 2;
     c.context.tokens.push({ kind: 'junk', seq: 0 }, { kind: 'cost', seq: 1 });
     const foe = viewFor(s, 1, RS, s.round).foes.find((f) => f.index === 7);
-    expect(foe).toMatchObject({ statuses: ['glazed', 'drift'], stages: { compute: 2 }, compute: effectiveStat(c.stats.compute, 2), contextUsed: 2, junk: 1 });
+    expect(foe).toMatchObject({ statuses: ['glazed', 'drift'], stages: { compute: 2 }, compute: effectiveStat(c.stats.compute, 2), contextUsed: 2 });
   });
 
   it('marks a creature charging a telegraphed move (Deliberate) as telegraphing, but not Deep Research', () => {

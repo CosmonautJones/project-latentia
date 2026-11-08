@@ -1,7 +1,7 @@
 import { gridShapeErrors } from '../grid/validate.js';
 import type { ValidationError } from './setup.js';
-import { field, isNum, isRecord, isStr, join, shape } from './shape.js';
-import { deckShapeErrors } from './validate-deck.js';
+import { field, isNum, isRecord, isStr, join, shape } from '../cards/json.js';
+import { deckShapeErrors } from '../cards/deck-shape.js';
 
 // Shape checks for untrusted JSON (Ruling 75, reversing Ruling 29): validateSetup runs these first and
 // replay reuses them, so no malformed setup or log can make a validator, createBattle or replay throw.
