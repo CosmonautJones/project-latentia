@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, hasStatus, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 
 /**
  * Reasoning charge-nuke (spec §9). The slice has no true charge move: Deliberate and Deep Research are in the move
@@ -9,7 +9,7 @@ import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT
  * Batch Job. Cool temperatures, because Reasoning gains a crit stage at T0/T1.
  */
 
-/** Sagelet at T0, two Tools on its Skills, a Robust Hallucinat beside it and a Cobolt tank on the bench. */
+/** Sagelet at T0, one Tool on both attack Skills, a Robust Hallucinat and an Embeddingo beside it, a Cobolt tank on the bench. */
 const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
   orchestrator: orchestrator('sagelet', 'sagelet', 8),
   active: [
@@ -22,6 +22,15 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
         card('tidy', 'self', FULL, 'compact', 'self'),
       ),
       generalization: 78,
+      trainedTemperature: 1,
+    }),
+    subagent('embeddingo', 'embeddingo', 8, {
+      deck: deck(
+        card('strike', 'self', ALWAYS, 'retrieval-strike', 'lowestHpFoe'),
+        card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
+        card('cite', 'foe', hasStatus('hallucinating'), 'citation-needed', 'lowestHpFoe'),
+      ),
+      generalization: 50,
       trainedTemperature: 1,
     }),
   ],
@@ -39,13 +48,13 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
   ],
   grid: layout(
     [
-      'PPP..', //
-      'AAeCC',
-      'AAett',
-      'eSSXX',
+      'PPPSS', //
+      'AAeBB',
+      'AAeBB',
+      'CCtXX',
       '.....',
     ],
-    { S: { skill: 'step-back-prompt' }, X: { skill: 'proof-by-contradiction' }, C: { skill: 'chain-of-thought' }, A: { slot: 'hallucinat' } },
+    { S: { skill: 'step-back-prompt' }, X: { skill: 'proof-by-contradiction' }, C: { skill: 'chain-of-thought' }, A: { slot: 'hallucinat' }, B: { slot: 'embeddingo' } },
   ),
   autopilot: deck(
     card('chain', 'self', ALWAYS, 'chain-of-thought', 'lowestHpFoe'),
@@ -84,6 +93,17 @@ const HALLUCINAT_NUKE = archetype('reasoning-nuke-hallucinat', {
       ),
       generalization: 45,
       trainedTemperature: 2,
+    }),
+  ],
+  bench: [
+    subagent('sagelet', 'sagelet', 8, {
+      deck: deck(
+        card('chain', 'self', ALWAYS, 'chain-of-thought', 'lowestHpFoe'),
+        card('think', 'self', cooldown(3), 'step-back-prompt', 'self'),
+        card('proof', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
+      ),
+      generalization: 58,
+      trainedTemperature: 0,
     }),
   ],
   grid: layout(

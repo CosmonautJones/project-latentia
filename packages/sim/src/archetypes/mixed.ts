@@ -1,9 +1,19 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
-import { starterGrid } from './starter-grids.js';
+import { ALLY_HURT, ALWAYS, archetype, hasStatus, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { STARTER_SKILLS, type StarterId } from './starter-grids.js';
 
-// Mixed builds (spec §9): the three starters as a player brings them to the gym — the standard starter grid
-// (Ruling 124), the bundled intern Tokenibble and one forest catch on the bench — and a Heisenmoth tempo build.
+// Mixed builds (spec §9): the three starters as a player brings them to the gym — the bundled intern Tokenibble and a
+// forest catch active, a second catch on the bench — and a Heisenmoth tempo build.
+
+/**
+ * A starter's full-team grid (Ruling 130: two Subagent Slots): the standard starter grid's three Skills (Ruling 124,
+ * STARTER_SKILLS) and one Tool on K and M, with the intern in slot A and the catch in slot B sharing two Example
+ * Cards. 20 cells, headroom 5. Compaction order: Skill L, M, K, then the slots.
+ */
+function teamGrid(species: StarterId, catchId: string) {
+  const s = STARTER_SKILLS[species];
+  return layout(['PPPLL', 'AAeBB', 'AAeBB', 'KKtMM', '.....'], { L: { skill: s.L }, M: { skill: s.M }, K: { skill: s.K }, A: { slot: 'intern' }, B: { slot: catchId } });
+}
 
 const INTERN = deck(
   card('nibble', 'self', ALWAYS, 'token-nibble', 'lowestHpFoe'),
@@ -18,8 +28,8 @@ const intern = (level: number) => subagent('intern', 'tokenibble', level, { deck
 
 const SAGELET_STARTER = archetype('mixed-starter-sagelet', {
   orchestrator: orchestrator('sagelet', 'sagelet', 8),
-  active: [intern(8)],
-  bench: [
+  active: [
+    intern(8),
     subagent('cobolt', 'cobolt', 8, {
       deck: deck(
         card('recall', 'self', ALWAYS, 'long-term-recall', 'highestAtkFoe'),
@@ -30,7 +40,18 @@ const SAGELET_STARTER = archetype('mixed-starter-sagelet', {
       trainedTemperature: 1,
     }),
   ],
-  grid: starterGrid('sagelet', 8, 'intern'),
+  bench: [
+    subagent('embeddingo', 'embeddingo', 8, {
+      deck: deck(
+        card('strike', 'self', ALWAYS, 'retrieval-strike', 'lowestHpFoe'),
+        card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
+        card('cure', 'self', hasStatus('glazed'), 'ground-truth', 'self'),
+      ),
+      generalization: 60,
+      trainedTemperature: 2,
+    }),
+  ],
+  grid: teamGrid('sagelet', 'cobolt'),
   autopilot: deck(
     card('chain', 'self', ALWAYS, 'chain-of-thought', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'proof-by-contradiction', 'lowestHpFoe'),
@@ -47,8 +68,8 @@ const SAGELET_STARTER = archetype('mixed-starter-sagelet', {
 
 const BLITZR_STARTER = archetype('mixed-starter-blitzr', {
   orchestrator: orchestrator('blitzr', 'blitzr', 8),
-  active: [intern(8)],
-  bench: [
+  active: [
+    intern(8),
     subagent('nullbeetle', 'nullbeetle', 8, {
       deck: deck(
         card('chomp', 'self', ALWAYS, 'null-chomp', 'lowestHpFoe'),
@@ -59,7 +80,18 @@ const BLITZR_STARTER = archetype('mixed-starter-blitzr', {
       trainedTemperature: 1,
     }),
   ],
-  grid: starterGrid('blitzr', 8, 'intern'),
+  bench: [
+    subagent('hallucinat', 'hallucinat', 8, {
+      deck: deck(
+        card('cite', 'self', ALWAYS, 'confident-citation', 'lowestHpFoe'),
+        card('probe', 'self', cooldown(3), 'socratic-method', 'highestAtkFoe'),
+        card('proof', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
+      ),
+      generalization: 50,
+      trainedTemperature: 3,
+    }),
+  ],
+  grid: teamGrid('blitzr', 'nullbeetle'),
   autopilot: deck(
     card('ship', 'self', ALWAYS, 'ship-it', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'token-burst', 'lowestHpFoe'),
@@ -76,8 +108,8 @@ const BLITZR_STARTER = archetype('mixed-starter-blitzr', {
 
 const FORKLING_STARTER = archetype('mixed-starter-forkling', {
   orchestrator: orchestrator('forkling', 'forkling', 8),
-  active: [intern(8)],
-  bench: [
+  active: [
+    intern(8),
     subagent('heisenmoth', 'heisenmoth', 8, {
       deck: deck(
         card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
@@ -89,7 +121,18 @@ const FORKLING_STARTER = archetype('mixed-starter-forkling', {
       trainedTemperature: 3,
     }),
   ],
-  grid: starterGrid('forkling', 8, 'intern'),
+  bench: [
+    subagent('slopling', 'slopling', 8, {
+      deck: deck(
+        card('fingers', 'self', ALWAYS, 'six-fingers', 'lowestHpFoe'),
+        card('dump', 'foe', WEAK, 'weights-dump', 'lowestHpFoe'),
+        card('patch', 'self', COIN, 'adversarial-patch', 'randomFoe'),
+      ),
+      generalization: 45,
+      trainedTemperature: 2,
+    }),
+  ],
+  grid: teamGrid('forkling', 'heisenmoth'),
   autopilot: deck(
     card('fork', 'self', ALWAYS, 'hard-fork', 'lowestHpFoe'),
     card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),

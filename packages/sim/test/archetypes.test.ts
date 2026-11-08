@@ -89,6 +89,15 @@ describe('ARCHETYPES', () => {
     }
   });
 
+  it('fields exactly 1 + 2 + 1 creatures per side, with two bound Subagent Slots (Ruling 130)', () => {
+    for (const a of ARCHETYPES) {
+      expect([a.side.active.length, a.side.bench.length], a.id).toEqual([2, 1]);
+      const slots = a.side.grid?.pieces.filter((p) => p.kind === 'subagentSlot').map((p) => p.subagentId) ?? [];
+      expect(new Set(slots), a.id).toEqual(new Set(a.side.active.map((c) => c.id)));
+      expect(slots, a.id).toHaveLength(2);
+    }
+  });
+
   it('gives every subagent a deck within MAX_DECK_CARDS, a generalization and a trained temperature', () => {
     for (const a of ARCHETYPES) {
       for (const c of subagents(a.side)) {
@@ -217,12 +226,12 @@ describe('starterGrid (Ruling 124)', () => {
     expect(() => starterGrid('sagelet', 6, 'intern')).toThrow(RangeError);
   });
 
-  it('uses the starter grid in the three mixed-starter archetypes', () => {
+  it("gives the mixed-starter archetypes their starter's three Skills on a two-slot grid", () => {
     for (const s of STARTERS) {
       const a = ARCHETYPES.find((x) => x.id === `mixed-starter-${s}`);
       expect(a, s).toBeDefined();
-      const intern = a?.side.active[0]?.id ?? '';
-      expect(a?.side.grid).toEqual(starterGrid(s, a?.side.orchestrator.level ?? 0, intern));
+      const skills = a?.side.grid?.pieces.filter((p) => p.kind === 'skill').map((p) => p.moveId);
+      expect(new Set(skills), s).toEqual(new Set(SPECIES[s].moves.filter((m) => m !== SPECIES[s].signature)));
     }
   });
 });

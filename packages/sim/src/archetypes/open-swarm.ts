@@ -4,7 +4,7 @@ import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT
 // Open swarm (spec §9): stack Open-type creatures so Swarm of Fine-Tunes hits 1 + (Open allies) times, keep the
 // team topped up with Community Patch, and let Slopling's stacking Compute grow while it survives.
 
-/** Forkling with two Open subagents (a Slopling and a spun-up Forkling): Swarm hits three times. */
+/** Forkling with two Open subagents (a Slopling and a spun-up Forkling): Swarm hits three times; a second Slopling benched. */
 const FORKLING_SWARM = archetype('open-swarm-forkling', {
   orchestrator: orchestrator('forkling', 'forkling', 8),
   active: [
@@ -28,6 +28,17 @@ const FORKLING_SWARM = archetype('open-swarm-forkling', {
       ),
       generalization: 20,
       trainedTemperature: 3,
+    }),
+  ],
+  bench: [
+    subagent('slopling-2', 'slopling', 8, {
+      deck: deck(
+        card('fingers', 'self', ALWAYS, 'six-fingers', 'lowestHpFoe'),
+        card('dump', 'foe', WEAK, 'weights-dump', 'lowestHpFoe'),
+        card('swarm', 'self', COIN, 'swarm-of-fine-tunes', 'lowestHpFoe'),
+      ),
+      generalization: 44,
+      trainedTemperature: 2,
     }),
   ],
   grid: layout(

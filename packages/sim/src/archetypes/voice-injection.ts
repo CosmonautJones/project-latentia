@@ -10,7 +10,7 @@ import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEA
  * stays visible; Prompt Injected is untested by the round-robin until a post-slice Voice species brings Deepfake Call.
  */
 
-/** Stochastiparrot at T3: hype, glaze the biggest hitter, then Hot Take; a Robust Vibrat and a Brittle T4 Hallucinat. */
+/** Stochastiparrot at T3: hype, glaze the biggest hitter, then Hot Take; a Robust Vibrat and a Brittle T4 Hallucinat, a second parrot benched. */
 const PARROT_PRESSURE = archetype('voice-pressure-parrot', {
   orchestrator: orchestrator('parrot', 'stochastiparrot', 8),
   active: [
@@ -33,6 +33,18 @@ const PARROT_PRESSURE = archetype('voice-pressure-parrot', {
       ),
       generalization: 38,
       trainedTemperature: 4,
+    }),
+  ],
+  bench: [
+    subagent('parrot-2', 'stochastiparrot', 8, {
+      deck: deck(
+        card('repeat', 'self', ALWAYS, 'stochastic-repeat', 'lowestHpFoe'),
+        card('hype', 'self', OPENER, 'hype-train', 'self'),
+        card('flatter', 'self', cooldown(3), 'flattery', 'highestAtkFoe'),
+        card('hot', 'foe', HURT, 'hot-take', 'lowestHpFoe'),
+      ),
+      generalization: 48,
+      trainedTemperature: 3,
     }),
   ],
   grid: layout(
@@ -59,7 +71,7 @@ const PARROT_PRESSURE = archetype('voice-pressure-parrot', {
   temperature: 3,
 });
 
-/** Vibrat at T4 with a grafted Stochastic Repeat: hype every other round, Accept All, two Stable T4/T2 helpers. */
+/** Vibrat at T4 with a grafted Stochastic Repeat: hype every other round, Accept All, two Stable T4/T2 helpers and a Hallucinat benched. */
 const VIBRAT_PRESSURE = archetype('voice-pressure-vibrat', {
   orchestrator: orchestrator('vibrat', 'vibrat', 8),
   active: [
@@ -82,6 +94,17 @@ const VIBRAT_PRESSURE = archetype('voice-pressure-vibrat', {
       ),
       generalization: 44,
       trainedTemperature: 2,
+    }),
+  ],
+  bench: [
+    subagent('hallucinat', 'hallucinat', 8, {
+      deck: deck(
+        card('cite', 'self', ALWAYS, 'confident-citation', 'lowestHpFoe'),
+        card('patch', 'foe', WEAK_TO_MOVE, 'adversarial-patch', 'foeWeakToMove'),
+        card('proof', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
+      ),
+      generalization: 60,
+      trainedTemperature: 4,
     }),
   ],
   grid: layout(

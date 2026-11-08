@@ -66,7 +66,7 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
   temperature: 1,
 });
 
-/** The forest bug family, "by the book" at T0: Nullbeetle with an Off-By-Wasp, a Robust Heisenmoth benched. */
+/** The forest bug family, "by the book" at T0: Nullbeetle with an Off-By-Wasp and a Robust Heisenmoth, a Brittle Spaghettopus benched. */
 const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
   orchestrator: orchestrator('nullbeetle', 'nullbeetle', 8),
   active: [
@@ -80,8 +80,6 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
       generalization: 48,
       trainedTemperature: 0,
     }),
-  ],
-  bench: [
     subagent('heisenmoth', 'heisenmoth', 8, {
       deck: deck(
         card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
@@ -93,15 +91,26 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
       trainedTemperature: 3,
     }),
   ],
+  bench: [
+    subagent('spaghettopus', 'spaghettopus', 8, {
+      deck: deck(
+        card('tangle', 'self', ALWAYS, 'tangle', 'lowestHpFoe'),
+        card('loop', 'foe', BUFFED, 'infinite-loop', 'highestAtkFoe'),
+        card('leak', 'self', cooldown(3), 'memory-leak', 'lowestHpFoe'),
+      ),
+      generalization: 36,
+      trainedTemperature: 1,
+    }),
+  ],
   grid: layout(
     [
-      'PPPt.', //
-      'AAeSS',
-      'AAeLL',
-      'eUU..',
+      'PPPSS', //
+      'AAeBB',
+      'AAeBB',
+      'eLLUU',
       '.....',
     ],
-    { S: { skill: 'segfault' }, L: { skill: 'infinite-loop' }, U: { skill: 'unit-test' }, A: { slot: 'wasp' } },
+    { S: { skill: 'segfault' }, L: { skill: 'infinite-loop' }, U: { skill: 'unit-test' }, A: { slot: 'wasp' }, B: { slot: 'heisenmoth' } },
   ),
   autopilot: deck(
     card('chomp', 'self', ALWAYS, 'null-chomp', 'lowestHpFoe'),
@@ -117,7 +126,7 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
   temperature: 0,
 });
 
-/** Cobolt at T2: big iron that heals and refactors while Spaghettopus and a Brittle T4 Nullbeetle lock. */
+/** Cobolt at T2: big iron that heals and refactors while Spaghettopus and a Brittle T4 Nullbeetle lock; a Robust Off-By-Wasp benched. */
 const COBOLT_LOCK = archetype('code-lock-cobolt', {
   orchestrator: orchestrator('cobolt', 'cobolt', 8),
   active: [
@@ -140,6 +149,17 @@ const COBOLT_LOCK = archetype('code-lock-cobolt', {
       ),
       generalization: 15,
       trainedTemperature: 4,
+    }),
+  ],
+  bench: [
+    subagent('wasp', 'off-by-wasp', 8, {
+      deck: deck(
+        card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
+        card('test', 'self', cooldown(3), 'unit-test', 'self'),
+        card('trace', 'foe', HEALTHY, 'stack-trace', 'highestAtkFoe'),
+      ),
+      generalization: 75,
+      trainedTemperature: 0,
     }),
   ],
   grid: layout(

@@ -1,8 +1,8 @@
 import type { GridLayout } from '@latentia/engine';
 import { layout, type LegendEntry } from './build.js';
 
-// The standard starter grids (Ruling 124): the only definition. C3's starter-triangle and graft-vs-spin-up setups,
-// and the mixed-starter archetypes, all build on it.
+// The standard starter grids (Ruling 124): the only definition. C3's starter-triangle and graft-vs-spin-up setups
+// build on it; the mixed-starter archetypes reuse its Skills (STARTER_SKILLS) on a two-slot grid (Ruling 130).
 
 export type StarterId = 'sagelet' | 'blitzr' | 'forkling';
 
@@ -21,7 +21,7 @@ const ROWS = [
 ];
 
 /** Skill letters per starter: K and M take the Tool's step (damage power or heal percentage); L does not. */
-const SKILLS: Readonly<Record<StarterId, { K: string; M: string; L: string }>> = {
+export const STARTER_SKILLS: Readonly<Record<StarterId, { K: string; M: string; L: string }>> = {
   sagelet: { K: 'chain-of-thought', M: 'proof-by-contradiction', L: 'step-back-prompt' },
   blitzr: { K: 'distilled-strike', M: 'token-burst', L: 'low-latency' },
   forkling: { K: 'leaderboard-flex', M: 'community-patch', L: 'swarm-of-fine-tunes' },
@@ -44,7 +44,7 @@ export function starterGrid(species: StarterId, level: number, subagentId: strin
   if (size === undefined) throw new RangeError(`a starter grid needs level 7 or more, got ${level}`);
   const [, width, height] = size;
   const rows = Array.from({ length: height }, (_, y) => (ROWS[y] ?? '').padEnd(width, '.'));
-  const s = SKILLS[species];
+  const s = STARTER_SKILLS[species];
   const legend: Record<string, LegendEntry> = { L: { skill: s.L }, M: { skill: s.M }, K: { skill: s.K }, A: { slot: subagentId } };
   return layout(rows, legend);
 }

@@ -7,7 +7,7 @@ import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEA
 
 const HALLUCINAT_NUKE_ID = 'reasoning-nuke-hallucinat';
 
-/** Embeddingo at T2 with a Specialist Scrapion (cards recorded from the Hallucinat nuke) and a Robust Sagelet. */
+/** Embeddingo at T2 with a Specialist Scrapion (cards recorded from the Hallucinat nuke) and a Robust Sagelet; a Brittle Heisenmoth benched. */
 const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
   orchestrator: orchestrator('embeddingo', 'embeddingo', 8),
   active: [
@@ -32,6 +32,17 @@ const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
         card('merge', 'foe', HURT, 'merge-conflict', 'lowestHpFoe'),
       ),
       generalization: 64,
+      trainedTemperature: 2,
+    }),
+  ],
+  bench: [
+    subagent('heisenmoth', 'heisenmoth', 8, {
+      deck: deck(
+        card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
+        card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
+        card('box', 'self', cooldown(3), 'bounding-box', 'self'),
+      ),
+      generalization: 22,
       trainedTemperature: 2,
     }),
   ],
