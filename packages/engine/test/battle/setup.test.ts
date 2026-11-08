@@ -473,7 +473,7 @@ describe('createBattle', () => {
     expect(extra).toMatchObject({ generalization: 72, trainedTemperature: 3, recordedFoes: ['b-act1'], nextActionMods: [{ kind: 'priority', delta: 1 }], shields: [] });
   });
 
-  it('builds side state: grid copy, default temperature T2 or the Autopilot temperature, not headless', () => {
+  it('builds side state: grid copy, default temperature T2 or the Autopilot temperature, not headless, no policy or directive', () => {
     const deck = { cards: [] } as never;
     const state = createBattle(setupOf({}, { autopilot: { deck, temperature: 4 } }), SEED);
     expect(state.sides.a).toEqual({
@@ -487,6 +487,8 @@ describe('createBattle', () => {
         { pieceId: 'slot2', occupant: 2 },
       ],
       lastMove: null,
+      policies: [],
+      directive: null,
     });
     expect(state.fields).toEqual([]);
     expect(state.turnOrder).toEqual([]);
@@ -520,7 +522,7 @@ describe('assertInvariants', () => {
     if (c === undefined) throw new Error(`fixture has no creature ${i}`);
     return c;
   };
-  const expectViolation = (state: BattleState, actor: number) => {
+  const expectViolation = (state: BattleState, actor: number | undefined) => {
     let caught: unknown;
     try {
       assertInvariants(state);
@@ -535,6 +537,19 @@ describe('assertInvariants', () => {
 
   it('passes on a fresh battle', () => {
     expect(() => assertInvariants(fresh())).not.toThrow();
+  });
+
+  it('rejects a Directive kept past its round and a Policy Update no longer in force', () => {
+    const s = fresh();
+    s.sides.a.directive = { subagent: 1, moveId: 'ship-it', target: 7, round: 0 };
+    expectViolation(s, undefined); // a side's fault: no creature to blame
+    const card = { id: 'p', subject: 'self', condition: { category: 'coin' }, move: 'compact', target: 'self' } as const;
+    const t = fresh();
+    t.round = 3;
+    t.sides.b.policies = [{ card, fromRound: 2, lastRound: 4 }];
+    expect(() => assertInvariants(t)).not.toThrow();
+    t.sides.b.policies = [{ card, fromRound: 1, lastRound: 3 }];
+    expectViolation(t, undefined);
   });
 
   it('rejects HP above max or below 0', () => {

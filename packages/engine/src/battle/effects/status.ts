@@ -3,9 +3,11 @@ import type { NonPassiveEffect } from '../../content/primitives.js';
 import { STATUSES } from '../../content/statuses.js';
 import { changeDrift } from '../../context/store.js';
 import { applyStatus, cureStatus, rollDuration, statusBlocked, type StatusInstance } from '../../status/apply.js';
+import { resolveTarget } from '../../cards/targets.js';
 import { aimsAtUser, lowestHpOnField } from '../order.js';
 import { defaultTarget } from '../targeting.js';
 import type { BattleState, CreatureState } from '../state.js';
+import { viewFor } from '../view.js';
 import { creature, recipients, type EffectContext } from './context.js';
 import { absorbStatus } from './shield.js';
 
@@ -34,10 +36,19 @@ export function defaultInjection(state: BattleState, victim: CreatureState): { m
   return { moveId, target: ally?.index ?? defaultTarget(state, victim, def) ?? victim.index };
 }
 
-/** The inflicter's choice: the command's `injection` when the victim knows its move, otherwise the default. */
+/**
+ * The inflicter's choice (spec §5 Prompt Injected): the command's `injection` when the victim knows its move; else
+ * the fired deck card's preference when the victim knows its move and its selector, resolved against the victim's
+ * own view, names a creature; otherwise the default.
+ */
 function injectionFor(ctx: EffectContext, victim: CreatureState): { moveId: string; target: number } {
   const chosen = ctx.injection;
   if (chosen !== null && victim.moves.includes(chosen.moveId)) return { moveId: chosen.moveId, target: chosen.target };
+  const pref = ctx.cardInjection;
+  if (pref !== null && victim.moves.includes(pref.moveId)) {
+    const target = resolveTarget(pref.target, viewFor(ctx.state, victim.index, victim.roundStart, ctx.round), pref.moveId);
+    if (target !== null) return { moveId: pref.moveId, target };
+  }
   return defaultInjection(ctx.state, victim);
 }
 

@@ -21,7 +21,8 @@ function placementError(c: CreatureState): string | null {
  * HP within [0, maxHp], fainted iff HP is 0, tokens within the window, Drift 0..5, stages -3..3, a slot
  * that agrees with activeSlot / benchOrder / isOrchestrator, and at most one shield per kind with a positive
  * count. Timed fields name real creatures and have rounds left; no turn order is pending. Per side: exactly one orchestrator,
- * each activeSlot held at most once, and `slots[i].occupant` is the creature holding activeSlot i.
+ * each activeSlot held at most once, `slots[i].occupant` is the creature holding activeSlot i, no Directive
+ * outlives its round and every Policy Update kept is still in force for the next round.
  * Throws EngineInvariantError with the round, seed and (when one is to blame) the canonical index.
  */
 export function assertInvariants(state: BattleState): void {
@@ -82,6 +83,10 @@ export function assertInvariants(state: BattleState): void {
       if (occupant !== holder) {
         fail(`side ${id} slot ${s} occupant ${String(occupant)} but activeSlot ${s} is held by ${String(holder)}`, holder ?? occupant ?? undefined);
       }
+    }
+    if (state.sides[id].directive !== null) fail(`side ${id} keeps a Directive past its round`);
+    for (const p of state.sides[id].policies) {
+      if (p.lastRound <= state.round || p.fromRound > state.round) fail(`side ${id} policy ${p.card.id} (rounds ${p.fromRound}-${p.lastRound}) is not in force after round ${state.round}`);
     }
   }
 }

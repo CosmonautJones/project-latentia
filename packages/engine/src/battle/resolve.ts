@@ -4,13 +4,14 @@ import type { ActionDraws } from '../rng/draws.js';
 import { consumeInjection, moveCost } from '../status/apply.js';
 import { applyEffect, bookkeeping, effectList, resolveEffects, runTrigger } from './effects/apply.js';
 import { chargesFirst, releaseEffects } from './effects/charge.js';
-import { creature, effectContext } from './effects/context.js';
+import { creature, effectContext, type EffectContext } from './effects/context.js';
 import { copiesMove } from './effects/copy.js';
 import { isGuardMove } from './effects/guard.js';
 import { takeAccuracyMods, takeCost, takePenaltyBp } from './effects/nextActionModifier.js';
 import { buffTag } from './effects/stage.js';
 import { heldInjection } from './effects/status.js';
 import { breakEnemyChains } from './handoff.js';
+import { cardOf } from './levers.js';
 import type { ActionEntry } from './order.js';
 import { deckAction } from './plan.js';
 import type { BattleState, CreatureState, Temperature } from './state.js';
@@ -19,8 +20,11 @@ import { aimInjected, aimMove, chooseAction, temperatureOf, type Choice } from '
 export type { EffectContext } from './effects/context.js';
 export { applyEffect, ROBUST_ACCURACY_BONUS, ROBUST_MIN_GENERALIZATION } from './effects/apply.js';
 
-/** What the entry does, before MoveUsed: a released charge, a hijacked (Prompt Injected) action, or its own move. */
-type Plan = { choice: Choice; release: { powerDelta: number } | null } | 'charging';
+/**
+ * What the entry does, before MoveUsed: a released charge, a hijacked (Prompt Injected) action, or its own move;
+ * `cardId` is the deck card that fired for a deck-driven action, else null.
+ */
+type Plan = { choice: Choice; release: { powerDelta: number } | null; cardId: string | null } | 'charging';
 
 /**
  * The entry's own move and target: a deck-driven entry is re-planned now (re-validation and obedience, plan.ts
@@ -47,13 +51,26 @@ function planAction(state: BattleState, user: CreatureState, entry: ActionEntry,
     charge.remaining -= 1;
     if (charge.remaining > 0) return 'charging';
     user.charging = null;
-    return { choice: aimMove(state, user, charge.moveId, charge.target), release: { powerDelta: charge.powerDelta } };
+    return { choice: aimMove(state, user, charge.moveId, charge.target), release: { powerDelta: charge.powerDelta }, cardId: null };
   }
   const injected = heldInjection({ state, round: state.round }, user.index);
-  if (injected === null) return { choice: chooseAction(state, user, ownAction(state, user, entry, draws, events), draws, temperature), release: null };
+  if (injected === null) {
+    const own = ownAction(state, user, entry, draws, events);
+    return { choice: chooseAction(state, user, own, draws, temperature), release: null, cardId: own.cardId ?? null };
+  }
   const choice = aimInjected(state, user, injected);
   if (choice !== null) events.push(...consumeInjection(user, state.round).events);
-  return { choice, release: null };
+  return { choice, release: null, cardId: null };
+}
+
+/**
+ * The fired card's Prompt Injected preference (Card.injection), when the move that runs is that card's own move
+ * (not one hallucination or Drift substituted); null otherwise. Its selector is resolved against the victim's view
+ * when the status lands (effects/status.ts).
+ */
+function cardInjection(state: BattleState, user: CreatureState, cardId: string | null, moveId: string): EffectContext['cardInjection'] {
+  const card = cardId === null ? null : cardOf(state, user, cardId);
+  return card?.injection !== undefined && card.move === moveId ? { ...card.injection } : null;
 }
 
 /**
@@ -88,6 +105,7 @@ export function resolveAction(state: BattleState, entry: ActionEntry, draws: Act
   // A charge round does not spend Refusal's penalty: the release is the move that deals the damage.
   const ctx = effectContext(state, user.index, targetIndex, move, draws, temperature, events, chargeRound ? null : takePenaltyBp(user));
   ctx.injection = entry.injection ?? null;
+  ctx.cardInjection = cardInjection(state, user, plan.cardId, move.id);
   if (plan.release !== null) ctx.powerAdd = plan.release.powerDelta;
   const target = creature(ctx, targetIndex);
   const first = !user.actedThisBattle;

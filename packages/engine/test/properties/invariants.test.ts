@@ -163,10 +163,11 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
       { numRuns: RUNS },
     );
     // The lever and injection paths are exercised, not just moves: ≥ 10% of the orchestrator commands
-    // are a swap, a directive or a move carrying an injection, and each kind occurs.
+    // are a swap, a directive, a policy update or a move carrying an injection, and each kind occurs.
     expect(sent.swap).toBeGreaterThan(0);
     expect(sent.directive).toBeGreaterThan(0);
+    expect(sent.policyUpdate).toBeGreaterThan(0);
     expect(sent.injection).toBeGreaterThan(0);
-    expect((sent.swap + sent.directive + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
+    expect((sent.swap + sent.directive + sent.policyUpdate + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
   });
 });

@@ -1,3 +1,4 @@
+import type { TargetSelector } from '../../cards/model.js';
 import type { Chance, DrawSlot, MoveDef, Who } from '../../content/primitives.js';
 import { TEMPERATURE, type TemperatureRow } from '../../content/temperature.js';
 import type { BattleEvent } from '../../events/types.js';
@@ -30,7 +31,8 @@ export type ActionTally = {
  * applied as the step-4 Refusal/Apology modifier; null when none. `guardBp` is the target's step-4 Guard
  * modifier against this move (Guardrail, or Captcha Wall vs a non-Speed attack), null when none.
  * `powerAdd` is added to the move's power in damage step 1 (a charge released after a hit: −30).
- * `injection` is the command's Prompt Injected choice for the victim (players), null when none.
+ * `injection` is the command's Prompt Injected choice for the victim (players), null when none; `cardInjection`
+ * is the fired deck card's preference (its move and a selector resolved against the victim's view), null when none.
  * `accMods` are the actor's accuracy-step next-action modifiers, taken once per move (none on a charge round).
  * `copied` is the context a move copy resolved its copied move in (the resolver's bookkeeping follows it).
  */
@@ -47,6 +49,7 @@ export type EffectContext = {
   guardBp: number | null;
   powerAdd: number;
   injection: { moveId: string; target: number } | null;
+  cardInjection: { moveId: string; target: TargetSelector } | null;
   accMods: AccuracyMods;
   copied: EffectContext | null;
   tally: ActionTally;
@@ -64,7 +67,7 @@ export function effectContext(
 ): EffectContext {
   return {
     state, actor, target, draws, move, temperature, events, round: state.round, penaltyBp,
-    guardBp: null, powerAdd: 0, injection: null, accMods: NO_ACCURACY_MODS, copied: null,
+    guardBp: null, powerAdd: 0, injection: null, cardInjection: null, accMods: NO_ACCURACY_MODS, copied: null,
     tally: { dealt: 0, damaged: [], superEffective: false, halted: false },
   };
 }

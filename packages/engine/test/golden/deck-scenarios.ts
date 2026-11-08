@@ -1,10 +1,11 @@
 import type { CreatureSetup } from '../../src/battle/setup.js';
 import type { Card, Condition, Deck, Subject, TargetSelector } from '../../src/cards/model.js';
 import type { GridLayout } from '../../src/grid/model.js';
-import { cycle, mon, scenario, setup, side, type GoldenScenario } from './builders.js';
+import { cycle, mon, opened, scenario, setup, side, type GoldenScenario } from './builders.js';
 
-// The deck battles (Phase B, task B2): subagents acting from decks, so the goldens carry IntentsPlanned with
-// card ids, CardTrace with every skip reason, obedience failures and Brittle repeats.
+// The deck battles (Phase B): subagents acting from decks, so the goldens carry IntentsPlanned with card ids,
+// CardTrace with every skip reason, obedience failures and Brittle repeats (B2), then the levers that act on decks:
+// Policy Update and Directive (B3).
 
 const card = (id: string, subject: Subject, condition: Condition, move: string, target: TargetSelector): Card => ({ id, subject, condition, move, target });
 /** The actor is at 25% HP or more. */
@@ -93,6 +94,21 @@ const BRITTLE_FORK: Deck = {
   default: card('fork', 'self', T, 'hard-fork', 'lowestHpFoe'),
 };
 
+/** Robust: batches a weak foe, else (Default) grinds the weakest one. It knows Long-Term Recall, the policy's move. */
+const POLICY_COBOLT: Deck = {
+  cards: [card('batch', 'foe', { category: 'hp', op: 'below', pct: 50 }, 'batch-job', 'lowestHpFoe')],
+  default: card('grind', 'self', T, 'batch-job', 'lowestHpFoe'),
+};
+
+/** Stable: finishes a weak foe, else (Default) ships. It does not know Long-Term Recall. */
+const POLICY_BLITZ: Deck = {
+  cards: [card('finish', 'foe', { category: 'hp', op: 'below', pct: 50 }, 'distilled-strike', 'lowestHpFoe')],
+  default: card('ship', 'self', T, 'ship-it', 'lowestHpFoe'),
+};
+
+/** The team-wide rule: recall into the weakest foe while at 25% HP or more. */
+const RECALL_POLICY: Card = card('recall', 'self', T, 'long-term-recall', 'lowestHpFoe');
+
 export const DECK_SCENARIOS: readonly GoldenScenario[] = [
   // Gridded active-card counts (3 and 2), notActive, insufficientContext, moveDisabled (Glazed), orchestratorTarget,
   // randomFoe and coin; side B's Nullbeetle acts from a deck, its Wasp from its default intent.
@@ -129,5 +145,26 @@ export const DECK_SCENARIOS: readonly GoldenScenario[] = [
       }),
     ),
     { a: cycle(['batch-job', 'long-term-recall', 'hotfix'], [2], 'foeSub'), b: cycle(['confident-citation', 'socratic-method'], [1]) },
+  ),
+  // Policy Update in round 1, in force for rounds 1-3: a-cobolt (slower than its orchestrator) re-evaluates from the
+  // top in round 1 and fires it, then plans it in rounds 2-3; a-blitzr does not know its move (moveDisabled). The
+  // round-3 Directive to a-blitzr (faster than its orchestrator) is spent; the round-4 one to a-cobolt lands.
+  scenario(
+    'policy-update-and-directive',
+    setup(
+      side('a', {
+        orch: mon('a-sagelet', 'sagelet', 24),
+        active: [trained(mon('a-cobolt', 'cobolt', 22), POLICY_COBOLT, 80), trained(mon('a-blitzr', 'blitzr', 22), POLICY_BLITZ, 50)],
+      }),
+      side('b', {
+        orch: mon('b-cobolt', 'cobolt', 20),
+        active: [mon('b-deprecatter', 'deprecatter', 18), mon('b-slopling', 'slopling', 18)],
+        bench: [mon('b-forkling', 'forkling', 16)],
+      }),
+    ),
+    {
+      a: opened([{ policy: RECALL_POLICY }, { move: 'happy-to-help' }, { directive: { slot: 1, moveId: 'token-burst' } }, { directive: { slot: 0, moveId: 'hotfix' } }], cycle(['chain-of-thought', 'happy-to-help', 'compact'])),
+      b: cycle(['refactor', 'batch-job', 'hotfix'], [1], 'foeSub'),
+    },
   ),
 ];

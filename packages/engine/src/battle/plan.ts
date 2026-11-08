@@ -1,4 +1,4 @@
-import { bandFor, evaluateDeck, type Band, type CardTrace, type Evaluation } from '../cards/evaluate.js';
+import { bandFor, evaluateDeck, type Band, type CardTrace, type EvaluateOptions, type Evaluation } from '../cards/evaluate.js';
 import type { Deck } from '../cards/model.js';
 import { moveDef } from '../content/moves.js';
 import type { BattleEvent } from '../events/types.js';
@@ -7,6 +7,7 @@ import { EngineInvariantError, mulBp } from '../math/bp.js';
 import { effectiveStat } from '../math/stats.js';
 import { drawRoundStart, type RoundStartDraws } from '../rng/draws.js';
 import { hasStatus, statStage } from '../status/apply.js';
+import { activePolicies, policyAddedThisRound } from './levers.js';
 import type { RoundCommand } from './log.js';
 import { aimsAtUser, defaultIntent, holdsLiveSlot, intentTarget, isHeadless, type ActionEntry, type LeverAction } from './order.js';
 import type { BattleState, CreatureState } from './state.js';
@@ -33,6 +34,11 @@ export function activeCards(state: BattleState, c: CreatureState): number {
   const grid = state.sides[c.side].grid;
   const pieceId = c.activeSlot === null ? null : (state.sides[c.side].slots[c.activeSlot]?.pieceId ?? null);
   return grid !== null && pieceId !== null ? activeCardCount(grid, pieceId, c.version) : VERSION_SLOTS[c.version];
+}
+
+/** The Policy Update cards in force for `c`'s side in `round`, for evaluateDeck (Policy Update, B3). */
+function policiesFor(state: BattleState, c: CreatureState, round: number): NonNullable<EvaluateOptions['policies']> {
+  return { cards: activePolicies(state, c.side, round), knownMoves: c.moves };
 }
 
 /** The creature's generalization band; a creature with no generalization is Stable. */
@@ -64,9 +70,9 @@ function leverEntry(actor: number, command: LeverAction): Planned {
 
 /**
  * A subagent's entry for `round` with round-start draws `rs`: a charging creature releases its charged move at
- * its stored target (Ruling 13); a creature with a deck evaluates its top activeCards cards then Default against
- * its view (the obeying choice; a selector with no legal target falls back to intentTarget); otherwise its
- * default intent.
+ * its stored target (Ruling 13); a creature with a deck evaluates the Policy Update cards in force for `round`,
+ * its top activeCards cards, then Default against its view (the obeying choice; a selector with no legal target
+ * falls back to intentTarget); otherwise its default intent.
  */
 function subagentEntry(state: BattleState, c: CreatureState, rs: RoundStartDraws | null, round: number): Planned {
   if (c.charging !== null) return moveEntry(c.index, c.charging.moveId, c.charging.target);
@@ -74,7 +80,7 @@ function subagentEntry(state: BattleState, c: CreatureState, rs: RoundStartDraws
     const intent = defaultIntent(state, c.index);
     return moveEntry(c.index, intent.moveId, intent.target);
   }
-  const e = evaluateDeck(c.deck, viewFor(state, c.index, rs, round), activeCards(state, c), { band: bandOf(c) });
+  const e = evaluateDeck(c.deck, viewFor(state, c.index, rs, round), activeCards(state, c), { band: bandOf(c), policies: policiesFor(state, c, round) });
   const aim = deckAim(state, c, e);
   return { ...moveEntry(c.index, aim.moveId, aim.target), cardId: e.cardId, skipped: e.trace.skipped };
 }
@@ -179,7 +185,9 @@ export function getIntents(state: BattleState): Intent[] {
  * usable and that target is still legal, else evaluation continues from the next card down (`replanned`) — then
  * obedience is rolled with lo(`d1`, 100). The trace is the plan-time cards skipped above the intent's card, then
  * this evaluation's. A selector with no legal target falls back to intentTarget; a disabled Default uses the
- * default intent (deckAim).
+ * default intent (deckAim). When a Policy Update of the creature's side resolved earlier this round (after
+ * planning), the deck is instead evaluated afresh from the top, the new policy included: the trace is that
+ * evaluation's alone, and the intent is `replanned` when its card, move or target changed.
  */
 export function deckAction(state: BattleState, user: CreatureState, entry: ActionEntry, d1: number): { intent: Intent; trace: CardTrace; brittleRepeat: boolean } {
   const deck: Deck | null = user.deck;
@@ -187,13 +195,17 @@ export function deckAction(state: BattleState, user: CreatureState, entry: Actio
     throw new EngineInvariantError('deckAction on an entry that is not deck-driven', { round: state.round, actor: user.index, seed: state.seed });
   }
   const view = viewFor(state, user.index, user.roundStart, state.round);
-  const e = evaluateDeck(deck, view, activeCards(state, user), { band: bandOf(user), resume: { cardId: entry.cardId, target: entry.target }, d1 });
+  const fresh = policyAddedThisRound(state, user.side);
+  const opts: EvaluateOptions = { band: bandOf(user), d1, policies: policiesFor(state, user, state.round) };
+  if (!fresh) opts.resume = { cardId: entry.cardId, target: entry.target };
+  const e = evaluateDeck(deck, view, activeCards(state, user), opts);
   const aim = deckAim(state, user, e);
+  const changed = e.cardId !== entry.cardId || aim.moveId !== entry.moveId || aim.target !== entry.target;
   // A fallback is re-derived now: the intent is re-planned when it no longer matches the plan.
-  const replanned = e.replanned || (e.fallback && (aim.moveId !== entry.moveId || aim.target !== entry.target));
+  const replanned = fresh ? changed : e.replanned || (e.fallback && (aim.moveId !== entry.moveId || aim.target !== entry.target));
   return {
     intent: { actor: user.index, moveId: aim.moveId, target: aim.target, cardId: e.cardId, replanned },
-    trace: { firedCardId: e.cardId, skipped: [...(entry.skipped ?? []), ...e.trace.skipped] },
+    trace: { firedCardId: e.cardId, skipped: fresh ? e.trace.skipped : [...(entry.skipped ?? []), ...e.trace.skipped] },
     brittleRepeat: e.brittleRepeat,
   };
 }

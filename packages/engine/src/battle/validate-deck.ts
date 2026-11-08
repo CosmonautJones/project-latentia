@@ -125,6 +125,24 @@ function cardErrors(card: Card, path: string, knows: (moveId: string) => boolean
   if (card.injection !== undefined) moveExists(card.injection.moveId, `${path}.injection.moveId`, errors);
 }
 
+/** Whether an untrusted value is a well-shaped card (a Policy Update command's card; invalidCommand otherwise). */
+export function cardShapeOk(card: unknown): boolean {
+  const errors: Errors = [];
+  cardShape(card, 'card', errors);
+  return errors.length === 0;
+}
+
+/**
+ * Value problems with a well-shaped Policy Update card: the rules every deck card meets (unknownId for the moves it
+ * names, cardSubject, range) except moveNotKnown — a policy is team-wide, and a subagent that does not know its
+ * move traces it `moveDisabled` instead (cards/evaluate.ts).
+ */
+export function policyCardErrors(card: Card): ValidationError[] {
+  const errors: Errors = [];
+  cardErrors(card, 'card', () => true, errors);
+  return errors;
+}
+
 /**
  * Value problems with a well-shaped deck at `path`, for a creature whose stored moveset is `known` (its listed or
  * grid moves; universal moves are always known): deckDefault when there is no Default card, duplicateId for a

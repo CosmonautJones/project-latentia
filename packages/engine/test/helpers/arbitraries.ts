@@ -6,7 +6,7 @@ import type { CommandSource } from '../../src/battle/simulate.js';
 import { VERSIONS, type BattleState, type SideId, type Temperature } from '../../src/battle/state.js';
 import { moveDef, SIGNATURE_MOVE_IDS } from '../../src/content/moves.js';
 import { SPECIES, type SpeciesDef } from '../../src/content/species.js';
-import type { Deck } from '../../src/cards/model.js';
+import type { Card, Deck } from '../../src/cards/model.js';
 import type { GridLayout, PlacedPiece } from '../../src/grid/model.js';
 import type { SeedHex } from '../../src/rng/seed.js';
 import { arbDeck } from './decks.js';
@@ -244,12 +244,12 @@ function targetsFor(state: BattleState, user: number, moveId: string): number[] 
  * Every legal orchestrator action for a side, by kind, each one accepted by validateCommand:
  * - `move`: each orchestrator move × legal target (a self/none move once, aimed at the user);
  * - `swap`: each allied active creature out × each living allied bench creature in;
- * - `directive`: each live allied subagent × each of its moves × legal target.
- * Policy Update is not generated yet: it has no effect until B3, which adds it here (Ruling 72).
+ * - `directive`: each live allied subagent × each of its moves × legal target;
+ * - `policyUpdate` (Ruling 72): a simple card (`policyCards`) for each move an allied active subagent knows.
  * Injections are added at pick time (scriptedFrom), onto a legal move.
  */
-export function legalActions(state: BattleState, side: SideId): { move: OrchestratorAction[]; swap: OrchestratorAction[]; directive: OrchestratorAction[] } {
-  const out = { move: [] as OrchestratorAction[], swap: [] as OrchestratorAction[], directive: [] as OrchestratorAction[] };
+export function legalActions(state: BattleState, side: SideId): Record<'move' | 'swap' | 'directive' | 'policyUpdate', OrchestratorAction[]> {
+  const out = { move: [] as OrchestratorAction[], swap: [] as OrchestratorAction[], directive: [] as OrchestratorAction[], policyUpdate: [] as OrchestratorAction[] };
   const orch = state.creatures.find((c) => c.side === side && c.isOrchestrator);
   if (orch === undefined) return out;
   const add = (list: OrchestratorAction[], action: OrchestratorAction): void => {
@@ -261,7 +261,21 @@ export function legalActions(state: BattleState, side: SideId): { move: Orchestr
   for (const sub of allies.filter((c) => c.slot === 'active' && !c.fainted)) {
     for (const moveId of sub.moves) for (const target of targetsFor(state, sub.index, moveId)) add(out.directive, { kind: 'directive', subagent: sub.index, moveId, target });
   }
+  const moves = new Set(allies.filter((c) => c.slot === 'active').flatMap((c) => c.moves));
+  for (const card of [...moves].flatMap(policyCards)) add(out.policyUpdate, { kind: 'policyUpdate', card });
   return out;
+}
+
+/**
+ * Policy Update cards over `move` (Ruling 72): a coin flip at the lowest-HP foe, or "at 50% HP or more" at a seeded
+ * random foe. One id for all of them, so a new policy replaces an older one in force; allied subagents that do not
+ * know the move trace it moveDisabled.
+ */
+function policyCards(move: string): Card[] {
+  return [
+    { id: 'policy', subject: 'self', condition: { category: 'coin' }, move, target: 'lowestHpFoe' },
+    { id: 'policy', subject: 'self', condition: { category: 'hp', op: 'atLeast', pct: 50 }, move, target: 'randomFoe' },
+  ];
 }
 
 /**
@@ -282,7 +296,7 @@ function withInjection(state: BattleState, side: SideId, move: OrchestratorActio
 /**
  * A scripted source from precomputed choices: each round, for each side, a temperature and one legal
  * orchestrator action picked from the current state — a kind among those with a legal action (move, move
- * with an injection, swap, directive), then one action of that kind; `none` when nothing is legal (e.g.
+ * with an injection, swap, directive, policy update), then one action of that kind; `none` when nothing is legal (e.g.
  * while charging). `next` is a pure function of the state, so the same source replays the same battle
  * every time it is simulated, and it never mutates the state.
  */
@@ -294,8 +308,8 @@ export function scriptedFrom(choices: readonly number[]): CommandSource {
       const cmd: RoundCommand = {};
       SIDE_IDS.forEach((side, s) => {
         const c = (k: number): number => choice(state.round, s * PER_SIDE + k);
-        const { move, swap, directive } = legalActions(state, side);
-        const kinds = [move, move, swap, directive].map((list, k) => ({ list, inject: k === 1 })).filter((x) => x.list.length > 0);
+        const { move, swap, directive, policyUpdate } = legalActions(state, side);
+        const kinds = [move, move, swap, directive, policyUpdate].map((list, k) => ({ list, inject: k === 1 })).filter((x) => x.list.length > 0);
         const kind = kinds[c(1) % Math.max(1, kinds.length)];
         const picked = kind?.list[c(2) % kind.list.length];
         const action = picked === undefined ? { kind: 'none' as const } : kind?.inject === true ? withInjection(state, side, picked, c(3)) : picked;

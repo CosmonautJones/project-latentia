@@ -9,6 +9,7 @@ import { lo } from '../../rng/draws.js';
 import { statStage, statusDamageMods } from '../../status/apply.js';
 import { sideNumber } from '../end.js';
 import { handoffBp } from '../handoff.js';
+import { specialistAgainst } from '../levers.js';
 import type { BattleState, CreatureState } from '../state.js';
 import { holds, powerBonus, typeBpAgainst, typesOf } from './conditions.js';
 import { creature, temperatureRow, type EffectContext } from './context.js';
@@ -23,6 +24,8 @@ const NATIVE_BP = 12500;
 const T4_SUPER_EFFECTIVE_BP = 12500;
 const CRIT_BP = 15000;
 const OBSERVATION_BP = 9000;
+/** Specialist (spec §5): +15% damage against the opponent a deck was mostly recorded from. */
+export const SPECIALIST_BP = 11500;
 const MAX_CRIT_STAGE = 6;
 
 /** The options of a damaging effect that shape one hit (multiHit has none of them). */
@@ -108,6 +111,7 @@ export function computeHit(ctx: EffectContext, shape: HitShape, incomingBp: numb
   const mods: DamageMods = { roll: rollBp(ctx) };
   const handoff = handoffBp(ctx.state, user.side, target.index);
   if (handoff !== null) mods.handoff = handoff;
+  if (specialistAgainst(ctx.state, user, target)) mods.specialist = SPECIALIST_BP;
   if (typeBp !== null) mods.type = typeBp;
   if (typeBp !== null && typeBp > 10000 && ctx.temperature === 4) mods.t4se = T4_SUPER_EFFECTIVE_BP;
   if (ctx.move.type !== 'system' && typesOf(user).includes(ctx.move.type)) mods.native = NATIVE_BP;

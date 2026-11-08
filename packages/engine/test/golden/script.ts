@@ -1,6 +1,7 @@
 import { validateCommand } from '../../src/battle/errors.js';
 import type { OrchestratorAction, RoundCommand, SideCommand } from '../../src/battle/log.js';
 import type { CommandSource } from '../../src/battle/simulate.js';
+import type { Card } from '../../src/cards/model.js';
 import type { BattleState, CreatureState, SideId, Temperature } from '../../src/battle/state.js';
 
 // Scripted command sources for the golden battles and the benchmark. A script is a cycle of steps per
@@ -18,6 +19,8 @@ export type Step =
   | { swap: { out: 0 | 1; in: number } }
   /** Directive to the occupant of active slot `slot`: `moveId`, or its first move with a legal target. */
   | { directive: { slot: 0 | 1; moveId?: string } }
+  /** Policy Update with this card. */
+  | { policy: Card }
   | 'none';
 
 /**
@@ -86,6 +89,10 @@ function stepAction(state: BattleState, side: SideId, orch: CreatureState, step:
       if (ok(action)) return action;
     }
     return null;
+  }
+  if ('policy' in step) {
+    const action: OrchestratorAction = { kind: 'policyUpdate', card: structuredClone(step.policy) };
+    return ok(action) ? action : null;
   }
   if ('swap' in step) {
     const out = state.sides[side].slots[step.swap.out]?.occupant ?? null;

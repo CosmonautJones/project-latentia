@@ -19,7 +19,7 @@ export type { BattleResult, CommandSource } from './battle/simulate.js';
 export { replay } from './battle/replay.js';
 export type { ReplayError } from './battle/replay.js';
 
-export type { BattleState, CreatureState, FieldState, Outcome, SideId, SideState, SlotState, Temperature, Version } from './battle/state.js';
+export type { BattleState, CreatureState, DirectiveState, FieldState, Outcome, PolicyState, SideId, SideState, SlotState, Temperature, Version } from './battle/state.js';
 
 export type { Card, Condition, Deck, FieldKind, Subject, TargetSelector, Threshold } from './cards/model.js';
 

@@ -1,14 +1,17 @@
 import { moveDef } from '../content/moves.js';
 import { moveDisabledByStatus } from '../status/apply.js';
+import type { Card } from '../cards/model.js';
 import type { OrchestratorAction, RoundCommand, SideCommand } from './log.js';
 import { holdsLiveSlot, isHeadless, legalTarget } from './order.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
+import { cardShapeOk, policyCardErrors } from './validate-deck.js';
 
 /**
  * A caller mistake in a RoundCommand (spec §7). `submitRound` returns it as `{ error }` and leaves the
  * input state untouched; it never throws for these. `actorSkipped`: any action but `none` for an
- * orchestrator that is charging a move (its entry is the release, Ruling 13). `moveDisabled`: a move a
- * held status forbids (Glazed / Overfit, Ruling 50). An orchestrator cleared by /clear is not an error:
+ * orchestrator that is charging a move (its entry is the release, Ruling 13), or a Directive to a charging
+ * subagent. `moveDisabled`: a move a held status forbids its user (Glazed / Overfit, Ruling 50), the directed
+ * subagent included. An orchestrator cleared by /clear is not an error:
  * its command is accepted and skipped (Ruling 11).
  */
 export type CommandError = {
@@ -37,7 +40,7 @@ function actionShapeOk(a: Record<string, unknown>): boolean {
     case 'directive':
       return num(a.subagent) && str(a.moveId) && num(a.target);
     case 'policyUpdate':
-      return a.card !== undefined && a.card !== null;
+      return cardShapeOk(a.card);
     case 'swap':
       return num(a.out) && num(a.in);
     case 'none':
@@ -72,6 +75,18 @@ function checkMove(state: BattleState, user: CreatureState, moveId: string, targ
   return null;
 }
 
+/**
+ * invalidCommand for a Policy Update card (its shape is checked with the command's): a card the deck rules reject
+ * (policyCardErrors), or an id a card of an allied deck already uses (traces and re-planning name cards by id). A
+ * policy in force with the same id is no clash: re-issuing it replaces it.
+ */
+function policyError(state: BattleState, side: SideId, card: Card): CommandError | null {
+  const bad = policyCardErrors(card)[0];
+  if (bad !== undefined) return err('invalidCommand', `policyUpdate: ${bad.message}`);
+  const clash = state.creatures.find((c) => c.side === side && c.deck !== null && [...c.deck.cards, c.deck.default].some((k) => k.id === card.id));
+  return clash === undefined ? null : err('invalidCommand', `policyUpdate: card id ${card.id} is already used by ${clash.id}'s deck`);
+}
+
 function checkAction(state: BattleState, side: SideId, orch: CreatureState, action: OrchestratorAction): CommandError | null {
   if (orch.charging !== null && action.kind !== 'none') {
     return err('actorSkipped', `${orch.id} is charging ${orch.charging.moveId}: its action this round is the release (send none)`);
@@ -92,8 +107,14 @@ function checkAction(state: BattleState, side: SideId, orch: CreatureState, acti
         return err('illegalTarget', `directive: ${String(action.subagent)} is not an allied subagent`);
       }
       if (sub.fainted || !holdsLiveSlot(state, sub)) return err('directiveOnFainted', `directive: ${sub.id} is fainted or not active`);
-      return checkMove(state, sub, action.moveId, action.target);
+      if (sub.charging !== null) return err('actorSkipped', `directive: ${sub.id} is charging ${sub.charging.moveId}: its action this round is the release`);
+      const bad = checkMove(state, sub, action.moveId, action.target);
+      const def = moveDef(action.moveId);
+      if (bad !== null || def === null) return bad;
+      return moveDisabledByStatus(sub, def, sub.lastMoveId) ? err('moveDisabled', `directive: a held status forbids ${sub.id} ${action.moveId}`) : null;
     }
+    case 'policyUpdate':
+      return policyError(state, side, action.card);
     case 'swap': {
       const out = creatureAt(state, action.out);
       if (out === null || out.side !== side || !holdsLiveSlot(state, out)) {
@@ -105,7 +126,6 @@ function checkAction(state: BattleState, side: SideId, orch: CreatureState, acti
       }
       return null;
     }
-    case 'policyUpdate':
     case 'none':
       return null;
   }

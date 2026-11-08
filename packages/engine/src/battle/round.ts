@@ -15,6 +15,7 @@ import { autofillBench, checkEnd, winOutcome } from './end.js';
 import { validateCommand, type CommandError } from './errors.js';
 import { breakEnemyChains } from './handoff.js';
 import { assertInvariants } from './invariants.js';
+import { directedEntry, endRoundLevers, resolveCommandLever } from './levers.js';
 import type { RoundCommand } from './log.js';
 import { holdsLiveSlot, isHeadless, sortActions, type ActionEntry } from './order.js';
 import { intentsPlanned, planEntries } from './plan.js';
@@ -79,8 +80,9 @@ function takeClearedSkip(c: CreatureState): boolean {
  * entry keeps the priority it was sorted with (a Swap's +3, say): the entry's place in the turn order is
  * fixed at Sort, before anyone knows it will be hijacked. Otherwise a lever other than `none` breaks the
  * enemy's Handoff chains and resets the guard streak; Swap exchanges its creatures (a no-op if they are no
- * longer in place); Directive and Policy Update (B3) are not yet executed. A `none` command emits nothing
- * further. Everything else goes to resolveAction. Exported for tests that drive entries one at a time.
+ * longer in place); Directive and Policy Update pay their 2 cells and take effect now (levers.ts, Ruling 74). A
+ * `none` command emits nothing further. Everything else goes to resolveAction — a subagent's entry as a Directive
+ * that landed on it this round replaces it (directedEntry). Exported for tests that drive entries one at a time.
  */
 export function resolveEntry(state: BattleState, entry: ActionEntry, events: BattleEvent[]): void {
   const draws = drawAction(state.rng);
@@ -97,9 +99,10 @@ export function resolveEntry(state: BattleState, entry: ActionEntry, events: Bat
     breakEnemyChains(state, c.side);
     c.guardStreak = 0;
     if (entry.lever.kind === 'swap') swapCreatures(state, entry.lever.out, entry.lever.in, state.round, events);
+    else resolveCommandLever(state, c, entry.lever, events);
     return;
   }
-  resolveAction(state, entry, draws, events);
+  resolveAction(state, directedEntry(state, entry), draws, events);
 }
 
 /**
@@ -175,8 +178,9 @@ function recoverBench(state: BattleState, events: BattleEvent[]): void {
 /**
  * End of round (spec §5 steps 5-6, Ruling 57): roundEnd passives, status ticks and Deprecated, timed field
  * ticks, notKoThisRound passives for every creature still alive, expired snapshots dropped, bench recovery,
- * bench auto-fill — all skipped when the round was cut short by a wipe — then every guard is cleared, then
- * RoundEnd, then the win check and round-50 cap, which emit at most one BattleEnd.
+ * bench auto-fill — all skipped when the round was cut short by a wipe — then every guard is cleared, expired
+ * Policy Updates and any unused Directive are dropped, then RoundEnd, then the win check and round-50 cap,
+ * which emit at most one BattleEnd.
  */
 function endRound(state: BattleState, cutShort: boolean, events: BattleEvent[]): void {
   if (!cutShort) {
@@ -189,6 +193,7 @@ function endRound(state: BattleState, cutShort: boolean, events: BattleEvent[]):
     events.push(...autofillBench(state, state.round));
   }
   for (const c of state.creatures) c.guard = null; // guards last only the round they were raised in
+  endRoundLevers(state);
   events.push({ round: state.round, type: 'RoundEnd' });
   events.push(...checkEnd(state));
 }

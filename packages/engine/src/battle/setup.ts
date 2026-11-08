@@ -151,6 +151,8 @@ function addSide(creatures: CreatureState[], side: SideSetup, id: SideId): SideS
     headless: false,
     slots: buildSlots(side, firstActive),
     lastMove: null,
+    policies: [],
+    directive: null,
   };
 }
 

@@ -150,6 +150,26 @@ describe('golden coverage', () => {
     expect(events.some((e) => e.type === 'IntentsPlanned' && e.intents.some((i) => i.cardId !== null))).toBe(true);
   });
 
+  it('policy-update-and-directive: the policy is in force for rounds 1-3 only; the first Directive is spent, the second lands (B3)', () => {
+    const at = GOLDENS.findIndex((g) => g.file === 'policy-update-and-directive');
+    const golden = GOLDENS[at]?.golden;
+    const events = replays()[at]?.events ?? [];
+    if (golden === undefined) throw new Error('missing golden');
+    const policy = golden.log.rounds[0]?.a?.action;
+    if (policy?.kind !== 'policyUpdate') throw new Error('round 1 is not a Policy Update');
+    const traced = events.flatMap((e) => (e.type === 'CardTrace' && (e.firedCardId === policy.card.id || e.skipped.some((k) => k.cardId === policy.card.id)) ? [e.round] : []));
+    expect([...new Set(traced)]).toEqual([1, 2, 3]);
+    expect(events.some((e) => e.type === 'CardTrace' && e.round === 1 && e.firedCardId === policy.card.id)).toBe(true);
+    // A Directive landed when the directed subagent used the directed move that round, not from its deck.
+    const landed = golden.log.rounds.flatMap((cmd, i) => {
+      const a = cmd.a?.action;
+      if (a?.kind !== 'directive') return [];
+      const mine = events.filter((e) => e.round === i + 1 && 'actor' in e && e.actor === a.subagent);
+      return [mine.some((e) => e.type === 'MoveUsed' && e.moveId === a.moveId) && !mine.some((e) => e.type === 'CardTrace')];
+    });
+    expect(landed).toEqual([false, true]);
+  });
+
   it('a T4-trained subagent uses a move with a wildT4 list, a Robust subagent has recordedFoes, and a side starts with no active subagent (Ruling 77)', () => {
     let wildT4 = false;
     GOLDENS.forEach(({ golden }, g) => {
@@ -164,12 +184,11 @@ describe('golden coverage', () => {
     expect(GOLDENS.some((g) => g.golden.log.setup.a.active.length === 0 || g.golden.log.setup.b.active.length === 0)).toBe(true);
   });
 
-  it('the logs pull every Phase A lever at every temperature, and the outcomes include a cap and a draw', () => {
+  it('the logs pull every lever at every temperature, and the outcomes include a cap and a draw', () => {
     const commands = GOLDENS.flatMap((g) => g.golden.log.rounds);
     const sides = commands.flatMap((c) => [c.a, c.b]);
     const given = sides.flatMap((sc) => (sc === undefined ? [] : [sc]));
-    // Policy Update is not covered: it has no effect until B3, which adds it (Ruling 72).
-    expect(new Set(given.map((sc) => sc.action.kind))).toEqual(new Set(['move', 'swap', 'directive', 'none']));
+    expect(new Set(given.map((sc) => sc.action.kind))).toEqual(new Set(['move', 'swap', 'directive', 'policyUpdate', 'none']));
     expect(given.some((sc) => sc.action.kind === 'move' && sc.action.injection !== undefined)).toBe(true);
     expect(sides.some((sc) => sc === undefined)).toBe(true);
     expect(new Set(given.map((sc) => sc.temperature))).toEqual(new Set([0, 1, 2, 3, 4]));

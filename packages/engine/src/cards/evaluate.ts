@@ -45,8 +45,17 @@ export type Evaluation = { cardId: string; moveId: string; target: number | null
  *   holds, its move is usable and its plan-time `target` is still legal (Ruling 85: a randomFoe pick is kept, not
  *   redrawn); otherwise evaluation continues from the next card down and the result is `replanned`.
  * - `d1`: roll obedience with this draw (at resolution); without it the obeying choice is returned (the intent).
+ * - `policies`: Policy Update cards in force (spec §5 "Orchestrator levers"), evaluated above the deck's cards like any
+ *   card (traced with their own ids) and always active — they use no card slot; one whose move the actor does not
+ *   know (not in `knownMoves`) is traced `moveDisabled`. They never count towards a Brittle repeat.
  */
-export type EvaluateOptions = { band: Band; startAfter?: string; resume?: { cardId: string; target: number }; d1?: number };
+export type EvaluateOptions = {
+  band: Band;
+  startAfter?: string;
+  resume?: { cardId: string; target: number };
+  d1?: number;
+  policies?: { cards: readonly Card[]; knownMoves: readonly string[] };
+};
 
 /** The cells a move costing `cost` pays with these pending modifiers: costSet replaces it (the last wins), then each costAdd adds. */
 export function cellsWithPending(cost: number, mods: readonly PendingCost[]): number {
@@ -115,17 +124,18 @@ function mostRepresented(deck: Deck): Card | null {
   return pick?.card ?? null;
 }
 
-/** The position of card `id`: its index, or `cards.length` for the Default card. */
-function positionOf(deck: Deck, id: string): number {
-  if (id === deck.default.id) return deck.cards.length;
-  const at = deck.cards.findIndex((c) => c.id === id);
+/** The position of card `id` among `cards` (policies, then the deck's cards): its index, or `cards.length` for the Default card. */
+function positionOf(cards: readonly Card[], deck: Deck, id: string): number {
+  if (id === deck.default.id) return cards.length;
+  const at = cards.findIndex((c) => c.id === id);
   if (at < 0) throw new EngineInvariantError(`card ${id} is not in the deck`, {});
   return at;
 }
 
 /**
- * Evaluates `deck` top-down for the view's actor (spec §5): cards at positions ≥ `activeN` are traced
- * `notActive`; an active card fires per `judge`, else it is traced with the reason. With `d1`, the first card that
+ * Evaluates `deck` top-down for the view's actor (spec §5): any policy cards first (always active), then the deck's
+ * cards, those at deck positions ≥ `activeN` traced `notActive`; an active card fires per `judge`, else it is
+ * traced with the reason. With `d1`, the first card that
  * fires is followed only when the actor `obeys`; otherwise it is traced `disobeyed` and the next card below that
  * fires is used, with no second roll. When no card above fires, Default does — unless the actor is Brittle, has
  * cards and disobeyed none of them: then it repeats its most-represented move (`brittleRepeat`), aimed by the first
@@ -134,14 +144,19 @@ function positionOf(deck: Deck, id: string): number {
  */
 export function evaluateDeck(deck: Deck, view: BattleView, activeN: number, opts: EvaluateOptions): Evaluation {
   const skipped: CardSkip[] = [];
-  const resumeAt = opts.resume === undefined ? -1 : positionOf(deck, opts.resume.cardId);
-  const start = resumeAt >= 0 ? resumeAt : opts.startAfter === undefined ? 0 : positionOf(deck, opts.startAfter) + 1;
+  const policies = opts.policies?.cards ?? [];
+  const cards = [...policies, ...deck.cards];
+  const active = activeN + policies.length;
+  const resumeAt = opts.resume === undefined ? -1 : positionOf(cards, deck, opts.resume.cardId);
+  const start = resumeAt >= 0 ? resumeAt : opts.startAfter === undefined ? 0 : positionOf(cards, deck, opts.startAfter) + 1;
   let rolled = false;
   let disobeyed = false;
   let replanned = false;
-  for (let i = start; i < deck.cards.length; i++) {
-    const card = deck.cards[i] as Card;
-    const v: Verdict = i >= activeN ? { fires: false, reason: 'notActive' } : judge(card, view, i === resumeAt ? opts.resume?.target : undefined);
+  for (let i = start; i < cards.length; i++) {
+    const card = cards[i] as Card;
+    const unknown = i < policies.length && opts.policies?.knownMoves.includes(card.move) !== true;
+    const v: Verdict =
+      i >= active ? { fires: false, reason: 'notActive' } : unknown ? { fires: false, reason: 'moveDisabled' } : judge(card, view, i === resumeAt ? opts.resume?.target : undefined);
     if (!v.fires) {
       if (i === resumeAt) replanned = true;
       skipped.push({ cardId: card.id, reason: v.reason });
@@ -157,7 +172,7 @@ export function evaluateDeck(deck: Deck, view: BattleView, activeN: number, opts
     }
     return { cardId: card.id, moveId: card.move, target: v.target, trace: { firedCardId: card.id, skipped }, brittleRepeat: false, replanned, fallback: false };
   }
-  const keep = resumeAt === deck.cards.length ? opts.resume?.target : undefined;
+  const keep = resumeAt === cards.length ? opts.resume?.target : undefined;
   const repeat = opts.band === 'brittle' && !disobeyed ? mostRepresented(deck) : null;
   const moveId = repeat?.move ?? deck.default.move;
   const trace = { firedCardId: deck.default.id, skipped };
