@@ -4,7 +4,7 @@ import { critThreshold } from '../../math/accuracy.js';
 import { EngineInvariantError, idiv, mulBp } from '../../math/bp.js';
 import { computeDamage, effectivePower, type DamageMods } from '../../math/damage.js';
 import { effectiveStat } from '../../math/stats.js';
-import { toolStepsFor } from '../../grid/adjacency.js';
+import { gridMovePiece, gridToolSteps } from '../../grid/derived.js';
 import { lo } from '../../rng/draws.js';
 import { statStage, statusDamageMods } from '../../status/apply.js';
 import { sideNumber } from '../end.js';
@@ -41,9 +41,9 @@ export type Hit = { damage: number; crit: boolean; typeBp: number | null };
 export function pieceBonus(state: BattleState, user: CreatureState, moveId: string): { toolSteps: number; summary: boolean } {
   const grid = state.sides[user.side].grid;
   if (!user.isOrchestrator || grid === null) return { toolSteps: 0, summary: false };
-  const piece = grid.pieces.find((p) => (p.kind === 'skill' || p.kind === 'graft') && p.moveId === moveId);
-  if (piece === undefined) return { toolSteps: 0, summary: false };
-  return { toolSteps: piece.kind === 'skill' ? toolStepsFor(grid, piece.id) : 0, summary: user.context.summarizedPieces.includes(piece.id) };
+  const piece = gridMovePiece(grid, moveId);
+  if (piece === null) return { toolSteps: 0, summary: false };
+  return { toolSteps: piece.kind === 'skill' ? gridToolSteps(grid, piece.id) : 0, summary: user.context.summarizedPieces.includes(piece.id) };
 }
 
 /**

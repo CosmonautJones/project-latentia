@@ -1,31 +1,50 @@
 import { cellsOf, type GridLayout, type PlacedPiece } from './model.js';
 
+type Cells = readonly [number, number][];
+
 function cellKey(x: number, y: number): string {
   return `${x},${y}`;
 }
 
-function neighbourPieces(grid: GridLayout, piece: PlacedPiece): PlacedPiece[] {
+const safeCells = (cells: Cells): boolean => cells.every((c) => Number.isSafeInteger(c[0]) && Number.isSafeInteger(c[1]));
+
+/** Whether a cell of `theirs` is one orthogonal step from a cell of `mine`, comparing coordinates (safe integers only). */
+function touchesSafe(mine: Cells, theirs: Cells): boolean {
+  for (let i = 0; i < theirs.length; i++) {
+    const t = theirs[i] as [number, number];
+    for (let j = 0; j < mine.length; j++) {
+      const m = mine[j] as [number, number];
+      const dx = t[0] - m[0];
+      const dy = t[1] - m[1];
+      if ((dy === 0 && (dx === 1 || dx === -1)) || (dx === 0 && (dy === 1 || dy === -1))) return true;
+    }
+  }
+  return false;
+}
+
+/** The same test through `x,y` keys: what adjacency always did, kept for cells that are not safe integers (unvalidated grids). */
+function touchesByKey(mine: Cells, theirs: Cells): boolean {
   const own = new Set<string>();
-  const mine = cellsOf(piece);
   for (let i = 0; i < mine.length; i++) {
     const c = mine[i] as [number, number];
     own.add(cellKey(c[0], c[1]));
   }
+  for (let i = 0; i < theirs.length; i++) {
+    const c = theirs[i] as [number, number];
+    if (own.has(cellKey(c[0] + 1, c[1])) || own.has(cellKey(c[0] - 1, c[1])) || own.has(cellKey(c[0], c[1] + 1)) || own.has(cellKey(c[0], c[1] - 1))) return true;
+  }
+  return false;
+}
+
+function neighbourPieces(grid: GridLayout, piece: PlacedPiece): PlacedPiece[] {
+  const mine = cellsOf(piece);
+  const mineSafe = safeCells(mine);
   const out: PlacedPiece[] = [];
   for (let p = 0; p < grid.pieces.length; p++) {
     const other = grid.pieces[p] as PlacedPiece;
     if (other.id === piece.id) continue;
     const theirs = cellsOf(other);
-    let touching = false;
-    for (let i = 0; i < theirs.length && !touching; i++) {
-      const c = theirs[i] as [number, number];
-      touching =
-        own.has(cellKey(c[0] + 1, c[1])) ||
-        own.has(cellKey(c[0] - 1, c[1])) ||
-        own.has(cellKey(c[0], c[1] + 1)) ||
-        own.has(cellKey(c[0], c[1] - 1));
-    }
-    if (touching) out.push(other);
+    if (mineSafe && safeCells(theirs) ? touchesSafe(mine, theirs) : touchesByKey(mine, theirs)) out.push(other);
   }
   return out;
 }

@@ -1,6 +1,17 @@
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { activeCardCount, isCompactable, neighbours, toolStepsFor } from '../../src/grid/adjacency.js';
+import { cellsOf, type GridLayout, type PlacedPiece } from '../../src/grid/model.js';
 import { grid, piece } from './helpers.js';
+
+/** neighbours as it was before C3.5: `x,y` keys of the piece's cells, each other piece tested against them. */
+function referenceNeighbours(g: GridLayout, id: string): string[] {
+  const p = g.pieces.find((q) => q.id === id);
+  if (p === undefined) return [];
+  const own = new Set(cellsOf(p).map(([x, y]) => `${x},${y}`));
+  const near = ([x, y]: [number, number]): boolean => own.has(`${x + 1},${y}`) || own.has(`${x - 1},${y}`) || own.has(`${x},${y + 1}`) || own.has(`${x},${y - 1}`);
+  return g.pieces.filter((o) => o.id !== p.id && cellsOf(o).some(near)).map((o) => o.id);
+}
 
 describe('neighbours', () => {
   it('is orthogonal only, in piece order', () => {
@@ -8,6 +19,18 @@ describe('neighbours', () => {
     expect(neighbours(g, 'a')).toEqual(['r', 'l', 'u']);
     expect(neighbours(g, 'diag')).toEqual(['r']);
     expect(neighbours(g, 'missing')).toEqual([]);
+  });
+  it('matches the keyed reference on any coordinates: safe integers, huge, negative, fractional, NaN', () => {
+    const coord = fc.oneof(fc.integer({ min: -3, max: 6 }), fc.constantFrom(2 ** 53 - 1, 2 ** 53 - 2, -(2 ** 53) + 1, 0.5, 1.5, NaN, Infinity, 2 ** 53, -0));
+    const kind = fc.constantFrom<Exclude<PlacedPiece['kind'], 'graft'>>('tool', 'skill', 'subagentSlot', 'exampleCard', 'systemPrompt');
+    const pieces = fc.array(fc.tuple(kind, coord, coord, fc.constantFrom<PlacedPiece['rotation']>(0, 90, 180, 270)), { minLength: 1, maxLength: 8 });
+    fc.assert(
+      fc.property(pieces, (ps) => {
+        const g = grid(6, 6, ps.map(([k, x, y, r], i) => piece(i % 3 === 2 ? 'dup' : `p${i}`, k, x, y, r)));
+        for (const p of g.pieces) expect(neighbours(g, p.id)).toEqual(referenceNeighbours(g, p.id));
+      }),
+      { numRuns: 500 },
+    );
   });
   it('works across multi-cell pieces', () => {
     const g = grid(5, 5, [piece('sk', 'skill', 0, 0), piece('t', 'tool', 1, 1)]);
