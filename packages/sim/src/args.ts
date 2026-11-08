@@ -94,3 +94,6 @@ export function tag(p: Parsed, name: string): string | undefined {
   const v = p.flags.get(name);
   return typeof v === 'string' ? v : undefined;
 }
+
+/** A string flag's value (an id, a seed): the same reader as `tag`, named for what it reads. */
+export const str = tag;

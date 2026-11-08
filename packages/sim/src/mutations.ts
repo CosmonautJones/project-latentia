@@ -1,5 +1,6 @@
 import {
   CONDITION_CATEGORIES,
+  moveDef,
   MOVES,
   SPECIES,
   STATUS_IDS,
@@ -13,12 +14,17 @@ import {
   type SideSetup,
   type SpeciesId,
   type Subject,
+  type TargetSelector,
 } from '@latentia/engine';
 import { cardText, conditionText } from './card-text.js';
 import type { Sfc32 } from './sfc32.js';
+import type { Archetype } from './types.js';
 
 // The deck search's mutations (Ruling 139 a, b): single changes to an Autopilot deck's cards, drawn from the engine's
 // card grammar (its condition categories, statuses, types, target selectors) and the orchestrator's known moves.
+// Ruling 141 narrows the draws to cards that can make sense: a foeLastMove condition names a move some foe in the field
+// can use, a turn condition names a round a fight plausibly reaches (and never `below 1`), and a card's target
+// selector aims where its move does (foe selectors for attacks, self or ally selectors for self, buff and heal moves).
 // Every mutation builds a new deck — the cards it keeps are shared, never edited — and keeps the card count and the
 // Default card. A mutation that would change nothing is no candidate; drawCandidate redraws it, and any candidate its
 // validity check rejects, up to a cap.
@@ -44,9 +50,12 @@ const FIELD_KINDS = Object.keys(FIELD_KIND_SET) as FieldKind[];
 const OPS = ['below', 'atLeast'] as const;
 const PCTS = [25, 50, 75] as const;
 const COOLDOWNS = [1, 2, 3] as const;
-/** A `turn` condition names a round in 1..TURN_ROUNDS (the opening rounds, where turn conditions matter). */
-const TURN_ROUNDS = 10;
-const ALL_MOVE_IDS = Object.keys(MOVES);
+/**
+ * The highest round a `turn` condition names (Ruling 141): a plausible fight length — the round-robin's median fight is
+ * 7 rounds, inside the 5–8 target band. `below` draws 2..TURN_MAX_ROUND (`below 1` never holds); `atLeast` draws
+ * 1..TURN_MAX_ROUND (`atLeast 1` is the always-true card).
+ */
+export const TURN_MAX_ROUND = 10;
 const UNIVERSAL_MOVE_IDS = Object.values(MOVES)
   .filter((m) => m.universal === true)
   .map((m) => m.id);
@@ -63,8 +72,44 @@ export function movePool(side: SideSetup): string[] {
   return [...new Set([...own, ...UNIVERSAL_MOVE_IDS])];
 }
 
-/** A condition drawn from the grammar: a category uniformly, then its parameters uniformly. */
-export function randomCondition(rng: Sfc32): Condition {
+/** What a mutation draws from: the moves the deck's cards may name, and the moves a foeLastMove condition may name. */
+export type MutationPools = { moves: readonly string[]; foeMoves: readonly string[] };
+
+/** `base`'s pools against `field`: its own movePool, and the union of movePool over the field's sides (Ruling 141). */
+export function mutationPools(base: Archetype, field: readonly Archetype[]): MutationPools {
+  return { moves: movePool(base.side), foeMoves: [...new Set(field.flatMap((f) => movePool(f.side)))] };
+}
+
+/** Which side a target selector names; the record keeps every selector classified. */
+const SELECTOR_SIDE: Record<TargetSelector, 'ally' | 'foe'> = {
+  self: 'ally',
+  orchestrator: 'ally',
+  lowestHpAlly: 'ally',
+  orchestratorTarget: 'foe',
+  lowestHpFoe: 'foe',
+  foeWeakToMove: 'foe',
+  highestAtkFoe: 'foe',
+  randomFoe: 'foe',
+};
+
+/**
+ * Where a move aims, read from its public move data the way the engine's default selector reads it: self and none
+ * moves aim at the user and ally moves at an ally (both `ally`); foe kinds and `other` aim at a foe (`foe`).
+ */
+export function moveSide(moveId: string): 'ally' | 'foe' {
+  const def = moveDef(moveId);
+  if (def === null) throw new RangeError(`unknown move ${moveId}`);
+  return def.target === 'self' || def.target === 'none' || def.target === 'ally' ? 'ally' : 'foe';
+}
+
+/** The target selectors a card naming `moveId` may use: those on the side the move aims at. */
+export function selectorsFor(moveId: string): TargetSelector[] {
+  const side = moveSide(moveId);
+  return TARGET_SELECTORS.filter((t) => SELECTOR_SIDE[t] === side);
+}
+
+/** A condition drawn from the grammar: a category uniformly, then its parameters uniformly; foeLastMove names one of `foeMoves`. */
+export function randomCondition(rng: Sfc32, foeMoves: readonly string[]): Condition {
   const category: ConditionCategory = rng.pick(CONDITION_CATEGORIES);
   switch (category) {
     case 'hp':
@@ -76,9 +121,12 @@ export function randomCondition(rng: Sfc32): Condition {
     case 'foeType':
       return { category, is: rng.below(TYPES.length + 1) === TYPES.length ? 'weakToMove' : rng.pick(TYPES) };
     case 'foeLastMove':
-      return { category, move: rng.pick(ALL_MOVE_IDS) };
-    case 'turn':
-      return { category, op: rng.pick(OPS), round: 1 + rng.below(TURN_ROUNDS) };
+      return { category, move: rng.pick(foeMoves) };
+    case 'turn': {
+      const op = rng.pick(OPS);
+      const low = op === 'below' ? 2 : 1;
+      return { category, op, round: low + rng.below(TURN_MAX_ROUND - low + 1) };
+    }
     case 'cooldown':
       return { category, rounds: rng.pick(COOLDOWNS) };
     case 'field':
@@ -92,19 +140,24 @@ export function randomCondition(rng: Sfc32): Condition {
 
 const same = (x: unknown, y: unknown): boolean => JSON.stringify(x) === JSON.stringify(y);
 
-/** `card` naming `move` instead: its Deepfake Call `injection` belonged to the old move, so it is dropped. */
-function withMove(card: Card, move: string): Card {
-  const next: Card = { ...card, move };
+/**
+ * `card` naming `move` instead: its Deepfake Call `injection` belonged to the old move, so it is dropped, and a target
+ * on the wrong side for the new move is redrawn from the move's selectors (Ruling 141).
+ */
+function withMove(card: Card, move: string, rng: Sfc32): Card {
+  const targets = selectorsFor(move);
+  const next: Card = { ...card, move, target: targets.includes(card.target) ? card.target : rng.pick(targets) };
   delete next.injection;
   return next;
 }
 
 /**
- * One mutation of `deck`, kind chosen uniformly: replace a card with a fresh one (id `freshId`), redraw a card's
- * subject and condition, give a card another move from `pool`, or move a card to another priority. Null when the
- * draw changes nothing (or cannot: one card, one move).
+ * One mutation of `deck`, kind chosen uniformly: replace a card with a fresh one (id `freshId`; its target on the side
+ * its move aims at), redraw a card's subject and condition, give a card another move from `pools.moves` (its target
+ * redrawn only when on the wrong side), or move a card to another priority. Null when the draw changes nothing (or
+ * cannot: one card, one move).
  */
-export function mutate(deck: Deck, pool: readonly string[], rng: Sfc32, freshId: string): Mutation | null {
+export function mutate(deck: Deck, pools: MutationPools, rng: Sfc32, freshId: string): Mutation | null {
   const n = deck.cards.length;
   if (n === 0) return null;
   const kind = rng.pick(MUTATIONS);
@@ -123,16 +176,17 @@ export function mutate(deck: Deck, pool: readonly string[], rng: Sfc32, freshId:
   } else {
     let card: Card;
     if (kind === 'replace') {
-      card = { id: freshId, subject: rng.pick(SUBJECTS), condition: randomCondition(rng), move: rng.pick(pool), target: rng.pick(TARGET_SELECTORS) };
+      const move = rng.pick(pools.moves);
+      card = { id: freshId, subject: rng.pick(SUBJECTS), condition: randomCondition(rng, pools.foeMoves), move, target: rng.pick(selectorsFor(move)) };
       label = `replace #${index + 1} (${old.id}) with ${freshId}: ${cardText(card)}`;
     } else if (kind === 'condition') {
-      card = { ...old, subject: rng.pick(SUBJECTS), condition: randomCondition(rng) };
+      card = { ...old, subject: rng.pick(SUBJECTS), condition: randomCondition(rng, pools.foeMoves) };
       label = `condition of #${index + 1} (${old.id}): ${old.subject} ${conditionText(old.condition)} → ${card.subject} ${conditionText(card.condition)}`;
     } else {
-      const others = pool.filter((m) => m !== old.move);
+      const others = pools.moves.filter((m) => m !== old.move);
       if (others.length === 0) return null;
-      card = withMove(old, rng.pick(others));
-      label = `move of #${index + 1} (${old.id}): ${old.move} → ${card.move}`;
+      card = withMove(old, rng.pick(others), rng);
+      label = `move of #${index + 1} (${old.id}): ${old.move} → ${card.move}${card.target === old.target ? '' : ` (target ${old.target} → ${card.target})`}`;
     }
     if (kind !== 'replace' && same(card, old)) return null;
     cards[index] = card;
@@ -144,9 +198,9 @@ export function mutate(deck: Deck, pool: readonly string[], rng: Sfc32, freshId:
  * A mutation of `deck` that `isValid` accepts: draws until one does, at most 1 + `maxRedraws` times. Redraws cost no
  * battles; null when the cap is reached (the search then stops rather than loop on an impossible state).
  */
-export function drawCandidate(deck: Deck, pool: readonly string[], rng: Sfc32, freshId: string, isValid: (d: Deck) => boolean, maxRedraws: number): Mutation | null {
+export function drawCandidate(deck: Deck, pools: MutationPools, rng: Sfc32, freshId: string, isValid: (d: Deck) => boolean, maxRedraws: number): Mutation | null {
   for (let i = 0; i <= maxRedraws; i++) {
-    const m = mutate(deck, pool, rng, freshId);
+    const m = mutate(deck, pools, rng, freshId);
     if (m !== null && isValid(m.deck)) return m;
   }
   return null;

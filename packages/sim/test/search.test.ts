@@ -1,17 +1,17 @@
-import { validateSetup, type Deck } from '@latentia/engine';
+import { MOVES, validateSetup, type Deck, type TargetSelector } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { UsageError } from '../src/args.js';
 import { card, cooldown, OPENER, WEAK } from '../src/archetypes/build.js';
 import { cardText, deckTable } from '../src/card-text.js';
 import { ARCHETYPES } from '../src/archetypes/index.js';
-import { DEFAULT_K, SEARCH, searchCommand } from '../src/commands/search.js';
-import { drawCandidate, movePool, mutate, MUTATIONS } from '../src/mutations.js';
-import { evaluate, heldOut, searchDeck, withDeck } from '../src/search.js';
+import { SEARCH, searchCommand } from '../src/commands/search.js';
+import { drawCandidate, movePool, mutate, mutationPools, MUTATIONS, randomCondition, TURN_MAX_ROUND } from '../src/mutations.js';
+import { ACCEPT_MARGIN, DEFAULT_K, evaluate, heldOut, searchDeck, withDeck } from '../src/search.js';
 import { Sfc32 } from '../src/sfc32.js';
 import type { Archetype } from '../src/types.js';
 import { csvRows, readOut, testContext } from './helpers/context.js';
 
-// Task C4 (Ruling 139): a budgeted hill-climbing search over an archetype's 8-card Autopilot deck.
+// Task C4 (Rulings 139 and 141): a budgeted hill-climbing search over an archetype's 8-card Autopilot deck.
 
 const byId = (id: string): Archetype => ARCHETYPES.find((a) => a.id === id) as Archetype;
 const BASE = byId('speed-rush-blitzr');
@@ -19,6 +19,8 @@ const BASE = byId('speed-rush-blitzr');
 const FIELD = [byId('open-swarm-forkling'), byId('voice-pressure-parrot')].filter((a) => a !== undefined);
 const SEED = '0123456789abcdef0123456789abcdef';
 const deckOf = (a: Archetype): Deck => a.side.autopilot?.deck as Deck;
+/** Float slack for comparing rates (the search itself compares integer-and-half points). */
+const EPS = 1e-9;
 
 describe('searchDeck', () => {
   it('uses the tiny field it is given', () => {
@@ -54,22 +56,33 @@ describe('searchDeck', () => {
     expect(c.history[0]).toBe(a.history[0]);
   });
 
-  it('records non-decreasing (strictly increasing) accepted-step win rates, from the base score to the final one', () => {
+  it('records accepted-step win rates that each beat the previous one by at least the 1 pp margin (Ruling 141)', () => {
+    expect(ACCEPT_MARGIN).toBe(0.01);
     const r = searchDeck(BASE, FIELD, 120, SEED, { k: 1 });
-    for (let i = 1; i < r.history.length; i++) expect(r.history[i]).toBeGreaterThanOrEqual(r.history[i - 1] as number);
-    for (let i = 1; i < r.history.length; i++) expect(r.history[i]).toBeGreaterThan(r.history[i - 1] as number);
+    for (let i = 1; i < r.history.length; i++) expect(r.history[i]).toBeGreaterThanOrEqual((r.history[i - 1] as number) + ACCEPT_MARGIN - EPS);
     expect(r.history[0]).toBe(evaluate(BASE, FIELD, 1, 'search:speed-rush-blitzr').points / r.battlesPerEvaluation);
     expect(r.history.at(-1)).toBe(r.winRate);
     // The base deck is trial 0 (kept by definition); every other kept trial is one accepted step.
     expect(r.history).toHaveLength(r.trials.filter((t) => t.accepted).length);
-    // Every trial is scored on the same seeds as the deck it was measured against, and accepted only when strictly higher.
+    // Every trial is scored on the same seeds as the deck it was measured against, and accepted only when at least the margin higher.
     let best = r.history[0] as number;
     for (const t of r.trials.slice(1)) {
-      expect(t.accepted).toBe(t.score > best);
+      expect(t.accepted).toBe(t.score >= best + ACCEPT_MARGIN - EPS);
       if (t.accepted) best = t.score;
     }
     // The final deck's score, re-measured, is its reported win rate.
     expect(evaluate(withDeck(BASE, r.deck), FIELD, 1, 'search:speed-rush-blitzr').points / r.battlesPerEvaluation).toBe(r.winRate);
+  });
+
+  it('applies the margin where a score step is finer than 1 pp (k = 13: 52 battles per evaluation)', () => {
+    const r = searchDeck(BASE, FIELD, 52 * 8, SEED, { k: 13 });
+    expect(r.battlesPerEvaluation).toBe(52);
+    for (let i = 1; i < r.history.length; i++) expect(r.history[i]).toBeGreaterThanOrEqual((r.history[i - 1] as number) + ACCEPT_MARGIN - EPS);
+    let best = r.history[0] as number;
+    for (const t of r.trials.slice(1)) {
+      expect(t.accepted, t.mutation).toBe(t.score >= best + ACCEPT_MARGIN - EPS);
+      if (t.accepted) best = t.score;
+    }
   });
 
   it('keeps exactly 8 cards plus the base Default, passes validateSetup, and never mutates ARCHETYPES', () => {
@@ -87,6 +100,7 @@ describe('searchDeck', () => {
 
 describe('mutations', () => {
   const pool = movePool(BASE.side);
+  const pools = mutationPools(BASE, FIELD);
 
   it('draws moves from the orchestrator’s known moves: its signature, its grid Skills and grafts, and the universals', () => {
     expect(new Set(pool)).toEqual(new Set(['ship-it', 'token-burst', 'distilled-strike', 'compact', 'clear', 'guardrail']));
@@ -97,7 +111,7 @@ describe('mutations', () => {
     const seen = new Set<string>();
     const rng = new Sfc32(SEED);
     for (let i = 0; i < 400; i++) {
-      const m = mutate(base, pool, rng, `n${i}`);
+      const m = mutate(base, pools, rng, `n${i}`);
       if (m === null) continue;
       seen.add(m.kind);
       expect(m.deck.cards).toHaveLength(8);
@@ -111,7 +125,8 @@ describe('mutations', () => {
         expect(changed).toBe(1);
         const old = base.cards[m.index]!;
         const neu = m.deck.cards[m.index]!;
-        if (m.kind === 'move') expect({ ...neu, move: old.move }).toEqual(old);
+        // A move change keeps the card's target unless it is on the wrong side for the new move (Ruling 141).
+        if (m.kind === 'move') expect({ ...neu, move: old.move, target: old.target }).toEqual(old);
         if (m.kind === 'condition') expect({ ...neu, subject: old.subject, condition: old.condition }).toEqual(old);
         if (m.kind === 'replace') expect(neu.id).toBe(`n${i}`);
         expect(pool).toContain(neu.move);
@@ -129,11 +144,58 @@ describe('mutations', () => {
       calls++;
       return false;
     };
-    expect(drawCandidate(base, pool, new Sfc32(SEED), 'n', never, 25)).toBeNull();
+    expect(drawCandidate(base, pools, new Sfc32(SEED), 'n', never, 25)).toBeNull();
     expect(calls).toBeLessThanOrEqual(26);
     expect(calls).toBeGreaterThan(0);
-    const ok = drawCandidate(base, pool, new Sfc32(SEED), 'n', () => true, 25);
+    const ok = drawCandidate(base, pools, new Sfc32(SEED), 'n', () => true, 25);
     expect(ok?.deck.cards).toHaveLength(8);
+  });
+});
+
+describe('mutation draws (Ruling 141)', () => {
+  /** Where a selector aims, written out independently of the code under test. */
+  const ALLY_SELECTORS: readonly TargetSelector[] = ['self', 'orchestrator', 'lowestHpAlly'];
+  /** An attack: a move aimed at a foe (foe kinds and `other`); self, none and ally moves are self, buff and heal moves. */
+  const isAttack = (move: string): boolean => !['self', 'none', 'ally'].includes(MOVES[move as keyof typeof MOVES].target);
+
+  it('never pairs an attack with a self or ally selector, or a self, buff or heal move with a foe selector', () => {
+    let replaced = 0;
+    let moved = 0;
+    for (const base of ARCHETYPES) {
+      const field = ARCHETYPES.filter((a) => a !== base);
+      const pools = mutationPools(base, field);
+      const rng = new Sfc32(SEED);
+      for (let i = 0; i < 200; i++) {
+        const m = mutate(deckOf(base), pools, rng, `n${i}`);
+        if (m === null || (m.kind !== 'replace' && m.kind !== 'move')) continue;
+        const c = m.deck.cards[m.index]!;
+        if (m.kind === 'replace') replaced++;
+        else moved++;
+        expect(ALLY_SELECTORS.includes(c.target), `${base.id} ${m.label} → ${c.target}`).toBe(!isAttack(c.move));
+      }
+    }
+    expect(replaced).toBeGreaterThan(100);
+    expect(moved).toBeGreaterThan(100);
+  });
+
+  it('draws foeLastMove moves from the field’s move pools, and turn rounds a fight can reach (never below 1)', () => {
+    const pools = mutationPools(BASE, FIELD);
+    const fieldMoves = new Set(FIELD.flatMap((f) => movePool(f.side)));
+    expect(new Set(pools.foeMoves)).toEqual(fieldMoves);
+    const rng = new Sfc32(SEED);
+    const lastMoves = new Set<string>();
+    const rounds = { below: new Set<number>(), atLeast: new Set<number>() };
+    for (let i = 0; i < 5000; i++) {
+      const c = randomCondition(rng, pools.foeMoves);
+      if (c.category === 'foeLastMove') lastMoves.add(c.move);
+      if (c.category === 'turn') rounds[c.op].add(c.round);
+    }
+    for (const m of lastMoves) expect(fieldMoves.has(m), m).toBe(true);
+    expect(lastMoves.size).toBeGreaterThan(1);
+    expect(Math.min(...rounds.below)).toBe(2);
+    expect(Math.min(...rounds.atLeast)).toBe(1);
+    expect(Math.max(...rounds.below, ...rounds.atLeast)).toBe(TURN_MAX_ROUND);
+    expect(TURN_MAX_ROUND).toBeLessThanOrEqual(12);
   });
 });
 
@@ -178,7 +240,8 @@ describe('search command', () => {
     expect(md).toContain('## Score history');
     expect(md).toContain('## Final deck');
     expect(md).toContain('## Held-out check');
-    expect(md).toContain(`- battlesUsed: ${r.battlesUsed} of 120`);
+    expect(md).toContain(`- battlesUsed: ${r.battlesUsed} of 120 (unused: ${120 - r.battlesUsed})`);
+    expect(md).toContain('- acceptance margin: 1.0 pp on the search seeds');
     expect(md).toContain('- k: 1 seed per foe per side (19 foes × 2 sides × 1 = 38 battles per evaluation)');
     expect(md).toContain(`- seed: ${SEED}`);
     for (const c of r.deck.cards) expect(md).toContain(`| ${c.id} |`);

@@ -1,5 +1,5 @@
 import { validateSetup, type Deck, type SeedHex } from '@latentia/engine';
-import { drawCandidate, movePool } from './mutations.js';
+import { drawCandidate, mutationPools } from './mutations.js';
 import { runPooled } from './runner.js';
 import { Sfc32 } from './sfc32.js';
 import { addScores, rate } from './stats.js';
@@ -7,7 +7,7 @@ import type { Archetype, Score } from './types.js';
 
 // The budgeted deck search (spec §9, Task C4, Ruling 139): hill climbing over an archetype's Autopilot deck, hunting
 // for a dominant deck before players find one. Each step draws one valid mutation (mutations.ts) and keeps it only
-// when it scores strictly higher. Every deck is scored with common random numbers: the same field, the same seeds —
+// when it scores at least ACCEPT_MARGIN (1 pp) higher (Ruling 141). Every deck is scored with common random numbers: the same field, the same seeds —
 // k per foe per side, both side assignments, through runMatch so opponentId is set — so a score difference is the
 // deck's, not the dice's. The search stops before an evaluation would take it past `budget` battles.
 
@@ -15,6 +15,12 @@ import type { Archetype, Score } from './types.js';
 export const DEFAULT_K = 16;
 /** Invalid or no-op draws allowed per step before the search gives up (they cost no battles). */
 export const MAX_REDRAWS = 100;
+/**
+ * How much a candidate must beat the incumbent by, as a score rate on the shared seeds (Ruling 141): 0.01 = 1
+ * percentage point. One evaluation's standard error is about 1.9 pp at k = 16, so a bare "strictly higher" rule
+ * chases noise.
+ */
+export const ACCEPT_MARGIN = 0.01;
 
 /** One evaluated deck: the base (evaluation 0) or a candidate, its score, whether it was kept, and battles spent so far. */
 export type Trial = { evaluation: number; mutation: string; score: number; accepted: boolean; battlesUsed: number };
@@ -25,7 +31,7 @@ export type SearchResult = {
   /** Its score rate on the search seeds (a draw counts 0.5). */
   winRate: number;
   battlesUsed: number;
-  /** The base deck's score, then each accepted step's: strictly increasing. */
+  /** The base deck's score, then each accepted step's: each at least ACCEPT_MARGIN above the one before. */
   history: number[];
   k: number;
   battlesPerEvaluation: number;
@@ -96,7 +102,7 @@ export function searchDeck(base: Archetype, field: readonly Archetype[], budget:
   if (!isValid(baseDeck)) throw new RangeError(`${base.id}'s Autopilot deck fails validateSetup`);
 
   const rng = new Sfc32(seed);
-  const pool = movePool(base.side);
+  const pools = mutationPools(base, field);
   const label = searchLabel(base.id);
   const maxEvaluations = Math.floor(budget / perEval);
   let deck = baseDeck;
@@ -108,15 +114,15 @@ export function searchDeck(base: Archetype, field: readonly Archetype[], budget:
   let stop: SearchResult['stop'] = 'budget';
   while (battlesUsed + perEval <= budget) {
     const evaluation = trials.length;
-    const m = drawCandidate(deck, pool, rng, `search-${evaluation}`, isValid, maxRedraws);
+    const m = drawCandidate(deck, pools, rng, `search-${evaluation}`, isValid, maxRedraws);
     if (m === null) {
       stop = 'redraws';
       break;
     }
     const score = evaluate(withDeck(base, m.deck), field, k, label);
     battlesUsed += perEval;
-    // Strictly higher only: equal points (same seeds, same n) keep the incumbent.
-    const accepted = score.points > best.points;
+    // At least ACCEPT_MARGIN higher (same seeds, same n, so compare points: margin × n of them).
+    const accepted = score.points - best.points >= ACCEPT_MARGIN * perEval;
     if (accepted) {
       deck = m.deck;
       best = score;
