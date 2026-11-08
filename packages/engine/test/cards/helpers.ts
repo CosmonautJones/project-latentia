@@ -14,6 +14,7 @@ export const vc = (index: number, over: Partial<ViewCreature> = {}): ViewCreatur
   telegraphing: false,
   contextUsed: 0,
   contextWindow: 12,
+  junk: 0,
   fields: [],
   ...over,
 });

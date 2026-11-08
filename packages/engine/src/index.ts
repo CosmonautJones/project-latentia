@@ -21,7 +21,12 @@ export type { ReplayError } from './battle/replay.js';
 
 export type { BattleState, CreatureState, DirectiveState, FieldState, Outcome, PolicyState, SideId, SideState, SlotState, Temperature, Version } from './battle/state.js';
 
-export type { Card, Condition, Deck, FieldKind, Subject, TargetSelector, Threshold } from './cards/model.js';
+export type { BattleView, Card, Condition, Deck, FieldKind, PendingCost, Subject, TargetSelector, Threshold, ViewCreature } from './cards/model.js';
+export type { Band } from './cards/evaluate.js';
+
+export { computeGeneralization } from './generalization/score.js';
+export { DEPRECATED_FOREST_SUITE } from './generalization/suites/deprecated-forest.js';
+export type { EvalScenario, EvalSuite, GeneralizationReport, WastefulRule } from './generalization/model.js';
 
 export { validateGrid } from './grid/validate.js';
 export type { GridError } from './grid/validate.js';

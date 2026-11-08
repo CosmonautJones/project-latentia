@@ -36,6 +36,7 @@ function project(state: BattleState, c: CreatureState): ViewCreature {
     telegraphing: c.charging !== null && telegraphed(moveDef(c.charging.moveId)),
     contextUsed: c.context.tokens.length,
     contextWindow: c.context.window,
+    junk: c.context.tokens.filter((t) => t.kind === 'junk').length,
     fields,
   };
 }

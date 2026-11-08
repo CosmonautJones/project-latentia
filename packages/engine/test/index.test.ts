@@ -2,14 +2,16 @@ import { describe, expect, it } from 'vitest';
 import * as engine from '../src/index.js';
 
 describe('public surface (spec §4, so far)', () => {
-  it('exports exactly the Phase A values plus getIntents (B2)', () => {
+  it('exports exactly the Phase A values plus getIntents (B2), computeGeneralization and DEPRECATED_FOREST_SUITE (B5)', () => {
     expect(Object.keys(engine).sort()).toEqual(
       [
+        'DEPRECATED_FOREST_SUITE',
         'ENGINE_VERSION',
         'EngineInvariantError',
         'SetupError',
         'SimulateError',
         'activeCardCount',
+        'computeGeneralization',
         'createBattle',
         'eventStreamHash',
         'fnv1a64Hex',
@@ -40,6 +42,14 @@ describe('public surface (spec §4, so far)', () => {
     expect('error' in again ? again.error : again.hash).toBe(result.hash);
     const bad: { error: engine.ReplayError } | engine.BattleResult = engine.replay({} as engine.BattleLog);
     expect(bad).toEqual({ error: { code: 'malformed' } });
+  });
+
+  it('computes Generalization from a deck, the Deprecated Forest suite and active slots (B5)', () => {
+    const always: engine.Condition = { category: 'turn', op: 'atLeast', round: 1 };
+    const deck: engine.Deck = { cards: [], default: { id: 'd', subject: 'self', condition: always, move: 'ship-it', target: 'lowestHpFoe' } };
+    const suite: engine.EvalSuite = engine.DEPRECATED_FOREST_SUITE;
+    const report: engine.GeneralizationReport = engine.computeGeneralization(deck, suite, 3);
+    expect(report).toEqual({ c: [0, 1], r: [0, 1], h: [0, 1], g: 20, band: 'brittle' });
   });
 
   it('exports the thrown error classes as values, so callers can use instanceof (Ruling 67)', () => {
