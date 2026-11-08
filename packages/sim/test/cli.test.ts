@@ -29,8 +29,42 @@ describe('main', () => {
   it('registers the round-robin, matchup, fuzz and targets commands', () => {
     expect(Object.keys(commands)).toEqual(expect.arrayContaining(['round-robin', 'matchup', 'fuzz', 'targets']));
   });
-  it('prints usage and returns 1 for an unknown command', async () => {
+  it.each([
+    [['round-robin', '--seed', '10'], /unknown flag --seed/],
+    [['round-robin', '1000'], /unexpected argument 1000/],
+    [['targets', '--seed-scale', '0.05'], /unknown flag --seed-scale/],
+    [['targets', '--seeds-scale'], /--seeds-scale needs a value/],
+    [['fuzz', '--battle', '5'], /unknown flag --battle/],
+    [['fuzz', '--battles', '5', 'extra'], /unexpected argument extra/],
+    [['matchup', 'speed-rush-blitzr', 'code-lock-cobolt', 'mixed-starter-sagelet'], /unexpected argument mixed-starter-sagelet/],
+    [['matchup', 'speed-rush-blitzr', '--seeds', '5'], /missing <b>/],
+    [['targets', '--', '--seeds-scale', '0.05'], /unexpected argument --seeds-scale/],
+  ])('rejects %j before running anything: exit 2 with the reason and usage', async (argv, reason) => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect(await main(argv)).toBe(2);
+    expect(err).toHaveBeenCalledOnce();
+    expect(String(err.mock.calls[0]?.[0])).toMatch(reason);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/usage: /);
+  });
+  it('drops one leading -- (pnpm forwards it: `pnpm sim -- <command>`)', async () => {
+    const run = vi.fn();
+    commands['hello'] = run;
+    expect(await main(['--', 'hello', '--x'])).toBe(0);
+    expect(run).toHaveBeenCalledWith(['--x']);
+  });
+  it('usage lists every command with its flags, where reports go, that same-day runs overwrite, and scratch tags', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await main([]);
+    const text = String(err.mock.calls[0]?.[0]);
+    for (const line of ['round-robin [--seeds N] [--tag <tag>]', 'matchup <a> <b> [--seeds N] [--tag <tag>]', 'fuzz [--battles N] [--tag <tag>]', 'targets [--seeds-scale k] [--tag <tag>]']) expect(text).toContain(line);
+    expect(text).toContain('reports/<command>-<YYYY-MM-DD>[-<tag>].md');
+    expect(text).toMatch(/same day overwrites/);
+    expect(text).toMatch(/--tag scratch.*git-ignored/s);
+  });
+  it('prints usage and returns 1 for an unknown command, including Object.prototype names', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect(await main(['toString'])).toBe(1);
+    err.mockClear();
     expect(await main(['nope'])).toBe(1);
     expect(err).toHaveBeenCalledOnce();
   });

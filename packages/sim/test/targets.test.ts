@@ -1,3 +1,4 @@
+import { ENGINE_VERSION } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { UsageError } from '../src/args.js';
 import { targetsCommand } from '../src/commands/targets.js';
@@ -61,6 +62,9 @@ describe('targets command', () => {
     expect(battles('fight-length')).toEqual([3800]);
     expect(battles('first-mover')).toEqual([100]);
     for (const r of rows) expect(['pass', 'fail', 'inconclusive']).toContain(r[8]);
+    for (const r of rows) expect(r.slice(9)).toEqual(['0.01', ENGINE_VERSION]);
+    // Row keys (target, subject) do not depend on the scale, so runs at different scales line up.
+    expect(rows.find((r) => r[0] === 'first-mover')?.[1]).toBe('side A vs its mirror, every archetype pooled');
     expect(ctx.lines.length).toBeGreaterThan(0);
   }, 120_000);
   it('rejects a seed scale that is not a positive number', async () => {

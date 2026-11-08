@@ -1,8 +1,8 @@
 import { EngineInvariantError, replay, simulate, type BattleSetup, type SeedHex, type Temperature } from '@latentia/engine';
-import { intFlag } from '../args.js';
+import { num, parseArgs, tag, type CommandSpec } from '../args.js';
 import { ARCHETYPES, mirrorOf } from '../archetypes/index.js';
 import { fmtCount, fmtSeconds, writeReport, type Report } from '../report.js';
-import { seedFor } from '../runner.js';
+import { endedByCap, seedFor } from '../runner.js';
 import type { Archetype, CommandContext } from '../types.js';
 
 // `pnpm sim fuzz --battles N` (spec §9): random legal battles through the engine's public API only (no engine test
@@ -10,8 +10,13 @@ import type { Archetype, CommandContext } from '../types.js';
 // at a random temperature or, one time in eight, removed (that side plays its default intents). Each battle is
 // replayed from its log, and must give the same hash. Exit code 1 when any battle fails.
 
-const CAP = 50;
 const MAX_LISTED = 20;
+
+export const FUZZ: CommandSpec = { name: 'fuzz', positionals: [], flags: { battles: 'int', tag: 'tag' } };
+
+/** The engine entry points fuzz drives: the real ones, or (in tests) a faulty stand-in to exercise the failure paths. */
+export type FuzzEngine = { simulate: typeof simulate; replay: typeof replay };
+const ENGINE: FuzzEngine = { simulate, replay };
 
 export type FuzzCase = { a: string; b: string; seed: SeedHex; setup: BattleSetup };
 
@@ -36,7 +41,8 @@ export function fuzzCase(i: number): FuzzCase {
 export type FuzzFailure = { index: number; a: string; b: string; seed: string; kind: 'exception' | 'invariant' | 'replay'; message: string };
 export type FuzzResult = { battles: number; exceptions: number; invariantErrors: number; replayMismatches: number; capHits: number; failures: FuzzFailure[] };
 
-export function runFuzz(battles: number, onProgress?: (done: number) => void): FuzzResult {
+export function runFuzz(battles: number, opts: { onProgress?: (done: number) => void; engine?: FuzzEngine } = {}): FuzzResult {
+  const engine = opts.engine ?? ENGINE;
   const r: FuzzResult = { battles, exceptions: 0, invariantErrors: 0, replayMismatches: 0, capHits: 0, failures: [] };
   const fail = (f: FuzzFailure): void => {
     if (r.failures.length < MAX_LISTED) r.failures.push(f);
@@ -45,9 +51,9 @@ export function runFuzz(battles: number, onProgress?: (done: number) => void): F
     const c = fuzzCase(i);
     const where = { index: i, a: c.a, b: c.b, seed: c.seed };
     try {
-      const res = simulate(c.setup, c.seed, { kind: 'autopilot' });
-      if (res.rounds >= CAP) r.capHits++;
-      const again = replay(res.log);
+      const res = engine.simulate(c.setup, c.seed, { kind: 'autopilot' });
+      if (endedByCap(res)) r.capHits++;
+      const again = engine.replay(res.log);
       if ('error' in again || again.hash !== res.hash) {
         r.replayMismatches++;
         fail({ ...where, kind: 'replay', message: 'error' in again ? `replay error ${again.error.code}` : `hash ${again.hash} ≠ ${res.hash}` });
@@ -58,24 +64,25 @@ export function runFuzz(battles: number, onProgress?: (done: number) => void): F
       else r.exceptions++;
       fail({ ...where, kind: invariant ? 'invariant' : 'exception', message: e instanceof Error ? `${e.name}: ${e.message}` : String(e) });
     }
-    if ((i + 1) % 1000 === 0) onProgress?.(i + 1);
+    if ((i + 1) % 1000 === 0) opts.onProgress?.(i + 1);
   }
   return r;
 }
 
 export const fuzzClean = (r: FuzzResult): boolean => r.exceptions + r.invariantErrors + r.replayMismatches === 0;
 
-export function fuzzReport(r: FuzzResult, run: { date: string; args: readonly string[]; wallMs: number }): Report {
+export function fuzzReport(r: FuzzResult, run: { date: string; tag?: string | undefined; args: readonly string[]; wallMs: number }): Report {
   return {
     command: 'fuzz',
     date: run.date,
+    tag: run.tag,
     args: run.args,
     meta: [
       ['battles', fmtCount(r.battles)],
       ['exceptions', String(r.exceptions)],
       ['invariant errors', String(r.invariantErrors)],
       ['replay mismatches', String(r.replayMismatches)],
-      ['round-cap hits', String(r.capHits)],
+      ['round-cap hits (BattleEnd reason cap)', String(r.capHits)],
       ['verdict', fuzzClean(r) ? 'clean' : 'FAILED'],
       ['wall time', fmtSeconds(run.wallMs)],
     ],
@@ -90,11 +97,12 @@ export function fuzzReport(r: FuzzResult, run: { date: string; args: readonly st
   };
 }
 
-export async function fuzzCommand(args: string[], ctx: CommandContext): Promise<number> {
-  const battles = intFlag(args, 'battles', 500);
+export async function fuzzCommand(args: string[], ctx: CommandContext, engine: FuzzEngine = ENGINE): Promise<number> {
+  const p = parseArgs(args, FUZZ);
+  const battles = num(p, 'battles', 500);
   const t0 = ctx.now();
-  const r = runFuzz(battles, (done) => ctx.progress(`fuzz: ${fmtCount(done)}/${fmtCount(battles)}`));
-  const paths = writeReport(fuzzReport(r, { date: ctx.date, args, wallMs: ctx.now() - t0 }), ctx.outDir);
+  const r = runFuzz(battles, { engine, onProgress: (done) => ctx.progress(`fuzz: ${fmtCount(done)}/${fmtCount(battles)}`) });
+  const paths = writeReport(fuzzReport(r, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0 }), ctx.outDir);
   ctx.progress(`wrote ${paths.md} and ${paths.csv}`);
   return fuzzClean(r) ? 0 : 1;
 }

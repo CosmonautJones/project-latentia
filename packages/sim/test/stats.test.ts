@@ -18,8 +18,8 @@ describe('wilson95', () => {
 
 describe('winRate', () => {
   it('counts a draw as half a win', () => {
-    expect(winRate({ winsA: 2, winsB: 1, draws: 2, rounds: [] })).toBeCloseTo(0.6, 12);
-    expect(winRate({ winsA: 0, winsB: 0, draws: 0, rounds: [] })).toBe(0);
+    expect(winRate({ winsA: 2, winsB: 1, draws: 2, rounds: [], capHits: 0 })).toBeCloseTo(0.6, 12);
+    expect(winRate({ winsA: 0, winsB: 0, draws: 0, rounds: [], capHits: 0 })).toBe(0);
   });
 });
 

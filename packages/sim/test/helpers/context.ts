@@ -1,13 +1,19 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { onTestFinished } from 'vitest';
 import type { CommandContext } from '../../src/types.js';
 
-/** A command context writing to a fresh temp dir, with a fixed date and a fake clock that ticks 1 ms per read. */
+/**
+ * A command context writing to a fresh temp dir, with a fixed date and a fake clock that ticks 1 ms per read. Call it
+ * inside a test: the temp dir is removed when that test finishes.
+ */
 export function testContext(): CommandContext & { lines: string[] } {
   let t = 0;
   const lines: string[] = [];
-  return { outDir: mkdtempSync(join(tmpdir(), 'latentia-sim-')), date: '2026-01-02', now: () => t++, progress: (l) => lines.push(l), lines };
+  const outDir = mkdtempSync(join(tmpdir(), 'latentia-sim-'));
+  onTestFinished(() => rmSync(outDir, { recursive: true, force: true }));
+  return { outDir, date: '2026-01-02', now: () => t++, progress: (l) => lines.push(l), lines };
 }
 
 export const readOut = (ctx: CommandContext, file: string): string => readFileSync(join(ctx.outDir, file), 'utf8');

@@ -73,7 +73,7 @@ describe('starter triangle setup', () => {
       expect(byId).toEqual({ setup: r.setup, sig: r.sig, power: r.power, tidy: 'compact', default: r.affordable });
     }
   });
-  it.each(TRIANGLE)('is live, %s vs %s: every side deals damage and its top card fires', (fav, beaten) => {
+  it.each(TRIANGLE)('is live, %s vs %s: every side deals damage, its top card fires and its orchestrator attacks with its power or signature move', (fav, beaten) => {
     const x = starterSide(fav);
     const y = starterSide(beaten);
     const rs = both(x, y, 'live:triangle', 10);
@@ -83,6 +83,9 @@ describe('starter triangle setup', () => {
       expect(damage, side.id).toBeGreaterThan(0);
       const top = side.side.autopilot?.deck.cards[0]?.id ?? '';
       expect(fired(rs, side.side.orchestrator.id, top), `${side.id} ${top}`).toBeGreaterThan(0);
+      const r = rolesOf(side.side.orchestrator.species as (typeof STARTERS)[number]);
+      const attacks = rs.reduce((n, b, i) => n + b.events.filter((e) => e.type === 'MoveUsed' && e.actor === mine[i]?.[0] && (e.moveId === r.power || e.moveId === r.sig)).length, 0);
+      expect(attacks, `${side.id} uses ${r.power} or ${r.sig}`).toBeGreaterThan(0);
     }
   });
 });

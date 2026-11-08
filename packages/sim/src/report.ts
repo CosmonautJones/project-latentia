@@ -13,7 +13,16 @@ export type Section = { heading: string; text?: readonly string[]; table?: Table
  * A command's report. `meta` lines (label, value) follow the engine version and the command line at the top: seed
  * counts and wall times go there. `csv` is the machine-readable table written to the `.csv`.
  */
-export type Report = { command: string; date: string; args: readonly string[]; meta: readonly (readonly [string, string])[]; sections: readonly Section[]; csv: Table };
+export type Report = {
+  command: string;
+  date: string;
+  /** Appended to the file names (`--tag`): `<command>-<date>-<tag>`. */
+  tag?: string | undefined;
+  args: readonly string[];
+  meta: readonly (readonly [string, string])[];
+  sections: readonly Section[];
+  csv: Table;
+};
 
 const mdCell = (c: Cell): string => String(c).replace(/\|/g, '\\|');
 
@@ -46,10 +55,10 @@ export function renderCsv(t: Table): string {
   return [t.columns, ...t.rows].map((r) => r.map(csvCell).join(',')).join('\n') + '\n';
 }
 
-/** Writes the report's `.md` and `.csv` into `outDir` (created when missing) and returns their paths. */
+/** Writes the report's `.md` and `.csv` into `outDir` (created when missing; same-day files are overwritten) and returns their paths. */
 export function writeReport(r: Report, outDir: string): { md: string; csv: string } {
   mkdirSync(outDir, { recursive: true });
-  const base = join(outDir, `${r.command}-${r.date}`);
+  const base = join(outDir, `${r.command}-${r.date}${r.tag === undefined ? '' : `-${r.tag}`}`);
   const paths = { md: `${base}.md`, csv: `${base}.csv` };
   writeFileSync(paths.md, renderMarkdown(r));
   writeFileSync(paths.csv, renderCsv(r.csv));

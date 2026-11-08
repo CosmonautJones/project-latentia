@@ -1,7 +1,7 @@
 import { SPECIES, type CreatureSetup, type SideSetup } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { roundRobinCommand } from '../src/commands/round-robin.js';
-import { allRounds, fieldScore, pairingScore, roundRobin, unorderedPairings, worstPairing } from '../src/round-robin.js';
+import { allRounds, totalCapHits, fieldScore, pairingScore, roundRobin, unorderedPairings, worstPairing } from '../src/round-robin.js';
 import { runMatch } from '../src/runner.js';
 import type { Archetype } from '../src/types.js';
 import { csvRows, readOut, testContext } from './helpers/context.js';
@@ -45,6 +45,9 @@ describe('roundRobin', () => {
     expect(field.n).toBe(28);
     expect(field.points).toBe(xyScore.points + pairingScore(rr, 'x', 'z').points);
   });
+  it('totals the cap hits of every pairing', () => {
+    expect(totalCapHits(rr)).toBe(rr.ordered.reduce((n, p) => n + p.stats.capHits, 0));
+  });
   it('finds each archetype’s worst pairing and every round count', () => {
     const w = worstPairing(rr, 'x');
     const other = w.foe === 'y' ? 'z' : 'y';
@@ -69,5 +72,6 @@ describe('round-robin command', () => {
     expect(rows[0]).toEqual(['a', 'b', 'battles', 'wins_a', 'wins_b', 'draws', 'score_a', 'median_rounds']);
     expect(rows).toHaveLength(381);
     expect(ctx.lines.filter((l) => l.startsWith('round-robin: '))).toHaveLength(20);
+    expect(md).toMatch(/round-cap hits \(BattleEnd reason cap\) \d+/);
   }, 60_000);
 });

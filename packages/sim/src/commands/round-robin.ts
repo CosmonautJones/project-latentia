@@ -1,7 +1,7 @@
-import { intFlag } from '../args.js';
+import { num, parseArgs, tag, type CommandSpec } from '../args.js';
 import { ARCHETYPES } from '../archetypes/index.js';
 import { fmtCount, fmtInterval, fmtPct, fmtSeconds, writeReport, type Report } from '../report.js';
-import { allRounds, fieldScore, roundRobin, unorderedPairings, worstPairing, type RoundRobin } from '../round-robin.js';
+import { allRounds, fieldScore, roundRobin, totalCapHits, unorderedPairings, worstPairing, type RoundRobin } from '../round-robin.js';
 import { scoreA } from '../runner.js';
 import { median, rate, wilson95 } from '../stats.js';
 import type { CommandContext } from '../types.js';
@@ -9,9 +9,9 @@ import type { CommandContext } from '../types.js';
 // `pnpm sim round-robin --seeds 1000` (spec §9): every archetype against every other, both side assignments, in one
 // process, with a progress line per archetype on stderr.
 
-const CAP = 50;
+export const ROUND_ROBIN: CommandSpec = { name: 'round-robin', positionals: [], flags: { seeds: 'int', tag: 'tag' } };
 
-export function roundRobinReport(rr: RoundRobin, run: { date: string; args: readonly string[]; wallMs: number }): Report {
+export function roundRobinReport(rr: RoundRobin, run: { date: string; tag?: string | undefined; args: readonly string[]; wallMs: number }): Report {
   const rounds = allRounds(rr);
   const sorted = [...rounds].sort((x, y) => x - y);
   const q = (p: number): number => sorted[Math.floor(p * (sorted.length - 1))] ?? NaN;
@@ -22,6 +22,7 @@ export function roundRobinReport(rr: RoundRobin, run: { date: string; args: read
   return {
     command: 'round-robin',
     date: run.date,
+    tag: run.tag,
     args: run.args,
     meta: [
       ['seeds', seedText],
@@ -32,7 +33,7 @@ export function roundRobinReport(rr: RoundRobin, run: { date: string; args: read
     sections: [
       {
         heading: 'Fight length',
-        text: [`Median ${median(rounds)} rounds; p25 ${q(0.25)}, p75 ${q(0.75)}, min ${sorted[0]}, max ${sorted.at(-1)}; round-cap (${CAP}) hits ${rounds.filter((r) => r >= CAP).length}.`],
+        text: [`Median ${median(rounds)} rounds; p25 ${q(0.25)}, p75 ${q(0.75)}, min ${sorted[0]}, max ${sorted.at(-1)}; round-cap hits (BattleEnd reason cap) ${totalCapHits(rr)}.`],
       },
       {
         heading: 'Vs the field',
@@ -54,10 +55,11 @@ export function roundRobinReport(rr: RoundRobin, run: { date: string; args: read
 }
 
 export async function roundRobinCommand(args: string[], ctx: CommandContext): Promise<number> {
-  const seeds = intFlag(args, 'seeds', 1000);
+  const p = parseArgs(args, ROUND_ROBIN);
+  const seeds = num(p, 'seeds', 1000);
   const t0 = ctx.now();
   const rr = roundRobin(ARCHETYPES, seeds, 'round-robin', (done, total) => ctx.progress(`round-robin: ${done}/${total} archetypes`));
-  const paths = writeReport(roundRobinReport(rr, { date: ctx.date, args, wallMs: ctx.now() - t0 }), ctx.outDir);
+  const paths = writeReport(roundRobinReport(rr, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0 }), ctx.outDir);
   ctx.progress(`wrote ${paths.md} and ${paths.csv}`);
   return 0;
 }

@@ -58,3 +58,8 @@ export function worstPairing(rr: RoundRobin, x: string): { foe: string; score: S
 export function allRounds(rr: RoundRobin): number[] {
   return rr.ordered.flatMap((p) => p.stats.rounds);
 }
+
+/** Battles the round cap ended, over every pairing. */
+export function totalCapHits(rr: RoundRobin): number {
+  return rr.ordered.reduce((n, p) => n + p.stats.capHits, 0);
+}

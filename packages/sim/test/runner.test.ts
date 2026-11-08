@@ -64,7 +64,7 @@ describe('runMatch', () => {
   it('a mirror match is not lopsided and zero seeds gives empty stats', () => {
     const m = runMatch(a, { id: 'a2', side: side('b', ['blitzr', 'forkling']) }, 200, 'mirror');
     expect(Math.abs(m.winsA - m.winsB)).toBeLessThan(60);
-    expect(runMatch(a, b, 0, 'none')).toEqual({ winsA: 0, winsB: 0, draws: 0, rounds: [] });
+    expect(runMatch(a, b, 0, 'none')).toEqual({ winsA: 0, winsB: 0, draws: 0, rounds: [], capHits: 0 });
   });
 });
 
@@ -97,5 +97,22 @@ describe('runPooled', () => {
     expect(p.score).toEqual({ points: scoreA(ab).points + scoreB(ba).points, n: 18 });
     expect(p.rounds).toEqual([...ab.rounds, ...ba.rounds]);
     expect(scoreA(ab).points + scoreB(ab).points).toBe(9);
+  });
+});
+
+describe('runMatch cap hits (Ruling 137 m3)', () => {
+  it('counts the battles whose BattleEnd reason is cap, not those that reach round 50', () => {
+    const a = arche('a', 'a', ['blitzr']);
+    const b = arche('b', 'b', ['forkling']);
+    const spy = vi.mocked(engine.simulate);
+    const real = spy.getMockImplementation();
+    if (real === undefined) throw new Error('no implementation');
+    // Battle 0 ends by knockout in round 50; battle 1 is ended by the cap.
+    spy.mockImplementationOnce((...args) => ({ ...real(...args), rounds: 50 }));
+    spy.mockImplementationOnce((...args) => {
+      const r = real(...args);
+      return { ...r, events: r.events.map((e) => (e.type === 'BattleEnd' ? { ...e, reason: 'cap' } : e)) };
+    });
+    expect(runMatch(a, b, 3, 'caps').capHits).toBe(1);
   });
 });

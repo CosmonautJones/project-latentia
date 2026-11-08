@@ -116,7 +116,7 @@ export function measureTargets({ scale, now, progress }: MeasureOptions): Target
   timed('first mover', ['first-mover'], () => {
     const per = scaled(500, scale);
     const score = addScores(...ARCHETYPES.map((x) => scoreA(runMatch(x, mirrorOf(x, 'm'), per, `targets:first-mover:${x.id}`))));
-    rows.push(rateRow('first-mover', `side A, ${ARCHETYPES.length} archetypes × ${per} mirrors`, score));
+    rows.push(rateRow('first-mover', 'side A vs its mirror, every archetype pooled', score));
     return score.n;
   });
 

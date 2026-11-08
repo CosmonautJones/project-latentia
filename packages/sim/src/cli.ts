@@ -1,9 +1,9 @@
 import { fileURLToPath } from 'node:url';
-import { UsageError } from './args.js';
-import { fuzzCommand } from './commands/fuzz.js';
-import { matchupCommand } from './commands/matchup.js';
-import { roundRobinCommand } from './commands/round-robin.js';
-import { targetsCommand } from './commands/targets.js';
+import { usageLine, UsageError } from './args.js';
+import { FUZZ, fuzzCommand } from './commands/fuzz.js';
+import { MATCHUP, matchupCommand } from './commands/matchup.js';
+import { ROUND_ROBIN, roundRobinCommand } from './commands/round-robin.js';
+import { TARGETS_COMMAND, targetsCommand } from './commands/targets.js';
 import type { CommandContext } from './types.js';
 
 // The CLI layer: the only place the sim reads the date and the wall clock (Ruling 126). Commands get them, the
@@ -32,15 +32,30 @@ export const commands: Record<string, Command> = {
   targets: (args) => targetsCommand(args, cliContext()),
 };
 
+/** The usage text: every command with its arguments, and where reports go. */
+export function usage(): string {
+  return [
+    'usage: pnpm sim <command> [options]',
+    ...[ROUND_ROBIN, MATCHUP, FUZZ, TARGETS_COMMAND].map((spec) => `  ${usageLine(spec)}`),
+    ...Object.keys(commands)
+      .filter((c) => ![ROUND_ROBIN, MATCHUP, FUZZ, TARGETS_COMMAND].some((s) => s.name === c))
+      .map((c) => `  ${c}`),
+    'Each run writes reports/<command>-<YYYY-MM-DD>[-<tag>].md and .csv at the repo root; a rerun on the same day overwrites them.',
+    'reports/ is committed (Phase C5): use --tag scratch (any tag containing "scratch") for runs that stay git-ignored (reports/*scratch*).',
+    'Unknown flags and extra arguments are errors (exit 2).',
+  ].join('\n');
+}
+
 /**
- * Dispatches `argv` (command name first) and returns the exit code: the command's own, 1 for an unknown command,
- * 2 for a UsageError (its message is printed). No args prints usage and returns 0.
+ * Dispatches `argv` (command name first; one leading `--`, which pnpm forwards from `pnpm sim -- <command>`, is
+ * dropped) and returns the exit code: the command's own, 1 for an unknown command, 2 for a UsageError (its message
+ * is printed). No args prints usage and returns 0.
  */
 export async function main(argv: string[]): Promise<number> {
-  const [name, ...rest] = argv;
-  const run = name === undefined ? undefined : commands[name];
+  const [name, ...rest] = argv[0] === '--' ? argv.slice(1) : argv;
+  const run = name === undefined || !Object.hasOwn(commands, name) ? undefined : commands[name];
   if (run === undefined) {
-    console.error(`usage: pnpm sim <command> [options]\ncommands: ${Object.keys(commands).join(', ') || '(none yet)'}`);
+    console.error(name === undefined ? usage() : `unknown command ${name}\n${usage()}`);
     return name === undefined ? 0 : 1;
   }
   try {

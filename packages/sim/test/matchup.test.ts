@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UsageError } from '../src/args.js';
 import { ARCHETYPES } from '../src/archetypes/index.js';
-import { matchupCommand } from '../src/commands/matchup.js';
+import { histogram, matchupCommand } from '../src/commands/matchup.js';
 import { runMatch } from '../src/runner.js';
 import { csvRows, readOut, testContext } from './helpers/context.js';
 
@@ -39,8 +39,21 @@ describe('matchup command', () => {
   it('rejects unknown archetypes and a bad seed count with a UsageError', async () => {
     const ctx = testContext();
     await expect(matchupCommand(['nope', B.id, '--seeds', '5'], ctx)).rejects.toThrow(UsageError);
-    await expect(matchupCommand([A.id], ctx)).rejects.toThrow(UsageError);
+    await expect(matchupCommand([A.id], ctx)).rejects.toThrow(/missing <b>/);
+    await expect(matchupCommand([A.id, B.id, 'extra'], ctx)).rejects.toThrow(/unexpected argument extra/);
+    await expect(matchupCommand([A.id, B.id, '--seed', '5'], ctx)).rejects.toThrow(/unknown flag --seed/);
     await expect(matchupCommand([A.id, B.id, '--seeds', '0'], ctx)).rejects.toThrow(UsageError);
     await expect(matchupCommand([A.id, B.id, '--seeds', '1.5'], ctx)).rejects.toThrow(UsageError);
+  });
+});
+
+describe('histogram', () => {
+  it('handles more round counts than a spread argument list allows', () => {
+    const rounds = Array.from({ length: 300_000 }, (_, i) => 1 + (i % 50));
+    const h = histogram(rounds);
+    expect(h).toHaveLength(50);
+    expect(h[0]).toEqual([1, 6000]);
+    expect(h.at(-1)).toEqual([50, 6000]);
+    expect(histogram([])).toEqual([]);
   });
 });

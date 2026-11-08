@@ -4,6 +4,9 @@ import { ENGINE_VERSION } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { fmtInterval, fmtPct, renderCsv, renderMarkdown, writeReport, type Report } from '../src/report.js';
 import { targetsReport } from '../src/commands/targets.js';
+import { activeCardCount } from '@latentia/engine';
+import { ARCHETYPES } from '../src/archetypes/index.js';
+import { GRAFT_SPECIES, graftVariant, spinUpVariant, starterSide, temperatureSides, TRIANGLE } from '../src/target-setups.js';
 import { TARGETS, type TargetsRun } from '../src/targets.js';
 import { readOut, testContext } from './helpers/context.js';
 
@@ -47,6 +50,11 @@ describe('writeReport', () => {
     expect(out).toEqual({ md: join(ctx.outDir, 'demo-2026-01-02.md'), csv: join(ctx.outDir, 'demo-2026-01-02.csv') });
     expect(readOut(ctx, 'demo-2026-01-02.md')).toBe(renderMarkdown(REPORT));
     expect(readOut(ctx, 'demo-2026-01-02.csv')).toBe(renderCsv(REPORT.csv));
+  });
+  it('appends a tag to the file names', () => {
+    const ctx = testContext();
+    expect(writeReport({ ...REPORT, tag: 'scratch' }, ctx.outDir).md).toBe(join(ctx.outDir, 'demo-2026-01-02-scratch.md'));
+    expect(readOut(ctx, 'demo-2026-01-02-scratch.csv')).toBe(renderCsv(REPORT.csv));
   });
   it('creates the directory when it does not exist', () => {
     const dir = join(testContext().outDir, 'nested', 'reports');
@@ -92,6 +100,22 @@ describe('targetsReport', () => {
   it('summarises each target once with its band and overall verdict', () => {
     for (const t of TARGETS) expect(md).toContain(`| ${t.name} | ${t.bandText} |`);
   });
+  it('describes each setup from the setup objects themselves', () => {
+    for (const [fav, beaten] of TRIANGLE) {
+      const s = starterSide(fav).side;
+      expect(md).toContain(`${fav} L${s.orchestrator.level} + ${s.active.map((c) => `${c.species} L${c.level}`).join(' + ')} vs ${beaten}`);
+    }
+    const [t0, t4] = temperatureSides();
+    expect(md).toContain(`${t0.id} at Autopilot T${t0.side.autopilot?.temperature} vs its mirror at T${t4.side.autopilot?.temperature}`);
+    for (const sp of GRAFT_SPECIES) {
+      const g = graftVariant(sp).side;
+      const s = spinUpVariant(sp).side;
+      const graft = g.grid?.pieces.find((p) => p.kind === 'graft');
+      const active = s.grid === null ? 0 : activeCardCount(s.grid, 'slot-B', 'v2');
+      expect(md).toContain(`${sp}: G = ${g.orchestrator.species} + ${g.active.map((c) => c.species).join(' + ')} with graft ${graft?.moveId} (${graft?.shape.length} cells); S = ${s.orchestrator.species} + ${s.active.map((c) => c.species).join(' + ')}, ${sp} on ${active} active cards`);
+    }
+    expect(md).toContain(`First mover: ${ARCHETYPES.length} archetypes`);
+  });
   it('records the engine version, the seed scale, and wall time per command and per measurement', () => {
     expect(md).toContain(`${ENGINE_VERSION}`);
     expect(md).toContain('- seeds scale: 0.5');
@@ -99,9 +123,9 @@ describe('targetsReport', () => {
     expect(md).toContain('| round-robin | vs-field | 380 | 2.5 s |');
   });
   it('writes one CSV row per target row with the raw numbers', () => {
-    expect(report.csv.columns).toEqual(['target', 'subject', 'battles', 'point', 'interval_lo', 'interval_hi', 'band_lo', 'band_hi', 'verdict']);
+    expect(report.csv.columns).toEqual(['target', 'subject', 'battles', 'point', 'interval_lo', 'interval_hi', 'band_lo', 'band_hi', 'verdict', 'seeds_scale', 'engine_version']);
     expect(report.csv.rows).toHaveLength(TARGETS.length);
     const fight = report.csv.rows.find((r) => r[0] === 'fight-length');
-    expect(fight?.slice(3, 9)).toEqual([6.5, '', '', 5, 8, run.rows.find((r) => r.target === 'fight-length')?.verdict]);
+    expect(fight?.slice(3, 11)).toEqual([6.5, '', '', 5, 8, run.rows.find((r) => r.target === 'fight-length')?.verdict, 0.5, ENGINE_VERSION]);
   });
 });

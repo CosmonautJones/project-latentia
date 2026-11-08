@@ -1,7 +1,16 @@
-import { fnv1a64Hex, simulate, type BattleSetup, type SeedHex } from '@latentia/engine';
+import { fnv1a64Hex, simulate, type BattleResult, type BattleSetup, type SeedHex } from '@latentia/engine';
 import type { Archetype, MatchStats, Score } from './types.js';
 
 const encoder = new TextEncoder();
+
+/** Whether the round cap ended the battle: its BattleEnd event (the last one) has reason `cap` (spec §5 "Cap"). */
+export function endedByCap(r: Pick<BattleResult, 'events'>): boolean {
+  for (let i = r.events.length - 1; i >= 0; i--) {
+    const e = r.events[i];
+    if (e?.type === 'BattleEnd') return e.reason === 'cap';
+  }
+  return false;
+}
 
 /**
  * A deterministic seed for battle `i` of the run named `label`: two FNV-1a-64 halves (of `${label}:${i}` and
@@ -21,7 +30,7 @@ export function seedFor(label: string, i: number): SeedHex {
  * against `recordedFrom` / `recordedFoes` (Specialist, Robust). The archetypes themselves are not mutated.
  */
 export function runMatch(a: Archetype, b: Archetype, seeds: number, label: string): MatchStats {
-  const stats: MatchStats = { winsA: 0, winsB: 0, draws: 0, rounds: [] };
+  const stats: MatchStats = { winsA: 0, winsB: 0, draws: 0, rounds: [], capHits: 0 };
   const setup: BattleSetup = {
     a: { ...a.side, opponentId: b.id },
     b: { ...b.side, opponentId: a.id },
@@ -33,6 +42,7 @@ export function runMatch(a: Archetype, b: Archetype, seeds: number, label: strin
     else if (r.winner === 'b') stats.winsB++;
     else stats.draws++;
     stats.rounds.push(r.rounds);
+    if (endedByCap(r)) stats.capHits++;
   }
   return stats;
 }

@@ -1,4 +1,8 @@
-// Command-line flags for the sim commands. A bad flag is a UsageError: the CLI prints it and exits 2.
+// Command-line parsing for the sim commands (Ruling 137). Each command declares its flags and how many positionals it
+// takes; anything else — an unknown or misspelt flag, a flag given twice, a flag with no value, too many or too few
+// positionals — is a UsageError, which the CLI prints and exits 2 on. Nothing is silently ignored, so a typo never
+// launches a run at its defaults. Flags take one value, as `--name value` or `--name=value`. A bare `--` ends the
+// flags: every argument after it is a positional.
 
 export class UsageError extends Error {
   constructor(message: string) {
@@ -7,40 +11,70 @@ export class UsageError extends Error {
   }
 }
 
-/** The value after `--name`, or undefined when the flag is absent. A flag with no value is a UsageError. */
-function flagValue(args: readonly string[], name: string): string | undefined {
-  const i = args.indexOf(`--${name}`);
-  if (i < 0) return undefined;
-  const v = args[i + 1];
-  if (v === undefined || v.startsWith('--')) throw new UsageError(`--${name} needs a value`);
-  return v;
+/** `int`: a positive integer; `num`: a positive finite number; `tag`: lowercase letters, digits and dashes. */
+export type FlagKind = 'int' | 'num' | 'tag';
+export type CommandSpec = {
+  name: string;
+  /** Positional names, in order (the command takes exactly these). */
+  positionals: readonly string[];
+  flags: Readonly<Record<string, FlagKind>>;
+};
+export type Parsed = { positionals: string[]; flags: ReadonlyMap<string, number | string> };
+
+/** One usage line: `name <pos>… [--flag <kind>]…`. */
+export function usageLine(spec: CommandSpec): string {
+  return [spec.name, ...spec.positionals.map((p) => `<${p}>`), ...Object.entries(spec.flags).map(([f, k]) => `[--${f} ${k === 'tag' ? '<tag>' : k === 'int' ? 'N' : 'k'}]`)].join(' ');
 }
 
-/** `--name N` as a positive integer, or `fallback` when absent. */
-export function intFlag(args: readonly string[], name: string, fallback: number): number {
-  const v = flagValue(args, name);
-  if (v === undefined) return fallback;
+function value(kind: FlagKind, name: string, v: string): number | string {
+  if (kind === 'tag') {
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v)) throw new UsageError(`--${name} must be lowercase letters, digits and dashes, got ${v}`);
+    return v;
+  }
   const n = Number(v);
-  if (!/^\d+$/.test(v) || !Number.isSafeInteger(n) || n < 1) throw new UsageError(`--${name} must be a positive integer, got ${v}`);
+  if (kind === 'int' && !(/^\d+$/.test(v) && Number.isSafeInteger(n) && n >= 1)) throw new UsageError(`--${name} must be a positive integer, got ${v}`);
+  if (kind === 'num' && !(v.trim() !== '' && Number.isFinite(n) && n > 0)) throw new UsageError(`--${name} must be a positive number, got ${v}`);
   return n;
 }
 
-/** `--name k` as a positive finite number, or `fallback` when absent. */
-export function numFlag(args: readonly string[], name: string, fallback: number): number {
-  const v = flagValue(args, name);
-  if (v === undefined) return fallback;
-  const n = Number(v);
-  if (v.trim() === '' || !Number.isFinite(n) || n <= 0) throw new UsageError(`--${name} must be a positive number, got ${v}`);
-  return n;
-}
-
-/** The arguments that are neither flags nor flag values (every flag takes one value). */
-export function positionals(args: readonly string[]): string[] {
-  const out: string[] = [];
+export function parseArgs(args: readonly string[], spec: CommandSpec): Parsed {
+  const usage = `usage: ${usageLine(spec)}`;
+  const positionals: string[] = [];
+  const flags = new Map<string, number | string>();
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
-    if (a.startsWith('--')) i++;
-    else out.push(a);
+    if (a === '--') {
+      positionals.push(...args.slice(i + 1));
+      break;
+    }
+    if (!a.startsWith('--')) {
+      positionals.push(a);
+      continue;
+    }
+    const eq = a.indexOf('=');
+    const name = eq < 0 ? a.slice(2) : a.slice(2, eq);
+    const kind = Object.prototype.hasOwnProperty.call(spec.flags, name) ? spec.flags[name] : undefined;
+    if (kind === undefined) throw new UsageError(`unknown flag --${name}\n${usage}`);
+    if (flags.has(name)) throw new UsageError(`--${name} given twice\n${usage}`);
+    const v = eq < 0 ? args[++i] : a.slice(eq + 1);
+    if (v === undefined || (eq < 0 && v.startsWith('--'))) throw new UsageError(`--${name} needs a value\n${usage}`);
+    flags.set(name, value(kind, name, v));
   }
-  return out;
+  if (positionals.length !== spec.positionals.length) {
+    const what = positionals.length > spec.positionals.length ? `unexpected argument ${positionals[spec.positionals.length]}` : `missing <${spec.positionals[positionals.length]}>`;
+    throw new UsageError(`${what}\n${usage}`);
+  }
+  return { positionals, flags };
+}
+
+/** A numeric flag's value, or `fallback` when it was not given. */
+export function num(p: Parsed, name: string, fallback: number): number {
+  const v = p.flags.get(name);
+  return typeof v === 'number' ? v : fallback;
+}
+
+/** A tag flag's value, or undefined when it was not given. */
+export function tag(p: Parsed, name: string): string | undefined {
+  const v = p.flags.get(name);
+  return typeof v === 'string' ? v : undefined;
 }

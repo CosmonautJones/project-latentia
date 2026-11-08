@@ -1,19 +1,52 @@
-import { numFlag } from '../args.js';
+import { activeCardCount, ENGINE_VERSION, type CreatureSetup } from '@latentia/engine';
+import { num, parseArgs, tag, type CommandSpec } from '../args.js';
+import { ARCHETYPES } from '../archetypes/index.js';
 import { fmtCount, fmtInterval, fmtPct, fmtSeconds, writeReport, type Report } from '../report.js';
-import { GRAFT_SPECIES, GRAFT_STARTER } from '../target-setups.js';
+import { GRAFT_SPECIES, graftVariant, spinUpVariant, starterSide, temperatureSides, TRIANGLE } from '../target-setups.js';
 import { measureTargets, TARGETS, targetById, targetVerdict, type TargetRow, type TargetsRun } from '../targets.js';
 import type { CommandContext } from '../types.js';
 
 // `pnpm sim targets [--seeds-scale k]` (spec §9, Ruling 133): every balance target, each with its own setup, at k × its
 // §9 seed count. A failing target is a balance finding, not an error: the exit code is 0.
 
+export const TARGETS_COMMAND: CommandSpec = { name: 'targets', positionals: [], flags: { 'seeds-scale': 'num', tag: 'tag' } };
+
 const fmtPoint = (r: TargetRow): string => (r.target === 'fight-length' ? String(r.point) : fmtPct(r.point));
 
-export function targetsReport(run: TargetsRun, cli: { date: string; args: readonly string[]; wallMs: number }): Report {
+const team = (cs: readonly CreatureSetup[]): string => cs.map((c) => `${c.species} L${c.level}`).join(' + ');
+
+/** What each setup is, read off the setup objects themselves (Ruling 137 m6), so the prose cannot drift from them. */
+export function setupNotes(): string[] {
+  const triangle = TRIANGLE.map(([fav, beaten]) => {
+    const f = starterSide(fav).side;
+    const b = starterSide(beaten).side;
+    return `${fav} L${f.orchestrator.level} + ${team(f.active)} vs ${beaten} L${b.orchestrator.level} + ${team(b.active)}`;
+  });
+  const [t0, t4] = temperatureSides();
+  const graft = GRAFT_SPECIES.map((sp) => {
+    const g = graftVariant(sp).side;
+    const s = spinUpVariant(sp).side;
+    const piece = g.grid?.pieces.find((p) => p.kind === 'graft');
+    const slot = s.grid?.pieces.find((p) => p.kind === 'subagentSlot' && p.subagentId === s.active.find((c) => c.species === sp)?.id);
+    const active = s.grid === null || slot === undefined ? 0 : activeCardCount(s.grid, slot.id, s.active.find((c) => c.species === sp)?.version ?? 'v2');
+    const species = (cs: readonly CreatureSetup[]) => cs.map((c) => c.species).join(' + ');
+    return `${sp}: G = ${g.orchestrator.species} + ${species(g.active)} with graft ${piece?.moveId} (${piece?.shape.length} cells); S = ${s.orchestrator.species} + ${species(s.active)}, ${sp} on ${active} active cards`;
+  });
+  return [
+    `- Starter triangle (favoured side's score): ${triangle.join('; ')}.`,
+    `- Temperature dial (T0 side's score): ${t0.id} at Autopilot T${t0.side.autopilot?.temperature} vs its mirror at T${t4.side.autopilot?.temperature}.`,
+    `- Graft vs spin-up (G's score): ${graft.join('; ')}.`,
+    `- First mover: ${ARCHETYPES.length} archetypes, each against its mirror, side A's score pooled.`,
+    `- Vs field, worst matchup and fight length: one round-robin of the ${ARCHETYPES.length} archetypes; worst matchup lists each archetype's worst pairing (its score, both orderings pooled), then the overall worst.`,
+  ];
+}
+
+export function targetsReport(run: TargetsRun, cli: { date: string; tag?: string | undefined; args: readonly string[]; wallMs: number }): Report {
   const battles = run.measurements.reduce((n, m) => n + m.battles, 0);
   return {
     command: 'targets',
     date: cli.date,
+    tag: cli.tag,
     args: cli.args,
     meta: [
       ['seeds scale', String(run.scale)],
@@ -37,9 +70,7 @@ export function targetsReport(run: TargetsRun, cli: { date: string; args: readon
       },
       {
         heading: 'Verdicts',
-        text: [
-          `Starter triangle: each starter at L8 on its standard grid with Tokenibble L8, vs the starter it beats; the favoured side's score. Temperature dial: the T0 side's score. Graft vs spin-up: the base team ${GRAFT_STARTER} L8 + Tokenibble L8 on the standard grid; G adds the signature of ${GRAFT_SPECIES.join(', ')} as a graft piece, S adds the species as a second subagent in a 2×2 slot (the L8 grid only holds it sharing slot A's two Example Cards: 2 active cards); G's score. First mover: side A's score over every archetype against its mirror. Worst matchup: each archetype's worst pairing (its score, both orderings pooled), then the overall worst.`,
-        ],
+        text: setupNotes(),
         table: {
           columns: ['target', 'subject', 'battles', 'point', '95% interval', 'verdict'],
           rows: run.rows.map((r) => [targetById(r.target).name, r.subject, r.battles, fmtPoint(r), r.interval === null ? 'point only' : fmtInterval(r.interval), r.verdict]),
@@ -51,20 +82,21 @@ export function targetsReport(run: TargetsRun, cli: { date: string; args: readon
       },
     ],
     csv: {
-      columns: ['target', 'subject', 'battles', 'point', 'interval_lo', 'interval_hi', 'band_lo', 'band_hi', 'verdict'],
+      columns: ['target', 'subject', 'battles', 'point', 'interval_lo', 'interval_hi', 'band_lo', 'band_hi', 'verdict', 'seeds_scale', 'engine_version'],
       rows: run.rows.map((r) => {
         const band = targetById(r.target).band;
-        return [r.target, r.subject, r.battles, r.point, r.interval?.[0] ?? '', r.interval?.[1] ?? '', band[0], band[1], r.verdict];
+        return [r.target, r.subject, r.battles, r.point, r.interval?.[0] ?? '', r.interval?.[1] ?? '', band[0], band[1], r.verdict, run.scale, ENGINE_VERSION];
       }),
     },
   };
 }
 
 export async function targetsCommand(args: string[], ctx: CommandContext): Promise<number> {
-  const scale = numFlag(args, 'seeds-scale', 1);
+  const p = parseArgs(args, TARGETS_COMMAND);
+  const scale = num(p, 'seeds-scale', 1);
   const t0 = ctx.now();
   const run = measureTargets({ scale, now: ctx.now, progress: ctx.progress });
-  const paths = writeReport(targetsReport(run, { date: ctx.date, args, wallMs: ctx.now() - t0 }), ctx.outDir);
+  const paths = writeReport(targetsReport(run, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0 }), ctx.outDir);
   ctx.progress(`wrote ${paths.md} and ${paths.csv}`);
   return 0;
 }
