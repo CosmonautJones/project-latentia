@@ -9,8 +9,9 @@ import { SPEED_RUSH } from './speed-rush.js';
 import { VOICE_PRESSURE } from './voice-injection.js';
 
 // The twenty archetypes the round-robin, the balance targets and the deck search run on (spec §9, Task C2): slice
-// species at slice levels (L5–L10), each a gridded side on an Autopilot deck of its orchestrator version's size
-// (Ruling 121), with every subagent trained on a deck. Creature ids are `<archetype id>/<local id>`.
+// species with every creature at L8 (Ruling 128: the early-gym band, so v2 and an 8-card Autopilot deck, Ruling 121),
+// each a gridded side with every subagent trained on a deck. Creature ids are `<archetype id>/<local id>`; mirrorOf
+// renames a copy for a mirror match (Ruling 129).
 
 export const ARCHETYPES: readonly Archetype[] = [
   ...SPEED_RUSH,
@@ -23,4 +24,5 @@ export const ARCHETYPES: readonly Archetype[] = [
   ...MIXED,
 ];
 
+export { mirrorOf } from './build.js';
 export { starterGrid, type StarterId } from './starter-grids.js';

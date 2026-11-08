@@ -4,11 +4,11 @@ import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT
 // Open swarm (spec §9): stack Open-type creatures so Swarm of Fine-Tunes hits 1 + (Open allies) times, keep the
 // team topped up with Community Patch, and let Slopling's stacking Compute grow while it survives.
 
-/** Forkling L8 with two Open subagents (a Slopling and a spun-up Forkling): Swarm hits three times. */
+/** Forkling with two Open subagents (a Slopling and a spun-up Forkling): Swarm hits three times. */
 const FORKLING_SWARM = archetype('open-swarm-forkling', {
   orchestrator: orchestrator('forkling', 'forkling', 8),
   active: [
-    subagent('slopling', 'slopling', 7, {
+    subagent('slopling', 'slopling', 8, {
       deck: deck(
         card('fingers', 'self', ALWAYS, 'six-fingers', 'lowestHpFoe'),
         card('dump', 'foe', WEAK, 'weights-dump', 'lowestHpFoe'),
@@ -19,7 +19,7 @@ const FORKLING_SWARM = archetype('open-swarm-forkling', {
       generalization: 60,
       trainedTemperature: 2,
     }),
-    subagent('fork', 'forkling', 7, {
+    subagent('fork', 'forkling', 8, {
       deck: deck(
         card('fork', 'self', ALWAYS, 'hard-fork', 'lowestHpFoe'),
         card('swarm', 'self', OPENER, 'swarm-of-fine-tunes', 'lowestHpFoe'),
@@ -54,9 +54,9 @@ const FORKLING_SWARM = archetype('open-swarm-forkling', {
   temperature: 2,
 });
 
-/** Slopling L9 at T3 with a Robust Forkling and a hype Stochastiparrot; a Cache keeps its slot and Swarm intact. */
+/** Slopling at T3 with a Robust Forkling and a hype Stochastiparrot; a Cache keeps its slot and Swarm intact. */
 const SLOPLING_SWARM = archetype('open-swarm-slopling', {
-  orchestrator: orchestrator('slopling', 'slopling', 9),
+  orchestrator: orchestrator('slopling', 'slopling', 8),
   active: [
     subagent('forkling', 'forkling', 8, {
       deck: deck(

@@ -4,11 +4,11 @@ import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT
 // Code lock (spec §9): deny the foe its plan. Infinite Loop pins a buffer into Overfit, Segfault makes the next move
 // fail, Memory Leak clogs a window with Junk, Unit Test guards on a cooldown (Gary Rebase's "don't overfit" gym).
 
-/** Spaghettopus L10 (6×5 grid) at T1, Gary-style: lockers on both slots and a Brittle Off-By-Wasp on the bench. */
+/** Spaghettopus at T1, Gary-style: lockers on both slots and a Brittle Off-By-Wasp on the bench. */
 const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
-  orchestrator: orchestrator('spaghettopus', 'spaghettopus', 10),
+  orchestrator: orchestrator('spaghettopus', 'spaghettopus', 8),
   active: [
-    subagent('nullbeetle', 'nullbeetle', 9, {
+    subagent('nullbeetle', 'nullbeetle', 8, {
       deck: deck(
         card('chomp', 'self', ALWAYS, 'null-chomp', 'lowestHpFoe'),
         card('guard', 'self', HURT, 'unit-test', 'self'),
@@ -20,7 +20,7 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
       trainedTemperature: 0,
       recordedFoes: ['speed-rush-blitzr'],
     }),
-    subagent('vibrat', 'vibrat', 9, {
+    subagent('vibrat', 'vibrat', 8, {
       deck: deck(
         card('merge', 'self', ALWAYS, 'merge-conflict', 'lowestHpFoe'),
         card('accept', 'foe', HURT, 'accept-all', 'lowestHpFoe'),
@@ -32,7 +32,7 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
     }),
   ],
   bench: [
-    subagent('wasp', 'off-by-wasp', 9, {
+    subagent('wasp', 'off-by-wasp', 8, {
       deck: deck(
         card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
         card('trace', 'foe', HEALTHY, 'stack-trace', 'highestAtkFoe'),
@@ -44,11 +44,11 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
   ],
   grid: layout(
     [
-      'PPPee.', //
-      'AAeBB.',
-      'AAeBB.',
-      'eeMMt.',
-      'IIKKt.',
+      'PPPII', //
+      'AAeBB',
+      'AAeBB',
+      'MMt..',
+      'KK...',
     ],
     { I: { skill: 'infinite-loop' }, K: { skill: 'memory-leak' }, M: { skill: 'merge-conflict' }, A: { slot: 'nullbeetle' }, B: { slot: 'vibrat' } },
   ),
@@ -66,11 +66,11 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
   temperature: 1,
 });
 
-/** The forest bug family at L5 (v1, 5×4 grid), "by the book" at T0: Nullbeetle with an Off-By-Wasp, a Robust Heisenmoth benched. */
+/** The forest bug family, "by the book" at T0: Nullbeetle with an Off-By-Wasp, a Robust Heisenmoth benched. */
 const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
-  orchestrator: orchestrator('nullbeetle', 'nullbeetle', 5),
+  orchestrator: orchestrator('nullbeetle', 'nullbeetle', 8),
   active: [
-    subagent('wasp', 'off-by-wasp', 5, {
+    subagent('wasp', 'off-by-wasp', 8, {
       deck: deck(
         card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
         card('trace', 'foe', HEALTHY, 'stack-trace', 'highestAtkFoe'),
@@ -82,7 +82,7 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
     }),
   ],
   bench: [
-    subagent('heisenmoth', 'heisenmoth', 5, {
+    subagent('heisenmoth', 'heisenmoth', 8, {
       deck: deck(
         card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
         card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
@@ -95,9 +95,10 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
   ],
   grid: layout(
     [
-      'PPPSS', //
+      'PPPt.', //
+      'AAeSS',
       'AAeLL',
-      'AAeUU',
+      'eUU..',
       '.....',
     ],
     { S: { skill: 'segfault' }, L: { skill: 'infinite-loop' }, U: { skill: 'unit-test' }, A: { slot: 'wasp' } },
@@ -110,13 +111,15 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
     card('tidy', 'self', FULL, 'compact', 'self'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
     card('speed', 'foe', lastMove('low-latency'), 'infinite-loop', 'highestAtkFoe'),
+    card('guard', 'self', WEAK, 'guardrail', 'self'),
+    card('finish', 'foe', WEAK, 'null-chomp', 'lowestHpFoe'),
   ),
   temperature: 0,
 });
 
-/** Cobolt L9 at T2: big iron that heals and refactors while Spaghettopus and a Brittle T4 Nullbeetle lock. */
+/** Cobolt at T2: big iron that heals and refactors while Spaghettopus and a Brittle T4 Nullbeetle lock. */
 const COBOLT_LOCK = archetype('code-lock-cobolt', {
-  orchestrator: orchestrator('cobolt', 'cobolt', 9),
+  orchestrator: orchestrator('cobolt', 'cobolt', 8),
   active: [
     subagent('spaghettopus', 'spaghettopus', 8, {
       deck: deck(

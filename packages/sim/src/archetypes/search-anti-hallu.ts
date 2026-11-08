@@ -7,11 +7,11 @@ import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEA
 
 const HALLUCINAT_NUKE_ID = 'reasoning-nuke-hallucinat';
 
-/** Embeddingo L8 at T2 with a Specialist Scrapion (cards recorded from the Hallucinat nuke) and a Robust Sagelet. */
+/** Embeddingo at T2 with a Specialist Scrapion (cards recorded from the Hallucinat nuke) and a Robust Sagelet. */
 const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
   orchestrator: orchestrator('embeddingo', 'embeddingo', 8),
   active: [
-    subagent('sagelet', 'sagelet', 7, {
+    subagent('sagelet', 'sagelet', 8, {
       deck: deck(
         card('chain', 'self', ALWAYS, 'chain-of-thought', 'lowestHpFoe'),
         card('think', 'self', cooldown(3), 'step-back-prompt', 'self'),
@@ -24,7 +24,7 @@ const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
     }),
     // Its two active cards (two Example Cards touch slot B) were both recorded from the Hallucinat nuke: Specialist
     // (+15%) against that archetype only (Rulings 116, 123, 127).
-    subagent('scrapion', 'scrapion', 7, {
+    subagent('scrapion', 'scrapion', 8, {
       deck: deck(
         card('scrape', 'self', ALWAYS, 'scrape', 'highestAtkFoe'),
         card('check', 'foe', BUFFED, 'fact-check', 'highestAtkFoe', { recordedFrom: HALLUCINAT_NUKE_ID }),
@@ -59,11 +59,11 @@ const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
   temperature: 2,
 });
 
-/** Scrapion L8 at T1, Team Scrape style: steal buffs, Fact Check on a cooldown, a Robust Embeddingo to ground the team. */
+/** Scrapion at T1, Team Scrape style: steal buffs, Fact Check on a cooldown, a Robust Embeddingo to ground the team. */
 const SCRAPION_GROUND = archetype('search-anti-hallu-scrapion', {
   orchestrator: orchestrator('scrapion', 'scrapion', 8),
   active: [
-    subagent('embeddingo', 'embeddingo', 7, {
+    subagent('embeddingo', 'embeddingo', 8, {
       deck: deck(
         card('strike', 'self', ALWAYS, 'retrieval-strike', 'lowestHpFoe'),
         card('ground', 'self', hasStatus('hallucinating'), 'ground-truth', 'self'),
@@ -75,7 +75,7 @@ const SCRAPION_GROUND = archetype('search-anti-hallu-scrapion', {
       generalization: 72,
       trainedTemperature: 1,
     }),
-    subagent('nullbeetle', 'nullbeetle', 7, {
+    subagent('nullbeetle', 'nullbeetle', 8, {
       deck: deck(
         card('chomp', 'self', ALWAYS, 'null-chomp', 'lowestHpFoe'),
         card('guard', 'self', HURT, 'unit-test', 'self'),
@@ -87,7 +87,7 @@ const SCRAPION_GROUND = archetype('search-anti-hallu-scrapion', {
     }),
   ],
   bench: [
-    subagent('slopling', 'slopling', 7, {
+    subagent('slopling', 'slopling', 8, {
       deck: deck(
         card('fingers', 'self', ALWAYS, 'six-fingers', 'lowestHpFoe'),
         card('dump', 'foe', WEAK, 'weights-dump', 'lowestHpFoe'),

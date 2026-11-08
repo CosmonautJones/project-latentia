@@ -13,12 +13,12 @@ const NIBBLER = deck(
   card('tidy', 'self', FULL, 'compact', 'self'),
 );
 
-/** Blitzr L8 with two fast subagents, hot (T3) for crits; every Autopilot card costs one cell. */
+/** Blitzr with two fast subagents, hot (T3) for crits; every Autopilot card costs one cell. */
 const BLITZR_RUSH = archetype('speed-rush-blitzr', {
   orchestrator: orchestrator('blitzr', 'blitzr', 8),
   active: [
-    subagent('tokenibble', 'tokenibble', 7, { deck: NIBBLER, generalization: 55, trainedTemperature: 3 }),
-    subagent('agentoad', 'agentoad', 7, {
+    subagent('tokenibble', 'tokenibble', 8, { deck: NIBBLER, generalization: 55, trainedTemperature: 3 }),
+    subagent('agentoad', 'agentoad', 8, {
       deck: deck(
         card('burst', 'self', ALWAYS, 'token-burst', 'lowestHpFoe'),
         card('tools', 'foe', HEALTHY, 'tool-call', 'highestAtkFoe'),
@@ -54,9 +54,9 @@ const BLITZR_RUSH = archetype('speed-rush-blitzr', {
   temperature: 3,
 });
 
-/** Agentoad L9 (Code/Speed) at T4 with grafted Off By One and two fast Code subagents: all-in on wild rolls. */
+/** Agentoad (Code/Speed) at T4 with grafted Off By One and two fast Code subagents: all-in on wild rolls. */
 const AGENTOAD_RUSH = archetype('speed-rush-agentoad', {
-  orchestrator: orchestrator('agentoad', 'agentoad', 9),
+  orchestrator: orchestrator('agentoad', 'agentoad', 8),
   active: [
     subagent('wasp', 'off-by-wasp', 8, {
       deck: deck(
@@ -104,11 +104,11 @@ const AGENTOAD_RUSH = archetype('speed-rush-agentoad', {
   temperature: 4,
 });
 
-/** An early-forest Blitzr L5 (v1, 5×4 grid) with one Brittle intern and a grafted Null Chomp. */
-const ROOKIE_RUSH = archetype('speed-rush-rookie', {
-  orchestrator: orchestrator('blitzr', 'blitzr', 5),
+/** A solo Blitzr: one Brittle intern, a grafted Null Chomp for Code coverage and room to think (headroom 8). */
+const SOLO_RUSH = archetype('speed-rush-solo', {
+  orchestrator: orchestrator('blitzr', 'blitzr', 8),
   active: [
-    subagent('tokenibble', 'tokenibble', 5, {
+    subagent('tokenibble', 'tokenibble', 8, {
       deck: deck(
         card('nibble', 'self', ALWAYS, 'token-nibble', 'lowestHpFoe'),
         card('burst', 'self', OPENER, 'token-burst', 'lowestHpFoe'),
@@ -124,9 +124,10 @@ const ROOKIE_RUSH = archetype('speed-rush-rookie', {
       'PPPDD', //
       'AAetN',
       'AAe.N',
-      '....N',
+      'LL..N',
+      '.....',
     ],
-    { D: { skill: 'distilled-strike' }, N: { graft: 'null-chomp' }, A: { slot: 'tokenibble' } },
+    { L: { skill: 'low-latency' }, D: { skill: 'distilled-strike' }, N: { graft: 'null-chomp' }, A: { slot: 'tokenibble' } },
   ),
   autopilot: deck(
     card('ship', 'self', ALWAYS, 'ship-it', 'lowestHpFoe'),
@@ -135,9 +136,11 @@ const ROOKIE_RUSH = archetype('speed-rush-rookie', {
     card('opener', 'self', OPENER, 'distilled-strike', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
     card('tidy', 'self', FULL, 'compact', 'self'),
+    card('speed', 'self', cooldown(3), 'low-latency', 'self'),
+    card('guard', 'self', WEAK, 'guardrail', 'self'),
     card('coin', 'self', COIN, 'null-chomp', 'randomFoe'),
   ),
   temperature: 2,
 });
 
-export const SPEED_RUSH: readonly Archetype[] = [BLITZR_RUSH, AGENTOAD_RUSH, ROOKIE_RUSH];
+export const SPEED_RUSH: readonly Archetype[] = [BLITZR_RUSH, AGENTOAD_RUSH, SOLO_RUSH];

@@ -10,11 +10,11 @@ import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEA
  * stays visible; Prompt Injected is untested by the round-robin until a post-slice Voice species brings Deepfake Call.
  */
 
-/** Stochastiparrot L8 at T3: hype, glaze the biggest hitter, then Hot Take; a Robust Vibrat and a Brittle T4 Hallucinat. */
+/** Stochastiparrot at T3: hype, glaze the biggest hitter, then Hot Take; a Robust Vibrat and a Brittle T4 Hallucinat. */
 const PARROT_PRESSURE = archetype('voice-pressure-parrot', {
   orchestrator: orchestrator('parrot', 'stochastiparrot', 8),
   active: [
-    subagent('vibrat', 'vibrat', 7, {
+    subagent('vibrat', 'vibrat', 8, {
       deck: deck(
         card('merge', 'self', ALWAYS, 'merge-conflict', 'lowestHpFoe'),
         card('hype', 'self', cooldown(3), 'hype-train', 'self'),
@@ -25,7 +25,7 @@ const PARROT_PRESSURE = archetype('voice-pressure-parrot', {
       generalization: 74,
       trainedTemperature: 3,
     }),
-    subagent('hallucinat', 'hallucinat', 7, {
+    subagent('hallucinat', 'hallucinat', 8, {
       deck: deck(
         card('cite', 'self', ALWAYS, 'confident-citation', 'lowestHpFoe'),
         card('patch', 'foe', WEAK_TO_MOVE, 'adversarial-patch', 'foeWeakToMove'),
@@ -59,9 +59,9 @@ const PARROT_PRESSURE = archetype('voice-pressure-parrot', {
   temperature: 3,
 });
 
-/** Vibrat L9 at T4 with a grafted Stochastic Repeat: hype every other round, Accept All, two Stable T4/T2 helpers. */
+/** Vibrat at T4 with a grafted Stochastic Repeat: hype every other round, Accept All, two Stable T4/T2 helpers. */
 const VIBRAT_PRESSURE = archetype('voice-pressure-vibrat', {
-  orchestrator: orchestrator('vibrat', 'vibrat', 9),
+  orchestrator: orchestrator('vibrat', 'vibrat', 8),
   active: [
     subagent('parrot', 'stochastiparrot', 8, {
       deck: deck(

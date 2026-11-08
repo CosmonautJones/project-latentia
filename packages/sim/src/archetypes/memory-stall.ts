@@ -5,11 +5,11 @@ import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT
 // hit taken from its target, Episodic Replay repeats an ally's move, healers keep the team up, and Caches keep
 // the loadout from compacting under Junk.
 
-/** Deprecatter L8 at T1 with a Robust Cobolt healer and a Memory-Leaking Spaghettopus. */
+/** Deprecatter at T1 with a Robust Cobolt healer and a Memory-Leaking Spaghettopus. */
 const DEPRECATTER_STALL = archetype('memory-stall-deprecatter', {
   orchestrator: orchestrator('deprecatter', 'deprecatter', 8),
   active: [
-    subagent('cobolt', 'cobolt', 7, {
+    subagent('cobolt', 'cobolt', 8, {
       deck: deck(
         card('recall', 'self', ALWAYS, 'long-term-recall', 'highestAtkFoe'),
         card('patch', 'self', ALLY_HURT, 'hotfix', 'lowestHpAlly'),
@@ -19,7 +19,7 @@ const DEPRECATTER_STALL = archetype('memory-stall-deprecatter', {
       generalization: 70,
       trainedTemperature: 0,
     }),
-    subagent('spaghettopus', 'spaghettopus', 7, {
+    subagent('spaghettopus', 'spaghettopus', 8, {
       deck: deck(
         card('tangle', 'self', ALWAYS, 'tangle', 'lowestHpFoe'),
         card('leak', 'self', cooldown(3), 'memory-leak', 'lowestHpFoe'),
@@ -54,11 +54,11 @@ const DEPRECATTER_STALL = archetype('memory-stall-deprecatter', {
   temperature: 1,
 });
 
-/** "Old v1.2": a Deprecatter L7 pinned at v1, T0, like the Retro Collector; two Caches guard its slots. */
+/** "Old v1.2", like the Retro Collector: a Deprecatter at T0 with a mimic Stochastiparrot and an old Cobolt; two Caches guard its slots. */
 const RETRO_STALL = archetype('memory-stall-retro', {
-  orchestrator: orchestrator('deprecatter', 'deprecatter', 7, 'v1'),
+  orchestrator: orchestrator('deprecatter', 'deprecatter', 8),
   active: [
-    subagent('parrot', 'stochastiparrot', 6, {
+    subagent('parrot', 'stochastiparrot', 8, {
       deck: deck(
         card('repeat', 'self', ALWAYS, 'stochastic-repeat', 'lowestHpFoe'),
         card('hype', 'self', OPENER, 'hype-train', 'self'),
@@ -68,7 +68,7 @@ const RETRO_STALL = archetype('memory-stall-retro', {
       generalization: 62,
       trainedTemperature: 1,
     }),
-    subagent('cobolt', 'cobolt', 6, {
+    subagent('cobolt', 'cobolt', 8, {
       deck: deck(
         card('recall', 'self', ALWAYS, 'long-term-recall', 'highestAtkFoe'),
         card('patch', 'self', ALLY_HURT, 'hotfix', 'lowestHpAlly'),
@@ -96,6 +96,8 @@ const RETRO_STALL = archetype('memory-stall-retro', {
     card('tidy', 'self', FULL, 'compact', 'self'),
     card('punish', 'foe', BUFFED, 'long-term-recall', 'highestAtkFoe'),
     card('low', 'self', WEAK, 'guardrail', 'self'),
+    card('finish', 'foe', WEAK, 'nostalgia-trip', 'lowestHpFoe'),
+    card('coin', 'self', COIN, 'long-term-recall', 'randomFoe'),
   ),
   temperature: 0,
 });

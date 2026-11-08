@@ -20,7 +20,7 @@ const SAGELET_STARTER = archetype('mixed-starter-sagelet', {
   orchestrator: orchestrator('sagelet', 'sagelet', 8),
   active: [intern(8)],
   bench: [
-    subagent('cobolt', 'cobolt', 7, {
+    subagent('cobolt', 'cobolt', 8, {
       deck: deck(
         card('recall', 'self', ALWAYS, 'long-term-recall', 'highestAtkFoe'),
         card('patch', 'self', ALLY_HURT, 'hotfix', 'lowestHpAlly'),
@@ -49,7 +49,7 @@ const BLITZR_STARTER = archetype('mixed-starter-blitzr', {
   orchestrator: orchestrator('blitzr', 'blitzr', 8),
   active: [intern(8)],
   bench: [
-    subagent('nullbeetle', 'nullbeetle', 7, {
+    subagent('nullbeetle', 'nullbeetle', 8, {
       deck: deck(
         card('chomp', 'self', ALWAYS, 'null-chomp', 'lowestHpFoe'),
         card('guard', 'self', HURT, 'unit-test', 'self'),
@@ -78,7 +78,7 @@ const FORKLING_STARTER = archetype('mixed-starter-forkling', {
   orchestrator: orchestrator('forkling', 'forkling', 8),
   active: [intern(8)],
   bench: [
-    subagent('heisenmoth', 'heisenmoth', 7, {
+    subagent('heisenmoth', 'heisenmoth', 8, {
       deck: deck(
         card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
         card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
@@ -104,11 +104,11 @@ const FORKLING_STARTER = archetype('mixed-starter-forkling', {
   temperature: 2,
 });
 
-/** Heisenmoth L10 (6×5 grid) at T3: Flash Inference before the foe acts, a grafted Token Nibble, an Off-By-Wasp and a Brittle Deprecatter. */
+/** Heisenmoth at T3: Flash Inference before the foe acts, a grafted Token Nibble, an Off-By-Wasp and a Brittle Deprecatter. */
 const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
-  orchestrator: orchestrator('heisenmoth', 'heisenmoth', 10),
+  orchestrator: orchestrator('heisenmoth', 'heisenmoth', 8),
   active: [
-    subagent('wasp', 'off-by-wasp', 9, {
+    subagent('wasp', 'off-by-wasp', 8, {
       deck: deck(
         card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
         card('trace', 'foe', HEALTHY, 'stack-trace', 'highestAtkFoe'),
@@ -118,7 +118,7 @@ const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
       generalization: 66,
       trainedTemperature: 3,
     }),
-    subagent('deprecatter', 'deprecatter', 9, {
+    subagent('deprecatter', 'deprecatter', 8, {
       deck: deck(
         card('trip', 'self', ALWAYS, 'nostalgia-trip', 'lowestHpFoe'),
         card('save', 'self', OPENER, 'save-state', 'self'),
@@ -130,7 +130,7 @@ const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
     }),
   ],
   bench: [
-    subagent('forkling', 'forkling', 9, {
+    subagent('forkling', 'forkling', 8, {
       deck: deck(
         card('fork', 'self', ALWAYS, 'hard-fork', 'lowestHpFoe'),
         card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),
@@ -142,19 +142,19 @@ const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
   ],
   grid: layout(
     [
-      'PPPFFt', //
-      'AAeBB.',
-      'AAeBBN',
-      'eeRRNN',
-      'XX....',
+      'PPPFF', //
+      'AAeBB',
+      'AAeBB',
+      'XX.N.',
+      '...NN',
     ],
-    { X: { skill: 'bounding-box' }, R: { skill: 'refactor' }, F: { skill: 'flash-inference' }, N: { graft: 'token-nibble' }, A: { slot: 'wasp' }, B: { slot: 'deprecatter' } },
+    { X: { skill: 'bounding-box' }, F: { skill: 'flash-inference' }, N: { graft: 'token-nibble' }, A: { slot: 'wasp' }, B: { slot: 'deprecatter' } },
   ),
   autopilot: deck(
     card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
     card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
     card('box', 'self', cooldown(3), 'bounding-box', 'self'),
-    card('refactor', 'self', DRIFT, 'refactor', 'self'),
+    card('drift', 'self', DRIFT, 'clear', 'self'),
     card('tidy', 'self', FULL, 'compact', 'self'),
     card('nibble', 'foe', WEAK, 'token-nibble', 'lowestHpFoe'),
     card('weak', 'foe', WEAK_TO_MOVE, 'flash-inference', 'foeWeakToMove'),

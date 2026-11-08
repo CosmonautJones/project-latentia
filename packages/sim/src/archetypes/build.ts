@@ -205,3 +205,16 @@ export function archetype(id: string, spec: ArchetypeSpec): Archetype {
     },
   };
 }
+
+/**
+ * A deep copy of `a` for a mirror match (Ruling 129): every creature id, and each Subagent Slot's subagentId with it,
+ * gets the suffix `~<tag>`, so `a` and its mirror can share one battle. No card field names a creature id (targets
+ * are selectors; `recordedFrom` and `recordedFoes` name opponent ids), so decks are copied unchanged. The archetype id
+ * is kept, so the two sides face the same opponent id and stay a perfect mirror; runMatch sets `opponentId`.
+ */
+export function mirrorOf(a: Archetype, tag: string): Archetype {
+  const side = structuredClone(a.side);
+  const renamed = (c: CreatureSetup): CreatureSetup => ({ ...c, id: `${c.id}~${tag}` });
+  const grid = side.grid === null ? null : { ...side.grid, pieces: side.grid.pieces.map((p) => (p.subagentId === undefined ? p : { ...p, subagentId: `${p.subagentId}~${tag}` })) };
+  return { id: a.id, side: { ...side, orchestrator: renamed(side.orchestrator), active: side.active.map(renamed), bench: side.bench.map(renamed), grid } };
+}

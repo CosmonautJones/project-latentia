@@ -12,8 +12,8 @@ import {
   type Version,
 } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
-import { ARCHETYPES, starterGrid } from '../src/archetypes/index.js';
-import { seedFor } from '../src/runner.js';
+import { ARCHETYPES, mirrorOf, starterGrid } from '../src/archetypes/index.js';
+import { runMatch, seedFor } from '../src/runner.js';
 
 // Task C2 (spec §9): twenty archetype teams as data, under Rulings 120–124.
 
@@ -79,12 +79,11 @@ describe('ARCHETYPES', () => {
     }
   });
 
-  it('uses slice levels (L5–L10) and versions the level allows, v1 or v2 only', () => {
+  it('puts every archetype creature at L8, v2 by the ladder (Ruling 128)', () => {
     for (const a of ARCHETYPES) {
       for (const c of members(a.side)) {
-        expect(c.level, c.id).toBeGreaterThanOrEqual(5);
-        expect(c.level, c.id).toBeLessThanOrEqual(10);
-        expect(['v1', 'v2'], c.id).toContain(c.version);
+        expect(c.level, c.id).toBe(8);
+        expect(c.version, c.id).toBe('v2');
         expect(c.level, c.id).toBeGreaterThanOrEqual(MIN_LEVEL[c.version]);
       }
     }
@@ -158,6 +157,31 @@ describe('ARCHETYPES', () => {
         expect(r.rounds, `${x.id} vs ${y.id}`).toBeGreaterThan(0);
       }
     });
+  });
+});
+
+describe('mirrorOf (Ruling 129)', () => {
+  it('meets its archetype in a valid setup and a completed match, for every archetype', () => {
+    for (const x of ARCHETYPES) {
+      const m = mirrorOf(x, 'm');
+      const r = validateSetup({ a: { ...x.side, opponentId: m.id }, b: { ...m.side, opponentId: x.id }, kind: 'trainer' });
+      expect(r.errors, x.id).toEqual([]);
+      const stats = runMatch(x, m, 2, `mirror:${x.id}`);
+      expect(stats.winsA + stats.winsB + stats.draws, x.id).toBe(2);
+    }
+  });
+
+  it('suffixes every creature id and slot binding, keeps the archetype id, and leaves the original untouched', () => {
+    const x = ARCHETYPES[0]!;
+    const before = structuredClone(x);
+    const m = mirrorOf(x, 'm');
+    expect(m.id).toBe(x.id);
+    expect(members(m.side).map((c) => c.id)).toEqual(members(x.side).map((c) => `${c.id}~m`));
+    const slots = (s: SideSetup) => s.grid?.pieces.flatMap((p) => (p.subagentId === undefined ? [] : [p.subagentId])) ?? [];
+    expect(slots(m.side)).toEqual(slots(x.side).map((id) => `${id}~m`));
+    expect(m.side.autopilot).toEqual(x.side.autopilot);
+    expect(m.side.autopilot).not.toBe(x.side.autopilot);
+    expect(x).toEqual(before);
   });
 });
 

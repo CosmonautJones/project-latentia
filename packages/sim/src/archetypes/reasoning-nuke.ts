@@ -9,11 +9,11 @@ import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT
  * Batch Job. Cool temperatures, because Reasoning gains a crit stage at T0/T1.
  */
 
-/** Sagelet L8 at T0, two Tools on its Skills, a Robust Hallucinat beside it and a Cobolt tank on the bench. */
+/** Sagelet at T0, two Tools on its Skills, a Robust Hallucinat beside it and a Cobolt tank on the bench. */
 const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
   orchestrator: orchestrator('sagelet', 'sagelet', 8),
   active: [
-    subagent('hallucinat', 'hallucinat', 7, {
+    subagent('hallucinat', 'hallucinat', 8, {
       deck: deck(
         card('cite', 'self', ALWAYS, 'confident-citation', 'lowestHpFoe'),
         card('probe', 'self', cooldown(3), 'socratic-method', 'highestAtkFoe'),
@@ -26,7 +26,7 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
     }),
   ],
   bench: [
-    subagent('cobolt', 'cobolt', 7, {
+    subagent('cobolt', 'cobolt', 8, {
       deck: deck(
         card('recall', 'self', ALWAYS, 'long-term-recall', 'highestAtkFoe'),
         card('patch', 'self', ALLY_HURT, 'hotfix', 'lowestHpAlly'),
@@ -61,9 +61,9 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
   temperature: 0,
 });
 
-/** Hallucinat L9 at T1 with a grafted Batch Job, a Brittle Vibrat that hypes then Accept-Alls, and a Nullbeetle. */
+/** Hallucinat at T1 with a grafted Batch Job, a Brittle Vibrat that hypes then Accept-Alls, and a Nullbeetle. */
 const HALLUCINAT_NUKE = archetype('reasoning-nuke-hallucinat', {
-  orchestrator: orchestrator('hallucinat', 'hallucinat', 9),
+  orchestrator: orchestrator('hallucinat', 'hallucinat', 8),
   active: [
     subagent('vibrat', 'vibrat', 8, {
       deck: deck(
