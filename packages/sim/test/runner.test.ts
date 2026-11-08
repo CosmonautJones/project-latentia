@@ -1,7 +1,7 @@
 import * as engine from '@latentia/engine';
 import { SPECIES, type CreatureSetup, type SideSetup } from '@latentia/engine';
 import { describe, expect, it, vi } from 'vitest';
-import { runMatch, seedFor } from '../src/runner.js';
+import { runMatch, runPooled, scoreA, scoreB, seedFor } from '../src/runner.js';
 import type { Archetype } from '../src/types.js';
 
 const mon = (id: string, species: string): CreatureSetup => ({
@@ -84,5 +84,18 @@ describe('runMatch opponentId (Ruling 127)', () => {
     expect(b.side.opponentId).toBe('stale-placeholder');
     runMatch(b, a, 1, 'opp');
     expect(spy.mock.calls[3]?.[0].a.opponentId).toBe('alpha');
+  });
+});
+
+describe('runPooled', () => {
+  it("pools x's score over both side assignments, each with its own label", () => {
+    const x = arche('x', 'x', ['blitzr']);
+    const y = arche('y', 'y', ['forkling']);
+    const ab = runMatch(x, y, 9, 'pool:ab');
+    const ba = runMatch(y, x, 9, 'pool:ba');
+    const p = runPooled(x, y, 9, 'pool');
+    expect(p.score).toEqual({ points: scoreA(ab).points + scoreB(ba).points, n: 18 });
+    expect(p.rounds).toEqual([...ab.rounds, ...ba.rounds]);
+    expect(scoreA(ab).points + scoreB(ab).points).toBe(9);
   });
 });

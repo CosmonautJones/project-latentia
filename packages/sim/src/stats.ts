@@ -1,4 +1,4 @@
-import type { MatchStats, Verdict } from './types.js';
+import type { MatchStats, Score, Verdict } from './types.js';
 
 const Z95 = 1.959964;
 
@@ -32,4 +32,22 @@ export function pointVerdict(point: number, band: [number, number]): 'pass' | 'f
 export function verdict(point: number, interval: [number, number], band: [number, number]): Verdict {
   if (pointVerdict(point, band) === 'fail') return 'fail';
   return interval[0] >= band[0] && interval[1] <= band[1] ? 'pass' : 'inconclusive';
+}
+
+/** A Score's rate (points per battle; 0 with no battles). */
+export function rate(s: Score): number {
+  return s.n === 0 ? 0 : s.points / s.n;
+}
+
+/** The sum of Scores. */
+export function addScores(...scores: Score[]): Score {
+  return scores.reduce((t, s) => ({ points: t.points + s.points, n: t.n + s.n }), { points: 0, n: 0 });
+}
+
+/** The median of `xs` (the mean of the two middle values for an even count); NaN for none. */
+export function median(xs: readonly number[]): number {
+  if (xs.length === 0) return NaN;
+  const s = [...xs].sort((x, y) => x - y);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 === 1 ? (s[mid] as number) : ((s[mid - 1] as number) + (s[mid] as number)) / 2;
 }

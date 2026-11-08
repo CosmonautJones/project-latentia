@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pointVerdict, verdict, wilson95, winRate } from '../src/stats.js';
+import { addScores, median, pointVerdict, rate, verdict, wilson95, winRate } from '../src/stats.js';
 
 describe('wilson95', () => {
   it('500 of 1000 is about [0.4691, 0.5309]', () => {
@@ -42,5 +42,21 @@ describe('verdict', () => {
     expect(pointVerdict(0.45, band)).toBe('pass');
     expect(pointVerdict(0.55, band)).toBe('pass');
     expect(pointVerdict(0.5501, band)).toBe('fail');
+  });
+});
+
+describe('Score helpers', () => {
+  it('rate is points per battle (0 with none) and addScores sums points and battles', () => {
+    expect(rate({ points: 7.5, n: 10 })).toBe(0.75);
+    expect(rate({ points: 0, n: 0 })).toBe(0);
+    expect(addScores({ points: 1.5, n: 2 }, { points: 3, n: 4 })).toEqual({ points: 4.5, n: 6 });
+    expect(addScores()).toEqual({ points: 0, n: 0 });
+  });
+  it('median takes the middle value, or the mean of the two middle values, without sorting its input', () => {
+    const xs = [9, 1, 5];
+    expect(median(xs)).toBe(5);
+    expect(xs).toEqual([9, 1, 5]);
+    expect(median([4, 1, 10, 6])).toBe(5);
+    expect(median([])).toBeNaN();
   });
 });
