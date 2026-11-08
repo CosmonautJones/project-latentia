@@ -29,7 +29,8 @@ export const BOOTCAMP_AUTOPILOT: Deck = {
   default: card('trace', 'self', ALWAYS, 'stack-trace', 'lowestHpFoe'),
 };
 
-// Fixture levels and temperatures, tuned for criterion 5 (Ruling 108; no species stat was changed). Each was chosen so
+// Fixture levels, temperatures, the heal condition and the subagent's generalization, tuned for criterion 5 (Rulings 108
+// and 114; no species stat was changed). Each was chosen so
 // that the fight turns on the one thing the arms differ in, whether the subagent heals: the starter Sagelet is the kill
 // engine (Reasoning hits Code 2x) but fragile, and the trainer's Code attacks wear it down in about three rounds; kept
 // alive by Community Patch it wins, left alone it falls before the second kill. Wins (broken / swapped) on the test's
@@ -40,6 +41,13 @@ export const BOOTCAMP_AUTOPILOT: Deck = {
 //     the swapped arm. On a 400-seed check list (seedFor(`check:${i}`)): T0 7 / 393, T1 7 / 380, T2 14 / 381.
 //   - Sagelet 4: at 5 → 154 / 200 (it seldom needs the heal). Forkling 6: at 5 → 1 / 44 (too frail to keep healing),
 //     at 7 → 1 / 199 (no change).
+//   - The player's Autopilot at T2 (the default): T0 or T1 → 1 / 200, T3 → 1 / 188, T4 → 3 / 181.
+//   - The heal fires when an ally is below 50%: below 75% → 1 / 199, below 25% → 1 / 158 (too late); healing itself
+//     when the Forkling is below 50% → 1 / 3 (it heals the wrong creature: the trainer is wearing down the starter).
+//   - The Forkling's generalization is FORKLING_G = 85, the deck's honest G: computeGeneralization(SWAPPED_DECK,
+//     DEPRECATED_FOREST_SUITE, 3 active slots), pinned in broken-deck.test.ts. Both arms use it (the broken deck's own G
+//     would be 88), so they differ only in card order. Any Robust value (≥ 70) gives the same 1 / 199, since Robust always
+//     obeys; Stable 65 or 50 → 4 / 177 (5% disobedience costs the swapped arm its gate), 30 → 17 / 148.
 
 /** The first Deprecated Forest trainer, Bootcamp Grad, at fixed levels (side b): an Off-By-Wasp orchestrating a Nullbeetle. */
 export function bootcampGrad(): SideSetup {
@@ -66,10 +74,13 @@ export const BROKEN_DECK: Deck = { cards: [ATTACK, HEAL], default: COMPACT };
 /** The same two cards swapped: heal a hurt ally, otherwise attack. */
 export const SWAPPED_DECK: Deck = { cards: [HEAL, ATTACK], default: COMPACT };
 
+/** The Forkling's generalization in both arms: the swapped deck's honest G over the Deprecated Forest suite (see above). */
+export const FORKLING_G = 85;
+
 /** The player's side (side a): the starter Sagelet on its Autopilot, with a Robust Forkling subagent acting from `deck`. */
 export function playerTeam(deck: Deck): SideSetup {
   return {
-    ...side('a', { orch: mon('a-sagelet', 'sagelet', 4), active: [{ ...mon('a-forkling', 'forkling', 6), deck, generalization: 80 }] }),
+    ...side('a', { orch: mon('a-sagelet', 'sagelet', 4), active: [{ ...mon('a-forkling', 'forkling', 6), deck, generalization: FORKLING_G }] }),
     autopilot: { deck: PLAYER_AUTOPILOT, temperature: 2 },
   };
 }

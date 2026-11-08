@@ -1,6 +1,8 @@
 import { fnv1a64Hex } from './fnv';
 import type { BattleEvent } from './types';
 
+// Module caches (quoted strings, key labels, small integers) are bounded by entry count and never change the output.
+
 /**
  * JSON.stringify of strings seen before — string values (ids, event types) in `quoted`, object keys with their ':' in
  * `labels`. The vocabulary is small; each cache is emptied when it reaches QUOTED_MAX entries.

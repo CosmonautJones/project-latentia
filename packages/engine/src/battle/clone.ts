@@ -1,6 +1,7 @@
 // clonePlain (B6, Ruling 109): the deep copy simulate and createBattle take of setups, decks and commands on every
-// battle. For plain JSON-compatible data it gives what structuredClone gives, without structuredClone's serialisation
-// cost; anything else is handed to structuredClone whole, so its results (and its errors) are unchanged.
+// battle. For plain JSON-compatible data it gives the JSON round-trip result (equal values, keys in order, `undefined`
+// values and -0 kept), not exactly structuredClone's: an object referenced twice is copied twice, where structuredClone
+// keeps the sharing (Ruling 115). Anything else is handed to structuredClone whole.
 
 /** Thrown inside copy when the value is not plain data; clonePlain then uses structuredClone. */
 const NOT_PLAIN = Symbol('not plain');
@@ -32,8 +33,9 @@ function copy(v: unknown, depth: number): unknown {
 }
 
 /**
- * A deep copy sharing no objects with `value`: arrays, plain (or null-prototype) objects and primitives are copied
- * directly, own enumerable keys in order; for any other value (a Map, a class instance, a function, a sparse array, an
+ * A deep copy sharing no objects with `value` (nor, for plain data, objects within itself: shared references are
+ * duplicated): arrays, plain (or null-prototype) objects and primitives are copied directly, own enumerable keys in
+ * order; for any other value (a Map, a class instance, a function, a sparse array, an
  * own `__proto__` key, a very deep or cyclic structure) the result is structuredClone(value).
  */
 export function clonePlain<T>(value: T): T {

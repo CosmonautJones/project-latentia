@@ -146,9 +146,24 @@ function goldenNamed(name: string): { golden: Golden; events: BattleResult['even
 }
 
 describe('golden coverage', () => {
-  it('golden coverage includes every move and every lever: every MoveUsed id and pulled lever, against the move registry (Ruling 110)', () => {
+  it('golden coverage includes every move and every lever: every MoveUsed id and lever that took effect, against the move registry (Ruling 110)', () => {
+    // Directive and Policy Update count by their MoveUsed (emitted only when the lever resolves); a Swap only when its
+    // Swapped event follows the orchestrator's ActionStarted with the commanded creatures (Ruling 115); `none` by command.
     const used = new Set(replays().flatMap((r) => r.events.flatMap((e) => (e.type === 'MoveUsed' ? [e.moveId] : []))));
-    for (const g of GOLDENS) for (const cmd of g.golden.log.rounds) for (const sc of [cmd.a, cmd.b]) if (sc !== undefined && sc.action.kind !== 'move') used.add(LEVER_IDS[sc.action.kind]);
+    GOLDENS.forEach(({ golden }, g) => {
+      const events = replays()[g]?.events ?? [];
+      const orch = (side: 'a' | 'b'): number => createBattle(golden.log.setup, golden.log.seed).creatures.find((c) => c.side === side && c.isOrchestrator)?.index ?? -1;
+      golden.log.rounds.forEach((cmd, i) => {
+        for (const side of ['a', 'b'] as const) {
+          const action = cmd[side]?.action;
+          if (action?.kind === 'none') used.add(LEVER_IDS.none);
+          if (action?.kind !== 'swap') continue;
+          const at = events.findIndex((e) => e.type === 'ActionStarted' && e.round === i + 1 && e.actor === orch(side));
+          const next = events[at + 1];
+          if (at >= 0 && next?.type === 'Swapped' && next.outIndex === action.out && next.inIndex === action.in) used.add(LEVER_IDS.swap);
+        }
+      });
+    });
     expect(Object.values(LEVER_IDS).filter((id) => !used.has(id))).toEqual([]);
     const registry = Object.keys(MOVES).sort();
     expect(registry.filter((m) => !used.has(m))).toEqual([...UNLEARNABLE_MOVES]);

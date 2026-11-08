@@ -3,7 +3,8 @@ import { clonePlain } from '../../src/battle/clone.js';
 import { SCENARIOS } from '../golden/scenarios.js';
 import { BENCH_SETUPS } from '../scenarios/slice.js';
 
-// clonePlain (B6): structuredClone's result for plain data, without its cost; structuredClone itself for anything else.
+// clonePlain (B6, Ruling 115): the JSON round-trip result for plain data (shared references duplicated), without
+// structuredClone's cost; structuredClone itself for anything else.
 
 /** Every object reachable from `v`. */
 function objects(v: unknown, out: Set<object> = new Set()): Set<object> {
@@ -31,6 +32,13 @@ describe('clonePlain', () => {
     expect(copy).toStrictEqual(structuredClone(v));
     expect(Object.keys(copy)).toEqual(['z', 'y', 'x']);
     expect(Object.is((copy.y as { a: number[] }).a[1], -0)).toBe(true);
+  });
+
+  it('duplicates a shared reference, as a JSON round trip does (structuredClone keeps the sharing)', () => {
+    const shared = { x: 1 };
+    const copy = clonePlain({ a: shared, b: shared });
+    expect(copy).toEqual(JSON.parse(JSON.stringify({ a: shared, b: shared })));
+    expect(copy.a).not.toBe(copy.b);
   });
 
   it('hands anything that is not plain data to structuredClone', () => {
