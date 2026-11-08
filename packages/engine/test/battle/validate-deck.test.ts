@@ -81,9 +81,29 @@ describe('deck validation', () => {
     ]);
   });
 
-  it('validates an orchestrator’s deck against its own moveset', () => {
-    const s = gridlessSetup({ orchestrator: { ...mon('a-orch', 'sagelet'), deck: { cards: [card({ move: 'chain-of-thought' }), card({ id: 'c2' })], default: DEF } } });
-    expect(validateSetup(s).errors.map((e) => [e.code, e.path])).toEqual([['moveNotKnown', 'a.orchestrator.deck.cards[1].move']]);
+  it('rejects the fields an orchestrator ignores — deck, generalization, trainedTemperature, recordedFoes — one orchestratorField each (Ruling 118)', () => {
+    const orchDeck = { cards: [card({ move: 'chain-of-thought' }), card({ id: 'c2' })], default: DEF };
+    const orch = (over: Partial<CreatureSetup>) => validateSetup(gridlessSetup({ orchestrator: { ...mon('a-orch', 'sagelet'), ...over } })).errors.map((e) => [e.code, e.path]);
+    // the ignored deck is not validated beyond its shape: no moveNotKnown for ship-it, no deckSize
+    expect(orch({ deck: orchDeck })).toEqual([['orchestratorField', 'a.orchestrator.deck']]);
+    expect(orch({ deck: { ...orchDeck, cards: Array.from({ length: 13 }, (_, i) => card({ id: `c${i}`, move: 'chain-of-thought' })) } })).toEqual([['orchestratorField', 'a.orchestrator.deck']]);
+    expect(orch({ generalization: 80 })).toEqual([['orchestratorField', 'a.orchestrator.generalization']]);
+    expect(orch({ generalization: 500 })).toEqual([['orchestratorField', 'a.orchestrator.generalization']]); // not also range
+    expect(orch({ trainedTemperature: 4 })).toEqual([['orchestratorField', 'a.orchestrator.trainedTemperature']]);
+    expect(orch({ recordedFoes: [] })).toEqual([['orchestratorField', 'a.orchestrator.recordedFoes']]);
+    expect(orch({ deck: orchDeck, generalization: 80, trainedTemperature: 1, recordedFoes: ['b'] })).toEqual([
+      ['orchestratorField', 'a.orchestrator.deck'],
+      ['orchestratorField', 'a.orchestrator.generalization'],
+      ['orchestratorField', 'a.orchestrator.trainedTemperature'],
+      ['orchestratorField', 'a.orchestrator.recordedFoes'],
+    ]);
+    // side b's orchestrator too
+    const b = validateSetup(gridlessSetup({}, { orchestrator: { ...mon('b-orch', 'sagelet'), recordedFoes: ['a'] } }));
+    expect(b.errors.map((e) => [e.code, e.path])).toEqual([['orchestratorField', 'b.orchestrator.recordedFoes']]);
+    // a subagent keeps them, and an AI orchestrator's deck goes in side.autopilot
+    const sub = gridlessSetup({ active: [{ ...mon('a-act1', 'blitzr'), deck: { cards: [card()], default: DEF }, generalization: 80, trainedTemperature: 4, recordedFoes: ['b'] }] });
+    expect(validateSetup(sub)).toEqual({ ok: true, errors: [] });
+    expect(validateSetup(gridlessSetup({ autopilot: { deck: { cards: [card({ move: 'chain-of-thought' })], default: card({ id: 'def', move: 'happy-to-help' }) }, temperature: 2 } })).ok).toBe(true);
   });
 
   it('is shape-safe on malformed decks: code shape, never a throw, and nothing else is checked', () => {

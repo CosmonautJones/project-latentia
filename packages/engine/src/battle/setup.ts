@@ -18,6 +18,8 @@ export type CreatureSetup = {
   version: Version;
   /** Never lists universal moves. Must be empty for a gridded orchestrator (its moves come from the grid). */
   moves: string[];
+  // Subagents only: an orchestrator that sets any of the next four fails validation with orchestratorField
+  // (Ruling 118); an AI orchestrator's deck goes in its side's `autopilot`.
   deck?: Deck;
   generalization?: number;
   trainedTemperature?: Temperature;

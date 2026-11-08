@@ -228,8 +228,10 @@ describe('Autopilot temperature (Ruling 101)', () => {
 describe('Autopilot resolution (Ruling 93)', () => {
   it('always obeys: a Brittle-generalization orchestrator never rolls obedience and never repeats', () => {
     // Generalization 0 would make a subagent Brittle (85% obedience, Brittle repeat); lo(D1, 100) = 99 would disobey.
+    // Setup rejects an orchestrator's generalization (Ruling 118), so it is set on the state directly.
     const deck: Deck = { cards: [c('go', T, 'chain-of-thought'), c('rare', F, 'chain-of-thought'), c('rare2', F, 'chain-of-thought')], default: c('help', T, 'happy-to-help') };
-    const s = battle({ orchestrator: { ...mon('a-orch', 'sagelet'), generalization: 0 }, ...auto(deck) });
+    const s = battle(auto(deck));
+    at(s, 0).generalization = 0;
     s.round = 1;
     const entry = planEntries(s, {}).find((e) => e.actor === 0);
     if (entry === undefined) throw new Error('no orchestrator entry');

@@ -79,6 +79,25 @@ function validateGridMoves(species: SpeciesDef | null, grid: GridLayout, id: Sid
   });
 }
 
+/** The training fields only a subagent uses (Ruling 118): an AI orchestrator's deck goes in its side's `autopilot`. */
+const SUBAGENT_ONLY_FIELDS = ['deck', 'generalization', 'trainedTemperature', 'recordedFoes'] as const;
+
+/** A subagent's generalization and trainedTemperature ranges; an orchestrator's training fields (orchestratorField). */
+function validateTraining(c: CreatureSetup, path: string, role: 'orchestrator' | 'subagent', errors: Errors): void {
+  if (role === 'orchestrator') {
+    for (const field of SUBAGENT_ONLY_FIELDS) {
+      if (c[field] !== undefined) errors.push({ code: 'orchestratorField', path: `${path}.${field}`, message: `an orchestrator has no ${field}; an AI orchestrator's deck goes in its side's autopilot` });
+    }
+    return;
+  }
+  if (c.generalization !== undefined && !inRange(c.generalization, 0, 100)) {
+    errors.push({ code: 'range', path: `${path}.generalization`, message: `generalization must be an integer in 0..100, got ${String(c.generalization)}` });
+  }
+  if (c.trainedTemperature !== undefined && !inRange(c.trainedTemperature, 0, 4)) {
+    errors.push({ code: 'range', path: `${path}.trainedTemperature`, message: `trainedTemperature must be an integer in 0..4, got ${String(c.trainedTemperature)}` });
+  }
+}
+
 function validateCreature(c: CreatureSetup, path: string, role: 'orchestrator' | 'subagent', gridded: boolean, ids: Set<string>, errors: Errors): void {
   if (ids.has(c.id)) errors.push({ code: 'duplicateId', path: `${path}.id`, message: `duplicate creature id ${c.id}` });
   ids.add(c.id);
@@ -86,12 +105,7 @@ function validateCreature(c: CreatureSetup, path: string, role: 'orchestrator' |
   if (species === null) errors.push({ code: 'unknownId', path: `${path}.species`, message: `unknown species ${String(c.species)}` });
   if (!inRange(c.level, 1, 100)) errors.push({ code: 'level', path: `${path}.level`, message: `level must be an integer in 1..100, got ${String(c.level)}` });
   if (!VERSIONS.includes(c.version)) errors.push({ code: 'version', path: `${path}.version`, message: `unknown version ${String(c.version)}` });
-  if (c.generalization !== undefined && !inRange(c.generalization, 0, 100)) {
-    errors.push({ code: 'range', path: `${path}.generalization`, message: `generalization must be an integer in 0..100, got ${String(c.generalization)}` });
-  }
-  if (c.trainedTemperature !== undefined && !inRange(c.trainedTemperature, 0, 4)) {
-    errors.push({ code: 'range', path: `${path}.trainedTemperature`, message: `trainedTemperature must be an integer in 0..4, got ${String(c.trainedTemperature)}` });
-  }
+  validateTraining(c, path, role, errors);
   if (role === 'orchestrator' && gridded) {
     if (c.moves.length > 0) errors.push({ code: 'movesFromGrid', path: `${path}.moves`, message: 'a gridded orchestrator lists no moves; they come from its grid' });
     return;
@@ -139,20 +153,18 @@ function validateSlots(side: SideSetup, grid: GridLayout, id: SideId, errors: Er
 }
 
 /**
- * Each creature's deck against its stored moveset (Ruling 82): a gridded orchestrator's comes from its grid
- * (species signature, then its Skill and graft moves); everyone else's is its listed moves. Universals are known.
- * The side's Autopilot deck is checked against the orchestrator's moveset, with its card cap (Ruling 95).
+ * Each subagent's deck against its listed moves (Ruling 82; universals are known), with the subagent card cap
+ * (Ruling 117). The side's Autopilot deck is checked against the orchestrator's stored moveset — a gridded
+ * orchestrator's comes from its grid (species signature, then its Skill and graft moves) — with its card cap
+ * (Ruling 95). An orchestrator's own deck is an orchestratorField error (validateTraining), not checked here.
  */
 function validateDecks(side: SideSetup, id: SideId, errors: Errors): void {
-  const orch = side.orchestrator;
-  const orchMoves = orchestratorMoves(side);
-  const all: [CreatureSetup, string, readonly string[]][] = [
-    [orch, `${id}.orchestrator`, orchMoves],
-    ...side.active.map((c, i): [CreatureSetup, string, readonly string[]] => [c, `${id}.active[${i}]`, c.moves]),
-    ...side.bench.map((c, i): [CreatureSetup, string, readonly string[]] => [c, `${id}.bench[${i}]`, c.moves]),
+  const subagents: [CreatureSetup, string][] = [
+    ...side.active.map((c, i): [CreatureSetup, string] => [c, `${id}.active[${i}]`]),
+    ...side.bench.map((c, i): [CreatureSetup, string] => [c, `${id}.bench[${i}]`]),
   ];
-  for (const [c, path, known] of all) if (c.deck !== undefined) deckErrors(c.deck, `${path}.deck`, known, errors);
-  if (side.autopilot !== undefined) autopilotDeckErrors(side.autopilot.deck, `${id}.autopilot.deck`, orchMoves, errors);
+  for (const [c, path] of subagents) if (c.deck !== undefined) deckErrors(c.deck, `${path}.deck`, c.moves, errors);
+  if (side.autopilot !== undefined) autopilotDeckErrors(side.autopilot.deck, `${id}.autopilot.deck`, orchestratorMoves(side), errors);
 }
 
 function validateSide(side: SideSetup, id: SideId, ids: Set<string>, errors: Errors): void {
