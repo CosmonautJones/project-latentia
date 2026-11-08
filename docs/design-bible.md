@@ -384,6 +384,58 @@ Each creature is a behaviour gag with a battle mechanic attached, so the joke is
 
 The slice's type logic has a deliberate shape. Sagelet gets an easy first gym, because Reasoning hits Code 2×. Blitzr and Forkling players are steered toward Embeddingo (Search hits Code 2×) or Hallucinat in the forest. Forkling's Open hits Agentoad's Speed half. This mirrors the classic "first gym favours one starter" curve while guaranteeing every starter a route answer. Kip always takes your counter-type.
 
+## The satire pass: Make No Mistakes, Slop and Vibes
+
+The jokes follow the same rule as everything else here: each one is a mechanic. The targets are AI culture's rituals, such as prompt superstitions, vibe coding, slop, sycophancy, hype and benchmark-maxxing. The jokes never target players or real people, and no real lab or product is named (see the legal table).
+
+### Moves (candidates)
+
+The 57-move launch list stays the slice baseline. Each candidate below is built from existing engine effect primitives unless marked **new**. Phase C's simulator decides which ones swap in, for balance, before slice content is locked (milestone 9). The three marked ★ are the recommended slice swap-ins.
+
+| Move | Type · stats | Effect | Gag |
+|---|---|---|---|
+| ★ **Make No Mistakes** | Reasoning · util·1 | The next move can't miss and can't crit (`cannotMiss`; −crit). 25% chance the user becomes Hallucinating anyway | The prompt suffix everyone swears by. Battle text: "…make no mistakes." Then, sometimes: "Mistakes were made." |
+| ★ **Vibe Code** | Code · 95·2·80 | Heavy hit; the user takes +1 Junk token (tech debt) | "Didn't read the diff. Shipped it." The TM version of Vibrat's Accept All |
+| ★ **Slop Cannon** | Open · 20×3·1·80 | Three low hits, each adding 1 Junk token to the target | Volume over quality. Each hit pops a six-fingered thumbnail |
+| **You're Absolutely Right!** | Voice · guard·1·+4 | Halves the incoming hit; the attacker −1 accuracy (`incomingDamageBp`, `stage`) | Concedes everything, wins nothing, de-escalates anyway |
+| **Delve** | Search · 70·2·100 | Ignores evasion (`ignoreEvasion`); 30% chance the user takes 1 Junk token | Pop-text: "It's not just a hit — it's a journey." The Junk token is drawn as an em dash |
+| **Ultrathink** | Reasoning · util·3 | The next move gets +30 power and +2 crit stages; the user −1 Latency | Status bar: "Thought for 47 seconds" |
+| **Ship It** | Speed · 80·1·90·+1 | Fast heavy hit with 15% recoil (**new**: a recoil rider unless Move Fast's passive is reused) | Reviewer comment: "LGTM 🚀". Recoil text: "prod is down" |
+| **Works On My Machine** | Code · def·1 | −50% damage to the user only, this round | Allies are visibly not on its machine |
+| **Just One More GPU** | Memory · buff·2 | +1 Compute and +1 Robustness; costs +1 cell per consecutive use (`costAdd`) | Scaling laws, but for your wallet |
+| **Prompt Engineer** | System · util·1 | The next ally move costs 1 cell less (`costAdd −1`) | Rewrites your sentence, adds "please" and "step by step" |
+| **Benchmaxx** | Reasoning · buff·1 | +2 Compute for 2 rounds, then −2 (**new**: a delayed stage reversal) | Goodhart's law as a buff: "SOTA on the test, mid in prod" |
+| **Seed Round** | Open · buff·2 | +2 Compute now, then −1 per round after round 3 (**new**: burn-rate decay) | "We're pre-revenue but post-hype" |
+
+### Items and key items
+
+- **"No Mistakes" Sticky Note** (held): the holder's first move each battle can't miss. Description: "Laminated. Blessed. Placebo-adjacent."
+- **Slop Filter** (held): blocks the first Junk token each battle.
+- **Em-Dash Remover** (consumable): removes all Junk tokens. "Makes your writing sound 40% more human."
+- **Free Tier Token** (consumable): +2 context cells once. The label reads "Usage limits may apply."
+- **Enterprise Plan** (key item): shown in the shop with no price, only "Contact Sales"; it does nothing.
+- **Vibes Crystal** (key item): opens the Vibes Guild door. Its inspect text is "You can't explain it. You just feel it."
+
+### Lore, trainers and lines
+
+- **The Order of No Mistakes**, at Patchwater's Retraining Center. Robed monks end every sentence with "…make no mistakes." Their trainers' Autopilot decks open with Make No Mistakes and use it every time. Beating one makes it mutter, "I said no mistakes."
+- **The Vibes Guild**, in Throughput City. "We don't read the code. We feel it." Each guild member's subagent runs Vibe Code on cooldown. The guild hall's door is held shut by 4,000 unreviewed changes.
+- **Act 2's slop**: the Spam Marshes gain **Slop Farms**, which are content mills where Content Farmer trainers field Slopling swarms. Each farm's sign updates hourly with a different AI-written headline.
+- **New trainer classes**:
+  - Vibe Coder
+  - Prompt Bro ("this one prompt changed everything")
+  - Thread Guy (pre-battle text: "🧵 1/37")
+  - Benchmark Maxxer
+  - Wrapper Founder
+  - Content Farmer
+  - Hype Bro
+- **Battle lines**:
+  - "It's not a bug — it's an emergent capability."
+  - "You're absolutely right! I apologize for the confusion." (after losing)
+  - "Let me delve into this battle."
+  - "As requested, I have made no mistakes." (it has)
+  - Compile Hall leader: "I accepted all the changes. What could go wrong?"
+
 ## Levels teach one verb per space: Localhost, the Deprecated Forest and the Compile Hall
 
 ### Evidence: one rule per room, trainers as optional tolls, visible creatures
