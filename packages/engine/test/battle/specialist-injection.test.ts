@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { specialistApplies } from '../../src/battle/levers.js';
+import { activeCards, specialistApplies } from '../../src/battle/levers.js';
 import type { BattleState } from '../../src/battle/state.js';
 import type { Card, Condition, Deck } from '../../src/cards/model.js';
 import { dealt, expected, fresh, ofType, run } from './effects/kit.js';
@@ -17,12 +17,21 @@ const traceOf = (events: ReturnType<typeof run>, actor: number) => ofType(events
 describe('Specialist (spec §5; Ruling 81)', () => {
   const rec = (id: string, from?: string): Card => card(id, 'ship-it', from === undefined ? {} : { recordedFrom: from });
 
-  it('specialistApplies: at least half the non-Default cards recorded from the opponent id', () => {
-    expect(specialistApplies({ cards: [], default: rec('d', 'b') }, 'b')).toBe(false);
-    expect(specialistApplies({ cards: [rec('1', 'b')], default: rec('d') }, 'b')).toBe(true);
-    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2')], default: rec('d') }, 'b')).toBe(true);
-    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2'), rec('3', 'c')], default: rec('d', 'b') }, 'b')).toBe(false);
-    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2', 'b')], default: rec('d') }, 'c')).toBe(false);
+  it('specialistApplies: at least half the active non-Default cards recorded from the opponent id', () => {
+    expect(specialistApplies({ cards: [], default: rec('d', 'b') }, 'b', 3)).toBe(false);
+    expect(specialistApplies({ cards: [rec('1', 'b')], default: rec('d') }, 'b', 3)).toBe(true);
+    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2')], default: rec('d') }, 'b', 3)).toBe(true);
+    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2'), rec('3', 'c')], default: rec('d', 'b') }, 'b', 3)).toBe(false);
+    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2', 'b')], default: rec('d') }, 'c', 3)).toBe(false);
+  });
+
+  it('counts only the active cards (Ruling 116): inactive recorded padding unlocks nothing', () => {
+    const general = [rec('g1'), rec('g2'), rec('g3')];
+    const recorded = [rec('r1', 'b'), rec('r2', 'b'), rec('r3', 'b')];
+    expect(specialistApplies({ cards: [...general, ...recorded], default: rec('d') }, 'b', 3)).toBe(false);
+    expect(specialistApplies({ cards: [...recorded, ...general], default: rec('d') }, 'b', 3)).toBe(true);
+    expect(specialistApplies({ cards: [rec('g1'), rec('r1', 'b'), rec('g2')], default: rec('d') }, 'b', 2)).toBe(true); // 1 of the top 2
+    expect(specialistApplies({ cards: [rec('r1', 'b')], default: rec('d') }, 'b', 0)).toBe(false); // no active card
   });
 
   /** a-act1 Blitzr's Ship It on b-act1 Blitzr (neutral, native, 100% roll at T2) with a half-recorded deck. */
@@ -32,6 +41,21 @@ describe('Specialist (spec §5; Ruling 81)', () => {
     return { s, got: dealt(run(s, 1, 'ship-it', 7)) };
   };
   const base = { type: 10000, native: 12500, roll: 10000 };
+
+  it('in battle, uses the top activeCards cards: 3 recorded cards in inactive slots give no modifier, in active slots they do', () => {
+    const general = [rec('g1'), rec('g2'), rec('g3')];
+    const recorded = [rec('r1', 'b'), rec('r2', 'b'), rec('r3', 'b')];
+    const hit = (cards: Card[]): { s: BattleState; got: number[] } => {
+      const s = fresh();
+      at(s, 1).deck = { cards, default: rec('d') };
+      expect(activeCards(s, at(s, 1))).toBe(3); // gridless v1: three active cards
+      return { s, got: dealt(run(s, 1, 'ship-it', 7)) };
+    };
+    const padded = hit([...general, ...recorded]);
+    expect(padded.got).toEqual([expected(padded.s, 1, 7, 65, base)]);
+    const active = hit([...recorded, ...general]);
+    expect(active.got).toEqual([expected(active.s, 1, 7, 65, { ...base, specialist: 11500 })]);
+  });
 
   it('deals the 11500 modifier only against the opponent id the side faces', () => {
     const match = shipIt('b'); // side a faces opponent id 'b'

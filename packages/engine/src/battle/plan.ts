@@ -1,12 +1,11 @@
 import { bandFor, evaluateDeck, type Band, type CardTrace, type EvaluateOptions, type Evaluation } from '../cards/evaluate.js';
 import type { Deck } from '../cards/model.js';
 import { moveDef } from '../content/moves.js';
-import { activeCardCount, VERSION_SLOTS } from '../grid/adjacency.js';
 import { EngineInvariantError, mulBp } from '../math/bp.js';
 import { effectiveStat } from '../math/stats.js';
 import type { RoundStartDraws } from '../rng/draws.js';
 import { hasStatus, statStage } from '../status/apply.js';
-import { activePolicies, deckOf, policyAddedThisRound } from './levers.js';
+import { activeCards, activePolicies, deckOf, policyAddedThisRound } from './levers.js';
 import type { RoundCommand } from './log.js';
 import { aimsAtUser, defaultIntent, holdsLiveSlot, intentTarget, isHeadless, type ActionEntry, type LeverAction } from './order.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
@@ -29,13 +28,6 @@ export const RATE_LIMITED_LATENCY_BP = 5000;
  * subagent's action resolves (an Autopilot orchestrator always obeys, Ruling 93).
  */
 export type Intent = { actor: number; moveId: string; target: number; cardId: string | null; replanned: boolean };
-
-/** Active cards for a subagent (spec §5 grid): its bound slot's adjacent Example Cards, capped by version; versionSlots when gridless. */
-export function activeCards(state: BattleState, c: CreatureState): number {
-  const grid = state.sides[c.side].grid;
-  const pieceId = c.activeSlot === null ? null : (state.sides[c.side].slots[c.activeSlot]?.pieceId ?? null);
-  return grid !== null && pieceId !== null ? activeCardCount(grid, pieceId, c.version) : VERSION_SLOTS[c.version];
-}
 
 /** The Policy Update cards in force for `c`'s side in `round`, for evaluateDeck (Policy Update, B3). */
 function policiesFor(state: BattleState, c: CreatureState, round: number): NonNullable<EvaluateOptions['policies']> {

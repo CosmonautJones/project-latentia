@@ -2,6 +2,7 @@ import type { Card, Deck } from '../cards/model.js';
 import { moveDef } from '../content/moves.js';
 import { pay } from '../context/store.js';
 import type { BattleEvent } from '../events/types.js';
+import { activeCardCount, VERSION_SLOTS } from '../grid/adjacency.js';
 import { EngineInvariantError } from '../math/bp.js';
 import { moveDisabledByStatus } from '../status/apply.js';
 import type { ActionEntry } from './order.js';
@@ -110,14 +111,25 @@ export function cardOf(state: BattleState, c: CreatureState, id: string): Card |
   return [...policies, ...deck.cards, deck.default].find((k) => k.id === id) ?? null;
 }
 
-/** Specialist (spec §5): at least half of the deck's cards, Default excluded, were recorded from `opponentId` (none: false). */
-export function specialistApplies(deck: Deck, opponentId: string): boolean {
-  const n = deck.cards.length;
-  const recorded = deck.cards.filter((k) => k.recordedFrom === opponentId).length;
-  return n > 0 && 2 * recorded >= n;
+/** Active cards for a subagent (spec §5 grid): its bound slot's adjacent Example Cards, capped by version; versionSlots when gridless. */
+export function activeCards(state: BattleState, c: CreatureState): number {
+  const grid = state.sides[c.side].grid;
+  const pieceId = c.activeSlot === null ? null : (state.sides[c.side].slots[c.activeSlot]?.pieceId ?? null);
+  return grid !== null && pieceId !== null ? activeCardCount(grid, pieceId, c.version) : VERSION_SLOTS[c.version];
+}
+
+/**
+ * Specialist (spec §5; Ruling 116): at least half of the deck's ACTIVE non-Default cards — its top `activeN`, the
+ * cards planning evaluates — were recorded from `opponentId`; false with no active card. Inactive cards count for
+ * nothing, so padding a deck below its active slots unlocks no Specialist.
+ */
+export function specialistApplies(deck: Deck, opponentId: string, activeN: number): boolean {
+  const active = deck.cards.slice(0, Math.min(activeN, deck.cards.length));
+  const recorded = active.filter((k) => k.recordedFrom === opponentId).length;
+  return active.length > 0 && 2 * recorded >= active.length;
 }
 
 /** Specialist for one hit: a subagent with a Specialist deck against a creature of the side it faces (Ruling 81). */
 export function specialistAgainst(state: BattleState, user: CreatureState, target: CreatureState): boolean {
-  return !user.isOrchestrator && user.deck !== null && target.side !== user.side && specialistApplies(user.deck, state.sides[user.side].opponentId);
+  return !user.isOrchestrator && user.deck !== null && target.side !== user.side && specialistApplies(user.deck, state.sides[user.side].opponentId, activeCards(state, user));
 }

@@ -3,7 +3,7 @@ import type { BattleSetup } from '../../src/battle/setup.js';
 import { simulate } from '../../src/battle/simulate.js';
 import type { Deck } from '../../src/cards/model.js';
 import { seedFor } from '../golden/builders.js';
-import { activeCards } from '../../src/battle/plan.js';
+import { activeCards } from '../../src/battle/levers.js';
 import { createBattle } from '../../src/battle/setup.js';
 import { computeGeneralization } from '../../src/generalization/score.js';
 import { DEPRECATED_FOREST_SUITE } from '../../src/generalization/suites/deprecated-forest.js';
