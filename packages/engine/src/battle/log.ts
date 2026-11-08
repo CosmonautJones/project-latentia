@@ -1,6 +1,7 @@
 import type { SeedHex } from '../rng/seed.js';
 import type { BattleSetup } from './setup.js';
-import type { Card, Temperature } from './state.js';
+import type { Card } from '../cards/model.js';
+import type { Temperature } from './state.js';
 
 /** The orchestrator's action for a round. Targets and subagents are canonical indices. */
 export type OrchestratorAction =

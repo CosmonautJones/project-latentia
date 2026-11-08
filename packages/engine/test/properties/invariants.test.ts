@@ -9,7 +9,7 @@ import type { BattleState } from '../../src/battle/state.js';
 import type { BattleEvent } from '../../src/events/types.js';
 import { parseSeed } from '../../src/rng/seed.js';
 import { nextU32, seedRng } from '../../src/rng/sfc32.js';
-import { arbLegalSetup, arbScriptedCommands, arbSeed } from '../helpers/arbitraries.js';
+import { arbLegalSetup, arbScriptedCommands, arbSeed, recordedFoeCandidates } from '../helpers/arbitraries.js';
 
 const RUNS = 200;
 
@@ -95,11 +95,11 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
   });
 
   it('arbLegalSetup trains subagents and builds sides with no active subagent (Ruling 77)', () => {
-    const seen = { temps: new Set<number>(), untrained: 0, robustWithFoes: 0, generalizationUnset: 0, noActives: 0, griddedNoActives: 0 };
+    const seen = { temps: new Set<number>(), untrained: 0, robustWithFoes: 0, robustVsRecorded: 0, robustVsUnseen: 0, generalizationUnset: 0, noActives: 0, griddedNoActives: 0 };
     fc.assert(
       fc.property(arbLegalSetup, (setup) => {
-        for (const [own, foe] of [[setup.a, setup.b], [setup.b, setup.a]] as const) {
-          const foeIds = new Set([foe.orchestrator, ...foe.active, ...foe.bench].map((c) => c.id));
+        for (const own of [setup.a, setup.b]) {
+          const candidates = new Set(recordedFoeCandidates(own));
           expect(own.orchestrator.trainedTemperature ?? own.orchestrator.generalization ?? own.orchestrator.recordedFoes).toBeUndefined();
           if (own.active.length === 0) {
             seen.noActives++;
@@ -109,8 +109,12 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
             if (c.trainedTemperature === undefined) seen.untrained++;
             else seen.temps.add(c.trainedTemperature);
             if (c.generalization === undefined) seen.generalizationUnset++;
-            for (const id of c.recordedFoes ?? []) expect(foeIds.has(id)).toBe(true);
-            if ((c.generalization ?? 0) >= 70 && (c.recordedFoes ?? []).length > 0) seen.robustWithFoes++;
+            for (const id of c.recordedFoes ?? []) expect(candidates.has(id)).toBe(true);
+            if ((c.generalization ?? 0) >= 70 && (c.recordedFoes ?? []).length > 0) {
+              seen.robustWithFoes++;
+              if ((c.recordedFoes ?? []).includes(own.opponentId)) seen.robustVsRecorded++;
+              else seen.robustVsUnseen++;
+            }
           }
         }
       }),
@@ -120,6 +124,8 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
     expect(seen.untrained).toBeGreaterThan(0);
     expect(seen.generalizationUnset).toBeGreaterThan(0);
     expect(seen.robustWithFoes).toBeGreaterThan(20);
+    expect(seen.robustVsRecorded).toBeGreaterThan(5); // Robust's +5 off (Ruling 80)
+    expect(seen.robustVsUnseen).toBeGreaterThan(5); // and on
     expect(seen.noActives).toBeGreaterThan(20);
     expect(seen.griddedNoActives).toBeGreaterThan(0);
   });

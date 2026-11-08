@@ -56,8 +56,8 @@ const named = (id: string, d: Draft): CreatureSetup => ({ id, species: d.species
 
 /**
  * A subagent's training (Ruling 77), each part present or absent: trainedTemperature 0-4, generalization
- * 0-100, and `foeMask`, which picks its recordedFoes from the opposing creature ids once both sides exist
- * (bit i = the i-th opposing creature in canonical order; see withRecordedFoes).
+ * 0-100, and `foeMask`, which picks its recordedFoes from opponent ids once the side exists (bit i = the i-th of
+ * recordedFoeCandidates; see withRecordedFoes).
  */
 type Training = { trainedTemperature: Temperature | undefined; generalization: number | undefined; foeMask: number | undefined };
 type SubDraft = Draft & { training: Training };
@@ -65,7 +65,7 @@ type SubDraft = Draft & { training: Training };
 const arbTraining: fc.Arbitrary<Training> = fc.record({
   trainedTemperature: fc.option(fc.constantFrom<Temperature>(0, 1, 2, 3, 4), { nil: undefined }),
   generalization: fc.option(fc.integer({ min: 0, max: 100 }), { nil: undefined }),
-  foeMask: fc.option(fc.integer({ min: 0, max: 0x3f }), { nil: undefined }),
+  foeMask: fc.option(fc.integer({ min: 0, max: 0x7 }), { nil: undefined }),
 });
 
 const arbSubDraft = (minLevel: number, maxLevel: number): fc.Arbitrary<SubDraft> =>
@@ -190,12 +190,15 @@ const arbGridded = (tag: SideId): fc.Arbitrary<DraftSide> =>
 const arbSide = (tag: SideId): fc.Arbitrary<DraftSide> =>
   fc.oneof({ arbitrary: arbGridless(tag), weight: 2 }, { arbitrary: arbGridded(tag), weight: 1 });
 
-/** Every creature id on a side, in canonical order (orchestrator, active, bench). */
-const idsOf = (side: SideSetup): string[] => [side.orchestrator, ...side.active, ...side.bench].map((c) => c.id);
+/**
+ * The opponent ids a subagent's recordedFoes are picked from (Ruling 80: opponent ids, not creature ids): the
+ * opponent its side faces, so Robust's +5 is off, then two other opponents, which leave it on.
+ */
+export const recordedFoeCandidates = (side: SideSetup): string[] => [side.opponentId, 'ghost-1', 'ghost-2'];
 
-/** Gives each masked subagent its recordedFoes: the opposing ids whose bit is set in its mask (possibly none). */
-function withRecordedFoes(own: DraftSide, foe: SideSetup): SideSetup {
-  const foes = idsOf(foe);
+/** Gives each masked subagent its recordedFoes: the candidate opponent ids whose bit is set in its mask (possibly none). */
+function withRecordedFoes(own: DraftSide): SideSetup {
+  const foes = recordedFoeCandidates(own.side);
   const pick = (c: CreatureSetup): CreatureSetup => {
     const mask = own.masks.get(c.id);
     return mask === undefined ? c : { ...c, recordedFoes: foes.filter((_, i) => (mask >>> i) & 1) };
@@ -205,12 +208,12 @@ function withRecordedFoes(own: DraftSide, foe: SideSetup): SideSetup {
 
 /**
  * A legal setup from the slice species (validateSetup passes). Subagents carry trainedTemperature,
- * generalization and recordedFoes (subsets of the opposing creature ids), each sometimes absent, and a side
+ * generalization and recordedFoes (subsets of recordedFoeCandidates), each sometimes absent, and a side
  * may have no active subagent (Ruling 77).
  */
 export const arbLegalSetup: fc.Arbitrary<BattleSetup> = fc
   .record({ a: arbSide('a'), b: arbSide('b'), kind: fc.constantFrom('trainer' as const, 'wild' as const, 'ghost' as const) })
-  .map(({ a, b, kind }) => ({ a: withRecordedFoes(a, b.side), b: withRecordedFoes(b, a.side), kind }));
+  .map(({ a, b, kind }) => ({ a: withRecordedFoes(a), b: withRecordedFoes(b), kind }));
 
 // --- commands ----------------------------------------------------------------------------------
 
@@ -236,7 +239,7 @@ function targetsFor(state: BattleState, user: number, moveId: string): number[] 
  * - `move`: each orchestrator move × legal target (a self/none move once, aimed at the user);
  * - `swap`: each allied active creature out × each living allied bench creature in;
  * - `directive`: each live allied subagent × each of its moves × legal target.
- * Policy Update is not generated: Card is opaque until B1 and no Card value can be built without a cast.
+ * Policy Update is not generated yet: it has no effect until B3, which adds it here (Ruling 72).
  * Injections are added at pick time (scriptedFrom), onto a legal move.
  */
 export function legalActions(state: BattleState, side: SideId): { move: OrchestratorAction[]; swap: OrchestratorAction[]; directive: OrchestratorAction[] } {

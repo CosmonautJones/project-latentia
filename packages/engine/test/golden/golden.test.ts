@@ -162,7 +162,7 @@ describe('golden coverage', () => {
     const commands = GOLDENS.flatMap((g) => g.golden.log.rounds);
     const sides = commands.flatMap((c) => [c.a, c.b]);
     const given = sides.flatMap((sc) => (sc === undefined ? [] : [sc]));
-    // Policy Update is not covered: Card is opaque until B1, so no Card value exists to send.
+    // Policy Update is not covered: it has no effect until B3, which adds it (Ruling 72).
     expect(new Set(given.map((sc) => sc.action.kind))).toEqual(new Set(['move', 'swap', 'directive', 'none']));
     expect(given.some((sc) => sc.action.kind === 'move' && sc.action.injection !== undefined)).toBe(true);
     expect(sides.some((sc) => sc === undefined)).toBe(true);

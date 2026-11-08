@@ -285,8 +285,9 @@ export const SCENARIOS: readonly GoldenScenario[] = [
   ),
 
   // Trained subagents (Ruling 77): a subagent at trained T4 whose first move has a wildT4 list (Hot Take ×2),
-  // a Robust subagent (generalization 80) that has recorded side B's orchestrator but not its bench, and a
-  // side B with no active subagent (its bench is auto-filled at the end of round 1).
+  // a Robust subagent (generalization 80) whose examples were recorded from another opponent ('trainer-c', not
+  // side B's 'trainer-b'), so its +5 applies (Ruling 80), and a side B with no active subagent (its bench is
+  // auto-filled at the end of round 1).
   scenario(
     'trained-subagents',
     setup(
@@ -294,7 +295,7 @@ export const SCENARIOS: readonly GoldenScenario[] = [
         orch: mon('a-sagelet', 'sagelet', 14),
         active: [
           { ...mon('a-parrot', 'stochastiparrot', 12, ['hot-take', 'flattery']), trainedTemperature: 4 },
-          { ...mon('a-embeddingo', 'embeddingo', 12), generalization: 80, recordedFoes: ['b-cobolt'] },
+          { ...mon('a-embeddingo', 'embeddingo', 12), generalization: 80, recordedFoes: ['trainer-c'] },
         ],
       }),
       side('b', { orch: mon('b-cobolt', 'cobolt', 18), bench: [mon('b-nullbeetle', 'nullbeetle', 12), mon('b-heisenmoth', 'heisenmoth', 12)] }),

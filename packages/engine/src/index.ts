@@ -17,7 +17,9 @@ export type { BattleResult, CommandSource } from './battle/simulate.js';
 export { replay } from './battle/replay.js';
 export type { ReplayError } from './battle/replay.js';
 
-export type { BattleState, Card, CreatureState, Deck, FieldState, Outcome, SideId, SideState, SlotState, Temperature, Version } from './battle/state.js';
+export type { BattleState, CreatureState, FieldState, Outcome, SideId, SideState, SlotState, Temperature, Version } from './battle/state.js';
+
+export type { Card, Condition, Deck, FieldKind, Subject, TargetSelector, Threshold } from './cards/model.js';
 
 export { validateGrid } from './grid/validate.js';
 export type { GridError } from './grid/validate.js';

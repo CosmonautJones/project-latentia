@@ -1,3 +1,4 @@
+import type { Deck } from '../cards/model.js';
 import type { TypeId } from '../content/ids.js';
 import type { FieldEffect, GuardKind, NextActionMod } from '../content/primitives.js';
 import type { ContextState } from '../context/store.js';
@@ -10,11 +11,6 @@ import type { StatusHolder } from '../status/apply.js';
 // BattleState is plain JSON-compatible data (spec §4 "State representation"): numbers, strings,
 // booleans, arrays and plain objects only. Absent values are `null`, never `undefined`, so a state
 // survives canonicalJson, JSON round-trips and structuredClone unchanged. Content is referenced by id.
-
-/** Opaque until B1 replaces it with the real type in cards/model.ts. */
-export type Deck = unknown & { readonly __brand: 'Deck' };
-/** Opaque until B1 replaces it with the real type in cards/model.ts. */
-export type Card = unknown & { readonly __brand: 'Card' };
 
 export type Version = 'v1' | 'v2' | 'v3.5' | 'v4';
 export const VERSIONS: readonly Version[] = ['v1', 'v2', 'v3.5', 'v4'];
@@ -108,6 +104,7 @@ export type CreatureState = StatusHolder & {
   deck: Deck | null;
   generalization: number | null;
   trainedTemperature: Temperature | null;
+  /** Opponent ids (SideState.opponentId values) its training examples were recorded from (Robust, Ruling 80). */
   recordedFoes: string[] | null;
   charging: ChargingState | null;
   /** Pending modifiers for the creature's next action (or next hit taken, for `incomingDamageBp`). */
@@ -152,6 +149,7 @@ export type SideState = {
   grid: GridLayout | null;
   temperature: Temperature;
   autopilot: { deck: Deck; temperature: Temperature } | null;
+  /** The id of the opponent this side faces (a trainer, wild model or ghost): Specialist and Robust match against it. */
   opponentId: string;
   /** True once the orchestrator is KO'd (spec §5 Headless Mode). */
   headless: boolean;

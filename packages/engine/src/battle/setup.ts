@@ -1,3 +1,4 @@
+import type { Deck } from '../cards/model.js';
 import type { SpeciesDef } from '../content/species.js';
 import { newContext } from '../context/store.js';
 import { cellsOf, type GridLayout } from '../grid/model.js';
@@ -6,7 +7,7 @@ import { hpAt, statAt } from '../math/stats.js';
 import { parseSeed, type SeedHex } from '../rng/seed.js';
 import { seedRng } from '../rng/sfc32.js';
 import { applyBattleStartPassives } from './effects/passive.js';
-import { DEFAULT_TEMPERATURE, type BattleState, type CreatureState, type Deck, type SideId, type SideState, type SlotState, type Temperature, type Version } from './state.js';
+import { DEFAULT_TEMPERATURE, type BattleState, type CreatureState, type SideId, type SideState, type SlotState, type Temperature, type Version } from './state.js';
 import { isGridMovePiece, MAX_ACTIVE, slotPieces, speciesOf, validateSetup } from './validate-setup.js';
 
 export type CreatureSetup = {
@@ -19,6 +20,7 @@ export type CreatureSetup = {
   deck?: Deck;
   generalization?: number;
   trainedTemperature?: Temperature;
+  /** Opponent ids its training examples were recorded from (matched against its side's `opponentId`, Ruling 80). */
   recordedFoes?: string[];
 };
 
@@ -28,6 +30,7 @@ export type SideSetup = {
   bench: CreatureSetup[];
   grid: GridLayout | null;
   autopilot?: { deck: Deck; temperature: Temperature };
+  /** The id of the opponent this side faces. */
   opponentId: string;
 };
 
