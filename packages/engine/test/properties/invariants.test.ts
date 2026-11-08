@@ -25,6 +25,8 @@ function checkState(state: BattleState): void {
 
 /** What the scripted sources sent, over every battle: orchestrator commands by kind. */
 const sent = { commands: 0, swap: 0, directive: 0, injection: 0, policyUpdate: 0 };
+/** States shown with two or more Policy Update cards of distinct ids in force on one side (Ruling 119 m6). */
+const stacked = { states: 0 };
 
 function tally(cmd: RoundCommand): void {
   for (const sc of [cmd.a, cmd.b]) {
@@ -43,6 +45,7 @@ function watched(source: CommandSource, shown: { rounds: number }): CommandSourc
     kind: 'scripted',
     next: (state) => {
       checkState(state);
+      for (const side of [state.sides.a, state.sides.b]) if (new Set(side.policies.map((p) => p.card.id)).size >= 2) stacked.states++;
       shown.rounds++;
       const cmd = source.next(state);
       tally(cmd);
@@ -181,6 +184,7 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
     expect(sent.swap).toBeGreaterThan(0);
     expect(sent.directive).toBeGreaterThan(0);
     expect(sent.policyUpdate).toBeGreaterThan(0);
+    expect(stacked.states).toBeGreaterThan(0); // policies stack: distinct ids, not one id replacing itself
     expect(sent.injection).toBeGreaterThan(0);
     expect((sent.swap + sent.directive + sent.policyUpdate + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
   }, 20_000);

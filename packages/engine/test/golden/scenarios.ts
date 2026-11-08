@@ -243,8 +243,9 @@ export const SCENARIOS: readonly GoldenScenario[] = [
 
   // Trained subagents (Ruling 77): a subagent at trained T4 whose first move has a wildT4 list (Hot Take ×2),
   // a Robust subagent (generalization 80) whose examples were recorded from another opponent ('trainer-c', not
-  // side B's 'trainer-b'), so its +5 applies (Ruling 80), and a side B with no active subagent (its bench is
-  // auto-filled at the end of round 1).
+  // side B's 'trainer-b'), so it is eligible for the +5 (Ruling 80), and a side B with no active subagent (its
+  // bench is auto-filled at the end of round 1). The golden does not pin the +5: it turns no miss into a hit in
+  // this battle, so the hash is the same with recordedFoes ['trainer-b']. resolve.test.ts pins the +5.
   scenario(
     'trained-subagents',
     setup(

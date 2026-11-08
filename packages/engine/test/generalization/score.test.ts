@@ -207,4 +207,13 @@ describe('computeGeneralization: caller mistakes throw a typed GeneralizationErr
     expect(bad(deck([never.coin('default')]))).toBe('deck'); // a card sharing the Default's id would read as Default
     expect(bad(deck([never.coin('a')]))).toBeNull();
   });
+
+  it('deck: a card naming an unknown move id — its move, its foeLastMove condition or its injection, the Default included (Ruling 119 m7)', () => {
+    const bad = (d: Deck) => codeOf(() => computeGeneralization(d, SUITE, 3));
+    expect(bad(deck([never.coin('a', 'no-such-move')]))).toBe('deck');
+    expect(bad({ cards: [], default: { ...deck([]).default, move: 'no-such-move' } })).toBe('deck');
+    expect(bad(deck([c('a', { category: 'foeLastMove', move: 'no-such-move' }, { subject: 'foe' })]))).toBe('deck');
+    expect(bad(deck([never.coin('a', 'deepfake-call')].map((k) => ({ ...k, injection: { moveId: 'no-such-move', target: 'self' as const } }))))).toBe('deck');
+    expect(bad(deck([never.coin('a', 'hard-fork'), never.foeLastMove('b')]))).toBeNull(); // every id known
+  });
 });

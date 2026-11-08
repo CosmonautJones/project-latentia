@@ -2,7 +2,7 @@ import type { Deck } from '../cards/model.js';
 import type { SpeciesDef } from '../content/species.js';
 import { newContext } from '../context/store.js';
 import { cellsOf, type GridLayout } from '../grid/model.js';
-import type { GridError, ValidationResult } from '../grid/validate.js';
+import type { GridError, ValidationErrorCode, ValidationResult } from '../grid/validate.js';
 import { hpAt, statAt } from '../math/stats.js';
 import { parseSeed, type SeedHex } from '../rng/seed.js';
 import { seedRng } from '../rng/sfc32.js';
@@ -40,7 +40,7 @@ export type SideSetup = {
 export type BattleSetup = { a: SideSetup; b: SideSetup; kind: 'trainer' | 'wild' | 'ghost' };
 
 export type ValidationError = GridError;
-export type { ValidationResult };
+export type { ValidationErrorCode, ValidationResult };
 
 export { MAX_ACTIVE, MAX_BENCH, MAX_MOVES, validateSetup } from './validate-setup.js';
 export { DEFAULT_TEMPERATURE };

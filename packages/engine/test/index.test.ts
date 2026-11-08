@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import * as engine from '../src/index.js';
 
 describe('public surface (spec §4, so far)', () => {
-  it('exports exactly the Phase A values plus getIntents (B2), computeGeneralization and DEPRECATED_FOREST_SUITE (B5)', () => {
+  it('exports exactly the Phase A values plus getIntents (B2), computeGeneralization and DEPRECATED_FOREST_SUITE (B5), and the catalogs and editor constants (Ruling 119 m3)', () => {
     expect(Object.keys(engine).sort()).toEqual(
       [
         'DEPRECATED_FOREST_SUITE',
@@ -22,6 +22,25 @@ describe('public surface (spec §4, so far)', () => {
         'submitRound',
         'validateGrid',
         'validateSetup',
+        // content catalogs (m3)
+        'LAUNCH_MOVE_IDS',
+        'MOVES',
+        'SIGNATURE_MOVE_IDS',
+        'SPECIES',
+        'SPECIES_IDS',
+        'STATUSES',
+        'STATUS_IDS',
+        'TYPES',
+        'TYPE_CHART_BP',
+        'moveDef',
+        'typeMultiplierBp',
+        // editor constants and bands (m3)
+        'BAND_MIN',
+        'CONDITION_CATEGORIES',
+        'MAX_AUTOPILOT_CARDS',
+        'MAX_DECK_CARDS',
+        'TARGET_SELECTORS',
+        'bandFor',
       ].sort(),
     );
     expect(engine.ENGINE_VERSION).toBe('0.2.0');
@@ -52,6 +71,75 @@ describe('public surface (spec §4, so far)', () => {
     const report: engine.GeneralizationReport = engine.computeGeneralization(deck, suite, 3);
     expect(report).toEqual({ c: [0, 1], r: [0, 1], h: [0, 1], g: 20, band: 'brittle' });
     expect(() => engine.computeGeneralization(deck, suite, 9)).toThrow(engine.GeneralizationError);
+  });
+
+  it('exports the content catalogs and editor constants read-only (Ruling 119 m3)', () => {
+    const frozen = [
+      engine.MOVES,
+      engine.MOVES['ship-it'],
+      engine.LAUNCH_MOVE_IDS,
+      engine.SIGNATURE_MOVE_IDS,
+      engine.SPECIES,
+      engine.SPECIES.sagelet,
+      engine.SPECIES_IDS,
+      engine.STATUSES,
+      engine.STATUSES.glazed,
+      engine.STATUS_IDS,
+      engine.TYPES,
+      engine.TYPE_CHART_BP,
+      engine.TYPE_CHART_BP.code,
+      engine.CONDITION_CATEGORIES,
+      engine.TARGET_SELECTORS,
+      engine.BAND_MIN,
+    ];
+    for (const v of frozen) expect(Object.isFrozen(v)).toBe(true);
+    expect(() => (engine.TYPES as unknown as string[]).push('fire')).toThrow(TypeError);
+    expect(engine.moveDef('ship-it')).toBe(engine.MOVES['ship-it']);
+    expect(engine.moveDef('no-such-move')).toBeNull();
+    expect(engine.typeMultiplierBp('code', ['vision'])).toBe(engine.TYPE_CHART_BP.code.vision);
+    expect([engine.MAX_DECK_CARDS, engine.MAX_AUTOPILOT_CARDS]).toEqual([12, 12]);
+    expect(engine.CONDITION_CATEGORIES).toContain('coin');
+    expect(engine.TARGET_SELECTORS).toHaveLength(8);
+    expect(engine.BAND_MIN).toEqual({ robust: 70, stable: 40 });
+    expect([engine.bandFor(70), engine.bandFor(69), engine.bandFor(40), engine.bandFor(39)]).toEqual(['robust', 'stable', 'stable', 'brittle']);
+  });
+
+  it('types: Intent has no replanned (m1), CardTrace is the CardTrace event (m3), ValidationErrorCode is every validator code (m2)', () => {
+    expectTypeOf<engine.Intent>().toEqualTypeOf<{ actor: number; moveId: string; target: number; cardId: string | null }>();
+    expectTypeOf<engine.CardTrace>().toEqualTypeOf<Extract<engine.BattleEvent, { type: 'CardTrace' }>>();
+    expectTypeOf<engine.ValidationError['code']>().toEqualTypeOf<engine.ValidationErrorCode>();
+    expectTypeOf<engine.GridError['code']>().toEqualTypeOf<engine.ValidationErrorCode>();
+    // Exhaustive both ways: a code missing here, or one the union lacks, fails typecheck.
+    const codes: Record<engine.ValidationErrorCode, true> = {
+      shape: true,
+      seed: true,
+      duplicateId: true,
+      unknownId: true,
+      level: true,
+      version: true,
+      range: true,
+      orchestratorField: true,
+      movesFromGrid: true,
+      moveCount: true,
+      moveNotKnown: true,
+      universalListed: true,
+      duplicateMove: true,
+      slotBinding: true,
+      activeCount: true,
+      benchCount: true,
+      deckDefault: true,
+      deckSize: true,
+      cardSubject: true,
+      gridSize: true,
+      overlap: true,
+      bounds: true,
+      systemPromptCount: true,
+      skillCount: true,
+      headroomFloor: true,
+    };
+    expect(Object.keys(codes)).toHaveLength(25);
+    const r = engine.validateSetup({});
+    expect(r.errors.every((e) => e.code in codes)).toBe(true);
   });
 
   it('exports the thrown error classes as values, so callers can use instanceof (Ruling 67)', () => {

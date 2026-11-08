@@ -2,6 +2,7 @@ import { deckShapeErrors } from '../cards/deck-shape.js';
 import { bandFor, evaluateDeck } from '../cards/evaluate.js';
 import type { ShapeError } from '../cards/json.js';
 import type { Card, Deck } from '../cards/model.js';
+import { moveDef } from '../content/moves.js';
 import { assertSafe, idiv } from '../math/bp.js';
 import { ratio, roundHalfUp } from '../math/rational.js';
 import { GeneralizationError } from './errors.js';
@@ -19,15 +20,25 @@ const WEIGHT = { c: 35, h: 45, r: 20 } as const;
 /** The most active cards a creature can have: 8 version slots at v4, a hard cap (bible; grid/adjacency.ts VERSION_SLOTS). */
 export const MAX_ACTIVE_SLOTS = 8;
 
-/** Why the deck is malformed (Ruling 107): its shape errors, a missing Default card, or a card id used twice; null when well-formed. */
+/** The move ids a card names: its move, a foeLastMove condition's move and an injection's move. */
+function namedMoves(card: Card): string[] {
+  return [card.move, ...(card.condition.category === 'foeLastMove' ? [card.condition.move] : []), ...(card.injection === undefined ? [] : [card.injection.moveId])];
+}
+
+/**
+ * Why the deck is malformed (Ruling 107): its shape errors, a missing Default card, a card id used twice, or a move
+ * id no move in the content has (Ruling 119 m7); null when well-formed.
+ */
 function deckProblem(deck: unknown): string | null {
   const errors: ShapeError[] = [];
   deckShapeErrors(deck, 'deck', errors);
   if (errors.length > 0) return errors.map((e) => `${e.path}: ${e.message}`).join('; ');
   const d = deck as Deck;
   if (d.default === undefined || d.default === null) return 'deck.default: a deck needs a Default card';
-  const ids = [...d.cards, d.default].map((c) => c.id);
-  return new Set(ids).size === ids.length ? null : 'deck: every card id, the Default card included, must be unique';
+  const all = [...d.cards, d.default];
+  const ids = all.map((c) => c.id);
+  if (new Set(ids).size !== ids.length) return 'deck: every card id, the Default card included, must be unique';
+  return all.some((c) => namedMoves(c).some((m) => moveDef(m) === null)) ? 'deck: a card names an unknown move id' : null;
 }
 
 /** The deck's active non-Default cards: the first min(activeSlots, cards) (Ruling 103). The Default card is never one. */

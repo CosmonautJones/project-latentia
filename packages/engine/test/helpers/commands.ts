@@ -32,7 +32,7 @@ function targetsFor(state: BattleState, user: number, moveId: string): number[] 
  * - `move`: each orchestrator move × legal target (a self/none move once, aimed at the user);
  * - `swap`: each allied active creature out × each living allied bench creature in;
  * - `directive`: each live allied subagent × each of its moves × legal target;
- * - `policyUpdate` (Ruling 72): a simple card (`policyCards`) for each move an allied active subagent knows.
+ * - `policyUpdate` (Ruling 72): simple cards of distinct ids (`policyCards`) for each move an allied active subagent knows.
  * Injections are added at pick time (scriptedFrom), onto a legal move.
  */
 export function legalActions(state: BattleState, side: SideId): Record<'move' | 'swap' | 'directive' | 'policyUpdate', OrchestratorAction[]> {
@@ -55,13 +55,14 @@ export function legalActions(state: BattleState, side: SideId): Record<'move' | 
 
 /**
  * Policy Update cards over `move` (Ruling 72): a coin flip at the lowest-HP foe, or "at 50% HP or more" at a seeded
- * random foe. One id for all of them, so a new policy replaces an older one in force; allied subagents that do not
- * know the move trace it moveDisabled.
+ * random foe. Each card has its own id (by rule and move), so policies issued in successive rounds stack in force,
+ * newest on top; re-issuing the same card replaces it (Ruling 119 m6). Allied subagents that do not know the move
+ * trace it moveDisabled.
  */
 function policyCards(move: string): Card[] {
   return [
-    { id: 'policy', subject: 'self', condition: { category: 'coin' }, move, target: 'lowestHpFoe' },
-    { id: 'policy', subject: 'self', condition: { category: 'hp', op: 'atLeast', pct: 50 }, move, target: 'randomFoe' },
+    { id: `policy-coin-${move}`, subject: 'self', condition: { category: 'coin' }, move, target: 'lowestHpFoe' },
+    { id: `policy-hp-${move}`, subject: 'self', condition: { category: 'hp', op: 'atLeast', pct: 50 }, move, target: 'randomFoe' },
   ];
 }
 

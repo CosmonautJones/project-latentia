@@ -1,10 +1,12 @@
+import type { ValidationErrorCode } from '../grid/validate.js';
+
 // Shared type-level checks for untrusted JSON (Ruling 75): the leaf helpers battle/setup-shape.ts, battle/replay.ts
 // and cards/deck-shape.ts build their shape errors with. Every error here has code `shape`; messages never print the
 // value. It lives in cards/ so that generalization/ can check decks without importing battle/ (Ruling 107).
 
-/** One problem at a path; the same shape as ValidationError (battle/setup.ts) and GridError. */
+/** One problem at a path; the same shape as ValidationError (battle/setup.ts) and GridError. Every code here is `shape`. */
 export interface ShapeError {
-  readonly code: string;
+  readonly code: ValidationErrorCode;
   readonly path: string;
   readonly message: string;
 }

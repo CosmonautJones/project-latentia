@@ -14,7 +14,7 @@ import { resolveTarget } from './targets.js';
 
 /** Generalization bands (spec §5 "Generalization"): Robust ≥ 70, Stable 40–69, Brittle < 40. */
 export type Band = 'robust' | 'stable' | 'brittle';
-export const BAND_MIN = { robust: 70, stable: 40 } as const;
+export const BAND_MIN = Object.freeze({ robust: 70, stable: 40 } as const);
 /** Obedience (spec §5, draw table D1 lo): a fired card is followed when lo(D1, 100) is below this. */
 export const OBEDIENCE_PCT: Readonly<Record<Band, number>> = { robust: 100, stable: 95, brittle: 85 };
 

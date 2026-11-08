@@ -11,7 +11,7 @@ import type { Projections } from './view.js';
 export type { Intent } from './plan.js';
 
 function intentOf(actor: number, p: Pick<ActionEntry, 'moveId' | 'target' | 'cardId'>): Intent {
-  return { actor, moveId: p.moveId, target: p.target, cardId: p.cardId ?? null, replanned: false };
+  return { actor, moveId: p.moveId, target: p.target, cardId: p.cardId ?? null };
 }
 
 /**
@@ -20,10 +20,7 @@ function intentOf(actor: number, p: Pick<ActionEntry, 'moveId' | 'target' | 'car
  * Autopilot, headless or charging orchestrator is not listed.
  */
 export function intentsPlanned(state: BattleState, entries: readonly ActionEntry[]): BattleEvent {
-  const intents = entries.filter((e) => state.creatures[e.actor]?.isOrchestrator === false || e.autopilot === true).map((e) => {
-    const { actor, moveId, target, cardId } = intentOf(e.actor, e);
-    return { actor, moveId, target, cardId };
-  });
+  const intents = entries.filter((e) => state.creatures[e.actor]?.isOrchestrator === false || e.autopilot === true).map((e) => intentOf(e.actor, e));
   return { round: state.round, type: 'IntentsPlanned', intents };
 }
 
@@ -33,6 +30,9 @@ export function intentsPlanned(state: BattleState, entries: readonly ActionEntry
  * creature in canonical order from a CLONE of the rng and each view is built for round `state.round + 1`, so the
  * intents equal what submitRound plans for `{}` when nothing changes. The state is not modified. Empty once the
  * battle has ended.
+ *
+ * It returns BOTH sides' intents. The game client must hide the foe side's intents from the player unless they are
+ * revealed (Red Team, Saliency Map, Socratic Method); the engine does not filter them.
  */
 export function getIntents(state: BattleState): Intent[] {
   if (state.ended) return [];

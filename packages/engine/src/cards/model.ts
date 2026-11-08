@@ -67,7 +67,7 @@ export type Condition =
 
 export type ConditionCategory = Condition['category'];
 
-export const CONDITION_CATEGORIES: readonly ConditionCategory[] = [
+export const CONDITION_CATEGORIES: readonly ConditionCategory[] = Object.freeze([
   'hp',
   'status',
   'foeType',
@@ -80,12 +80,12 @@ export const CONDITION_CATEGORIES: readonly ConditionCategory[] = [
   'contextFill',
   'telegraphing',
   'coin',
-];
+]);
 
 /** The bible's 8 target selectors (resolveTarget). */
 export type TargetSelector = 'self' | 'orchestrator' | 'lowestHpAlly' | 'orchestratorTarget' | 'lowestHpFoe' | 'foeWeakToMove' | 'highestAtkFoe' | 'randomFoe';
 
-export const TARGET_SELECTORS: readonly TargetSelector[] = [
+export const TARGET_SELECTORS: readonly TargetSelector[] = Object.freeze([
   'self',
   'orchestrator',
   'lowestHpAlly',
@@ -94,7 +94,7 @@ export const TARGET_SELECTORS: readonly TargetSelector[] = [
   'foeWeakToMove',
   'highestAtkFoe',
   'randomFoe',
-];
+]);
 
 /**
  * One card. `move` must be a move the creature knows (checked by deck validation, B2). `allowOverflow` lets the

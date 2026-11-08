@@ -48,10 +48,10 @@ describe('getIntents (Ruling 79/82)', () => {
     const next = round(s).state;
     const r2 = at(next, 1).roundStart?.r2 ?? -1;
     expect(intents).toEqual([
-      { actor: 1, moveId: 'ship-it', target: [6, 7, 8][lo(r2, 3)], cardId: 'rand', replanned: false },
-      { actor: 2, ...defaultIntent(s, 2), cardId: null, replanned: false },
-      { actor: 7, ...defaultIntent(s, 7), cardId: null, replanned: false },
-      { actor: 8, ...defaultIntent(s, 8), cardId: null, replanned: false },
+      { actor: 1, moveId: 'ship-it', target: [6, 7, 8][lo(r2, 3)], cardId: 'rand' },
+      { actor: 2, ...defaultIntent(s, 2), cardId: null },
+      { actor: 7, ...defaultIntent(s, 7), cardId: null },
+      { actor: 8, ...defaultIntent(s, 8), cardId: null },
     ]);
   });
 

@@ -23,11 +23,14 @@ export const RATE_LIMITED_LATENCY_BP = 5000;
 
 /**
  * A subagent's or Autopilot orchestrator's planned action (spec §4 `getIntents`): its move and target (a self/none
- * move aims at the actor), the deck card that gives it (null without a deck, or while charging), and whether
- * resolution had to re-plan it. Intents are planned assuming the creature obeys; obedience is rolled when a
- * subagent's action resolves (an Autopilot orchestrator always obeys, Ruling 93).
+ * move aims at the actor) and the deck card that gives it (null without a deck, or while charging). Intents are
+ * planned assuming the creature obeys; obedience is rolled when a subagent's action resolves (an Autopilot
+ * orchestrator always obeys, Ruling 93).
  */
-export type Intent = { actor: number; moveId: string; target: number; cardId: string | null; replanned: boolean };
+export type Intent = { actor: number; moveId: string; target: number; cardId: string | null };
+
+/** The intent a deck-driven entry resolves with (deckAction), and whether resolution re-planned it (Ruling 92; internal). */
+export type ResolvedIntent = Intent & { replanned: boolean };
 
 /** The Policy Update cards in force for `c`'s side in `round`, for evaluateDeck (Policy Update, B3). */
 function policiesFor(state: BattleState, c: CreatureState, round: number): NonNullable<EvaluateOptions['policies']> {
@@ -196,7 +199,7 @@ export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[
  * planning), its deck is instead evaluated afresh from the top, the new policy included: the trace is that
  * evaluation's alone (the same `replanned` rule applies).
  */
-export function deckAction(state: BattleState, user: CreatureState, entry: ActionEntry, d1: number): { intent: Intent; trace: CardTrace; brittleRepeat: boolean } {
+export function deckAction(state: BattleState, user: CreatureState, entry: ActionEntry, d1: number): { intent: ResolvedIntent; trace: CardTrace; brittleRepeat: boolean } {
   const run = deckRun(state, user, state.round);
   if (run === null || entry.cardId === undefined) {
     throw new EngineInvariantError('deckAction on an entry that is not deck-driven', { round: state.round, actor: user.index, seed: state.seed });

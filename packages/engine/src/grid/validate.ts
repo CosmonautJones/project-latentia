@@ -1,7 +1,43 @@
 import { cellsOf, gridSizeFor, HEADROOM_FLOOR, rotateShape, type GridLayout, type PieceKind, type PlacedPiece, type Rotation } from './model.js';
 
+/**
+ * Every code validateGrid and validateSetup emit (Ruling 119 m2), whatever validator raised it: `shape` (untrusted
+ * JSON of the wrong type), the grid codes, the setup codes and the deck codes. Typing ValidationError.code with it
+ * makes typecheck reject any code a validator emits that is not listed here.
+ */
+export type ValidationErrorCode =
+  // type-level (Ruling 75)
+  | 'shape'
+  // grid
+  | 'gridSize'
+  | 'duplicateId'
+  | 'overlap'
+  | 'bounds'
+  | 'systemPromptCount'
+  | 'skillCount'
+  | 'headroomFloor'
+  // setup
+  | 'seed'
+  | 'unknownId'
+  | 'level'
+  | 'version'
+  | 'range'
+  | 'orchestratorField'
+  | 'movesFromGrid'
+  | 'moveCount'
+  | 'moveNotKnown'
+  | 'universalListed'
+  | 'duplicateMove'
+  | 'slotBinding'
+  | 'activeCount'
+  | 'benchCount'
+  // deck
+  | 'deckDefault'
+  | 'deckSize'
+  | 'cardSubject';
+
 export interface GridError {
-  readonly code: string;
+  readonly code: ValidationErrorCode;
   readonly path: string;
   readonly message: string;
 }
@@ -140,7 +176,7 @@ export function validateGrid(input: unknown, level: number): ValidationResult {
   if (shape.length > 0) return { ok: false, errors: shape };
   const grid = input as GridLayout;
   const errors: GridError[] = [];
-  const add = (code: string, path: string, message: string): void => {
+  const add = (code: ValidationErrorCode, path: string, message: string): void => {
     errors.push({ code, path, message });
   };
 
