@@ -1,6 +1,7 @@
 /** Command name -> handler. Later tasks (C3, C4) register their commands here. */
 export const commands: Record<string, (args: string[]) => Promise<void> | void> = {};
 
+/** Dispatches `argv` (command name first) and returns the exit code. No args prints usage and returns 0. */
 export async function main(argv: string[]): Promise<number> {
   const [name, ...rest] = argv;
   const run = name === undefined ? undefined : commands[name];
@@ -11,5 +12,3 @@ export async function main(argv: string[]): Promise<number> {
   await run(rest);
   return 0;
 }
-
-process.exitCode = await main(process.argv.slice(2));

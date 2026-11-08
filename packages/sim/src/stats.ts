@@ -10,6 +10,7 @@ export function winRate(s: MatchStats): number {
 
 /** The 95% Wilson score interval for `wins` successes in `n` trials (`wins` may be fractional: draws are 0.5). */
 export function wilson95(wins: number, n: number): [number, number] {
+  // No trials: nothing is known, so the interval is the whole [0, 1] (also avoids dividing by zero).
   if (n <= 0) return [0, 1];
   const p = wins / n;
   const z2 = Z95 * Z95;

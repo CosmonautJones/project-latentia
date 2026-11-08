@@ -1,4 +1,4 @@
-import { fnv1a64Hex, simulate, type SeedHex } from '@latentia/engine';
+import { fnv1a64Hex, simulate, type BattleSetup, type SeedHex } from '@latentia/engine';
 import type { Archetype, MatchStats } from './types.js';
 
 const encoder = new TextEncoder();
@@ -16,11 +16,19 @@ export function seedFor(label: string, i: number): SeedHex {
 /**
  * `seeds` battles of `a` (side a) against `b` (side b), both on Autopilot, seeds `seedFor(label, 0..seeds-1)`.
  * Pure in its inputs: the same archetypes, count and label always give the same stats.
+ *
+ * Overwrites `side.opponentId` on copies: A faces `b.id` and B faces `a.id`, because the engine matches it
+ * against `recordedFrom` / `recordedFoes` (Specialist, Robust). The archetypes themselves are not mutated.
  */
 export function runMatch(a: Archetype, b: Archetype, seeds: number, label: string): MatchStats {
   const stats: MatchStats = { winsA: 0, winsB: 0, draws: 0, rounds: [] };
+  const setup: BattleSetup = {
+    a: { ...a.side, opponentId: b.id },
+    b: { ...b.side, opponentId: a.id },
+    kind: 'trainer',
+  };
   for (let i = 0; i < seeds; i++) {
-    const r = simulate({ a: a.side, b: b.side, kind: 'trainer' }, seedFor(label, i), { kind: 'autopilot' });
+    const r = simulate(setup, seedFor(label, i), { kind: 'autopilot' });
     if (r.winner === 'a') stats.winsA++;
     else if (r.winner === 'b') stats.winsB++;
     else stats.draws++;

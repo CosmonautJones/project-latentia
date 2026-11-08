@@ -38,6 +38,8 @@ describe('verdict', () => {
   });
   it('treats the band edges as inside', () => {
     expect(verdict(0.45, [0.45, 0.5], band)).toBe('pass');
+    expect(verdict(0.5, [0.5, 0.55], band)).toBe('pass');
+    expect(pointVerdict(0.45, band)).toBe('pass');
     expect(pointVerdict(0.55, band)).toBe('pass');
     expect(pointVerdict(0.5501, band)).toBe('fail');
   });

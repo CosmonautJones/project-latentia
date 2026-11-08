@@ -1,5 +1,6 @@
+import * as engine from '@latentia/engine';
 import { SPECIES, type CreatureSetup, type SideSetup } from '@latentia/engine';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { runMatch, seedFor } from '../src/runner.js';
 import type { Archetype } from '../src/types.js';
 
@@ -16,12 +17,22 @@ const side = (tag: string, active: string[]): SideSetup => ({
   active: active.map((s, i) => mon(`${tag}-act${i}`, s)),
   bench: [],
   grid: null,
-  opponentId: tag === 'a' ? 'b' : 'a',
+  opponentId: 'stale-placeholder',
 });
 
 const arche = (id: string, tag: string, active: string[]): Archetype => ({ id, side: side(tag, active) });
 
+vi.mock('@latentia/engine', async (orig) => {
+  const real = await orig<typeof import('@latentia/engine')>();
+  return { ...real, simulate: vi.fn(real.simulate) };
+});
+
 describe('seedFor', () => {
+  it('is unique across 10,000 values of i for one label', () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 10_000; i++) seen.add(seedFor('one-label', i));
+    expect(seen.size).toBe(10_000);
+  });
   it('is deterministic and 32 lowercase hex characters', () => {
     expect(seedFor('x', 7)).toBe(seedFor('x', 7));
     expect(seedFor('x', 7)).toMatch(/^[0-9a-f]{32}$/);
@@ -54,5 +65,24 @@ describe('runMatch', () => {
     const m = runMatch(a, { id: 'a2', side: side('b', ['blitzr', 'forkling']) }, 200, 'mirror');
     expect(Math.abs(m.winsA - m.winsB)).toBeLessThan(60);
     expect(runMatch(a, b, 0, 'none')).toEqual({ winsA: 0, winsB: 0, draws: 0, rounds: [] });
+  });
+});
+
+describe('runMatch opponentId (Ruling 127)', () => {
+  it('sets each side opponentId to the other archetype id, on copies, once per match', () => {
+    const a = arche('alpha', 'a', ['blitzr']);
+    const b = arche('beta', 'b', ['forkling']);
+    const spy = vi.mocked(engine.simulate);
+    spy.mockClear();
+    runMatch(a, b, 3, 'opp');
+    expect(spy).toHaveBeenCalledTimes(3);
+    const first = spy.mock.calls[0]?.[0];
+    expect(first?.a.opponentId).toBe('beta');
+    expect(first?.b.opponentId).toBe('alpha');
+    expect(spy.mock.calls.every((c) => c[0] === first)).toBe(true);
+    expect(a.side.opponentId).toBe('stale-placeholder');
+    expect(b.side.opponentId).toBe('stale-placeholder');
+    runMatch(b, a, 1, 'opp');
+    expect(spy.mock.calls[3]?.[0].a.opponentId).toBe('alpha');
   });
 });
