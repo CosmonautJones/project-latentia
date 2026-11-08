@@ -7,6 +7,7 @@ import { hpAt, statAt } from '../math/stats.js';
 import { parseSeed, type SeedHex } from '../rng/seed.js';
 import { seedRng } from '../rng/sfc32.js';
 import { clonePlain } from './clone.js';
+import { knownValidSetup, rememberValidSetup } from './setup-memo.js';
 import { applyBattleStartPassives } from './effects/passive.js';
 import { DEFAULT_TEMPERATURE, type BattleState, type CreatureState, type SideId, type SideState, type SlotState, type Temperature, type Version } from './state.js';
 import { MAX_ACTIVE, orchestratorMoves, slotPieces, speciesOf, validateSetup } from './validate-setup.js';
@@ -159,13 +160,16 @@ function addSide(creatures: CreatureState[], side: SideSetup, id: SideId): SideS
 
 /**
  * Builds the round-0 state, battleStart passives applied (Ruling 57). Throws SetupError with every validation error (and a `seed` error for a
- * seed parseSeed rejects). The state shares no objects with `setup`.
+ * seed parseSeed rejects). The state shares no objects with `setup`. A setup object that passed before and is unchanged
+ * since is not validated again (setup-memo.ts).
  */
 export function createBattle(setup: BattleSetup, seed: SeedHex): BattleState {
-  const errors = [...validateSetup(setup).errors];
+  const known = knownValidSetup(setup);
+  const errors = known ? [] : [...validateSetup(setup).errors];
   const parsed = parseSeed(seed);
   if (!parsed.ok) errors.push({ code: 'seed', path: 'seed', message: `invalid seed (${parsed.error})` });
   if (errors.length > 0 || !parsed.ok) throw new SetupError(errors);
+  if (!known) rememberValidSetup(setup);
 
   const creatures: CreatureState[] = [];
   const a = addSide(creatures, setup.a, 'a');
