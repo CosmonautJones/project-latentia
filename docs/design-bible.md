@@ -556,6 +556,40 @@ A hill-climbing search over 8-card decks hunts dominant strategies before player
 
 A ghost upload stores the seed, ruleset and engine version, and the team, deck and grid JSON. Prompts are never stored. The server, for example a Supabase Edge Function running the same TS engine package, validates the team against the player's legal progression state (card counts, grid capacity, levels) and re-simulates reported results before accepting them. The server also rate-limits uploads, weights sampling so no single ghost dominates, version-tags and retires ghosts after patches, and ties each checkpoint to a team-power budget so "smurf ghosts" can't sit low. Telemetry logs every ghost battle's input log, which is cheap because it is replay-complete.
 
+### Design: saves are local-first, versioned and replay-backed
+
+The slice is a 45–75 minute playthrough on phones, where the OS kills background tabs, so saving is required from the first overworld build, not a full-game feature. The full arc (three acts, eight badges) only raises the stakes.
+
+**What a save holds.** One JSON document, `SaveFile`:
+- `schemaVersion` and `engineVersion`
+- trainer name and id, play time, and settings (text speed, 1×/2×/4× battle speed, audio)
+- `location`: map id, tile and facing
+- `flags`: a set of story-flag ids, for example `intro.done`, `forest.grunt1.beaten` and `badge.code`
+- the party:
+  - the orchestrator, with species, version, level, XP, moves and grid layout
+  - each subagent, with the same fields plus its deck, Generalization and trained temperature
+- storage (the box), the Example Card inventory and items
+- recorded ghost logs, which Specialist needs
+- `suspendedBattle`, which is null outside a fight
+
+Content is referenced by id only, like the engine's battle state.
+
+**Mid-battle saves cost nothing.** `suspendedBattle` is the battle's `BattleLog` (seed, setup and the commands so far). Loading replays it to the exact same moment. If the stored `engineVersion` no longer matches after an update, the fight restarts from its setup with the same seed rather than replaying under new rules.
+
+**When it saves.**
+- Autosave fires on every map transition, after every battle and every round inside one, and when the page is hidden (`visibilitychange`), which is the moment mobile apps get killed.
+- A manual Save in the menu is shown as a checkpoint gag: "Saving weights… do not unplug the GPU."
+- One slot, plus the two previous autosaves kept as rolling backups, so a corrupted write never costs a run.
+
+**Where it lives.**
+- Web/PWA: IndexedDB, with `navigator.storage.persist()` requested. WebKit can clear storage for a site the player hasn't used in a while unless it is installed to the home screen, so the demo nudges an install and offers **Export save** and **Import save** as a file.
+- Capacitor: the app's filesystem.
+- Steam: a file in the user-data folder, synced by Steam Auto-Cloud.
+
+**Versioning.** `schemaVersion` is an integer. Ordered migration functions upgrade older saves one step at a time and never rewrite fields in place. The tests load a fixture save from every past version.
+
+**Cloud sync (optional).** A player who signs in gets the same document in a Supabase `saves` table: `user_id`, `slot`, `schema_version`, `updated_at` and a `jsonb` body, with owner-only row-level security. It is last-write-wins unless both copies changed since the last sync, in which case the player picks one from a side-by-side summary (badges, play time, party). Local saves are never trusted for competitive play: the ghost server already re-checks progression legality, so editing a save only cheats yourself.
+
 ### Design: platforms and monetization in the decided order
 
 **Free web demo (PWA).** It launches *months* before a Next Fest, given the 2.5× finding. It ends with a trainer card, a Wishlist button, and locked "full release" buttons for routes and modes, as GMTK recommends ([GMTK](https://gmtk.substack.com/p/how-to-make-a-great-steam-next-fest)).
@@ -573,14 +607,14 @@ The ordering follows FF12's warning that you can't tell whether a gambit system 
 | 3 | Headless sim harness and archetype decks; tune the grid rule, headroom floor, triangle, temperature and graft/spin-up | Balance targets met within tolerance on slice content |
 | 4 | Phaser 4 + Vite shell: integer scaling, portrait two-band layout, desktop layout, D-pad/A/B plus touch, BitmapFonts | Crisp on 3 real phones and a desktop |
 | 5 | Greybox battle scene and second-screen grid editor (drag with ghost preview, tap to rotate, long-press info) | Five testers complete a packing decision unaided |
-| 6 | Overworld: Tiled loader, grid movement, warps, edges, trainer sight, visible wild behaviours | Walk the lab to the forest with no softlocks |
+| 6 | Overworld: Tiled loader, grid movement, warps, edges, trainer sight, visible wild behaviours; local saves (autosave, backups, migrations, mid-battle resume) | Walk the lab to the forest with no softlocks; kill the app mid-route or mid-battle and resume exactly there |
 | 7 | Greybox maps: lab, Localhost, Deprecated Forest, Patchwater, Compile Hall rooms with puzzle entities | 45–75 minute playthrough; every puzzle room is solvable and resets |
 | 8 | Distillation (graft/spin-up, Clean), XP curve, grid expansion, v2 evolution, Record Example, Dry Run | First distill arrives by 4:00; first expansion at L4 |
 | 9 | Slice content data: 17 species, Kip, 3 forest trainers, 2 grunts, 2 gym trainers, Gary Rebase | All fights 5–8 rounds in sims |
 | 10 | Writing pass and laugh log: cold open, NPC lines, Team Scrape, the Old v1.2 beat | Every kept joke got a laugh from at least 2 of 5 testers |
 | 11 | Art: palette lock, starter lines (v1/v2 full, v3.5 as overlay), 14 species, ~500 tiles, UI 9-slices, VFX | Silhouette test passes; contact-sheet QA |
 | 12 | Audio: Furnace stems, battle vertical layers, SFX set | Layers swap on HP, last-enemy and context state |
-| 13 | Supabase ghosts: upload, re-simulation validation, seed ghosts, trailhead kiosk, post-gym Arena | A tampered result is rejected; empty buckets fall back to seed ghosts |
+| 13 | Supabase ghosts: upload, re-simulation validation, seed ghosts, trailhead kiosk, post-gym Arena; optional cloud save sync | A tampered result is rejected; empty buckets fall back to seed ghosts; a save moves between phone and desktop |
 | 14 | Shareables, funnel telemetry, PWA deploy, Steam page | KPI dashboard live; demo shipped months ahead of a Next Fest |
 
 ### Open questions to settle in playtest or simulation
