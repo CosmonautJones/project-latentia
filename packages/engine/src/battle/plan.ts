@@ -10,7 +10,7 @@ import { hasStatus, statStage } from '../status/apply.js';
 import { activePolicies, deckOf, policyAddedThisRound } from './levers.js';
 import type { RoundCommand } from './log.js';
 import { aimsAtUser, defaultIntent, holdsLiveSlot, intentTarget, isHeadless, type ActionEntry, type LeverAction } from './order.js';
-import type { BattleState, CreatureState } from './state.js';
+import type { BattleState, CreatureState, SideId } from './state.js';
 import { viewFor } from './view.js';
 
 // Plan (spec §5 step 2): one action entry per on-field position, with every subagent's intent from its deck
@@ -117,11 +117,17 @@ function deckAim(state: BattleState, c: CreatureState, e: Evaluation): { moveId:
 }
 
 /**
- * Whether the side's Autopilot deck drives orchestrator `c` this round (Ruling 94): the side has an Autopilot config
- * and sent no SideCommand (a present one wins for the round), and the orchestrator is neither headless nor charging.
+ * Whether the side is an Autopilot side this round (Rulings 94, 101): it has an Autopilot config and sent no
+ * SideCommand (a present one wins for the round), and its orchestrator is not headless. A charging orchestrator
+ * still counts (it releases its charge, but the round plays at the Autopilot temperature).
  */
+export function autopilotSide(state: BattleState, side: SideId, cmd: RoundCommand): boolean {
+  return !isHeadless(state, side) && cmd[side] === undefined && state.sides[side].autopilot !== null;
+}
+
+/** Whether the side's Autopilot deck drives orchestrator `c` this round (Ruling 94): an Autopilot side whose orchestrator is not charging. */
 function autopilotDrives(state: BattleState, c: CreatureState, cmd: RoundCommand): boolean {
-  return c.isOrchestrator && c.charging === null && !isHeadless(state, c.side) && cmd[c.side] === undefined && state.sides[c.side].autopilot !== null;
+  return c.isOrchestrator && c.charging === null && autopilotSide(state, c.side, cmd);
 }
 
 /**

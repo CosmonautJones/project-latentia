@@ -18,7 +18,7 @@ import { assertInvariants } from './invariants.js';
 import { directedEntry, endRoundLevers, resolveCommandLever } from './levers.js';
 import type { RoundCommand } from './log.js';
 import { holdsLiveSlot, isHeadless, sortActions, type ActionEntry } from './order.js';
-import { intentsPlanned, planEntries } from './plan.js';
+import { autopilotSide, intentsPlanned, planEntries } from './plan.js';
 import { resolveAction } from './resolve.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
 
@@ -29,7 +29,8 @@ export const BENCH_RECOVERY_CELLS = 2;
 /**
  * Round start (spec §5 step 1): advance the round, clear the Handoff chains, emit RoundStart, take R1/R2 for every creature in
  * canonical order (alive or not) and keep them on the creature; store each command's temperature on its
- * side, except a headless side's (its command is ignored, Ruling 36).
+ * side, except a headless side's (its command is ignored, Ruling 36); an Autopilot side (no command, Ruling 101)
+ * plays at its configured autopilot.temperature. A side with neither keeps its stored temperature.
  */
 function startRound(state: BattleState, cmd: RoundCommand, events: BattleEvent[]): void {
   state.round += 1;
@@ -38,7 +39,9 @@ function startRound(state: BattleState, cmd: RoundCommand, events: BattleEvent[]
   for (const c of state.creatures) c.roundStart = drawRoundStart(state.rng);
   for (const side of SIDES) {
     const sc = cmd[side];
+    const autopilot = state.sides[side].autopilot;
     if (sc !== undefined && !isHeadless(state, side)) state.sides[side].temperature = sc.temperature;
+    else if (autopilot !== null && autopilotSide(state, side, cmd)) state.sides[side].temperature = autopilot.temperature;
   }
 }
 

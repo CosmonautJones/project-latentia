@@ -130,7 +130,7 @@ describe('Autopilot battles (Rulings 93-96)', () => {
     expect(ofType(r.events, 'CardTrace')).toEqual([]);
   });
 
-  it('a present SideCommand wins for that round (and its temperature stays); Autopilot drives again when it is absent', () => {
+  it('a present SideCommand wins for that round (and its temperature applies to it); Autopilot drives again, at its configured temperature, when it is absent', () => {
     let s = createBattle(bothAuto(), SEED);
     expect([s.sides.a.temperature, s.sides.b.temperature]).toEqual([1, 3]);
     const commanded = round(s, { a: { temperature: 4, action: { kind: 'move', moveId: 'chain-of-thought', target: 7 } } });
@@ -142,7 +142,8 @@ describe('Autopilot battles (Rulings 93-96)', () => {
     expect(s.sides.a.temperature).toBe(4);
     const next = round(s);
     expect(intentsOf(next.events).map((i) => i.actor)).toContain(0);
-    expect(next.state.sides.a.temperature).toBe(4);
+    expect(next.state.sides.a.temperature).toBe(1); // Ruling 101: restored to autopilot.temperature
+    expect(next.state.sides.b.temperature).toBe(3);
   });
 
   it('getIntents previews Autopilot orchestrators (assuming no command) and equals the next IntentsPlanned', () => {
@@ -176,6 +177,25 @@ describe('Autopilot battles (Rulings 93-96)', () => {
     const orch = planEntries(s, {}).find((e) => e.actor === 0);
     expect(orch).toMatchObject({ moveId: 'happy-to-help', target: 7 });
     expect(orch?.cardId).toBeUndefined();
+  });
+});
+
+describe('Autopilot temperature (Ruling 101)', () => {
+  it('a charging Autopilot orchestrator still plays its round at the configured temperature; a headless side keeps its stored one', () => {
+    const s = battle(auto({ cards: [], default: c('help', T, 'happy-to-help') }, 3));
+    s.sides.a.temperature = 4;
+    at(s, 0).charging = { moveId: 'happy-to-help', target: 7, remaining: 1, powerDelta: 0, hitPower: 0 };
+    expect(round(s).state.sides.a.temperature).toBe(3);
+    const headless = battle(auto({ cards: [], default: c('help', T, 'happy-to-help') }, 3));
+    headless.sides.a.temperature = 4;
+    faint(at(headless, 0));
+    expect(round(headless).state.sides.a.temperature).toBe(4);
+  });
+
+  it('a side without an Autopilot config keeps its last temperature when it sends no command', () => {
+    const s = battle();
+    s.sides.a.temperature = 4;
+    expect(round(s).state.sides.a.temperature).toBe(4);
   });
 });
 
