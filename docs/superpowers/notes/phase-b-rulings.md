@@ -1,6 +1,6 @@
 # Phase B rulings (normative addendum to the battle engine spec)
 
-These are the controller rulings recorded while Phase B of the battle engine was built (tasks B1–B6). They continue the numbering of `phase-a-rulings.md` and have the same status: **normative amendments** to `docs/superpowers/specs/2026-11-07-battle-engine-design.md`. Where a ruling and the spec disagree, the ruling wins. A later ruling amends an earlier one where it says so: for example, Ruling 91 amends 74, 96 amends 87, 97 amends 39, and 106 amends 104. Ruling 97 records Travis's own design decision. Each ruling is reproduced verbatim from the build ledger and grouped by the task it governs. "Cost if wrong" is the controller's estimate of the price of a wrong call.
+These are the controller rulings recorded while Phase B of the battle engine was built (tasks B1–B6 and the Checkpoint B review). They continue the numbering of `phase-a-rulings.md` and have the same status: **normative amendments** to `docs/superpowers/specs/2026-11-07-battle-engine-design.md`. Where a ruling and the spec disagree, the ruling wins. A later ruling amends an earlier one where it says so: for example, Ruling 91 amends 74, 96 amends 87, 97 amends 39, and 106 amends 104. Ruling 97 records Travis's own design decision. Each ruling is reproduced verbatim from the build ledger and grouped by the task it governs. "Cost if wrong" is the controller's estimate of the price of a wrong call.
 
 ## Task B1 — card model, conditions and selectors
 
@@ -83,3 +83,37 @@ These are the controller rulings recorded while Phase B of the battle engine was
     m4 (G computed on decks that validateSetup would reject) is parked for sub-project 5 upload validation. m5 and m6 are cosmetic and parked.
 - Ruling 112 (B6 concern 1): the "every move" golden coverage is satisfied by an exact, verified list of the 18 launch moves that no slice species knows. Each of those moves has engine unit tests. Making them reachable is a content decision for milestone 9 and Phase C (learnsets and TMs) — cost if wrong: none to the engine.
 - Ruling 113 (B6 concern 2): Prompt Injected cannot be reached in a legal slice battle, because no slice species knows Deepfake Call. The direct-application scenario test is accepted for the engine. This is flagged to Travis as a slice content gap, since the bible's signature counter-play depends on it, and is carried to Phase C archetypes and content. Concerns 3 (bench headroom on CI) and 4 (a fragile low-level criterion-5 fight) are recorded for the Checkpoint B review.
+
+## Task B6 fix round
+
+- Ruling 114 (amends 108): the subagent's generalization is ratified as a criterion-5 fixture parameter. A tutorial subagent can come pre-trained, and Robust removes obedience noise, which is not what criterion 5 measures. Conditions:
+    - Comment it in fixtures.ts as a tuned value, with its counterfactuals (50 and 65 → 177/200). Comment the player's temperature and the heal condition the same way.
+    - Compute the deck's honest G with computeGeneralization(deck, DEPRECATED_FOREST_SUITE, activeSlots) and pin it in a test.
+    - If the honest G is ≥ 70, use it in place of 80. If it is lower, keep 80 and state the gap in the comment.
+    - Record the fixture's fragility (Sagelet +1 level → 154 broken wins) as a known re-tune point in the test-file header.
+    Cost if wrong: criterion 5 reads "card order decides the fight for a well-trained subagent", not for any subagent.
+- Ruling 115 (B6 minors, same fix round):
+    - m2: clonePlain's doc says it gives the JSON round-trip result, not structuredClone's.
+    - m3: one-line header note on canonical.ts's bounded module caches.
+    - m4: swap lever coverage requires a Swapped event.
+    - m1: covered by Ruling 114.
+    - m5 and m6: accepted; CI bench ran at 0.672 ms deck-driven on GitHub.
+
+## Checkpoint B review
+
+- Ruling 116 (CB Important 1): Specialist counts only the deck's ACTIVE non-Default cards for the ≥ 50% recordedFrom test (consistent with Ruling 103), so inactive padding unlocks nothing. Cost if wrong: Specialist is harder to earn with oversized decks.
+- Ruling 117 (CB Important 2): a subagent deck holds at most 12 non-Default cards, the same rule as Autopilot (Ruling 98); 13 or more → `deckSize`. This bounds trace and event size and the Brittle mostRepresented cost. Travis may change the number. Cost if wrong: one constant.
+- Ruling 118 (CB Important 3): setup validation rejects fields the engine ignores on an orchestrator: `deck`, `generalization`, `trainedTemperature` and `recordedFoes` → code `orchestratorField`. AI orchestrators use `side.autopilot`. The test that pins the old behaviour is updated. Cost if wrong: one validation branch.
+- Ruling 119 (CB minors), fixed now (before the 0.3.0 bump):
+    - m1: remove `replanned` from the public Intent type (it stays internal on the entry; CardTrace shows the fired card).
+    - m2: ValidationError.code becomes a string-literal union of every code.
+    - m3: export the content catalogs (moves, species, types and statuses read-only), the editor constants (condition categories, target selectors, MAX_AUTOPILOT_CARDS, the new MAX_DECK_CARDS), bandFor and BAND_MIN, and a CardTrace type alias.
+    - m4: document on getIntents that it returns both sides' intents, and that the client hides foe intents unless revealed (Red Team, Saliency Map, Socratic Method).
+    - m6: the fuzz and property arbitraries generate stacked distinct Policy Update ids.
+    - m7: computeGeneralization rejects unknown move ids with code `deck`.
+    - m9: fix the trained-subagents golden comment.
+    Carried:
+    - m5 (an unmarked hallucination or Drift substitution after a CardTrace) → sub-project 2 client: the client compares MoveUsed against the fired card.
+    - m8 (bench at archetype fight lengths) → Phase C, re-measured against criterion 7.
+    - m10 (Rulings 114–119 in the docs) → the controller's docs pass.
+    - The triage table's other verdicts are accepted as written.
