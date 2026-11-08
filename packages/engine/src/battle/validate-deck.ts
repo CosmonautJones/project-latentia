@@ -5,12 +5,15 @@ import type { ValidationError } from './setup.js';
 // Deck validation (Review Focus 3, Rulings 75 and 82). The type-level check of untrusted JSON (code `shape`) is
 // cards/deck-shape.ts deckShapeErrors, which setup-shape.ts runs. deckErrors is the value check
 // validateSetup runs on a well-shaped deck: `deckDefault`, `duplicateId`, `unknownId`, `moveNotKnown`,
-// `cardSubject` and `range`; an Autopilot deck is also held to MAX_AUTOPILOT_CARDS (`deckSize`, Ruling 95).
+// `cardSubject` and `range`; a subagent deck is held to MAX_DECK_CARDS and an Autopilot deck to MAX_AUTOPILOT_CARDS
+// (`deckSize`, Rulings 95 and 117).
 
 type Errors = ValidationError[];
 
 /** An Autopilot deck holds at most this many cards, its Default card aside (spec §5 "Cards, decks and traces"). */
 export const MAX_AUTOPILOT_CARDS = 12;
+/** A subagent deck holds at most this many cards, its Default card aside (Ruling 117: the Autopilot rule). */
+export const MAX_DECK_CARDS = 12;
 
 /** Categories that read the actor, not the subject: their cards must say subject 'self' (Ruling 82). */
 export const ACTOR_CATEGORIES: readonly ConditionCategory[] = ['turn', 'cooldown', 'allyHp', 'coin'];
@@ -51,12 +54,19 @@ export function policyCardErrors(card: Card): ValidationError[] {
   return errors;
 }
 
+/** deckSize when the deck holds more than `max` cards besides its Default, at its cards path. */
+function deckSizeErrors(deck: Deck, path: string, max: number, what: string, errors: Errors): void {
+  if (deck.cards.length > max) {
+    errors.push({ code: 'deckSize', path: `${path}.cards`, message: `${what} holds at most ${max} cards besides its Default, got ${deck.cards.length}` });
+  }
+}
+
 /**
  * Value problems with a well-shaped deck at `path`, for a creature whose stored moveset is `known` (its listed or
  * grid moves; universal moves are always known): deckDefault when there is no Default card, duplicateId for a
  * repeated card id (Default included: traces and re-planning name cards by id), then each card's errors.
  */
-export function deckErrors(deck: Deck, path: string, known: readonly string[], errors: Errors): void {
+function deckValueErrors(deck: Deck, path: string, known: readonly string[], errors: Errors): void {
   const knows = (m: string): boolean => known.includes(m) || MOVES[m as keyof typeof MOVES].universal === true;
   const defaultCard = deck.default as Card | null | undefined;
   const all: [Card, string][] = deck.cards.map((c, i) => [c, `${path}.cards[${i}]`]);
@@ -71,12 +81,20 @@ export function deckErrors(deck: Deck, path: string, known: readonly string[], e
 }
 
 /**
+ * Value problems with a well-shaped subagent deck at `path`, for a subagent whose listed moves are `known`
+ * (Ruling 117): deckSize above MAX_DECK_CARDS cards (the Default card aside), then deckDefault, duplicateId and
+ * each card's errors.
+ */
+export function deckErrors(deck: Deck, path: string, known: readonly string[], errors: Errors): void {
+  deckSizeErrors(deck, path, MAX_DECK_CARDS, 'a subagent deck', errors);
+  deckValueErrors(deck, path, known, errors);
+}
+
+/**
  * Value problems with a well-shaped Autopilot deck at `path` for an orchestrator whose stored moveset is `known`
- * (Ruling 95): deckSize above MAX_AUTOPILOT_CARDS cards (the Default card aside), then every deckErrors rule.
+ * (Ruling 95): deckSize above MAX_AUTOPILOT_CARDS cards (the Default card aside), then the same rules as deckErrors.
  */
 export function autopilotDeckErrors(deck: Deck, path: string, known: readonly string[], errors: Errors): void {
-  if (deck.cards.length > MAX_AUTOPILOT_CARDS) {
-    errors.push({ code: 'deckSize', path: `${path}.cards`, message: `an Autopilot deck holds at most ${MAX_AUTOPILOT_CARDS} cards besides its Default, got ${deck.cards.length}` });
-  }
-  deckErrors(deck, path, known, errors);
+  deckSizeErrors(deck, path, MAX_AUTOPILOT_CARDS, 'an Autopilot deck', errors);
+  deckValueErrors(deck, path, known, errors);
 }

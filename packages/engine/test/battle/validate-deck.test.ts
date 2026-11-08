@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createBattle, SetupError, validateSetup, type CreatureSetup } from '../../src/battle/setup.js';
+import { MAX_AUTOPILOT_CARDS, MAX_DECK_CARDS } from '../../src/battle/validate-deck.js';
 import type { Card } from '../../src/cards/model.js';
 import { gridlessSetup, mon, SEED } from './helpers.js';
 
@@ -63,6 +64,21 @@ describe('deck validation', () => {
     for (const round of [0, -1, 1.5]) {
       expect(errors({ cards: [card({ condition: { category: 'turn', op: 'below', round } })], default: DEF })).toEqual([['range', 'a.active[0].deck.cards[0].condition.round']]);
     }
+  });
+
+  it('holds a subagent deck to MAX_DECK_CARDS = 12 non-Default cards: 13 or more is deckSize at the cards path (Ruling 117)', () => {
+    expect(MAX_DECK_CARDS).toBe(12);
+    expect(MAX_DECK_CARDS).toBe(MAX_AUTOPILOT_CARDS);
+    const many = (n: number) => ({ cards: Array.from({ length: n }, (_, i) => card({ id: `c${i}` })), default: DEF });
+    expect(errors(many(12))).toEqual([]);
+    expect(errors(many(13))).toEqual([['deckSize', 'a.active[0].deck.cards']]);
+    expect(errors(many(40))).toEqual([['deckSize', 'a.active[0].deck.cards']]);
+    // a bench deck too, and the other deck rules still run beside it
+    const bench = gridlessSetup({ bench: [{ ...mon('a-b1', 'blitzr'), deck: { ...many(13), default: card({ id: 'c0' }) } }] });
+    expect(validateSetup(bench).errors.map((e) => [e.code, e.path])).toEqual([
+      ['deckSize', 'a.bench[0].deck.cards'],
+      ['duplicateId', 'a.bench[0].deck.default.id'],
+    ]);
   });
 
   it('validates an orchestrator’s deck against its own moveset', () => {
