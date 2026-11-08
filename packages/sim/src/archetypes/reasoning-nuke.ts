@@ -16,10 +16,8 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
     subagent('hallucinat', 'hallucinat', 8, {
       deck: deck(
         card('cite', 'self', ALWAYS, 'confident-citation', 'lowestHpFoe'),
-        card('probe', 'self', cooldown(3), 'socratic-method', 'highestAtkFoe'),
+        card('patch', 'foe', HEALTHY, 'adversarial-patch', 'highestAtkFoe'),
         card('proof', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
-        card('patch', 'foe', WEAK_TO_MOVE, 'adversarial-patch', 'foeWeakToMove'),
-        card('tidy', 'self', FULL, 'compact', 'self'),
       ),
       generalization: 78,
       trainedTemperature: 1,
@@ -27,8 +25,8 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
     subagent('embeddingo', 'embeddingo', 8, {
       deck: deck(
         card('strike', 'self', ALWAYS, 'retrieval-strike', 'lowestHpFoe'),
-        card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
         card('cite', 'foe', hasStatus('hallucinating'), 'citation-needed', 'lowestHpFoe'),
+        card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
       ),
       generalization: 50,
       trainedTemperature: 1,
@@ -40,7 +38,6 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
         card('recall', 'self', ALWAYS, 'long-term-recall', 'highestAtkFoe'),
         card('patch', 'self', ALLY_HURT, 'hotfix', 'lowestHpAlly'),
         card('batch', 'foe', HURT, 'batch-job', 'lowestHpFoe'),
-        card('clean', 'self', DRIFT, 'refactor', 'self'),
       ),
       generalization: 50,
       trainedTemperature: 0,
@@ -79,7 +76,6 @@ const HALLUCINAT_NUKE = archetype('reasoning-nuke-hallucinat', {
         card('merge', 'self', ALWAYS, 'merge-conflict', 'lowestHpFoe'),
         card('hype', 'self', OPENER, 'hype-train', 'self'),
         card('accept', 'foe', HURT, 'accept-all', 'lowestHpFoe'),
-        card('crash', 'self', COIN, 'segfault', 'randomFoe'),
       ),
       generalization: 35,
       trainedTemperature: 3,
@@ -112,7 +108,7 @@ const HALLUCINAT_NUKE = archetype('reasoning-nuke-hallucinat', {
       'GGGG.',
       'AAeBB',
       'AAeBB',
-      'XX...',
+      'XX.e.',
     ],
     { X: { skill: 'proof-by-contradiction' }, G: { graft: 'batch-job' }, A: { slot: 'vibrat' }, B: { slot: 'nullbeetle' } },
   ),

@@ -1,4 +1,5 @@
 import {
+  activeCardCount,
   MAX_DECK_CARDS,
   SPECIES,
   SPECIES_IDS,
@@ -12,6 +13,8 @@ import {
   type Version,
 } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
+import { ALWAYS, HURT, layout } from '../src/archetypes/build.js';
+import { HEADLINES, cardFires } from '../src/archetypes/headlines.js';
 import { ARCHETYPES, mirrorOf, starterGrid } from '../src/archetypes/index.js';
 import { runMatch, seedFor } from '../src/runner.js';
 
@@ -96,6 +99,49 @@ describe('ARCHETYPES', () => {
       expect(new Set(slots), a.id).toEqual(new Set(a.side.active.map((c) => c.id)));
       expect(slots, a.id).toHaveLength(2);
     }
+  });
+
+  it('keeps every active deck within its slot active-card count, and every bench deck within the smaller one (Ruling 132)', () => {
+    for (const a of ARCHETYPES) {
+      const grid = a.side.grid!;
+      const counts = a.side.active.map((c) => {
+        const slot = grid.pieces.find((p) => p.kind === 'subagentSlot' && p.subagentId === c.id);
+        const n = activeCardCount(grid, slot?.id ?? '', c.version);
+        expect(c.deck?.cards.length ?? 0, `${c.id}: ${n} active`).toBeLessThanOrEqual(n);
+        return n;
+      });
+      for (const c of a.side.bench) expect(c.deck?.cards.length ?? 0, `${c.id}: bench`).toBeLessThanOrEqual(Math.min(...counts));
+    }
+  });
+
+  it('fires every headline card at least once across a pass over the field (Ruling 132)', () => {
+    const fired = new Map<string, number>();
+    ARCHETYPES.forEach((a, i) => {
+      for (const b of ARCHETYPES) {
+        if (a === b) continue;
+        const r = simulate({ a: { ...a.side, opponentId: b.id }, b: { ...b.side, opponentId: a.id }, kind: 'trainer' }, seedFor(`headline:${b.id}`, i), { kind: 'autopilot' });
+        for (const [creature, cards] of cardFires(r)) for (const [cardId, n] of cards) fired.set(`${creature}#${cardId}`, (fired.get(`${creature}#${cardId}`) ?? 0) + n);
+      }
+    });
+    expect(Object.keys(HEADLINES).sort()).toEqual(ARCHETYPES.map((a) => a.id).sort());
+    for (const [id, cards] of Object.entries(HEADLINES)) {
+      expect(cards.length, id).toBeGreaterThan(0);
+      for (const { creature, card } of cards) expect(fired.get(`${id}/${creature}#${card}`) ?? 0, `${id}/${creature} ${card}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('is deeply frozen and shares no object between archetypes (C4 cannot leak a mutation)', () => {
+    const owner = new Map<object, string>();
+    const walk = (v: unknown, id: string): void => {
+      if (typeof v !== 'object' || v === null) return;
+      expect(Object.isFrozen(v), id).toBe(true);
+      const prev = owner.get(v);
+      expect(prev === undefined || prev === id, `${id} shares an object with ${String(prev)}`).toBe(true);
+      owner.set(v, id);
+      for (const x of Object.values(v)) walk(x, id);
+    };
+    for (const a of ARCHETYPES) walk(a, a.id);
+    for (const c of [ALWAYS, HURT]) expect(Object.isFrozen(c)).toBe(true);
   });
 
   it('gives every subagent a deck within MAX_DECK_CARDS, a generalization and a trained temperature', () => {
@@ -192,6 +238,22 @@ describe('mirrorOf (Ruling 129)', () => {
     expect(m.side.autopilot).not.toBe(x.side.autopilot);
     expect(x).toEqual(before);
   });
+
+  it('is a deep copy: mutating its decks, grid, Autopilot and bench leaves the original unchanged', () => {
+    for (const x of ARCHETYPES) {
+      const before = structuredClone(x);
+      const m = mirrorOf(x, 'm');
+      const sub = m.side.active[0]!;
+      sub.deck!.cards.push({ ...sub.deck!.default, id: 'extra' });
+      (sub.deck!.default as { move: string }).move = 'compact';
+      (m.side.grid!.pieces as unknown[]).pop();
+      m.side.autopilot!.deck.cards.length = 0;
+      m.side.autopilot!.temperature = 4;
+      m.side.bench.length = 0;
+      m.side.orchestrator.level = 1;
+      expect(x, x.id).toEqual(before);
+    }
+  });
 });
 
 describe('starterGrid (Ruling 124)', () => {
@@ -210,6 +272,17 @@ describe('starterGrid (Ruling 124)', () => {
     expect(grid.pieces.filter((p) => p.kind === 'subagentSlot').map((p) => p.subagentId)).toEqual(['intern']);
     const mirror = { a: starterSide(s, 8, 'a'), b: starterSide(s, 8, 'b'), kind: 'trainer' as const };
     expect(validateSetup(mirror).errors).toEqual([]);
+  });
+
+  it('is deterministic and returns a fresh object on every call', () => {
+    for (const s of STARTERS) {
+      const g1 = starterGrid(s, 8, 'intern');
+      const g2 = starterGrid(s, 8, 'intern');
+      expect(g2).toEqual(g1);
+      expect(g2).not.toBe(g1);
+      expect(g2.pieces).not.toBe(g1.pieces);
+      expect(g2.pieces[0]).not.toBe(g1.pieces[0]);
+    }
   });
 
   it('grants each starter its three non-signature moves as Skills', () => {
@@ -233,5 +306,12 @@ describe('starterGrid (Ruling 124)', () => {
       const skills = a?.side.grid?.pieces.filter((p) => p.kind === 'skill').map((p) => p.moveId);
       expect(new Set(skills), s).toEqual(new Set(SPECIES[s].moves.filter((m) => m !== SPECIES[s].signature)));
     }
+  });
+});
+
+describe('layout', () => {
+  it('builds a legal grid from text and refuses a legend letter drawn as two separate blobs', () => {
+    expect(validateGrid(layout(['PPP..', 'AAe..', 'AAe..', 'KK...', '.....'], { K: { skill: 'chain-of-thought' }, A: { slot: 'x' } }), 8).errors).toEqual([]);
+    expect(() => layout(['PPPK.', 'AAe..', 'AAe..', 'K....', '.....'], { K: { skill: 'chain-of-thought' }, A: { slot: 'x' } })).toThrow(/not connected/);
   });
 });

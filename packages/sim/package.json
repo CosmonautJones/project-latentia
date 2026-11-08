@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "sim": "tsx src/bin.ts"
+    "sim": "tsx src/bin.ts",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@latentia/engine": "workspace:*"

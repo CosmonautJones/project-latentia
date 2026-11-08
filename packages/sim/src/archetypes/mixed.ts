@@ -6,21 +6,21 @@ import { STARTER_SKILLS, type StarterId } from './starter-grids.js';
 // forest catch active, a second catch on the bench — and a Heisenmoth tempo build.
 
 /**
- * A starter's full-team grid (Ruling 130: two Subagent Slots): the standard starter grid's three Skills (Ruling 124,
- * STARTER_SKILLS) and one Tool on K and M, with the intern in slot A and the catch in slot B sharing two Example
- * Cards. 20 cells, headroom 5. Compaction order: Skill L, M, K, then the slots.
+ * A starter's full-team grid (Ruling 130: two Subagent Slots; not starterGrid, which has one): the starter's three
+ * Skills from STARTER_SKILLS, the single definition starterGrid also uses, and one Tool on K and M, with the intern
+ * in slot A and the catch in slot B sharing two Example Cards. 20 cells, headroom 5. Compaction order: Skill L, M,
+ * K, then the slots.
  */
 function teamGrid(species: StarterId, catchId: string) {
   const s = STARTER_SKILLS[species];
   return layout(['PPPLL', 'AAeBB', 'AAeBB', 'KKtMM', '.....'], { L: { skill: s.L }, M: { skill: s.M }, K: { skill: s.K }, A: { slot: 'intern' }, B: { slot: catchId } });
 }
 
+/** The intern's deck: two cards, the active count of its slot on the team grid (Ruling 132). */
 const INTERN = deck(
   card('nibble', 'self', ALWAYS, 'token-nibble', 'lowestHpFoe'),
   card('exit', 'foe', WEAK, 'early-exit', 'lowestHpFoe'),
   card('burst', 'self', OPENER, 'token-burst', 'randomFoe'),
-  card('speed', 'self', cooldown(3), 'low-latency', 'self'),
-  card('tidy', 'self', FULL, 'compact', 'self'),
 );
 
 /** The bundled Tokenibble at the starter's level (Stable, trained warm). */
@@ -115,7 +115,6 @@ const FORKLING_STARTER = archetype('mixed-starter-forkling', {
         card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
         card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
         card('box', 'self', cooldown(3), 'bounding-box', 'self'),
-        card('refactor', 'self', DRIFT, 'refactor', 'self'),
       ),
       generalization: 80,
       trainedTemperature: 3,
@@ -155,7 +154,6 @@ const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
       deck: deck(
         card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
         card('trace', 'foe', HEALTHY, 'stack-trace', 'highestAtkFoe'),
-        card('test', 'self', cooldown(3), 'unit-test', 'self'),
         card('burst', 'foe', WEAK, 'token-burst', 'lowestHpFoe'),
       ),
       generalization: 66,
@@ -188,7 +186,7 @@ const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
       'PPPFF', //
       'AAeBB',
       'AAeBB',
-      'XX.N.',
+      'XX.Ne',
       '...NN',
     ],
     { X: { skill: 'bounding-box' }, F: { skill: 'flash-inference' }, N: { graft: 'token-nibble' }, A: { slot: 'wasp' }, B: { slot: 'deprecatter' } },

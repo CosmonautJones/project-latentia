@@ -11,10 +11,9 @@ const FORKLING_SWARM = archetype('open-swarm-forkling', {
     subagent('slopling', 'slopling', 8, {
       deck: deck(
         card('fingers', 'self', ALWAYS, 'six-fingers', 'lowestHpFoe'),
-        card('dump', 'foe', WEAK, 'weights-dump', 'lowestHpFoe'),
         card('swarm', 'self', OPENER, 'swarm-of-fine-tunes', 'lowestHpFoe'),
+        card('dump', 'foe', WEAK, 'weights-dump', 'lowestHpFoe'),
         card('patch', 'self', COIN, 'adversarial-patch', 'randomFoe'),
-        card('tidy', 'self', FULL, 'compact', 'self'),
       ),
       generalization: 60,
       trainedTemperature: 2,
@@ -46,7 +45,7 @@ const FORKLING_SWARM = archetype('open-swarm-forkling', {
       'PPPWW', //
       'AAeBB',
       'AAeBB',
-      'eFF..',
+      'eFFe.',
       'HH...',
     ],
     { F: { skill: 'leaderboard-flex' }, W: { skill: 'swarm-of-fine-tunes' }, H: { skill: 'community-patch' }, B: { slot: 'fork' }, A: { slot: 'slopling' } },
@@ -72,10 +71,8 @@ const SLOPLING_SWARM = archetype('open-swarm-slopling', {
     subagent('forkling', 'forkling', 8, {
       deck: deck(
         card('fork', 'self', ALWAYS, 'hard-fork', 'lowestHpFoe'),
-        card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),
-        card('flex', 'self', HEALTHY, 'leaderboard-flex', 'highestAtkFoe'),
         card('swarm', 'foe', WEAK, 'swarm-of-fine-tunes', 'lowestHpFoe'),
-        card('tidy', 'self', FULL, 'compact', 'self'),
+        card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),
       ),
       generalization: 70,
       trainedTemperature: 1,
@@ -95,9 +92,8 @@ const SLOPLING_SWARM = archetype('open-swarm-slopling', {
     subagent('embeddingo', 'embeddingo', 8, {
       deck: deck(
         card('strike', 'self', ALWAYS, 'retrieval-strike', 'lowestHpFoe'),
-        card('cure', 'self', hasStatus('glazed'), 'ground-truth', 'self'),
-        card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
         card('cite', 'foe', hasStatus('hallucinating'), 'citation-needed', 'lowestHpFoe'),
+        card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
       ),
       generalization: 55,
       trainedTemperature: 2,
@@ -108,7 +104,7 @@ const SLOPLING_SWARM = archetype('open-swarm-slopling', {
       'PPPDD', //
       'AAeBB',
       'AAeBB',
-      'cWW..',
+      'cWWe.',
       'XX...',
     ],
     { D: { skill: 'weights-dump' }, X: { skill: 'adversarial-patch' }, W: { skill: 'swarm-of-fine-tunes' }, B: { slot: 'parrot' }, A: { slot: 'forkling' } },

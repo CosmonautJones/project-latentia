@@ -1,8 +1,9 @@
-import type { GridLayout } from '@latentia/engine';
+import { gridSizeFor, type GridLayout } from '@latentia/engine';
 import { layout, type LegendEntry } from './build.js';
 
-// The standard starter grids (Ruling 124): the only definition. C3's starter-triangle and graft-vs-spin-up setups
-// build on it; the mixed-starter archetypes reuse its Skills (STARTER_SKILLS) on a two-slot grid (Ruling 130).
+// The standard starter grid (Ruling 124), the only definition, for C3's starter-triangle and graft-vs-spin-up setups;
+// and STARTER_SKILLS, the single definition of each starter's Skills, which the grid and the mixed-starter archetypes'
+// two-slot team grids (mixed.ts, Ruling 130) share.
 
 export type StarterId = 'sagelet' | 'blitzr' | 'forkling';
 
@@ -27,22 +28,14 @@ export const STARTER_SKILLS: Readonly<Record<StarterId, { K: string; M: string; 
   forkling: { K: 'leaderboard-flex', M: 'community-patch', L: 'swarm-of-fine-tunes' },
 };
 
-/** [minimum level, width, height] from L7 up: the engine's grid-size table (spec §5 "Grid model"). */
-const SIZES: readonly (readonly [number, number, number])[] = [
-  [7, 5, 5],
-  [10, 6, 5],
-  [13, 6, 6],
-];
-
 /**
  * The standard grid of a starter at `level` (7 or more), with its Subagent Slot bound to the creature `subagentId`.
- * The loadout is the same at every level; a larger grid only adds empty cells (headroom). Below L7 the grid is 5×4
- * or smaller and cannot hold it: RangeError. Compaction order: Skill L, M, K, then the slot.
+ * The loadout is the same at every level; a larger grid (the engine's gridSizeFor) only adds empty cells (headroom).
+ * Below L7 the grid is 5×4 or smaller and cannot hold it: RangeError. Compaction order: Skill L, M, K, then the slot.
  */
 export function starterGrid(species: StarterId, level: number, subagentId: string): GridLayout {
-  const size = SIZES.filter(([min]) => min <= level).at(-1);
-  if (size === undefined) throw new RangeError(`a starter grid needs level 7 or more, got ${level}`);
-  const [, width, height] = size;
+  const { width, height } = gridSizeFor(level);
+  if (width < 5 || height < 5) throw new RangeError(`a starter grid needs level 7 or more (5×5), got level ${level} (${width}×${height})`);
   const rows = Array.from({ length: height }, (_, y) => (ROWS[y] ?? '').padEnd(width, '.'));
   const s = STARTER_SKILLS[species];
   const legend: Record<string, LegendEntry> = { L: { skill: s.L }, M: { skill: s.M }, K: { skill: s.K }, A: { slot: subagentId } };

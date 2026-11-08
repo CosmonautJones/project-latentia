@@ -41,6 +41,9 @@ describe('public surface (spec §4, so far)', () => {
         'MAX_DECK_CARDS',
         'TARGET_SELECTORS',
         'bandFor',
+        // grid sizes (C2 fix round 1)
+        'GRID_SIZE_BY_LEVEL',
+        'gridSizeFor',
       ].sort(),
     );
     expect(engine.ENGINE_VERSION).toBe('0.3.0');
@@ -91,6 +94,8 @@ describe('public surface (spec §4, so far)', () => {
       engine.CONDITION_CATEGORIES,
       engine.TARGET_SELECTORS,
       engine.BAND_MIN,
+      engine.GRID_SIZE_BY_LEVEL,
+      engine.GRID_SIZE_BY_LEVEL[0],
     ];
     for (const v of frozen) expect(Object.isFrozen(v)).toBe(true);
     expect(() => (engine.TYPES as unknown as string[]).push('fire')).toThrow(TypeError);
@@ -101,6 +106,7 @@ describe('public surface (spec §4, so far)', () => {
     expect(engine.CONDITION_CATEGORIES).toContain('coin');
     expect(engine.TARGET_SELECTORS).toHaveLength(8);
     expect(engine.BAND_MIN).toEqual({ robust: 70, stable: 40 });
+    expect(engine.gridSizeFor(8)).toEqual({ width: 5, height: 5 });
     expect([engine.bandFor(70), engine.bandFor(69), engine.bandFor(40), engine.bandFor(39)]).toEqual(['robust', 'stable', 'stable', 'brittle']);
   });
 

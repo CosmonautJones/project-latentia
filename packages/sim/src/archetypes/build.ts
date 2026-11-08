@@ -23,29 +23,29 @@ import type { Archetype } from '../types.js';
 // --- conditions -------------------------------------------------------------------------------------------------
 
 /** True every round: a card that always fires while its move fits. */
-export const ALWAYS: Condition = { category: 'turn', op: 'atLeast', round: 1 };
+export const ALWAYS: Condition = Object.freeze({ category: 'turn', op: 'atLeast', round: 1 });
 /** Round 1 only. */
-export const OPENER: Condition = { category: 'turn', op: 'below', round: 2 };
+export const OPENER: Condition = Object.freeze({ category: 'turn', op: 'below', round: 2 });
 export const fromRound = (round: number): Condition => ({ category: 'turn', op: 'atLeast', round });
 /** The actor has not used the card's move in the last `rounds` rounds (or ever). */
 export const cooldown = (rounds: 1 | 2 | 3): Condition => ({ category: 'cooldown', rounds });
-export const COIN: Condition = { category: 'coin' };
+export const COIN: Condition = Object.freeze({ category: 'coin' });
 /** Subject below 25% HP. */
-export const WEAK: Condition = { category: 'hp', op: 'below', pct: 25 };
+export const WEAK: Condition = Object.freeze({ category: 'hp', op: 'below', pct: 25 });
 /** Subject below 50% HP. */
-export const HURT: Condition = { category: 'hp', op: 'below', pct: 50 };
+export const HURT: Condition = Object.freeze({ category: 'hp', op: 'below', pct: 50 });
 /** Subject at 75% HP or more. */
-export const HEALTHY: Condition = { category: 'hp', op: 'atLeast', pct: 75 };
+export const HEALTHY: Condition = Object.freeze({ category: 'hp', op: 'atLeast', pct: 75 });
 /** Another living ally of the actor is below 50% HP. */
-export const ALLY_HURT: Condition = { category: 'allyHp', op: 'below', pct: 50 };
+export const ALLY_HURT: Condition = Object.freeze({ category: 'allyHp', op: 'below', pct: 50 });
 /** Subject's context is at least 75% full. */
-export const FULL: Condition = { category: 'contextFill', op: 'atLeast', pct: 75 };
+export const FULL: Condition = Object.freeze({ category: 'contextFill', op: 'atLeast', pct: 75 });
 export const hasStatus = (status: StatusId): Condition => ({ category: 'status', status });
-export const DRIFT: Condition = hasStatus('drift');
+export const DRIFT: Condition = Object.freeze(hasStatus('drift'));
 /** The card's move is super effective against the subject. */
-export const WEAK_TO_MOVE: Condition = { category: 'foeType', is: 'weakToMove' };
+export const WEAK_TO_MOVE: Condition = Object.freeze({ category: 'foeType', is: 'weakToMove' });
 export const isType = (type: TypeId): Condition => ({ category: 'foeType', is: type });
-export const BUFFED: Condition = { category: 'foeBuffed' };
+export const BUFFED: Condition = Object.freeze({ category: 'foeBuffed' });
 export const lastMove = (move: string): Condition => ({ category: 'foeLastMove', move });
 export const inField = (effect: FieldKind): Condition => ({ category: 'field', effect });
 
@@ -121,6 +121,25 @@ function sameUpToRotation(drawn: Offsets, shape: readonly (readonly [number, num
   return false;
 }
 
+/** Whether the cells form one orthogonally connected blob. */
+function connected(cells: readonly (readonly [number, number])[]): boolean {
+  const all = new Set(cells.map(([x, y]) => `${x},${y}`));
+  const first = cells[0];
+  if (first === undefined) return false;
+  const seen = new Set([`${first[0]},${first[1]}`]);
+  const stack: (readonly [number, number])[] = [first];
+  for (let c = stack.pop(); c !== undefined; c = stack.pop()) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const k = `${c[0] + dx},${c[1] + dy}`;
+      if (all.has(k) && !seen.has(k)) {
+        seen.add(k);
+        stack.push([c[0] + dx, c[1] + dy]);
+      }
+    }
+  }
+  return seen.size === all.size;
+}
+
 /** The slice species whose signature `moveId` is: a graft piece takes that species' graft shape. */
 function graftSource(moveId: string) {
   const source = Object.values(SPECIES).find((s) => s.signature === moveId);
@@ -158,6 +177,7 @@ export function layout(rows: readonly string[], legend: Readonly<Record<string, 
   const place = (ch: string, base: Omit<PlacedPiece, 'shape' | 'anchor' | 'rotation'>): PlacedPiece => {
     const cells = cellsByChar.get(ch);
     if (cells === undefined) throw new Error(`legend letter ${ch} is not drawn`);
+    if (!connected(cells)) throw new Error(`layout letter ${ch} is not connected: draw each piece as one orthogonal blob`);
     const anchor: [number, number] = [Math.min(...cells.map((c) => c[0])), Math.min(...cells.map((c) => c[1]))];
     return { ...base, shape: normalized(cells), anchor, rotation: 0 };
   };
@@ -187,13 +207,14 @@ export type ArchetypeSpec = {
 
 /**
  * An archetype from creatures with short local ids: each creature id (and each Subagent Slot's subagentId) becomes
- * `<archetype id>/<local id>`, so creature ids never collide between two archetypes. `opponentId` is a placeholder
+ * `<archetype id>/<local id>`, so creature ids never collide between two archetypes. The result is a deep-frozen copy
+ * that shares no object with the spec or with any other archetype; mirrorOf gives a mutable copy. `opponentId` is a placeholder
  * (`field`): runMatch sets it per match (Ruling 127).
  */
 export function archetype(id: string, spec: ArchetypeSpec): Archetype {
   const named = (c: CreatureSetup): CreatureSetup => ({ ...c, id: `${id}/${c.id}` });
   const pieces = spec.grid.pieces.map((p) => (p.subagentId === undefined ? p : { ...p, subagentId: `${id}/${p.subagentId}` }));
-  return {
+  return deepFreeze({
     id,
     side: {
       orchestrator: named(spec.orchestrator),
@@ -203,7 +224,19 @@ export function archetype(id: string, spec: ArchetypeSpec): Archetype {
       autopilot: { deck: spec.autopilot, temperature: spec.temperature },
       opponentId: 'field',
     },
+  });
+}
+
+/** A deep copy of plain data with every object in it frozen: archetypes share no object and cannot be mutated. */
+function deepFreeze<T>(value: T): T {
+  const copy = structuredClone(value);
+  const freeze = (v: unknown): void => {
+    if (typeof v !== 'object' || v === null) return;
+    for (const x of Object.values(v)) freeze(x);
+    Object.freeze(v);
   };
+  freeze(copy);
+  return copy;
 }
 
 /**

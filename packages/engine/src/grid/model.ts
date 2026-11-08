@@ -22,13 +22,13 @@ export interface GridLayout {
 }
 
 /** [minimum orchestrator level, width, height], ascending. */
-export const GRID_SIZE_BY_LEVEL: readonly (readonly [number, number, number])[] = [
-  [1, 4, 4],
-  [4, 5, 4],
-  [7, 5, 5],
-  [10, 6, 5],
-  [13, 6, 6],
-];
+export const GRID_SIZE_BY_LEVEL: readonly (readonly [number, number, number])[] = Object.freeze([
+  Object.freeze([1, 4, 4] as const),
+  Object.freeze([4, 5, 4] as const),
+  Object.freeze([7, 5, 5] as const),
+  Object.freeze([10, 6, 5] as const),
+  Object.freeze([13, 6, 6] as const),
+]);
 
 export const HEADROOM_FLOOR = 4;
 

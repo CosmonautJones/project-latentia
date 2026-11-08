@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, fromRound, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, fromRound, HEALTHY, HURT, layout, orchestrator, subagent, WEAK } from './build.js';
 
 // Memory stall (spec §9): outlast. Save State snapshots HP against the next KO, Long-Term Recall grows with every
 // hit taken from its target, Episodic Replay repeats an ally's move, healers keep the team up, and Caches keep
@@ -14,7 +14,6 @@ const DEPRECATTER_STALL = archetype('memory-stall-deprecatter', {
         card('recall', 'self', ALWAYS, 'long-term-recall', 'highestAtkFoe'),
         card('patch', 'self', ALLY_HURT, 'hotfix', 'lowestHpAlly'),
         card('batch', 'foe', HURT, 'batch-job', 'lowestHpFoe'),
-        card('clean', 'self', DRIFT, 'refactor', 'self'),
       ),
       generalization: 70,
       trainedTemperature: 0,
@@ -46,7 +45,7 @@ const DEPRECATTER_STALL = archetype('memory-stall-deprecatter', {
       'PPPSS', //
       'AAeBB',
       'AAeBB',
-      'LLc..',
+      'LLce.',
       'EE...',
     ],
     { S: { skill: 'save-state' }, E: { skill: 'episodic-replay' }, L: { skill: 'long-term-recall' }, B: { slot: 'spaghettopus' }, A: { slot: 'cobolt' } },
@@ -72,7 +71,6 @@ const RETRO_STALL = archetype('memory-stall-retro', {
     subagent('parrot', 'stochastiparrot', 8, {
       deck: deck(
         card('repeat', 'self', ALWAYS, 'stochastic-repeat', 'lowestHpFoe'),
-        card('hype', 'self', OPENER, 'hype-train', 'self'),
         card('flatter', 'self', cooldown(3), 'flattery', 'highestAtkFoe'),
         card('hot', 'foe', HURT, 'hot-take', 'lowestHpFoe'),
       ),

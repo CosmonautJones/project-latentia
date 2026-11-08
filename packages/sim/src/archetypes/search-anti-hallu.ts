@@ -29,7 +29,6 @@ const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
         card('scrape', 'self', ALWAYS, 'scrape', 'highestAtkFoe'),
         card('check', 'foe', BUFFED, 'fact-check', 'highestAtkFoe', { recordedFrom: HALLUCINAT_NUKE_ID }),
         card('finish', 'foe', WEAK, 'retrieval-strike', 'lowestHpFoe', { recordedFrom: HALLUCINAT_NUKE_ID }),
-        card('merge', 'foe', HURT, 'merge-conflict', 'lowestHpFoe'),
       ),
       generalization: 64,
       trainedTemperature: 2,
@@ -51,7 +50,7 @@ const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
       'PPPGG', //
       'AAeBB',
       'AAeBB',
-      '.CCt.',
+      'eCCt.',
       'RR...',
     ],
     { G: { skill: 'ground-truth' }, R: { skill: 'retrieval-strike' }, C: { skill: 'citation-needed' }, A: { slot: 'sagelet' }, B: { slot: 'scrapion' } },
@@ -77,11 +76,9 @@ const SCRAPION_GROUND = archetype('search-anti-hallu-scrapion', {
     subagent('embeddingo', 'embeddingo', 8, {
       deck: deck(
         card('strike', 'self', ALWAYS, 'retrieval-strike', 'lowestHpFoe'),
-        card('ground', 'self', hasStatus('hallucinating'), 'ground-truth', 'self'),
-        card('cure', 'self', hasStatus('glazed'), 'ground-truth', 'self'),
         card('cite', 'foe', hasStatus('hallucinating'), 'citation-needed', 'lowestHpFoe'),
+        card('ground', 'self', hasStatus('hallucinating'), 'ground-truth', 'self'),
         card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
-        card('tidy', 'self', FULL, 'compact', 'self'),
       ),
       generalization: 72,
       trainedTemperature: 1,

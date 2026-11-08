@@ -11,10 +11,8 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
     subagent('nullbeetle', 'nullbeetle', 8, {
       deck: deck(
         card('chomp', 'self', ALWAYS, 'null-chomp', 'lowestHpFoe'),
-        card('guard', 'self', HURT, 'unit-test', 'self'),
-        card('loop', 'foe', lastMove('hype-train'), 'infinite-loop', 'highestAtkFoe'),
-        card('crash', 'foe', HEALTHY, 'segfault', 'highestAtkFoe'),
         card('pin', 'foe', BUFFED, 'infinite-loop', 'highestAtkFoe'),
+        card('crash', 'foe', HEALTHY, 'segfault', 'highestAtkFoe'),
       ),
       generalization: 82,
       trainedTemperature: 0,
@@ -47,7 +45,7 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
       'PPPII', //
       'AAeBB',
       'AAeBB',
-      'MMt..',
+      'MMte.',
       'KK...',
     ],
     { I: { skill: 'infinite-loop' }, K: { skill: 'memory-leak' }, M: { skill: 'merge-conflict' }, A: { slot: 'nullbeetle' }, B: { slot: 'vibrat' } },
@@ -73,8 +71,8 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
     subagent('wasp', 'off-by-wasp', 8, {
       deck: deck(
         card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
-        card('trace', 'foe', HEALTHY, 'stack-trace', 'highestAtkFoe'),
         card('test', 'self', cooldown(3), 'unit-test', 'self'),
+        card('trace', 'foe', HEALTHY, 'stack-trace', 'highestAtkFoe'),
         card('burst', 'foe', WEAK, 'token-burst', 'lowestHpFoe'),
       ),
       generalization: 48,
@@ -85,7 +83,6 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
         card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
         card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
         card('box', 'self', cooldown(3), 'bounding-box', 'self'),
-        card('refactor', 'self', DRIFT, 'refactor', 'self'),
       ),
       generalization: 72,
       trainedTemperature: 3,
@@ -136,7 +133,6 @@ const COBOLT_LOCK = archetype('code-lock-cobolt', {
         card('loop', 'foe', BUFFED, 'infinite-loop', 'highestAtkFoe'),
         card('leak', 'self', cooldown(3), 'memory-leak', 'lowestHpFoe'),
         card('merge', 'foe', HURT, 'merge-conflict', 'lowestHpFoe'),
-        card('tidy', 'self', FULL, 'compact', 'self'),
       ),
       generalization: 68,
       trainedTemperature: 1,
