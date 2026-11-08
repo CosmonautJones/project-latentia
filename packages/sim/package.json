@@ -1,0 +1,19 @@
+{
+  "name": "@latentia/sim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "sim": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@latentia/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4.0.0",
+    "vitest": "^3.0.0"
+  }
+}
