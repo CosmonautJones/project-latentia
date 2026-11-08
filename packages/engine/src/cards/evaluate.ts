@@ -32,9 +32,12 @@ export type CardTrace = { firedCardId: string; skipped: CardSkip[] };
 /**
  * The fired card, its move and target (null when nothing on the field is a legal target for it: the caller
  * falls back), the trace, whether a Brittle repeat replaced the Default move, and whether a resumed intent had
- * to be re-planned.
+ * to be re-planned. `fallback` (Rulings 86, 88): a held status forbids the Default move (or the Brittle repeat
+ * move), so nothing fires — the Default card is traced `moveDisabled`, `moveId` is the forbidden move, `target` is
+ * null, and the caller uses the creature's no-deck default intent (its first move a status allows, at that move's
+ * default selector). The trace still names the Default card as `firedCardId`, its slot in the deck.
  */
-export type Evaluation = { cardId: string; moveId: string; target: number | null; trace: CardTrace; brittleRepeat: boolean; replanned: boolean };
+export type Evaluation = { cardId: string; moveId: string; target: number | null; trace: CardTrace; brittleRepeat: boolean; replanned: boolean; fallback: boolean };
 
 /**
  * - `startAfter`: begin below that card (Default when it is the last card).
@@ -126,7 +129,8 @@ function positionOf(deck: Deck, id: string): number {
  * fires is followed only when the actor `obeys`; otherwise it is traced `disobeyed` and the next card below that
  * fires is used, with no second roll. When no card above fires, Default does — unless the actor is Brittle, has
  * cards and disobeyed none of them: then it repeats its most-represented move (`brittleRepeat`), aimed by the first
- * card holding it. Default is never disobeyed; see Deck for why it always fires.
+ * card holding it. Default is never disobeyed and ignores its condition and the free cells (see Deck), but when a
+ * held status forbids its move (or the repeat move) the result is a `fallback` (Rulings 86, 88).
  */
 export function evaluateDeck(deck: Deck, view: BattleView, activeN: number, opts: EvaluateOptions): Evaluation {
   const skipped: CardSkip[] = [];
@@ -151,12 +155,18 @@ export function evaluateDeck(deck: Deck, view: BattleView, activeN: number, opts
         continue;
       }
     }
-    return { cardId: card.id, moveId: card.move, target: v.target, trace: { firedCardId: card.id, skipped }, brittleRepeat: false, replanned };
+    return { cardId: card.id, moveId: card.move, target: v.target, trace: { firedCardId: card.id, skipped }, brittleRepeat: false, replanned, fallback: false };
   }
   const keep = resumeAt === deck.cards.length ? opts.resume?.target : undefined;
   const repeat = opts.band === 'brittle' && !disobeyed ? mostRepresented(deck) : null;
   const moveId = repeat?.move ?? deck.default.move;
+  const trace = { firedCardId: deck.default.id, skipped };
+  const def = moveDef(moveId);
+  if (def === null || moveDisabledByStatus(holderOf(view), def, view.lastMoveId)) {
+    skipped.push({ cardId: deck.default.id, reason: 'moveDisabled' });
+    return { cardId: deck.default.id, moveId, target: null, trace, brittleRepeat: false, replanned, fallback: true };
+  }
   const target = defaultAim(view, repeat ?? deck.default, moveId, keep);
   if (keep !== undefined && target !== keep) replanned = true;
-  return { cardId: deck.default.id, moveId, target, trace: { firedCardId: deck.default.id, skipped }, brittleRepeat: repeat !== null, replanned };
+  return { cardId: deck.default.id, moveId, target, trace, brittleRepeat: repeat !== null, replanned, fallback: false };
 }

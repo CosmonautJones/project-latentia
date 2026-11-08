@@ -1,4 +1,4 @@
-import { bandFor, evaluateDeck, type Band, type CardTrace } from '../cards/evaluate.js';
+import { bandFor, evaluateDeck, type Band, type CardTrace, type Evaluation } from '../cards/evaluate.js';
 import type { Deck } from '../cards/model.js';
 import { moveDef } from '../content/moves.js';
 import type { BattleEvent } from '../events/types.js';
@@ -75,7 +75,17 @@ function subagentEntry(state: BattleState, c: CreatureState, rs: RoundStartDraws
     return moveEntry(c.index, intent.moveId, intent.target);
   }
   const e = evaluateDeck(c.deck, viewFor(state, c.index, rs, round), activeCards(state, c), { band: bandOf(c) });
-  return { ...moveEntry(c.index, e.moveId, e.target ?? intentTarget(state, c, e.moveId)), cardId: e.cardId, skipped: e.trace.skipped };
+  const aim = deckAim(state, c, e);
+  return { ...moveEntry(c.index, aim.moveId, aim.target), cardId: e.cardId, skipped: e.trace.skipped };
+}
+
+/**
+ * The move and target an evaluation gives: a `fallback` (a status forbids the Default or Brittle repeat move,
+ * Rulings 86 and 88) uses the no-deck default intent; a selector with no legal target falls back to intentTarget.
+ */
+function deckAim(state: BattleState, c: CreatureState, e: Evaluation): { moveId: string; target: number } {
+  if (e.fallback) return defaultIntent(state, c.index);
+  return { moveId: e.moveId, target: e.target ?? intentTarget(state, c, e.moveId) };
 }
 
 /**
@@ -168,7 +178,8 @@ export function getIntents(state: BattleState): Intent[] {
  * re-validated against the current view — kept with its plan-time target while its condition holds, its move is
  * usable and that target is still legal, else evaluation continues from the next card down (`replanned`) — then
  * obedience is rolled with lo(`d1`, 100). The trace is the plan-time cards skipped above the intent's card, then
- * this evaluation's. A selector with no legal target falls back to intentTarget.
+ * this evaluation's. A selector with no legal target falls back to intentTarget; a disabled Default uses the
+ * default intent (deckAim).
  */
 export function deckAction(state: BattleState, user: CreatureState, entry: ActionEntry, d1: number): { intent: Intent; trace: CardTrace; brittleRepeat: boolean } {
   const deck: Deck | null = user.deck;
@@ -177,9 +188,11 @@ export function deckAction(state: BattleState, user: CreatureState, entry: Actio
   }
   const view = viewFor(state, user.index, user.roundStart, state.round);
   const e = evaluateDeck(deck, view, activeCards(state, user), { band: bandOf(user), resume: { cardId: entry.cardId, target: entry.target }, d1 });
-  const target = e.target ?? intentTarget(state, user, e.moveId);
+  const aim = deckAim(state, user, e);
+  // A fallback is re-derived now: the intent is re-planned when it no longer matches the plan.
+  const replanned = e.replanned || (e.fallback && (aim.moveId !== entry.moveId || aim.target !== entry.target));
   return {
-    intent: { actor: user.index, moveId: e.moveId, target, cardId: e.cardId, replanned: e.replanned },
+    intent: { actor: user.index, moveId: aim.moveId, target: aim.target, cardId: e.cardId, replanned },
     trace: { firedCardId: e.cardId, skipped: [...(entry.skipped ?? []), ...e.trace.skipped] },
     brittleRepeat: e.brittleRepeat,
   };

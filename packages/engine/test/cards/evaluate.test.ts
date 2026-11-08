@@ -23,6 +23,7 @@ describe('evaluateDeck: top-down over the active cards, then Default', () => {
       trace: { firedCardId: 'b', skipped: [{ cardId: 'a', reason: 'conditionFalse' }] },
       brittleRepeat: false,
       replanned: false,
+      fallback: false,
     });
   });
 
@@ -103,6 +104,45 @@ describe('evaluateDeck: top-down over the active cards, then Default', () => {
   });
 });
 
+describe('a disabled Default or Brittle repeat (Rulings 86, 88)', () => {
+  const glazed = view({ self: vc(1, { statuses: ['glazed'] }) });
+
+  it('a Default whose move a held status forbids does not fire: it is traced moveDisabled and the caller falls back', () => {
+    const d = deck([c('a', F)], { move: 'low-latency', target: 'self' });
+    expect(evaluateDeck(d, glazed, 3, STABLE)).toEqual({
+      cardId: 'def',
+      moveId: 'low-latency',
+      target: null,
+      trace: {
+        firedCardId: 'def',
+        skipped: [
+          { cardId: 'a', reason: 'conditionFalse' },
+          { cardId: 'def', reason: 'moveDisabled' },
+        ],
+      },
+      brittleRepeat: false,
+      replanned: false,
+      fallback: true,
+    });
+    // Overfit: only the last chosen move is allowed
+    const overfit = view({ self: vc(1, { statuses: ['overfit'] }), lastMoveId: 'ship-it' });
+    expect(evaluateDeck(deck([], { move: 'token-burst', target: 'lowestHpFoe' }), overfit, 3, STABLE)).toMatchObject({ fallback: true, target: null });
+    expect(evaluateDeck(deck([], { move: 'ship-it', target: 'lowestHpFoe' }), overfit, 3, STABLE)).toMatchObject({ fallback: false, target: 6 });
+  });
+
+  it('a Brittle repeat of a move a held status forbids falls back the same way, with no BrittleRepeat', () => {
+    const d = deck([c('a', F, { move: 'low-latency', target: 'self' }), c('b', F, { move: 'low-latency', target: 'self' }), c('e', F, { move: 'ship-it' })], { move: 'ship-it', target: 'lowestHpFoe' });
+    expect(evaluateDeck(d, glazed, 3, { band: 'brittle' })).toMatchObject({
+      cardId: 'def',
+      target: null,
+      brittleRepeat: false,
+      fallback: true,
+      trace: { firedCardId: 'def', skipped: [{ cardId: 'a' }, { cardId: 'b' }, { cardId: 'e' }, { cardId: 'def', reason: 'moveDisabled' }] },
+    });
+    expect(evaluateDeck(d, view(), 3, { band: 'brittle' })).toMatchObject({ moveId: 'low-latency', brittleRepeat: true, fallback: false });
+  });
+});
+
 describe('obedience (D1 lo)', () => {
   it('bandFor: Robust ≥ 70, Stable 40–69, Brittle < 40', () => {
     expect([100, 70, 69, 40, 39, 0].map(bandFor)).toEqual(['robust', 'robust', 'stable', 'stable', 'brittle', 'brittle']);
@@ -159,6 +199,7 @@ describe('Brittle repeat', () => {
       },
       brittleRepeat: true,
       replanned: false,
+      fallback: false,
     });
     // inactive cards count towards the most-represented move
     expect(evaluateDeck(d, v, 1, { band: 'brittle' })).toMatchObject({ moveId: 'token-burst', brittleRepeat: true });

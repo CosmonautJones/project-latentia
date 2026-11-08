@@ -226,6 +226,32 @@ describe('resolution: re-plan, obedience and Brittle repeat', () => {
     ]);
   });
 
+  it('a Default (or Brittle repeat) move a status forbids falls back to the no-deck default intent, the Default traced moveDisabled (Rulings 86, 88)', () => {
+    const buff = c('def', T, 'low-latency', 'self');
+    const cases: [Deck, number][] = [
+      [{ cards: [c('a', F, 'ship-it')], default: buff }, 90],
+      [{ cards: [c('a', F, 'low-latency', 'self'), c('b', F, 'low-latency', 'self')], default: c('def', T, 'ship-it') }, 10],
+    ];
+    for (const [deck, g] of cases) {
+      const s = decked(deck, g);
+      s.round = 1;
+      at(s, 1).statuses.push({ id: 'glazed', remaining: 3, source: 7 });
+      const fallback = defaultIntent(s, 1);
+      expect(fallback.moveId).toBe('ship-it');
+      const entry = planEntries(s, {}).find((e) => e.actor === 1);
+      if (entry === undefined) throw new Error('no entry');
+      expect(entry).toMatchObject({ cardId: 'def', moveId: fallback.moveId, target: fallback.target });
+      expect(getIntents(s).find((i) => i.actor === 1)).toMatchObject({ cardId: 'def', moveId: 'ship-it' });
+      const events: BattleEvent[] = [];
+      resolveEntry(s, entry, events);
+      const trace = ofType(events, 'CardTrace')[0];
+      expect(trace?.firedCardId).toBe('def');
+      expect(trace?.skipped.at(-1)).toEqual({ cardId: 'def', reason: 'moveDisabled' });
+      expect(ofType(events, 'BrittleRepeat')).toEqual([]);
+      expect(ofType(events, 'MoveUsed')[0]).toMatchObject({ actor: 1, moveId: 'ship-it', target: fallback.target });
+    }
+  });
+
   it('a skipped action (KO’d before its turn) emits no CardTrace', () => {
     const { s, entry } = planned(TWO, 90);
     faint(at(s, 1));

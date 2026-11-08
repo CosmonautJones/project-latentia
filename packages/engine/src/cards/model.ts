@@ -114,8 +114,9 @@ export type Card = {
 
 /**
  * Active cards in priority order, then the non-removable Default card. Default fires whenever no card above it
- * does: its condition is not read, and it fires with too few free cells (overflow becomes Drift) or a move a
- * status forbids — a subagent never idles (bible "Training is example cards").
+ * does: its condition is not read, and it fires with too few free cells (overflow becomes Drift) — a subagent
+ * never idles (bible "Training is example cards"). When a held status forbids its move, it does not fire and the
+ * creature uses its no-deck default intent instead (Ruling 86; cards/evaluate.ts `fallback`).
  */
 export type Deck = { cards: Card[]; default: Card };
 

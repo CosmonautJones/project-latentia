@@ -2,6 +2,7 @@ import { CONDITION_CATEGORIES, FIELD_KINDS, SUBJECTS, TARGET_SELECTORS, type Car
 import { STATUS_IDS, TYPES } from '../content/ids.js';
 import { MOVES } from '../content/moves.js';
 import type { ValidationError } from './setup.js';
+import { field, isRecord, isStr, shape } from './shape.js';
 
 // Deck validation (Review Focus 3, Rulings 75 and 82). deckShapeErrors is the type-level check setup-shape.ts
 // runs on untrusted JSON (code `shape`; a missing Default is not a shape error). deckErrors is the value check
@@ -9,10 +10,7 @@ import type { ValidationError } from './setup.js';
 // `cardSubject` and `range`.
 
 type Errors = ValidationError[];
-type Rec = Record<string, unknown>;
 
-const isRecord = (v: unknown): v is Rec => typeof v === 'object' && v !== null && !Array.isArray(v);
-const isStr = (v: unknown): v is string => typeof v === 'string';
 const oneOf =
   (values: readonly unknown[]) =>
   (v: unknown): boolean =>
@@ -22,14 +20,6 @@ const OPS = ['below', 'atLeast'] as const;
 const PCTS = [25, 50, 75] as const;
 /** Categories that read the actor, not the subject: their cards must say subject 'self' (Ruling 82). */
 export const ACTOR_CATEGORIES: readonly ConditionCategory[] = ['turn', 'cooldown', 'allyHp', 'coin'];
-
-function shape(errors: Errors, path: string, message: string): void {
-  errors.push({ code: 'shape', path, message });
-}
-
-function field(r: Rec, key: string, path: string, ok: (v: unknown) => boolean, what: string, errors: Errors): void {
-  if (!ok(r[key])) shape(errors, `${path}.${key}`, `${key} must be ${what}`);
-}
 
 /** The fields each condition category needs (spec §5 card grammar). */
 function conditionShape(c: unknown, path: string, errors: Errors): void {
