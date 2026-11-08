@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleView, ViewCreature } from '../../src/cards/model.js';
-import { isNoOp, isWasteful, wasteReason } from '../../src/generalization/wasteful.js';
+import type { MoveDef } from '../../src/content/primitives.js';
+import { isNoOp, isNoOpMove, isWasteful, wasteReason } from '../../src/generalization/wasteful.js';
 import type { WastefulRule } from '../../src/generalization/model.js';
 import { view } from '../cards/helpers.js';
 
@@ -134,6 +135,34 @@ describe('compactWhenEmpty', () => {
   it('another creature’s tokens do not count, and a move that adds Junk to a foe always does something', () => {
     expect(isWasteful(COMPACT, 'compact', 1, withCreature(2, { contextUsed: 4 }))).toBe(true);
     expect(isWasteful(COMPACT, 'filibuster', 6, view())).toBe(false);
+  });
+});
+
+describe('B5 review minors (Ruling 111)', () => {
+  /** A made-up self move with these effects (no slice move isolates them). */
+  const move = (effects: MoveDef['effects'], power: number | null = null): MoveDef => ({ id: 'probe', name: 'Probe', type: 'system', target: 'self', power, cost: 0, accuracy: null, priority: 0, effects });
+
+  it('m1: a `tokens clear` effect is a no-op only with no tokens held and no Drift (clearAll also removes Drift)', () => {
+    const clearOnly = move([{ kind: 'tokens', who: 'self', op: 'clear' }]);
+    expect(isNoOpMove(clearOnly, 1, view())).toBe(true);
+    expect(isNoOpMove(clearOnly, 1, withCreature(1, { contextUsed: 1 }))).toBe(false);
+    expect(isNoOpMove(clearOnly, 1, withCreature(1, { statuses: ['drift'] }))).toBe(false);
+  });
+
+  it("m2: a token op is never provably idle while the actor's view has a pending cost modifier", () => {
+    const pending = (cells: number): BattleView => ({ ...view(), pendingCost: [{ kind: 'costAdd', cells }] });
+    for (const op of [{ kind: 'tokens', who: 'self', op: 'clear' }, { kind: 'tokens', who: 'self', op: 'compact', oldest: 6 }, { kind: 'tokens', who: 'self', op: 'freeOldest', count: 2 }] as const) {
+      expect(isNoOpMove(move([op]), 1, view())).toBe(true);
+      expect(isNoOpMove(move([op]), 1, pending(2))).toBe(false);
+    }
+    expect(isWasteful(COMPACT, 'compact', 1, pending(1))).toBe(false); // Compact pays the pending cell, then has a token to pair
+    expect(isWasteful(HEAL, 'community-patch', 2, pending(1))).toBe(true); // not a token op: still a wasted heal
+  });
+
+  it('m3: a move with power is never a no-op, even when every effect it lists is', () => {
+    const idle = [{ kind: 'heal', who: 'self', pct: 10 }] as const;
+    expect(isNoOpMove(move([...idle]), 1, view())).toBe(true);
+    expect(isNoOpMove(move([...idle], 40), 1, view())).toBe(false);
   });
 });
 

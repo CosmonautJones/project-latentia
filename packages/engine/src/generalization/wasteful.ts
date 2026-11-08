@@ -64,9 +64,13 @@ function noOpOn(view: BattleView, e: NonPassiveEffect, c: ViewCreature): boolean
     case 'cure':
       return !e.statuses.some((s) => c.statuses.includes(s));
     case 'tokens':
+      // A pending costSet / costAdd makes the move pay cells first, which a token op may then remove (Ruling 111 m2).
+      if (view.pendingCost.length > 0) return false;
       // Compact pairs the oldest tokens into summaries (context/compaction.ts): with fewer than two it pairs nothing
       if (e.op === 'compact') return c.contextUsed < 2;
-      if (e.op === 'clear' || e.op === 'freeOldest') return c.contextUsed === 0;
+      // /clear's clearAll also removes Drift (context/store.ts; Ruling 111 m1)
+      if (e.op === 'clear') return c.contextUsed === 0 && !c.statuses.includes('drift');
+      if (e.op === 'freeOldest') return c.contextUsed === 0;
       return false;
     case 'nextActionModifier':
       // a skipped orchestrator command is a no-op for a subagent (content/primitives.ts NextActionMod `skip`)
@@ -78,15 +82,18 @@ function noOpOn(view: BattleView, e: NonPassiveEffect, c: ViewCreature): boolean
   }
 }
 
-/** Whether the whole action achieves nothing: no damage, and every effect is a no-op on every creature it lands on. */
-function noOpAction(def: MoveDef, target: number, view: BattleView): boolean {
+/**
+ * Whether move `def` aimed at `target` achieves nothing at all in `view`: it has no power (a move with power always
+ * deals damage, whatever its effect list says), and every effect is a no-op on every creature it lands on.
+ */
+export function isNoOpMove(def: MoveDef, target: number, view: BattleView): boolean {
   return def.power === null && def.effects.every((e) => recipients(view, e.who, target).every((c) => noOpOn(view, e, c)));
 }
 
 /** Whether `moveId` aimed at `target` would achieve nothing at all in `view`, whatever its kind (false for an unknown move). */
 export function isNoOp(moveId: string, target: number, view: BattleView): boolean {
   const def = moveDef(moveId);
-  return def !== null && noOpAction(def, target, view);
+  return def !== null && isNoOpMove(def, target, view);
 }
 
 /**
@@ -95,7 +102,7 @@ export function isNoOp(moveId: string, target: number, view: BattleView): boolea
  */
 export function isWasteful(rule: WastefulRule, moveId: string, target: number, view: BattleView): boolean {
   const def = moveDef(moveId);
-  return def !== null && def.effects.some((e) => labels(rule.kind, e)) && noOpAction(def, target, view);
+  return def !== null && def.effects.some((e) => labels(rule.kind, e)) && isNoOpMove(def, target, view);
 }
 
 /** The first of a scenario's rules that flags the action — the reason it is wasted — or null when none does. */
