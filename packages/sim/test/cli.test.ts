@@ -26,8 +26,8 @@ describe('main', () => {
     expect(await main(['hello'])).toBe(2);
     expect(err).toHaveBeenCalledWith('hello: --seeds must be a positive integer');
   });
-  it('registers the round-robin, matchup, fuzz and targets commands', () => {
-    expect(Object.keys(commands)).toEqual(expect.arrayContaining(['round-robin', 'matchup', 'fuzz', 'targets']));
+  it('registers the round-robin, matchup, fuzz, targets and search commands', () => {
+    expect(Object.keys(commands)).toEqual(expect.arrayContaining(['round-robin', 'matchup', 'fuzz', 'targets', 'search']));
   });
   it.each([
     [['round-robin', '--seed', '10'], /unknown flag --seed/],
@@ -39,6 +39,8 @@ describe('main', () => {
     [['matchup', 'speed-rush-blitzr', 'code-lock-cobolt', 'mixed-starter-sagelet'], /unexpected argument mixed-starter-sagelet/],
     [['matchup', 'speed-rush-blitzr', '--seeds', '5'], /missing <b>/],
     [['targets', '--', '--seeds-scale', '0.05'], /unexpected argument --seeds-scale/],
+    [['search', '--archetype', 'speed-rush-blitzr', '--budget', '2000', '--seeds', '5'], /unknown flag --seeds/],
+    [['search', '--archetype', 'speed-rush-blitzr'], /missing --budget/],
   ])('rejects %j before running anything: exit 2 with the reason and usage', async (argv, reason) => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(await main(argv)).toBe(2);
@@ -56,7 +58,7 @@ describe('main', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     await main([]);
     const text = String(err.mock.calls[0]?.[0]);
-    for (const line of ['round-robin [--seeds N] [--tag <tag>]', 'matchup <a> <b> [--seeds N] [--tag <tag>]', 'fuzz [--battles N] [--tag <tag>]', 'targets [--seeds-scale k] [--tag <tag>]']) expect(text).toContain(line);
+    for (const line of ['round-robin [--seeds N] [--tag <tag>]', 'matchup <a> <b> [--seeds N] [--tag <tag>]', 'fuzz [--battles N] [--tag <tag>]', 'targets [--seeds-scale k] [--tag <tag>]', 'search --archetype <id> --budget N [--seed <hex>] [--tag <tag>]']) expect(text).toContain(line);
     expect(text).toContain('reports/<command>-<YYYY-MM-DD>[-<tag>].md');
     expect(text).toMatch(/same day overwrites/);
     expect(text).toMatch(/--tag scratch.*git-ignored/s);

@@ -3,6 +3,7 @@ import { usageLine, UsageError } from './args.js';
 import { FUZZ, fuzzCommand } from './commands/fuzz.js';
 import { MATCHUP, matchupCommand } from './commands/matchup.js';
 import { ROUND_ROBIN, roundRobinCommand } from './commands/round-robin.js';
+import { SEARCH, searchCommand } from './commands/search.js';
 import { TARGETS_COMMAND, targetsCommand } from './commands/targets.js';
 import type { CommandContext } from './types.js';
 
@@ -24,21 +25,22 @@ function cliContext(): CommandContext {
   };
 }
 
-/** Command name -> handler. C4 registers `search` here. */
+/** Command name -> handler. */
 export const commands: Record<string, Command> = {
   'round-robin': (args) => roundRobinCommand(args, cliContext()),
   matchup: (args) => matchupCommand(args, cliContext()),
   fuzz: (args) => fuzzCommand(args, cliContext()),
   targets: (args) => targetsCommand(args, cliContext()),
+  search: (args) => searchCommand(args, cliContext()),
 };
 
 /** The usage text: every command with its arguments, and where reports go. */
 export function usage(): string {
   return [
     'usage: pnpm sim <command> [options]',
-    ...[ROUND_ROBIN, MATCHUP, FUZZ, TARGETS_COMMAND].map((spec) => `  ${usageLine(spec)}`),
+    ...[ROUND_ROBIN, MATCHUP, FUZZ, TARGETS_COMMAND, SEARCH].map((spec) => `  ${usageLine(spec)}`),
     ...Object.keys(commands)
-      .filter((c) => ![ROUND_ROBIN, MATCHUP, FUZZ, TARGETS_COMMAND].some((s) => s.name === c))
+      .filter((c) => ![ROUND_ROBIN, MATCHUP, FUZZ, TARGETS_COMMAND, SEARCH].some((s) => s.name === c))
       .map((c) => `  ${c}`),
     'Each run writes reports/<command>-<YYYY-MM-DD>[-<tag>].md and .csv at the repo root; a rerun on the same day overwrites them.',
     'reports/ is committed (Phase C5): use --tag scratch (any tag containing "scratch") for runs that stay git-ignored (reports/*scratch*).',

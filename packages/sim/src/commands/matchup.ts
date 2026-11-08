@@ -25,7 +25,8 @@ export function histogram(rounds: readonly number[]): [number, number][] {
   return counts.map((n, i): [number, number] => [lo + i, n]);
 }
 
-function archetypeById(id: string): Archetype {
+/** The archetype with id `id`; a UsageError naming the known ids otherwise. */
+export function archetypeById(id: string): Archetype {
   const a = ARCHETYPES.find((x) => x.id === id);
   if (a === undefined) throw new UsageError(`unknown archetype ${id}; known: ${ARCHETYPES.map((x) => x.id).join(', ')}`);
   return a;

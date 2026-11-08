@@ -38,6 +38,21 @@ describe('parseArgs (Ruling 137)', () => {
     expect(parseArgs(['x', '--', '--y'], SPEC).positionals).toEqual(['x', '--y']);
     expect(bad(['x', 'y', '--', '--seeds', '3'])).toThrow(/unexpected argument --seeds/);
   });
+  it('reads id and seed flags, and rejects bad ones (Ruling 139 g)', () => {
+    const S: CommandSpec = { name: 'search', positionals: [], flags: { archetype: 'id', budget: 'int', seed: 'seed' }, required: ['archetype', 'budget'] };
+    const seed = '0123456789abcdef0123456789abcdef';
+    const p = parseArgs(['--archetype', 'speed-rush-blitzr', '--budget', '5', `--seed=${seed}`], S);
+    expect(tag(p, 'archetype')).toBe('speed-rush-blitzr');
+    expect(tag(p, 'seed')).toBe(seed);
+    for (const v of ['0'.repeat(32), seed.toUpperCase(), seed.slice(1), `${seed}0`, 'xyz']) expect(() => parseArgs(['--archetype', 'a', '--budget', '5', '--seed', v], S)).toThrow(/32 lowercase hex characters, not all zero/);
+    expect(() => parseArgs(['--archetype', 'Bad', '--budget', '5'], S)).toThrow(/lowercase/);
+  });
+  it('rejects a missing required flag, and lists required flags unbracketed in the usage line', () => {
+    const S: CommandSpec = { name: 'search', positionals: [], flags: { archetype: 'id', budget: 'int', seed: 'seed', tag: 'tag' }, required: ['archetype', 'budget'] };
+    expect(() => parseArgs(['--budget', '5'], S)).toThrow(/missing --archetype\nusage: search --archetype <id> --budget N \[--seed <hex>\] \[--tag <tag>\]/);
+    expect(() => parseArgs(['--archetype', 'a'], S)).toThrow(/missing --budget/);
+    expect(() => parseArgs([], S)).toThrow(UsageError);
+  });
   it('writes a usage line from the spec', () => {
     expect(usageLine(SPEC)).toBe('demo <a> <b> [--seeds N] [--seeds-scale k] [--tag <tag>]');
   });
