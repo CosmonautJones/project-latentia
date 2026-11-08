@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CreatureSetup, SideSetup } from '../../src/battle/setup.js';
 import { createBattle } from '../../src/battle/setup.js';
-import { defaultIntent } from '../../src/battle/order.js';
+import { defaultIntent, type ActionEntry } from '../../src/battle/order.js';
 import { activeCards, deckAction, getIntents, planEntries } from '../../src/battle/plan.js';
 import { resolveEntry, submitRound } from '../../src/battle/round.js';
 import type { BattleState } from '../../src/battle/state.js';
@@ -201,6 +201,35 @@ describe('resolution: re-plan, obedience and Brittle repeat', () => {
     const { s, entry } = planned(TWO, null);
     expect(deckAction(s, at(s, 1), entry, word(0, 94)).intent.cardId).toBe('hit');
     expect(deckAction(s, at(s, 1), entry, word(0, 95)).intent.cardId).toBe('next');
+  });
+
+  describe('replanned (Ruling 92): the obeying choice differs from the planned intent; obedience alone never re-plans', () => {
+    const replanned = (s: BattleState, entry: ActionEntry, lo1: number) => deckAction(s, at(s, 1), entry, word(0, lo1)).intent;
+    /** A Policy Update of side a resolved this round, after a-act1 was planned. */
+    const policyNow = (s: BattleState, card: Card): void => {
+      s.sides.a.policies = [{ card, fromRound: s.round, lastRound: s.round + 2 }];
+    };
+
+    it('resume path: a disobeyed intent is not re-planned; a target that fainted is', () => {
+      const { s, entry } = planned(TWO, 10);
+      expect(replanned(s, entry, 90)).toMatchObject({ cardId: 'next', replanned: false });
+      faint(at(s, 6));
+      expect(replanned(s, entry, 0)).toMatchObject({ cardId: 'next', replanned: true });
+      expect(replanned(s, entry, 90)).toMatchObject({ cardId: 'def', replanned: true });
+    });
+
+    it('fresh path (a policy resolved this round): the same rule', () => {
+      const unmet = planned(TWO, 10);
+      policyNow(unmet.s, c('pol', F, 'token-burst'));
+      // The policy does not hold, so the obeying choice is still the planned card: a disobeyed roll is no re-plan.
+      expect(replanned(unmet.s, unmet.entry, 0)).toMatchObject({ cardId: 'hit', replanned: false });
+      expect(replanned(unmet.s, unmet.entry, 90)).toMatchObject({ cardId: 'next', replanned: false });
+      const met = planned(TWO, 10);
+      policyNow(met.s, c('pol', T, 'token-burst'));
+      expect(replanned(met.s, met.entry, 0)).toMatchObject({ cardId: 'pol', replanned: true });
+      // Disobeying the policy lands back on the planned card, but the policy changed the obeying choice.
+      expect(replanned(met.s, met.entry, 90)).toMatchObject({ cardId: 'hit', replanned: true });
+    });
   });
 
   it('a Brittle creature with no matching card repeats its most-represented move and emits BrittleRepeat', () => {

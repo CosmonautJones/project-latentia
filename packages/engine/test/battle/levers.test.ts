@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { OrchestratorAction, RoundCommand } from '../../src/battle/log.js';
-import { specialistApplies } from '../../src/battle/levers.js';
 import type { ActionEntry } from '../../src/battle/order.js';
 import { getIntents } from '../../src/battle/plan.js';
 import { resolveEntry, submitRound } from '../../src/battle/round.js';
@@ -9,11 +8,11 @@ import type { Card, Condition, Deck } from '../../src/cards/model.js';
 import { pay } from '../../src/context/store.js';
 import type { BattleEvent } from '../../src/events/types.js';
 import { lo } from '../../src/rng/draws.js';
-import { dealt, expected, fresh, ofType, run } from './effects/kit.js';
+import { ofType, run } from './effects/kit.js';
 import { at, battle, entry, mon, rngWhere } from './helpers.js';
 
-// Task B3 (spec §5 "Orchestrator levers", "Cards, decks and traces"; Rulings 74, 81): Directive and Policy
-// Update take effect when the orchestrator's entry resolves; Headless Mode; Specialist; card injection.
+// Task B3 (spec §5 "Orchestrator levers"; Rulings 74, 90): Directive and Policy Update take effect when the
+// orchestrator's entry resolves; Headless Mode. Specialist and card injection: specialist-injection.test.ts.
 
 const T: Condition = { category: 'hp', op: 'atLeast', pct: 25 };
 const F: Condition = { category: 'hp', op: 'below', pct: 25 };
@@ -70,7 +69,11 @@ describe('Directive (Ruling 74: takes effect when the orchestrator entry resolve
   it('costs the orchestrator 2 cells and replaces a subagent action that has not happened yet; the intent shows the deck', () => {
     const { state, events } = ok(levers(), directive(1, 'long-term-recall', 4));
     const orch = entryEvents(events, 0);
-    expect(orch.slice(1)).toEqual([{ round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 2, tokensAfter: 2 }]);
+    // Ruling 90: the lever is announced (MoveUsed 'directive' at the directed subagent), then paid.
+    expect(orch.slice(1)).toEqual([
+      { round: 1, type: 'MoveUsed', actor: 0, moveId: 'directive', target: 1 },
+      { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 2, tokensAfter: 2 },
+    ]);
     expect(intentOf(events, 1)).toEqual({ actor: 1, moveId: 'batch-job', target: expect.any(Number), cardId: 'def' });
     const sub = entryEvents(events, 1);
     expect(sub.find((e) => e.type === 'MoveUsed')).toEqual({ round: 1, type: 'MoveUsed', actor: 1, moveId: 'long-term-recall', target: 4 });
@@ -85,7 +88,11 @@ describe('Directive (Ruling 74: takes effect when the orchestrator entry resolve
     at(s, 1).stats.latency = 100; // a-act1 now acts before its orchestrator
     const { state, events } = ok(s, directive(1, 'long-term-recall', 4));
     expect(events.findIndex((e) => e.type === 'ActionStarted' && e.actor === 1)).toBeLessThan(events.findIndex((e) => e.type === 'ActionStarted' && e.actor === 0));
-    expect(entryEvents(events, 0).slice(1)).toEqual([{ round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 2, tokensAfter: 2 }]);
+    // A spent Directive is still visible as issued (Ruling 90).
+    expect(entryEvents(events, 0).slice(1)).toEqual([
+      { round: 1, type: 'MoveUsed', actor: 0, moveId: 'directive', target: 1 },
+      { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 2, tokensAfter: 2 },
+    ]);
     expect(ofType(events, 'MoveUsed').filter((e) => e.actor === 1).map((e) => e.moveId)).toEqual(['batch-job']);
     expect(traceOf(events, 1)?.firedCardId).toBe('def');
     expect(state.sides.a.directive).toBeNull();
@@ -96,6 +103,7 @@ describe('Directive (Ruling 74: takes effect when the orchestrator entry resolve
     pay(at(s, 0).context, 11, 0, 0); // one free cell left
     const { state, events } = ok(s, directive(2, 'segfault', 5));
     expect(entryEvents(events, 0).slice(1)).toEqual([
+      { round: 1, type: 'MoveUsed', actor: 0, moveId: 'directive', target: 2 },
       { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 1, tokensAfter: 12 },
       { round: 1, type: 'DriftChanged', target: 0, drift: 1 },
     ]);
@@ -143,6 +151,21 @@ describe('Directive (Ruling 74: takes effect when the orchestrator entry resolve
     expect(s.sides.a.directive).toBeNull();
   });
 
+  it('a Directive that lands on a Prompt Injected subagent is used up, and the hijack wins', () => {
+    const s = levers();
+    s.round = 1;
+    s.turnOrder = [1];
+    const events: BattleEvent[] = [];
+    resolveEntry(s, { ...entry(0, 'directive', 1), lever: { kind: 'directive', subagent: 1, moveId: 'long-term-recall', target: 4 } }, events);
+    expect(s.sides.a.directive).not.toBeNull();
+    at(s, 1).statuses.push({ id: 'promptInjected', remaining: 1, injected: { moveId: 'batch-job', target: 2 } });
+    resolveEntry(s, { ...entry(1, 'batch-job', 4), cardId: 'def', skipped: [] }, events);
+    expect(ofType(events, 'MoveUsed').at(-1)).toEqual({ round: 1, type: 'MoveUsed', actor: 1, moveId: 'batch-job', target: 2 });
+    expect(ofType(events, 'StatusExpired')).toContainEqual(expect.objectContaining({ target: 1, status: 'promptInjected' }));
+    expect(traceOf(events, 1)).toBeUndefined();
+    expect(s.sides.a.directive).toBeNull();
+  });
+
   it('validation: a move a held status forbids the subagent is moveDisabled; a charging subagent is actorSkipped', () => {
     const s = levers();
     at(s, 1).statuses.push({ id: 'overfit', remaining: 3 });
@@ -164,7 +187,12 @@ describe('Policy Update', () => {
     const previews: (string | null | undefined)[] = [];
     for (let r = 1; r <= 4; r++) {
       const { state, events } = ok(s, r === 1 ? policy() : NONE);
-      if (r === 1) expect(entryEvents(events, 0).slice(1)).toEqual([{ round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 2, tokensAfter: 2 }]);
+      if (r === 1) {
+        expect(entryEvents(events, 0).slice(1)).toEqual([
+          { round: 1, type: 'MoveUsed', actor: 0, moveId: 'policy-update', target: 0 },
+          { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 2, tokensAfter: 2 },
+        ]);
+      }
       fired.push(traceOf(events, 1)?.firedCardId);
       planned.push(intentOf(events, 1)?.cardId);
       other.push(traceOf(events, 2)?.skipped);
@@ -244,74 +272,5 @@ describe('Headless Mode (spec §5; Ruling 36)', () => {
       expect(ofType(events, 'MoveUsed').some((e) => e.actor === 1)).toBe(true);
       expect(ofType(events, 'Swapped')).toEqual([{ round: 1, type: 'Swapped', side: 0, outIndex: 2, inIndex: 3 }]);
     }
-  });
-});
-
-describe('Specialist (spec §5; Ruling 81)', () => {
-  const rec = (id: string, from?: string): Card => card(id, 'ship-it', from === undefined ? {} : { recordedFrom: from });
-
-  it('specialistApplies: at least half the non-Default cards recorded from the opponent id', () => {
-    expect(specialistApplies({ cards: [], default: rec('d', 'b') }, 'b')).toBe(false);
-    expect(specialistApplies({ cards: [rec('1', 'b')], default: rec('d') }, 'b')).toBe(true);
-    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2')], default: rec('d') }, 'b')).toBe(true);
-    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2'), rec('3', 'c')], default: rec('d', 'b') }, 'b')).toBe(false);
-    expect(specialistApplies({ cards: [rec('1', 'b'), rec('2', 'b')], default: rec('d') }, 'c')).toBe(false);
-  });
-
-  /** a-act1 Blitzr's Ship It on b-act1 Blitzr (neutral, native, 100% roll at T2) with a half-recorded deck. */
-  const shipIt = (from: string | null): { s: BattleState; got: number[] } => {
-    const s = fresh();
-    if (from !== null) at(s, 1).deck = { cards: [rec('1', from), rec('2')], default: rec('d') };
-    return { s, got: dealt(run(s, 1, 'ship-it', 7)) };
-  };
-  const base = { type: 10000, native: 12500, roll: 10000 };
-
-  it('deals the 11500 modifier only against the opponent id the side faces', () => {
-    const match = shipIt('b'); // side a faces opponent id 'b'
-    expect(match.got).toEqual([expected(match.s, 1, 7, 65, { ...base, specialist: 11500 })]);
-    expect(match.got[0]).toBeGreaterThan(expected(match.s, 1, 7, 65, base));
-    const other = shipIt('ghost-1');
-    expect(other.got).toEqual([expected(other.s, 1, 7, 65, base)]);
-    expect(shipIt(null).got).toEqual(other.got);
-  });
-
-  it('never applies to an orchestrator', () => {
-    const hit = (deck: boolean): number[] => {
-      const s = fresh();
-      if (deck) at(s, 0).deck = { cards: [card('1', 'happy-to-help', { recordedFrom: 'b' })], default: card('d', 'happy-to-help') };
-      return dealt(run(s, 0, 'happy-to-help', 7));
-    };
-    expect(hit(true)).toEqual(hit(false));
-  });
-});
-
-describe("a deck card's injection preference (spec §5 Prompt Injected; Ruling 72)", () => {
-  const DEEP = (injection?: Card['injection']): Deck => ({ cards: [card('deep', 'deepfake-call', injection === undefined ? {} : { injection })], default: card('d', 'ship-it') });
-  const injectedOf = (s: BattleState, i: number) => at(s, i).statuses.find((x) => x.id === 'promptInjected')?.injected;
-
-  it("is stored when the card's Deepfake Call lands, its selector resolved against the victim's view", () => {
-    const s = fresh();
-    at(s, 1).deck = DEEP({ moveId: 'token-burst', target: 'lowestHpAlly' });
-    at(s, 8).hp = 100; // the victim's lowest-HP ally
-    const events = run(s, 1, 'deepfake-call', 7, {}, { cardId: 'deep', skipped: [] });
-    expect(traceOf(events, 1)?.firedCardId).toBe('deep');
-    expect(injectedOf(s, 7)).toEqual({ moveId: 'token-burst', target: 8 });
-  });
-
-  it('falls back to the default choice without a preference, or when the victim does not know its move', () => {
-    for (const deck of [DEEP(), DEEP({ moveId: 'hard-fork', target: 'lowestHpAlly' })]) {
-      const s = fresh();
-      at(s, 1).deck = deck;
-      at(s, 8).hp = 100;
-      run(s, 1, 'deepfake-call', 7, {}, { cardId: 'deep', skipped: [] });
-      // Blitzr's highest-power move, at its lowest-HP ally (b-act2).
-      expect(injectedOf(s, 7)).toEqual({ moveId: 'distilled-strike', target: 8 });
-    }
-  });
-
-  it('a command injection still wins for an orchestrator move (no card)', () => {
-    const s = fresh();
-    run(s, 0, 'deepfake-call', 7, {}, { injection: { moveId: 'ship-it', target: 6 } });
-    expect(injectedOf(s, 7)).toEqual({ moveId: 'ship-it', target: 6 });
   });
 });

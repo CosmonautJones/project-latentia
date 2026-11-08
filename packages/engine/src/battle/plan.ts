@@ -182,12 +182,13 @@ export function getIntents(state: BattleState): Intent[] {
 /**
  * A deck-driven entry as it resolves (spec §5 "Re-planning", "Obedience"; Ruling 85): the intent's card is
  * re-validated against the current view — kept with its plan-time target while its condition holds, its move is
- * usable and that target is still legal, else evaluation continues from the next card down (`replanned`) — then
- * obedience is rolled with lo(`d1`, 100). The trace is the plan-time cards skipped above the intent's card, then
+ * usable and that target is still legal, else evaluation continues from the next card down — then obedience is
+ * rolled with lo(`d1`, 100). The intent is `replanned` (Ruling 92) when the choice it would make by obeying differs
+ * from the planned intent in card, move or target; disobedience alone is not a re-plan. The trace is the plan-time cards skipped above the intent's card, then
  * this evaluation's. A selector with no legal target falls back to intentTarget; a disabled Default uses the
  * default intent (deckAim). When a Policy Update of the creature's side resolved earlier this round (after
  * planning), the deck is instead evaluated afresh from the top, the new policy included: the trace is that
- * evaluation's alone, and the intent is `replanned` when its card, move or target changed.
+ * evaluation's alone (the same `replanned` rule applies).
  */
 export function deckAction(state: BattleState, user: CreatureState, entry: ActionEntry, d1: number): { intent: Intent; trace: CardTrace; brittleRepeat: boolean } {
   const deck: Deck | null = user.deck;
@@ -200,9 +201,10 @@ export function deckAction(state: BattleState, user: CreatureState, entry: Actio
   if (!fresh) opts.resume = { cardId: entry.cardId, target: entry.target };
   const e = evaluateDeck(deck, view, activeCards(state, user), opts);
   const aim = deckAim(state, user, e);
-  const changed = e.cardId !== entry.cardId || aim.moveId !== entry.moveId || aim.target !== entry.target;
-  // A fallback is re-derived now: the intent is re-planned when it no longer matches the plan.
-  const replanned = fresh ? changed : e.replanned || (e.fallback && (aim.moveId !== entry.moveId || aim.target !== entry.target));
+  // Ruling 92, both paths: re-planned when the obeying choice is not the planned intent (card, move or target);
+  // a failed obedience roll alone never re-plans.
+  const want = e.obeying ?? { cardId: e.cardId, ...aim };
+  const replanned = want.cardId !== entry.cardId || want.moveId !== entry.moveId || want.target !== entry.target;
   return {
     intent: { actor: user.index, moveId: aim.moveId, target: aim.target, cardId: e.cardId, replanned },
     trace: { firedCardId: e.cardId, skipped: fresh ? e.trace.skipped : [...(entry.skipped ?? []), ...e.trace.skipped] },

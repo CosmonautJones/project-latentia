@@ -22,8 +22,8 @@ describe('evaluateDeck: top-down over the active cards, then Default', () => {
       target: 6,
       trace: { firedCardId: 'b', skipped: [{ cardId: 'a', reason: 'conditionFalse' }] },
       brittleRepeat: false,
-      replanned: false,
       fallback: false,
+      obeying: null,
     });
   });
 
@@ -121,8 +121,8 @@ describe('a disabled Default or Brittle repeat (Rulings 86, 88)', () => {
         ],
       },
       brittleRepeat: false,
-      replanned: false,
       fallback: true,
+      obeying: null,
     });
     // Overfit: only the last chosen move is allowed
     const overfit = view({ self: vc(1, { statuses: ['overfit'] }), lastMoveId: 'ship-it' });
@@ -157,11 +157,12 @@ describe('obedience (D1 lo)', () => {
 
   it('on a failed roll the next matching card below fires and the skipped one is traced disobeyed; one roll only', () => {
     const d = deck([c('a', T), c('b', F), c('c', T, { move: 'token-burst' }), c('e', T)]);
-    expect(evaluateDeck(d, view(), 4, { band: 'brittle', d1: word(0, 84) }).cardId).toBe('a');
+    expect(evaluateDeck(d, view(), 4, { band: 'brittle', d1: word(0, 84) })).toMatchObject({ cardId: 'a', obeying: null });
     expect(evaluateDeck(d, view(), 4, { band: 'brittle', d1: word(0, 85) })).toMatchObject({
       cardId: 'c',
       moveId: 'token-burst',
       brittleRepeat: false,
+      obeying: { cardId: 'a', moveId: 'ship-it', target: 6 }, // what obeying would have used (Ruling 92)
       trace: {
         firedCardId: 'c',
         skipped: [
@@ -176,7 +177,7 @@ describe('obedience (D1 lo)', () => {
 
   it('with nothing matching below the disobeyed card, Default fires (not a Brittle repeat); Default itself is never disobeyed', () => {
     const d = deck([c('a', T, { move: 'token-burst' }), c('b', F, { move: 'token-burst' })]);
-    expect(evaluateDeck(d, view(), 2, { band: 'brittle', d1: word(0, 99) })).toMatchObject({ cardId: 'def', moveId: 'compact', brittleRepeat: false });
+    expect(evaluateDeck(d, view(), 2, { band: 'brittle', d1: word(0, 99) })).toMatchObject({ cardId: 'def', moveId: 'compact', brittleRepeat: false, obeying: { cardId: 'a' } });
     expect(evaluateDeck(deck([c('a', F)]), view(), 1, { band: 'stable', d1: word(0, 99) })).toMatchObject({ cardId: 'def', trace: { skipped: [{ cardId: 'a', reason: 'conditionFalse' }] } });
   });
 });
@@ -198,8 +199,8 @@ describe('Brittle repeat', () => {
         ],
       },
       brittleRepeat: true,
-      replanned: false,
       fallback: false,
+      obeying: null,
     });
     // inactive cards count towards the most-represented move
     expect(evaluateDeck(d, v, 1, { band: 'brittle' })).toMatchObject({ moveId: 'token-burst', brittleRepeat: true });
@@ -223,28 +224,27 @@ describe('startAfter and resume', () => {
 
   it('resume re-validates the intent’s card and keeps its plan-time target while that target is still legal', () => {
     const r = evaluateDeck(d, view(), 3, { ...STABLE, resume: { cardId: 'b', target: 8 } });
-    expect(r).toMatchObject({ cardId: 'b', target: 8, replanned: false, trace: { skipped: [] } });
+    expect(r).toMatchObject({ cardId: 'b', target: 8, trace: { skipped: [] } });
     // a randomFoe intent keeps its pick even though the draws are gone from the view
     const rand = deck([c('r', T, { target: 'randomFoe' })]);
-    expect(evaluateDeck(rand, view(), 3, { ...STABLE, resume: { cardId: 'r', target: 7 } })).toMatchObject({ cardId: 'r', target: 7, replanned: false });
+    expect(evaluateDeck(rand, view(), 3, { ...STABLE, resume: { cardId: 'r', target: 7 } })).toMatchObject({ cardId: 'r', target: 7 });
   });
 
-  it('when the intent’s target is gone or its condition no longer holds, evaluation continues from the next card down, replanned', () => {
+  it('when the intent’s target is gone or its condition no longer holds, evaluation continues from the next card down', () => {
     const gone = view({ foes: [vc(6, { isOrchestrator: true }), vc(7)] });
     expect(evaluateDeck(d, gone, 3, { ...STABLE, resume: { cardId: 'b', target: 8 } })).toMatchObject({
       cardId: 'e',
       target: 6,
-      replanned: true,
       trace: { skipped: [{ cardId: 'b', reason: 'conditionFalse' }] },
     });
     const weak = view({ self: vc(1, { hp: 10 }) });
-    expect(evaluateDeck(d, weak, 3, { ...STABLE, resume: { cardId: 'a', target: 6 } })).toMatchObject({ cardId: 'def', replanned: true });
+    expect(evaluateDeck(d, weak, 3, { ...STABLE, resume: { cardId: 'a', target: 6 } })).toMatchObject({ cardId: 'def' });
   });
 
-  it('a resumed Default keeps a legal target, else re-aims (replanned)', () => {
+  it('a resumed Default keeps a legal target, else re-aims', () => {
     const shipDef = deck([], { move: 'ship-it', target: 'lowestHpFoe' });
-    expect(evaluateDeck(shipDef, view(), 3, { ...STABLE, resume: { cardId: 'def', target: 8 } })).toMatchObject({ target: 8, replanned: false });
+    expect(evaluateDeck(shipDef, view(), 3, { ...STABLE, resume: { cardId: 'def', target: 8 } })).toMatchObject({ target: 8 });
     const gone = view({ foes: [vc(6, { isOrchestrator: true }), vc(7)] });
-    expect(evaluateDeck(shipDef, gone, 3, { ...STABLE, resume: { cardId: 'def', target: 8 } })).toMatchObject({ target: 6, replanned: true });
+    expect(evaluateDeck(shipDef, gone, 3, { ...STABLE, resume: { cardId: 'def', target: 8 } })).toMatchObject({ target: 6 });
   });
 });

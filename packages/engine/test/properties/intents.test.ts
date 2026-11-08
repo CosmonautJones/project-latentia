@@ -4,7 +4,8 @@ import { getIntents } from '../../src/battle/plan.js';
 import { submitRound } from '../../src/battle/round.js';
 import { createBattle, type BattleSetup } from '../../src/battle/setup.js';
 import type { BattleEvent } from '../../src/events/types.js';
-import { arbLegalSetup, arbScriptedCommands, arbSeed } from '../helpers/arbitraries.js';
+import { arbLegalSetup, arbSeed } from '../helpers/arbitraries.js';
+import { arbScriptedCommands } from '../helpers/commands.js';
 
 // Intents over random legal battles with decks (B2, Rulings 79/82): every round, getIntents previews exactly the
 // round submitRound plans and leaves the state untouched, and the first deck-driven action fires its intent.

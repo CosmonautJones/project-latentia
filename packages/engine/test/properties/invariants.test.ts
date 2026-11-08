@@ -9,7 +9,8 @@ import type { BattleState } from '../../src/battle/state.js';
 import type { BattleEvent } from '../../src/events/types.js';
 import { parseSeed } from '../../src/rng/seed.js';
 import { nextU32, seedRng } from '../../src/rng/sfc32.js';
-import { arbLegalSetup, arbScriptedCommands, arbSeed, recordedFoeCandidates } from '../helpers/arbitraries.js';
+import { arbLegalSetup, arbSeed, recordedFoeCandidates } from '../helpers/arbitraries.js';
+import { arbScriptedCommands } from '../helpers/commands.js';
 
 const RUNS = 200;
 

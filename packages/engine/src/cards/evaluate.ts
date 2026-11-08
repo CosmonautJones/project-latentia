@@ -31,19 +31,28 @@ export type CardTrace = { firedCardId: string; skipped: CardSkip[] };
 
 /**
  * The fired card, its move and target (null when nothing on the field is a legal target for it: the caller
- * falls back), the trace, whether a Brittle repeat replaced the Default move, and whether a resumed intent had
- * to be re-planned. `fallback` (Rulings 86, 88): a held status forbids the Default move (or the Brittle repeat
+ * falls back), the trace, whether a Brittle repeat replaced the Default move, and `obeying`: when the obedience
+ * roll failed, the card the actor would have used had it obeyed (its id, move and target), else null — so the
+ * caller can tell a re-plan from a disobedience (Ruling 92, battle/plan.ts deckAction). `fallback` (Rulings 86, 88): a held status forbids the Default move (or the Brittle repeat
  * move), so nothing fires — the Default card is traced `moveDisabled`, `moveId` is the forbidden move, `target` is
  * null, and the caller uses the creature's no-deck default intent (its first move a status allows, at that move's
  * default selector). The trace still names the Default card as `firedCardId`, its slot in the deck.
  */
-export type Evaluation = { cardId: string; moveId: string; target: number | null; trace: CardTrace; brittleRepeat: boolean; replanned: boolean; fallback: boolean };
+export type Evaluation = {
+  cardId: string;
+  moveId: string;
+  target: number | null;
+  trace: CardTrace;
+  brittleRepeat: boolean;
+  fallback: boolean;
+  obeying: { cardId: string; moveId: string; target: number } | null;
+};
 
 /**
  * - `startAfter`: begin below that card (Default when it is the last card).
  * - `resume`: re-validate an intent at resolution — begin AT its card, which fires again only while its condition
  *   holds, its move is usable and its plan-time `target` is still legal (Ruling 85: a randomFoe pick is kept, not
- *   redrawn); otherwise evaluation continues from the next card down and the result is `replanned`.
+ *   redrawn); otherwise evaluation continues from the next card down; a resumed Default re-aims when its target is gone.
  * - `d1`: roll obedience with this draw (at resolution); without it the obeying choice is returned (the intent).
  * - `policies`: Policy Update cards in force (spec §5 "Orchestrator levers"), evaluated above the deck's cards like any
  *   card (traced with their own ids) and always active — they use no card slot; one whose move the actor does not
@@ -150,38 +159,35 @@ export function evaluateDeck(deck: Deck, view: BattleView, activeN: number, opts
   const resumeAt = opts.resume === undefined ? -1 : positionOf(cards, deck, opts.resume.cardId);
   const start = resumeAt >= 0 ? resumeAt : opts.startAfter === undefined ? 0 : positionOf(cards, deck, opts.startAfter) + 1;
   let rolled = false;
-  let disobeyed = false;
-  let replanned = false;
+  let obeying: Evaluation['obeying'] = null;
   for (let i = start; i < cards.length; i++) {
     const card = cards[i] as Card;
     const unknown = i < policies.length && opts.policies?.knownMoves.includes(card.move) !== true;
     const v: Verdict =
       i >= active ? { fires: false, reason: 'notActive' } : unknown ? { fires: false, reason: 'moveDisabled' } : judge(card, view, i === resumeAt ? opts.resume?.target : undefined);
     if (!v.fires) {
-      if (i === resumeAt) replanned = true;
       skipped.push({ cardId: card.id, reason: v.reason });
       continue;
     }
     if (opts.d1 !== undefined && !rolled) {
       rolled = true;
       if (!obeys(opts.band, opts.d1)) {
-        disobeyed = true;
+        obeying = { cardId: card.id, moveId: card.move, target: v.target };
         skipped.push({ cardId: card.id, reason: 'disobeyed' });
         continue;
       }
     }
-    return { cardId: card.id, moveId: card.move, target: v.target, trace: { firedCardId: card.id, skipped }, brittleRepeat: false, replanned, fallback: false };
+    return { cardId: card.id, moveId: card.move, target: v.target, trace: { firedCardId: card.id, skipped }, brittleRepeat: false, fallback: false, obeying };
   }
   const keep = resumeAt === cards.length ? opts.resume?.target : undefined;
-  const repeat = opts.band === 'brittle' && !disobeyed ? mostRepresented(deck) : null;
+  const repeat = opts.band === 'brittle' && obeying === null ? mostRepresented(deck) : null;
   const moveId = repeat?.move ?? deck.default.move;
   const trace = { firedCardId: deck.default.id, skipped };
   const def = moveDef(moveId);
   if (def === null || moveDisabledByStatus(holderOf(view), def, view.lastMoveId)) {
     skipped.push({ cardId: deck.default.id, reason: 'moveDisabled' });
-    return { cardId: deck.default.id, moveId, target: null, trace, brittleRepeat: false, replanned, fallback: true };
+    return { cardId: deck.default.id, moveId, target: null, trace, brittleRepeat: false, fallback: true, obeying };
   }
   const target = defaultAim(view, repeat ?? deck.default, moveId, keep);
-  if (keep !== undefined && target !== keep) replanned = true;
-  return { cardId: deck.default.id, moveId, target, trace, brittleRepeat: repeat !== null, replanned, fallback: false };
+  return { cardId: deck.default.id, moveId, target, trace, brittleRepeat: repeat !== null, fallback: false, obeying };
 }

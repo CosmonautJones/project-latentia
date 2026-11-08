@@ -42,12 +42,16 @@ export function applyPolicyUpdate(state: BattleState, side: SideId, card: Card, 
 }
 
 /**
- * Directive or Policy Update for an orchestrator whose entry acts (no skip, no hijack): it pays the lever's cells
- * (overflow becomes Drift, as for any cost), then applies it. A spent Directive emits nothing beyond the payment.
+ * Directive or Policy Update for an orchestrator whose entry acts (no skip, no hijack): MoveUsed announces the lever
+ * (`directive` at the directed subagent, `policy-update` at the orchestrator itself; Ruling 90), it pays the lever's
+ * cells (overflow becomes Drift, as for any cost), then applies it. A spent Directive emits nothing beyond its
+ * MoveUsed and payment, so it is still visible as issued.
  */
 export function resolveCommandLever(state: BattleState, orch: CreatureState, lever: Extract<NonNullable<ActionEntry['lever']>, { kind: 'directive' | 'policyUpdate' }>, events: BattleEvent[]): void {
   const round = state.round;
-  events.push(...pay(orch.context, leverCells(state, lever.kind === 'directive' ? 'directive' : 'policy-update'), round, orch.index));
+  const id = lever.kind === 'directive' ? 'directive' : 'policy-update';
+  events.push({ round, type: 'MoveUsed', actor: orch.index, moveId: id, target: lever.kind === 'directive' ? lever.subagent : orch.index });
+  events.push(...pay(orch.context, leverCells(state, id), round, orch.index));
   if (lever.kind === 'directive') applyDirective(state, orch.side, lever.subagent, lever.moveId, lever.target, round);
   else applyPolicyUpdate(state, orch.side, lever.card, round);
 }

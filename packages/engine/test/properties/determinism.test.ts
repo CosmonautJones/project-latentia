@@ -8,7 +8,8 @@ import { submitRound } from '../../src/battle/round.js';
 import type { BattleEvent } from '../../src/events/types.js';
 import { eventStreamHash } from '../../src/events/canonical.js';
 import { gridlessSetup, mon, SEED } from '../battle/helpers.js';
-import { arbLegalSetup, arbScriptedCommands, arbSeed, scriptedFrom } from '../helpers/arbitraries.js';
+import { arbLegalSetup, arbSeed } from '../helpers/arbitraries.js';
+import { arbScriptedCommands, scriptedFrom } from '../helpers/commands.js';
 
 const DEFAULTS: CommandSource = { kind: 'recorded', rounds: [] };
 
