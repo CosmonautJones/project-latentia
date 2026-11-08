@@ -6,9 +6,10 @@ import { createBattle, UNIVERSAL_MOVES } from '../../src/battle/setup.js';
 import { simulate, type BattleResult } from '../../src/battle/simulate.js';
 import type { Outcome } from '../../src/battle/state.js';
 import { STATUS_IDS, type StatusId } from '../../src/content/ids.js';
-import { moveDef } from '../../src/content/moves.js';
+import { moveDef, MOVES } from '../../src/content/moves.js';
 import type { Effect } from '../../src/content/primitives.js';
 import { SPECIES } from '../../src/content/species.js';
+import { HANDOFF_MAX_BP, HANDOFF_STEP_BP } from '../../src/battle/handoff.js';
 import type { BattleEventType, CardSkipReason } from '../../src/events/types.js';
 import { SCENARIOS } from './scenarios.js';
 import { scriptedSource } from './script.js';
@@ -83,6 +84,21 @@ function reachableMoves(): string[] {
 }
 
 /**
+ * Registry moves no legal battle can use, so no golden can (Ruling 110): no slice species knows them. A creature may
+ * list only its species' moves (validateSetup moveNotKnown), a gridded orchestrator may graft only species signatures,
+ * deck and Policy Update cards fire only moves their creature knows, and hallucination, Drift, copies and Prompt
+ * Injected all pick from the user's own moveset. They are the bible's launch moves outside the slice's 17 species;
+ * the coverage test checks this list is exactly the registry moves no slice species knows.
+ */
+const UNLEARNABLE_MOVES: readonly string[] = [
+  'captcha-wall', 'deep-research', 'deepfake-call', 'deliberate', 'earnest-apology', 'embedding-cache', 'filibuster', 'fork', 'permissive-license',
+  'pixel-peep', 'red-team', 'refusal', 'saliency-map', 'screenshot', 'speculative-decoding', 'temperature-spike', 'throttle', 'tree-search',
+];
+
+/** The lever ids (Ruling 90: Directive and Policy Update also emit MoveUsed with these ids; Swap and none do not). */
+const LEVER_IDS = { directive: 'directive', policyUpdate: 'policy-update', swap: 'swap', none: 'none' } as const;
+
+/**
  * Statuses no Phase A battle can apply, each for a stated reason. Anything not listed here must appear.
  * - promptInjected: only Deepfake Call applies it, and no slice species knows Deepfake Call.
  * - rateLimited: only Throttle applies it, and no slice species knows Throttle.
@@ -121,10 +137,55 @@ const EVENT_TYPES: Record<BattleEventType, true> = {
 /** Every reason a card can be skipped, so the list below is checked complete by the type checker. */
 const SKIP_REASONS: Record<CardSkipReason, true> = { conditionFalse: true, insufficientContext: true, moveDisabled: true, notActive: true, disobeyed: true };
 
+/** The golden named `name` and its replayed events. */
+function goldenNamed(name: string): { golden: Golden; events: BattleResult['events'] } {
+  const at = GOLDENS.findIndex((g) => g.file === name);
+  const golden = GOLDENS[at]?.golden;
+  if (golden === undefined) throw new Error(`missing golden ${name}`);
+  return { golden, events: replays()[at]?.events ?? [] };
+}
+
 describe('golden coverage', () => {
-  it('every reachable move is used in some golden battle', () => {
+  it('golden coverage includes every move and every lever: every MoveUsed id and pulled lever, against the move registry (Ruling 110)', () => {
     const used = new Set(replays().flatMap((r) => r.events.flatMap((e) => (e.type === 'MoveUsed' ? [e.moveId] : []))));
-    expect(reachableMoves().filter((m) => !used.has(m))).toEqual([]);
+    for (const g of GOLDENS) for (const cmd of g.golden.log.rounds) for (const sc of [cmd.a, cmd.b]) if (sc !== undefined && sc.action.kind !== 'move') used.add(LEVER_IDS[sc.action.kind]);
+    expect(Object.values(LEVER_IDS).filter((id) => !used.has(id))).toEqual([]);
+    const registry = Object.keys(MOVES).sort();
+    expect(registry.filter((m) => !used.has(m))).toEqual([...UNLEARNABLE_MOVES]);
+    const learnable = new Set(reachableMoves());
+    expect(registry.filter((m) => !learnable.has(m) && !Object.values(LEVER_IDS).includes(m as never))).toEqual([...UNLEARNABLE_MOVES]);
+  });
+
+  it('handoff-chain-high-damage: 3-hit chains whose 2nd and 3rd hits are large enough to pin 11500 and 13000 (Ruling 97)', () => {
+    expect([HANDOFF_STEP_BP, HANDOFF_MAX_BP]).toEqual([1500, 13000]);
+    const { events } = goldenNamed('handoff-chain-high-damage');
+    const chains = events.flatMap((e, i) => (e.type === 'HandoffChain' && e.chain.length === 3 ? [i] : []));
+    expect(chains.length).toBeGreaterThan(0);
+    for (const at of chains) {
+      // The chain's hits, in order: the Damage event just before each of its HandoffChain events.
+      const chain = events[at];
+      if (chain?.type !== 'HandoffChain') throw new Error('not a chain');
+      const hits = chain.chain.map((actor) => events.slice(0, at + 1).reverse().find((e) => e.type === 'Damage' && e.actor === actor && e.round === chain.round));
+      expect(new Set(hits.map((h) => (h?.type === 'Damage' ? h.target : -1))).size).toBe(1);
+      // A hit's damage is about x·m/10000 for its pre-Handoff damage x. Ruling 39's 11000 / 12000 would differ from
+      // 11500 / 13000 by x/20 and x/10, so neither can floor to the same amount once x ≥ 20 — i.e. a 2nd hit of 24+.
+      for (const h of hits.slice(1)) expect(h?.type === 'Damage' ? h.amount : 0).toBeGreaterThanOrEqual(24);
+    }
+  });
+
+  it('default-disabled-fallback: a status disables the Default card — it is traced moveDisabled once and the default intent acts (Ruling 86)', () => {
+    const { golden, events } = goldenNamed('default-disabled-fallback');
+    const deck = golden.log.setup.a.active[0]?.deck;
+    if (deck === undefined) throw new Error('no deck');
+    const traces = events.filter((e) => e.type === 'CardTrace' && e.skipped.some((k) => k.cardId === deck.default.id && k.reason === 'moveDisabled'));
+    expect(traces.length).toBeGreaterThan(0);
+    for (const t of traces) {
+      if (t.type !== 'CardTrace') continue;
+      expect(t.firedCardId).toBe(deck.default.id);
+      expect(t.skipped.filter((k) => k.cardId === deck.default.id)).toEqual([{ cardId: deck.default.id, reason: 'moveDisabled' }]);
+      const used = events.find((e) => e.type === 'MoveUsed' && e.round === t.round && e.actor === t.actor);
+      expect(used?.type === 'MoveUsed' ? used.moveId : null).not.toBe(deck.default.move);
+    }
   });
 
   it('every status id is applied in some golden battle, except the stated unreachable ones', () => {

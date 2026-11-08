@@ -1,0 +1,166 @@
+{
+  "name": "handoff-chain-high-damage",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "b6b84ddcba7e36c73ad370b436aadeba",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-blitzr",
+          "species": "blitzr",
+          "level": 60,
+          "version": "v1",
+          "moves": [
+            "ship-it",
+            "token-burst",
+            "low-latency",
+            "distilled-strike"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-wasp",
+            "species": "off-by-wasp",
+            "level": 60,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "trace",
+                  "subject": "self",
+                  "condition": {
+                    "category": "turn",
+                    "op": "atLeast",
+                    "round": 1
+                  },
+                  "move": "stack-trace",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "off",
+                "subject": "self",
+                "condition": {
+                  "category": "turn",
+                  "op": "atLeast",
+                  "round": 1
+                },
+                "move": "off-by-one",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 90
+          },
+          {
+            "id": "a-wasp2",
+            "species": "off-by-wasp",
+            "level": 60,
+            "version": "v1",
+            "moves": [
+              "off-by-one",
+              "stack-trace",
+              "token-burst",
+              "unit-test"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "trace",
+                  "subject": "self",
+                  "condition": {
+                    "category": "turn",
+                    "op": "atLeast",
+                    "round": 1
+                  },
+                  "move": "stack-trace",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "off",
+                "subject": "self",
+                "condition": {
+                  "category": "turn",
+                  "op": "atLeast",
+                  "round": 1
+                },
+                "move": "off-by-one",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 90
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-cobolt",
+          "species": "cobolt",
+          "level": 70,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "distilled-strike",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "ship-it",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 1
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "f4536201c5fb10bf",
+  "rounds": 2,
+  "winner": "a"
+}

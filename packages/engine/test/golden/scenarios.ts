@@ -1,10 +1,11 @@
+import { COVERAGE_SCENARIOS } from './coverage-scenarios.js';
 import { DECK_SCENARIOS } from './deck-scenarios.js';
 import { cycle, gridded, mon, opened, scenario, setup, side, type GoldenScenario } from './builders.js';
 
 // The golden battles (spec §8 "Golden files"): named, hand-designed setups with scripted commands that
 // together use every move reachable in Phase A, apply every reachable status and pull every Phase A
 // lever (move, move + injection, swap, directive, none, uncommanded sides, all five temperatures, grids),
-// then the deck battles of Phase B (deck-scenarios.ts).
+// then the deck battles of Phase B (deck-scenarios.ts) and the B6 coverage battles (coverage-scenarios.ts).
 // `pnpm golden:record` runs each through simulate and writes test/golden/<name>.json; golden.test.ts
 // replays those logs. Changing a scenario changes its golden: re-record with --update.
 
@@ -285,4 +286,5 @@ export const SCENARIOS: readonly GoldenScenario[] = [
     { a: cycle(['tool-call', 'stack-trace', 'rerank', 'token-burst'], [1, 2], 'foeSub'), b: cycle(['cosine-sniff', 'citation-needed', 'ground-truth', 'retrieval-strike'], [2], 'foeSub') },
   ),
   ...DECK_SCENARIOS,
+  ...COVERAGE_SCENARIOS,
 ];

@@ -205,6 +205,19 @@ describe('Autopilot temperature (Ruling 101)', () => {
     expect(round(headless).state.sides.a.temperature).toBe(4);
   });
 
+  it('getIntents is unaffected by the temperature an Autopilot side is restored to (B4.5 m4)', () => {
+    // Round 1 commanded at T4 leaves side a stored at 4; the next uncommanded round restores its configured T1.
+    const commanded = round(createBattle(bothAuto(), SEED), { a: { temperature: 4, action: { kind: 'none' } } });
+    expect(commanded.state.sides.a.temperature).toBe(4);
+    const intents = getIntents(commanded.state);
+    const restored = structuredClone(commanded.state);
+    restored.sides.a.temperature = 1;
+    expect(getIntents(restored)).toEqual(intents);
+    const next = round(commanded.state);
+    expect(next.state.sides.a.temperature).toBe(1);
+    expect(intentsOf(next.events)).toEqual(intents.map(({ actor, moveId, target, cardId }) => ({ actor, moveId, target, cardId })));
+  });
+
   it('a side without an Autopilot config keeps its last temperature when it sends no command', () => {
     const s = battle();
     s.sides.a.temperature = 4;

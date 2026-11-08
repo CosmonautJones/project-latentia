@@ -1,0 +1,124 @@
+{
+  "name": "default-disabled-fallback",
+  "log": {
+    "engineVersion": "0.2.0",
+    "seed": "e6b32ae671be96afdb28d341641c28a2",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 14,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-tokenibble",
+            "species": "tokenibble",
+            "level": 12,
+            "version": "v1",
+            "moves": [
+              "token-burst",
+              "token-nibble",
+              "low-latency"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "opener",
+                  "subject": "self",
+                  "condition": {
+                    "category": "turn",
+                    "op": "below",
+                    "round": 2
+                  },
+                  "move": "token-burst",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "nibble",
+                "subject": "self",
+                "condition": {
+                  "category": "turn",
+                  "op": "atLeast",
+                  "round": 1
+                },
+                "move": "token-nibble",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 90
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-nullbeetle",
+          "species": "nullbeetle",
+          "level": 16,
+          "version": "v1",
+          "moves": [
+            "infinite-loop",
+            "null-chomp"
+          ]
+        },
+        "active": [],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 2
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 2
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "infinite-loop",
+            "target": 1
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "e361b752b8cba117",
+  "rounds": 2,
+  "winner": "a"
+}
