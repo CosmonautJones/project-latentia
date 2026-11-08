@@ -174,11 +174,10 @@
       {},
       {},
       {},
-      {},
       {}
     ]
   },
-  "expectedHash": "d5601c5ef1cf2d88",
-  "rounds": 9,
+  "expectedHash": "445865e518a88aff",
+  "rounds": 8,
   "winner": "b"
 }

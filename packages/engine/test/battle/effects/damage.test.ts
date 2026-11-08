@@ -48,7 +48,7 @@ function expected(s: BattleState, actor: number, target: number, power: number, 
 const shipIt = (s: BattleState, extra: DamageMods) => expected(s, 1, 7, 65, { type: 10000, native: 12500, roll: 10000, ...extra });
 
 describe('Handoff chain', () => {
-  it('counts consecutive allied hits on one target (Ruling 39): none, 11000, 12000, then 13000; an enemy action resets it', () => {
+  it('counts consecutive allied hits on one target (Ruling 97): none, 11500, 13000, then 13000 (cap); an enemy action resets it', () => {
     const s = fresh();
     const chains: BattleEvent[] = [];
     const amounts: number[] = [];
@@ -62,8 +62,8 @@ describe('Handoff chain', () => {
     const reasoning = { type: 20000, native: 12500, roll: 10000 };
     expect(amounts).toEqual([
       expected(s, 0, 8, 70, reasoning),
-      expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, handoff: 11000 }),
-      expected(s, 2, 8, 70, { type: 10000, native: 12500, roll: 10000, handoff: 12000 }),
+      expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, handoff: 11500 }),
+      expected(s, 2, 8, 70, { type: 10000, native: 12500, roll: 10000, handoff: 13000 }),
       expected(s, 0, 8, 70, { ...reasoning, handoff: 13000, observation: 9000 }),
       expected(s, 1, 8, 65, { type: 5000, native: 12500, roll: 10000, handoff: 13000, observation: 9000 }),
     ]);
