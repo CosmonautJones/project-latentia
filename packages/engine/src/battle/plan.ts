@@ -1,11 +1,10 @@
 import { bandFor, evaluateDeck, type Band, type CardTrace, type EvaluateOptions, type Evaluation } from '../cards/evaluate.js';
 import type { Deck } from '../cards/model.js';
 import { moveDef } from '../content/moves.js';
-import type { BattleEvent } from '../events/types.js';
 import { activeCardCount, VERSION_SLOTS } from '../grid/adjacency.js';
 import { EngineInvariantError, mulBp } from '../math/bp.js';
 import { effectiveStat } from '../math/stats.js';
-import { drawRoundStart, type RoundStartDraws } from '../rng/draws.js';
+import type { RoundStartDraws } from '../rng/draws.js';
 import { hasStatus, statStage } from '../status/apply.js';
 import { activePolicies, deckOf, policyAddedThisRound } from './levers.js';
 import type { RoundCommand } from './log.js';
@@ -15,8 +14,8 @@ import { viewFor } from './view.js';
 
 // Plan (spec §5 step 2): one action entry per on-field position, with every subagent's intent from its deck
 // (or its default intent when it has none) and an uncommanded AI orchestrator's from its side's Autopilot deck;
-// getIntents previews the next round's intents; deckAction re-plans a deck-driven entry when it resolves
-// (re-validation, obedience, Brittle repeat).
+// deckAction re-plans a deck-driven entry when it resolves
+// (re-validation, obedience, Brittle repeat). The intents listings (IntentsPlanned, getIntents) live in intents.ts.
 
 /** Swap and Early Exit resolve at this priority bracket (spec §5 "Orchestrator levers"). */
 export const SWAP_PRIORITY = 3;
@@ -48,7 +47,7 @@ export function bandOf(c: CreatureState): Band {
   return c.generalization === null ? 'stable' : bandFor(c.generalization);
 }
 
-type Planned = Pick<ActionEntry, 'moveId' | 'target' | 'priority' | 'cardId' | 'skipped' | 'injection' | 'lever'>;
+type Planned = Pick<ActionEntry, 'moveId' | 'target' | 'priority' | 'cardId' | 'skipped' | 'injection' | 'lever' | 'autopilot'>;
 
 function moveEntry(actor: number, moveId: string, target: number): Planned {
   const def = moveDef(moveId);
@@ -97,7 +96,7 @@ function deckEntry(state: BattleState, c: CreatureState, run: DeckRun, rs: Round
  * its stored target (Ruling 13); a creature with a deck evaluates the Policy Update cards in force for `round`,
  * its top activeCards cards, then Default against its view (deckEntry); otherwise its default intent.
  */
-function subagentEntry(state: BattleState, c: CreatureState, rs: RoundStartDraws | null, round: number): Planned {
+export function subagentEntry(state: BattleState, c: CreatureState, rs: RoundStartDraws | null, round: number): Planned {
   if (c.charging !== null) return moveEntry(c.index, c.charging.moveId, c.charging.target);
   const run = deckRun(state, c, round);
   if (run === null) {
@@ -126,7 +125,7 @@ export function autopilotSide(state: BattleState, side: SideId, cmd: RoundComman
 }
 
 /** Whether the side's Autopilot deck drives orchestrator `c` this round (Ruling 94): an Autopilot side whose orchestrator is not charging. */
-function autopilotDrives(state: BattleState, c: CreatureState, cmd: RoundCommand): boolean {
+export function autopilotDrives(state: BattleState, c: CreatureState, cmd: RoundCommand): boolean {
   return c.isOrchestrator && c.charging === null && autopilotSide(state, c.side, cmd);
 }
 
@@ -135,10 +134,10 @@ function autopilotDrives(state: BattleState, c: CreatureState, cmd: RoundCommand
  * evaluates its side's Autopilot deck (deckEntry, Rulings 93-94); otherwise a non-headless orchestrator follows its
  * side's command, and an uncommanded or headless one its default intent.
  */
-function orchestratorEntry(state: BattleState, c: CreatureState, cmd: RoundCommand, rs: RoundStartDraws | null, round: number): Planned {
+export function orchestratorEntry(state: BattleState, c: CreatureState, cmd: RoundCommand, rs: RoundStartDraws | null, round: number): Planned {
   if (c.charging !== null) return moveEntry(c.index, c.charging.moveId, c.charging.target);
   const run = autopilotDrives(state, c, cmd) ? deckRun(state, c, round) : null;
-  if (run !== null) return deckEntry(state, c, run, rs, round);
+  if (run !== null) return { ...deckEntry(state, c, run, rs, round), autopilot: true };
   const action = isHeadless(state, c.side) ? undefined : cmd[c.side]?.action;
   if (action === undefined) {
     const intent = defaultIntent(state, c.index);
@@ -161,7 +160,7 @@ function sortLatency(c: CreatureState): number {
 }
 
 /** A living subagent in a non-removed active slot: it gets an entry (and an intent). */
-const plansAsSubagent = (state: BattleState, c: CreatureState): boolean => !c.isOrchestrator && !c.fainted && holdsLiveSlot(state, c);
+export const plansAsSubagent = (state: BattleState, c: CreatureState): boolean => !c.isOrchestrator && !c.fainted && holdsLiveSlot(state, c);
 
 /**
  * Plan (spec §5 step 2, Ruling 31): one entry per on-field position — each side's orchestrator always
@@ -187,44 +186,6 @@ export function planEntries(state: BattleState, cmd: RoundCommand): ActionEntry[
     });
   }
   return entries;
-}
-
-function intentOf(actor: number, p: Pick<ActionEntry, 'moveId' | 'target' | 'cardId'>): Intent {
-  return { actor, moveId: p.moveId, target: p.target, cardId: p.cardId ?? null, replanned: false };
-}
-
-/**
- * IntentsPlanned (spec §5 step 2; Ruling 96): the intents of the subagent entries and of the Autopilot-driven
- * orchestrator entries (those planned from a deck card), in canonical order. A commanded, uncommanded-without-
- * Autopilot, headless or charging orchestrator is not listed.
- */
-export function intentsPlanned(state: BattleState, entries: readonly ActionEntry[]): BattleEvent {
-  const listed = (e: ActionEntry): boolean => state.creatures[e.actor]?.isOrchestrator === false || e.cardId !== undefined;
-  const intents = entries.filter(listed).map((e) => {
-    const { actor, moveId, target, cardId } = intentOf(e.actor, e);
-    return { actor, moveId, target, cardId };
-  });
-  return { round: state.round, type: 'IntentsPlanned', intents };
-}
-
-/**
- * The next round's intents, before submitRound (Rulings 79, 82, 96): every planned subagent's, and every orchestrator
- * its Autopilot will drive assuming the side sends no command next round. The round-start draws are taken for every
- * creature in canonical order from a CLONE of the rng and each view is built for round `state.round + 1`, so the
- * intents equal what submitRound plans for `{}` when nothing changes. The state is not modified. Empty once the
- * battle has ended.
- */
-export function getIntents(state: BattleState): Intent[] {
-  if (state.ended) return [];
-  const rng = structuredClone(state.rng);
-  const draws = state.creatures.map(() => drawRoundStart(rng));
-  const round = state.round + 1;
-  return state.creatures
-    .filter((c) => plansAsSubagent(state, c) || autopilotDrives(state, c, {}))
-    .map((c) => {
-      const rs = draws[c.index] ?? null;
-      return intentOf(c.index, c.isOrchestrator ? orchestratorEntry(state, c, {}, rs, round) : subagentEntry(state, c, rs, round));
-    });
 }
 
 /**

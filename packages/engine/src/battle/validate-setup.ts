@@ -56,6 +56,16 @@ export function isGridMovePiece(p: PlacedPiece): boolean {
   return p.kind === 'skill' || p.kind === 'graft';
 }
 
+/**
+ * An orchestrator's stored moveset (Ruling 82): its listed moves, or on a gridded side its species signature
+ * (none for an unknown species) then the moves of its Skill and graft pieces.
+ */
+export function orchestratorMoves(side: SideSetup): string[] {
+  if (side.grid === null) return side.orchestrator.moves;
+  const species = speciesOf(side.orchestrator.species);
+  return [...(species === null ? [] : [species.signature]), ...side.grid.pieces.flatMap((p) => (isGridMovePiece(p) && p.moveId !== undefined ? [p.moveId] : []))];
+}
+
 /** A gridded orchestrator's moves: Skills must be known by its species; grafts must be some species' signature. */
 function validateGridMoves(species: SpeciesDef | null, grid: GridLayout, id: SideId, errors: Errors): void {
   const seen = new Set<string>(species === null ? [] : [species.signature]);
@@ -135,9 +145,7 @@ function validateSlots(side: SideSetup, grid: GridLayout, id: SideId, errors: Er
  */
 function validateDecks(side: SideSetup, id: SideId, errors: Errors): void {
   const orch = side.orchestrator;
-  const orchSpecies = speciesOf(orch.species);
-  const orchMoves =
-    side.grid === null ? orch.moves : [...(orchSpecies === null ? [] : [orchSpecies.signature]), ...side.grid.pieces.flatMap((p) => (isGridMovePiece(p) && p.moveId !== undefined ? [p.moveId] : []))];
+  const orchMoves = orchestratorMoves(side);
   const all: [CreatureSetup, string, readonly string[]][] = [
     [orch, `${id}.orchestrator`, orchMoves],
     ...side.active.map((c, i): [CreatureSetup, string, readonly string[]] => [c, `${id}.active[${i}]`, c.moves]),

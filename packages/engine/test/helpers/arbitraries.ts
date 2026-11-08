@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import type { BattleSetup, CreatureSetup, SideSetup } from '../../src/battle/setup.js';
+import { orchestratorMoves } from '../../src/battle/validate-setup.js';
 import { VERSIONS, type SideId, type Temperature } from '../../src/battle/state.js';
 import { SIGNATURE_MOVE_IDS } from '../../src/content/moves.js';
 import { SPECIES, type SpeciesDef } from '../../src/content/species.js';
@@ -188,13 +189,6 @@ const arbGridded = (tag: SideId): fc.Arbitrary<DraftSide> =>
         masks: subs.masks,
       };
     });
-
-/** The orchestrator's stored moveset (Ruling 82): its listed moves, or on a gridded side its signature and grid moves. */
-function orchestratorMoves(side: SideSetup): string[] {
-  if (side.grid === null) return side.orchestrator.moves;
-  const grid = side.grid.pieces.flatMap((p) => ((p.kind === 'skill' || p.kind === 'graft') && p.moveId !== undefined ? [p.moveId] : []));
-  return [speciesDef(side.orchestrator.species).signature, ...grid];
-}
 
 /** An Autopilot config (B4): 0-12 cards and a Default over the orchestrator's moves, at temperature 0-4. */
 const arbAutopilot = (side: SideSetup): fc.Arbitrary<NonNullable<SideSetup['autopilot']>> =>

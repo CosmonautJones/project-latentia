@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getIntents, planEntries, deckAction } from '../../src/battle/plan.js';
+import { getIntents } from '../../src/battle/intents.js';
+import { planEntries, deckAction } from '../../src/battle/plan.js';
 import { replay } from '../../src/battle/replay.js';
 import { submitRound } from '../../src/battle/round.js';
 import { createBattle, validateSetup, type BattleSetup, type SideSetup } from '../../src/battle/setup.js';
@@ -177,6 +178,18 @@ describe('Autopilot battles (Rulings 93-96)', () => {
     const orch = planEntries(s, {}).find((e) => e.actor === 0);
     expect(orch).toMatchObject({ moveId: 'happy-to-help', target: 7 });
     expect(orch?.cardId).toBeUndefined();
+  });
+});
+
+describe('Autopilot entry marker', () => {
+  it('only an orchestrator entry planned from the Autopilot deck is marked autopilot (a charging one is not)', () => {
+    const s = battle(auto());
+    s.round = 1;
+    const marks = (cmd: Parameters<typeof planEntries>[1] = {}) => planEntries(s, cmd).filter((e) => e.autopilot === true).map((e) => e.actor);
+    expect(marks()).toEqual([0]);
+    expect(marks({ a: { temperature: 2, action: { kind: 'none' } } })).toEqual([]);
+    at(s, 0).charging = { moveId: 'happy-to-help', target: 7, remaining: 1, powerDelta: 0, hitPower: 0 };
+    expect(marks()).toEqual([]);
   });
 });
 

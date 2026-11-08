@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { OrchestratorAction, RoundCommand } from '../../src/battle/log.js';
 import type { ActionEntry } from '../../src/battle/order.js';
-import { getIntents } from '../../src/battle/plan.js';
+import { getIntents } from '../../src/battle/intents.js';
 import { resolveEntry, submitRound } from '../../src/battle/round.js';
 import type { BattleState } from '../../src/battle/state.js';
 import type { Card, Condition, Deck } from '../../src/cards/model.js';

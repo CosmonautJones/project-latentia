@@ -14,11 +14,12 @@ import { roundStartReveals, tickFields } from './effects/timedField.js';
 import { autofillBench, checkEnd, winOutcome } from './end.js';
 import { validateCommand, type CommandError } from './errors.js';
 import { breakEnemyChains } from './handoff.js';
+import { intentsPlanned } from './intents.js';
 import { assertInvariants } from './invariants.js';
 import { directedEntry, endRoundLevers, resolveCommandLever } from './levers.js';
 import type { RoundCommand } from './log.js';
 import { holdsLiveSlot, isHeadless, sortActions, type ActionEntry } from './order.js';
-import { autopilotSide, intentsPlanned, planEntries } from './plan.js';
+import { autopilotSide, planEntries } from './plan.js';
 import { resolveAction } from './resolve.js';
 import type { BattleState, CreatureState, SideId } from './state.js';
 

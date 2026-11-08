@@ -183,5 +183,5 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
     expect(sent.policyUpdate).toBeGreaterThan(0);
     expect(sent.injection).toBeGreaterThan(0);
     expect((sent.swap + sent.directive + sent.policyUpdate + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
-  }, 60_000);
+  }, 20_000);
 });

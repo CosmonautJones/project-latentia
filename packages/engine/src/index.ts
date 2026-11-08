@@ -9,8 +9,8 @@ export { createBattle, SetupError, validateSetup } from './battle/setup.js';
 export type { BattleSetup, CreatureSetup, SideSetup, ValidationError, ValidationResult } from './battle/setup.js';
 
 export { submitRound } from './battle/round.js';
-export { getIntents } from './battle/plan.js';
-export type { Intent } from './battle/plan.js';
+export { getIntents } from './battle/intents.js';
+export type { Intent } from './battle/intents.js';
 export type { CommandError } from './battle/errors.js';
 
 export { simulate, SimulateError } from './battle/simulate.js';

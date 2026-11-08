@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { getIntents } from '../../src/battle/plan.js';
+import { getIntents } from '../../src/battle/intents.js';
 import { submitRound } from '../../src/battle/round.js';
 import { createBattle, type BattleSetup } from '../../src/battle/setup.js';
 import type { BattleEvent } from '../../src/events/types.js';

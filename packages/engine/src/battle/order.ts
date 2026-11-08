@@ -26,6 +26,8 @@ export type ActionEntry = {
   target: number;
   cardId?: string;
   skipped?: CardSkip[];
+  /** Set (true) only on an orchestrator entry planned from its side's Autopilot deck (plan.ts orchestratorEntry; Ruling 96 lists it). */
+  autopilot?: true;
   /** Set on the copy resolution acts on when re-planning changed the intent (spec §5 "Re-planning"). */
   replanned?: boolean;
   injection?: { moveId: string; target: number };

@@ -8,7 +8,7 @@ import { parseSeed, type SeedHex } from '../rng/seed.js';
 import { seedRng } from '../rng/sfc32.js';
 import { applyBattleStartPassives } from './effects/passive.js';
 import { DEFAULT_TEMPERATURE, type BattleState, type CreatureState, type SideId, type SideState, type SlotState, type Temperature, type Version } from './state.js';
-import { isGridMovePiece, MAX_ACTIVE, slotPieces, speciesOf, validateSetup } from './validate-setup.js';
+import { MAX_ACTIVE, orchestratorMoves, slotPieces, speciesOf, validateSetup } from './validate-setup.js';
 
 export type CreatureSetup = {
   id: string;
@@ -131,9 +131,7 @@ function addSide(creatures: CreatureState[], side: SideSetup, id: SideId): SideS
   const orchSpecies = speciesOf(side.orchestrator.species) as SpeciesDef;
   const grid = side.grid;
   const orchWindow = grid === null ? orchSpecies.ctx : headroomOf(grid);
-  const orchMoves =
-    grid === null ? side.orchestrator.moves : [orchSpecies.signature, ...grid.pieces.filter(isGridMovePiece).map((p) => p.moveId as string)];
-  creatures.push(buildCreature(side.orchestrator, creatures.length, id, { slot: 'orchestrator', activeSlot: null, benchOrder: null }, orchWindow, orchMoves));
+  creatures.push(buildCreature(side.orchestrator, creatures.length, id, { slot: 'orchestrator', activeSlot: null, benchOrder: null }, orchWindow, orchestratorMoves(side)));
   const firstActive = creatures.length;
   side.active.forEach((c, i) => {
     const s = speciesOf(c.species) as SpeciesDef;
