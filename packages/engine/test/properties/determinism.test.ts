@@ -8,7 +8,8 @@ import { submitRound } from '../../src/battle/round.js';
 import type { BattleEvent } from '../../src/events/types.js';
 import { eventStreamHash } from '../../src/events/canonical.js';
 import { gridlessSetup, mon, SEED } from '../battle/helpers.js';
-import { arbLegalSetup, arbScriptedCommands, arbSeed, scriptedFrom } from '../helpers/arbitraries.js';
+import { arbLegalSetup, arbSeed } from '../helpers/arbitraries.js';
+import { arbScriptedCommands, scriptedFrom } from '../helpers/commands.js';
 
 const DEFAULTS: CommandSource = { kind: 'recorded', rounds: [] };
 
@@ -93,13 +94,10 @@ describe('simulate', () => {
     expect(r.hash).toBe(simulate(gridlessSetup(), SEED, DEFAULTS).hash);
   });
 
-  it('throws SimulateError for autopilot (until B4) and for a command submitRound rejects', () => {
-    expect(() => simulate(gridlessSetup(), SEED, { kind: 'autopilot' })).toThrow(SimulateError);
-    try {
-      simulate(gridlessSetup(), SEED, { kind: 'autopilot' });
-    } catch (e) {
-      expect((e as SimulateError).code).toBe('autopilotUnavailable');
-    }
+  it('throws SimulateError for a command submitRound rejects; an autopilot source sends {} every round (Ruling 95)', () => {
+    const auto = simulate(gridlessSetup(), SEED, { kind: 'autopilot' });
+    expect(auto.log.rounds).toEqual(Array.from({ length: auto.rounds }, () => ({})));
+    expect(auto.hash).toBe(simulate(gridlessSetup(), SEED, DEFAULTS).hash);
     const bad: RoundCommand = { a: { temperature: 2, action: { kind: 'move', moveId: 'no-such-move', target: 6 } } };
     try {
       simulate(gridlessSetup(), SEED, { kind: 'recorded', rounds: [bad] });

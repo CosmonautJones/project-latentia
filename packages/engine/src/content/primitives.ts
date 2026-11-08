@@ -25,6 +25,12 @@ export type Who = 'target' | 'self' | 'allAllies' | 'allFoes' | 'everyone';
 /** Stats that carry stages (−3…+3). Accuracy and evasion stages are worth 10 accuracy points each. */
 export type StageStat = 'compute' | 'robustness' | 'latency' | 'accuracy' | 'evasion';
 
+/** A stage is clamped to STAGE_MIN…STAGE_MAX. */
+export const STAGE_MIN = -3;
+export const STAGE_MAX = 3;
+/** Every stat that carries a stage, in the order `clear` walks them. */
+export const STAGE_STATS: readonly StageStat[] = ['compute', 'robustness', 'latency', 'accuracy', 'evasion'];
+
 /** Battle-state tests used by conditional effects. Comparisons are integer cross-multiplications. */
 export type Condition =
   | { readonly kind: 'targetHasStatus'; readonly status: StatusId }

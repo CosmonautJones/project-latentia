@@ -1,7 +1,7 @@
 {
   "name": "solo-duel-uncommanded",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "4844fab0df9a7a92afae6fcebfeae783",
     "setup": {
       "a": {
@@ -48,7 +48,7 @@
       {}
     ]
   },
-  "expectedHash": "d77ff88a0b578954",
+  "expectedHash": "eecb8731063b7670",
   "rounds": 3,
   "winner": "a"
 }

@@ -1,7 +1,7 @@
 {
   "name": "round-cap-tiebreak",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "2356f4fce6d28d5b3ae90cd2c619f86e",
     "setup": {
       "a": {
@@ -940,7 +940,7 @@
       }
     ]
   },
-  "expectedHash": "bb100c13712d4458",
+  "expectedHash": "6fbea1839bd5611c",
   "rounds": 50,
   "winner": "a"
 }

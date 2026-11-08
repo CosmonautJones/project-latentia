@@ -32,7 +32,7 @@ interface Base {
 
 export type BattleEvent =
   | (Base & { type: 'RoundStart' })
-  | (Base & { type: 'IntentsPlanned'; intents: { actor: number; moveId: string; target: number }[] })
+  | (Base & { type: 'IntentsPlanned'; intents: { actor: number; moveId: string; target: number; cardId: string | null }[] })
   | (Base & { type: 'ActionStarted'; actor: number; draws: RawDraws })
   | (Base & {
       type: 'CardTrace';
@@ -72,3 +72,6 @@ export type BattleEvent =
   | (Base & { type: 'BattleEnd'; winner: number | null; reason: string });
 
 export type BattleEventType = BattleEvent['type'];
+
+/** The CardTrace event: which deck card fired for a deck-driven action, and why each card above it was skipped. */
+export type CardTraceEvent = Extract<BattleEvent, { type: 'CardTrace' }>;

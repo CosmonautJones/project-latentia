@@ -1,26 +1,15 @@
 import { gridShapeErrors } from '../grid/validate.js';
 import type { ValidationError } from './setup.js';
+import { field, isNum, isRecord, isStr, join, shape } from '../cards/json.js';
+import { deckShapeErrors } from '../cards/deck-shape.js';
 
 // Shape checks for untrusted JSON (Ruling 75, reversing Ruling 29): validateSetup runs these first and
 // replay reuses them, so no malformed setup or log can make a validator, createBattle or replay throw.
 // They check types only; values (ranges, ids, counts) are validateSetup's.
 
-export type Rec = Record<string, unknown>;
-
-export const isRecord = (v: unknown): v is Rec => typeof v === 'object' && v !== null && !Array.isArray(v);
-export const isStr = (v: unknown): v is string => typeof v === 'string';
-export const isNum = (v: unknown): v is number => typeof v === 'number';
-
 export const SETUP_KINDS = ['trainer', 'wild', 'ghost'] as const;
 
 type Errors = ValidationError[];
-
-const shape = (errors: Errors, path: string, message: string): void => {
-  errors.push({ code: 'shape', path, message });
-};
-
-/** `path.key`; '' on either side is the root, so it adds nothing. */
-const join = (path: string, key: string): string => (path === '' ? key : key === '' ? path : `${path}.${key}`);
 
 /** An array (no holes) whose every entry passes `entry`; reports the array or each bad entry. */
 function arrayOf(v: unknown, path: string, what: string, errors: Errors, entry: (x: unknown, at: string) => void): void {
@@ -31,9 +20,7 @@ function arrayOf(v: unknown, path: string, what: string, errors: Errors, entry: 
   for (let i = 0; i < v.length; i++) entry(v[i], `${path}[${i}]`);
 }
 
-function field(c: Rec, key: string, path: string, ok: (v: unknown) => boolean, what: string, errors: Errors): void {
-  if (!ok(c[key])) shape(errors, join(path, key), `${key} must be ${what}`);
-}
+const isNumIfPresent = (v: unknown): boolean => v === undefined || isNum(v);
 
 function creatureShape(c: unknown, path: string, errors: Errors): void {
   if (!isRecord(c)) {
@@ -47,13 +34,14 @@ function creatureShape(c: unknown, path: string, errors: Errors): void {
   arrayOf(c.moves, join(path, 'moves'), 'moves', errors, (m, at) => {
     if (!isStr(m)) shape(errors, at, 'a move id must be a string');
   });
-  field(c, 'generalization', path, (v) => v === undefined || isNum(v), 'a number when present', errors);
-  field(c, 'trainedTemperature', path, (v) => v === undefined || isNum(v), 'a number when present', errors);
+  field(c, 'generalization', path, isNumIfPresent, 'a number when present', errors);
+  field(c, 'trainedTemperature', path, isNumIfPresent, 'a number when present', errors);
   if (c.recordedFoes !== undefined) {
     arrayOf(c.recordedFoes, join(path, 'recordedFoes'), 'recordedFoes', errors, (f, at) => {
       if (!isStr(f)) shape(errors, at, 'a recorded foe id must be a string');
     });
   }
+  if (c.deck !== undefined) deckShapeErrors(c.deck, join(path, 'deck'), errors);
 }
 
 function sideShape(s: unknown, path: string, errors: Errors): void {
@@ -71,7 +59,10 @@ function sideShape(s: unknown, path: string, errors: Errors): void {
   }
   if (s.autopilot !== undefined) {
     if (!isRecord(s.autopilot)) shape(errors, join(path, 'autopilot'), 'autopilot must be an object when present');
-    else field(s.autopilot, 'temperature', join(path, 'autopilot'), isNum, 'a number', errors);
+    else {
+      deckShapeErrors(s.autopilot.deck, join(join(path, 'autopilot'), 'deck'), errors);
+      field(s.autopilot, 'temperature', join(path, 'autopilot'), isNum, 'a number', errors);
+    }
   }
   field(s, 'opponentId', path, isStr, 'a string', errors);
 }

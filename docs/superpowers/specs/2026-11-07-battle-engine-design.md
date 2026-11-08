@@ -3,9 +3,9 @@
 - **Project:** Latentia (working codename; the region name, not a final title)
 - **Sub-project:** 1 of 5 — the headless battle engine and balance simulator
 - **Date:** 2026-11-07
-- **Status:** Revision 3.1 — plus normative rulings in docs/superpowers/notes/phase-a-rulings.md
+- **Status:** Revision 3.2 — plus normative rulings in docs/superpowers/notes/phase-a-rulings.md (1–80) and docs/superpowers/notes/phase-b-rulings.md (81–119)
 - **Source of truth for game rules:** `docs/design-bible.md` (sections "One Context Grid…", "Battles run on eight types…", "Training is example cards…", "Determinism makes ghosts…"). This spec turns those rules into a buildable engine. Where this spec and the bible differ, this spec wins and the bible gets updated.
-- **Normative rulings:** `docs/superpowers/notes/phase-a-rulings.md` holds the rulings made while Phase A was built; they amend this spec, and where a ruling and this spec differ, the ruling wins.
+- **Normative rulings:** `docs/superpowers/notes/phase-a-rulings.md` and `docs/superpowers/notes/phase-b-rulings.md` hold the rulings made while Phases A and B were built; they amend this spec, and where a ruling and this spec differ, the ruling wins.
 
 Normative words: **must** / **must not** are requirements; everything marked *tunable* is a starting value the simulator will adjust.
 
@@ -117,11 +117,11 @@ latentia/
 | `math` | Fixed-point and basis-point arithmetic, stat formulas, damage, accuracy, crit | — |
 | `content` | Type chart, moves, statuses, species | `math` |
 | `events` | `BattleEvent` union, `BattleLog`, canonical JSON, event-stream hash | — |
-| `grid` | Validate layouts; adjacency; active-card counts | `content` |
-| `context` | Per-creature token store: add, overflow → Drift, compact, clear, forced compaction | `grid`, `events` |
-| `status` | Apply, block, tick, expire, cure | `content`, `events`, `math`, `rng` |
-| `cards` | Evaluate a deck against a read-only battle view → card, move, target, trace | `content`, `math` |
-| `generalization` | C, R, H, G from a deck, an Eval Suite and active slots | `cards`, `content` |
+| `grid` | Validate layouts; adjacency; active-card counts | — |
+| `context` | Per-creature token store: add, overflow → Drift, compact, clear, forced compaction | `grid`, `events` (types only) |
+| `status` | Apply, block, tick, expire, cure | `content`, `events` (types only), `math`, `rng` |
+| `cards` | Evaluate a deck against a read-only battle view → card, move, target, trace; deck shape checks | `content`, `math`, `rng`, `status`, `events` (types only) |
+| `generalization` | C, R, H, G from a deck, an Eval Suite and active slots | `cards`, `content`, `math` |
 | `battle` | Setup validation, round loop, actions, win check, `replay` | all units except `generalization` |
 
 `generalization` evaluates Eval Suite snapshots with `cards` only. It never runs a battle. **G is a setup input**: the caller computes it with `computeGeneralization` and passes it in. Sub-project 5's ghost server recomputes it before accepting an upload.
@@ -172,7 +172,7 @@ export function eventStreamHash(events: readonly BattleEvent[]): string;   // 16
 
 ### Round structure
 1. **Round start.** Take two round-start draws for **every** creature in canonical order, alive or not (draw table below). Resolve round-start effects.
-2. **Plan.** Evaluate every subagent deck and every Autopilot deck → one `Intent` per creature (move, target, card id). Apply Directive and Policy Update from the `RoundCommand` (see Levers), then re-derive intents. The player's command sets temperature and the orchestrator's action.
+2. **Plan.** Evaluate every subagent deck and every Autopilot deck → one `Intent` per creature (move, target, card id). Levers in the `RoundCommand` do not touch intents: Directive and Policy Update resolve with the orchestrator's entry in step 4 (Rulings 74, 91). The player's command sets temperature and the orchestrator's action; an uncommanded side with an Autopilot deck is commanded by that deck (Rulings 93–96, 101).
 3. **Sort.** Order actions by priority bracket (+4 … −3), then effective Latency (descending), then round-start tie-break value (descending), then canonical index (ascending). The order is fixed after Sort; only an explicit Rerank changes it. Sorted entries belong to **creatures**, not slots: a creature that leaves the field mid-round (Swap, Early Exit, force-bench) skips its entry but still consumes its draws, and a creature that arrives mid-round does not act until the next round.
 4. **Resolve each action.** Every creature in the sorted list consumes its **six action draws whether or not it acts** — including Rate Limited skips, the /clear skip, Headless skips and creatures KO'd before their turn. Then, if it acts: re-validate the card; check statuses; pay context; roll; apply effects; update the Handoff Chain.
 5. **End of round.** Statuses tick and expire; timed field effects tick; Deprecated counts down; bench creatures recover 2 context cells; empty slots auto-fill; win check.
@@ -210,7 +210,7 @@ Damage is carried at ×10000 precision so small modifiers matter at slice levels
 1. **Effective power `P`**, in this order, each multiplicative step `P = floor(P × m / 10000)`: start from the move's base power → add additive bonuses (Chain of Thought, Long-Term Recall, Leaderboard Flex) → conditional multipliers (e.g., Proof by Contradiction ×2 = 20000, Wild ×1.5 = 15000) → Tool steps (11000 each) → Compaction Summary (5000).
 2. `LF = floor(2 × L / 5) + 2`.
 3. `d = floor(P × Atk × LF × 10000 / (Def × 50))` using effective Atk and Def. A crit ignores the defender's positive Robustness stages.
-4. Apply each modifier `m` (basis points) in this exact order with `d = floor(d × m / 10000)`, skipping any that don't apply: **Type** (chart product, clamped 2500–30000) → **T4 super-effective** (12500) → **Native** same-type (12500) → **Crit** (15000) → **Roll** (temperature roll, as basis points) → **Handoff** (11000 / 12000 / 13000) → **Specialist** (11500) → **Overfit** (11500 same target / 7000 other) → **Glazed** (7000 vs its glazer) → **Observation** (9000) → **Guard** (Guardrail, or Captcha Wall against a non-Speed move: 5000) → **Refusal penalty / Earnest Apology** (5000 / 7000). A Captcha Wall block of a Speed move counts as a miss.
+4. Apply each modifier `m` (basis points) in this exact order with `d = floor(d × m / 10000)`, skipping any that don't apply: **Type** (chart product, clamped 2500–30000) → **T4 super-effective** (12500) → **Native** same-type (12500) → **Crit** (15000) → **Roll** (temperature roll, as basis points) → **Handoff** (none on a side's first hit on the target; 11500 on the 2nd consecutive hit, 13000 from the 3rd: Ruling 97) → **Specialist** (11500) → **Overfit** (11500 same target / 7000 other) → **Glazed** (7000 vs its glazer) → **Observation** (9000) → **Guard** (Guardrail, or Captcha Wall against a non-Speed move: 5000) → **Refusal penalty / Earnest Apology** (5000 / 7000). A Captcha Wall block of a Speed move counts as a miss.
 5. `damage = floor(d / 10000) + 1`.
 6. Every intermediate value **must** satisfy `Number.isSafeInteger`; the engine asserts it. Two basis-point values are never multiplied without dividing by 10000 in between.
 7. Multi-hit moves roll accuracy, crit and damage roll once and apply them to every hit; the whole move counts as one Handoff hit.
@@ -265,8 +265,8 @@ A unit test **must** show that a 10% modifier changes damage for a typical L5 at
 - **Trace:** every deck-driven action emits `CardTrace { firedCardId, skipped: [{ cardId, reason }] }`, reasons ∈ `conditionFalse`, `insufficientContext`, `moveDisabled`, `notActive`, `disobeyed`.
 
 ### Orchestrator levers (timing is normative)
-- **Directive** (2 cells, uses the orchestrator's action): applied at plan time; replaces one allied subagent's intent for this round with the given move and target.
-- **Policy Update** (2 cells, uses the orchestrator's action): the `RoundCommand` carries one card. It is inserted above every allied deck's active cards for rounds *r* to *r*+2. It uses no card slot.
+- **Directive** (2 cells, uses the orchestrator's action): resolves when the orchestrator's entry resolves (Rulings 74, 90, 91). From then on, if the directed subagent has not yet acted this round, its action is the given move and target. Intents are never altered by levers.
+- **Policy Update** (2 cells, uses the orchestrator's action): the `RoundCommand` carries one card. It is inserted above every allied deck's active cards for rounds *r* to *r*+2. It uses no card slot. It takes effect when the orchestrator's entry resolves; allied subagents that have not yet acted this round re-evaluate from the top (Ruling 90).
 - **Swap** and **Early Exit** resolve at priority +3. The incoming creature is the chosen bench creature (Swap) or the first living bench creature (Early Exit).
 
 ### Generalization

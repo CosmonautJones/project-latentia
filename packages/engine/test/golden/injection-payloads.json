@@ -1,7 +1,7 @@
 {
   "name": "injection-payloads",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "708cb0c6ad21d24119cf0f9a5cbbe5dc",
     "setup": {
       "a": {
@@ -215,7 +215,7 @@
       }
     ]
   },
-  "expectedHash": "ebe3ddbf372e703c",
+  "expectedHash": "fc82b63828364824",
   "rounds": 5,
   "winner": "b"
 }

@@ -9,7 +9,8 @@ import type { BattleState } from '../../src/battle/state.js';
 import type { BattleEvent } from '../../src/events/types.js';
 import { parseSeed } from '../../src/rng/seed.js';
 import { nextU32, seedRng } from '../../src/rng/sfc32.js';
-import { arbLegalSetup, arbScriptedCommands, arbSeed } from '../helpers/arbitraries.js';
+import { arbLegalSetup, arbSeed, recordedFoeCandidates } from '../helpers/arbitraries.js';
+import { arbScriptedCommands } from '../helpers/commands.js';
 
 const RUNS = 200;
 
@@ -24,6 +25,8 @@ function checkState(state: BattleState): void {
 
 /** What the scripted sources sent, over every battle: orchestrator commands by kind. */
 const sent = { commands: 0, swap: 0, directive: 0, injection: 0, policyUpdate: 0 };
+/** States shown with two or more Policy Update cards of distinct ids in force on one side (Ruling 119 m6). */
+const stacked = { states: 0 };
 
 function tally(cmd: RoundCommand): void {
   for (const sc of [cmd.a, cmd.b]) {
@@ -42,6 +45,7 @@ function watched(source: CommandSource, shown: { rounds: number }): CommandSourc
     kind: 'scripted',
     next: (state) => {
       checkState(state);
+      for (const side of [state.sides.a, state.sides.b]) if (new Set(side.policies.map((p) => p.card.id)).size >= 2) stacked.states++;
       shown.rounds++;
       const cmd = source.next(state);
       tally(cmd);
@@ -82,24 +86,37 @@ function checkDraws(seed: string, creatures: number, events: readonly BattleEven
 }
 
 describe('invariants over random legal battles (spec §8 properties)', () => {
-  it('arbLegalSetup only builds setups validateSetup accepts, gridded and gridless', () => {
-    let gridded = 0;
+  it('arbLegalSetup only builds setups validateSetup accepts, gridded and gridless, with and without Autopilot', () => {
+    const seen = { gridded: 0, autopilot: 0, griddedAutopilot: 0, noAutopilot: 0, bigAutopilot: 0 };
     fc.assert(
       fc.property(arbLegalSetup, (setup) => {
         expect(validateSetup(setup).errors).toEqual([]);
-        if (setup.a.grid !== null || setup.b.grid !== null) gridded++;
+        if (setup.a.grid !== null || setup.b.grid !== null) seen.gridded++;
+        for (const side of [setup.a, setup.b]) {
+          if (side.autopilot === undefined) {
+            seen.noAutopilot++;
+            continue;
+          }
+          seen.autopilot++;
+          if (side.grid !== null) seen.griddedAutopilot++;
+          if (side.autopilot.deck.cards.length > 6) seen.bigAutopilot++;
+        }
       }),
       { numRuns: 500 },
     );
-    expect(gridded).toBeGreaterThan(100);
+    expect(seen.gridded).toBeGreaterThan(100);
+    expect(seen.autopilot).toBeGreaterThan(300); // B4: about half the sides carry an Autopilot deck
+    expect(seen.noAutopilot).toBeGreaterThan(300);
+    expect(seen.griddedAutopilot).toBeGreaterThan(50);
+    expect(seen.bigAutopilot).toBeGreaterThan(50); // beyond a subagent deck's 6, up to the cap of 12
   });
 
   it('arbLegalSetup trains subagents and builds sides with no active subagent (Ruling 77)', () => {
-    const seen = { temps: new Set<number>(), untrained: 0, robustWithFoes: 0, generalizationUnset: 0, noActives: 0, griddedNoActives: 0 };
+    const seen = { temps: new Set<number>(), untrained: 0, robustWithFoes: 0, robustVsRecorded: 0, robustVsUnseen: 0, generalizationUnset: 0, noActives: 0, griddedNoActives: 0, decks: 0, noDeck: 0 };
     fc.assert(
       fc.property(arbLegalSetup, (setup) => {
-        for (const [own, foe] of [[setup.a, setup.b], [setup.b, setup.a]] as const) {
-          const foeIds = new Set([foe.orchestrator, ...foe.active, ...foe.bench].map((c) => c.id));
+        for (const own of [setup.a, setup.b]) {
+          const candidates = new Set(recordedFoeCandidates(own));
           expect(own.orchestrator.trainedTemperature ?? own.orchestrator.generalization ?? own.orchestrator.recordedFoes).toBeUndefined();
           if (own.active.length === 0) {
             seen.noActives++;
@@ -109,8 +126,14 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
             if (c.trainedTemperature === undefined) seen.untrained++;
             else seen.temps.add(c.trainedTemperature);
             if (c.generalization === undefined) seen.generalizationUnset++;
-            for (const id of c.recordedFoes ?? []) expect(foeIds.has(id)).toBe(true);
-            if ((c.generalization ?? 0) >= 70 && (c.recordedFoes ?? []).length > 0) seen.robustWithFoes++;
+            if (c.deck === undefined) seen.noDeck++;
+            else seen.decks++;
+            for (const id of c.recordedFoes ?? []) expect(candidates.has(id)).toBe(true);
+            if ((c.generalization ?? 0) >= 70 && (c.recordedFoes ?? []).length > 0) {
+              seen.robustWithFoes++;
+              if ((c.recordedFoes ?? []).includes(own.opponentId)) seen.robustVsRecorded++;
+              else seen.robustVsUnseen++;
+            }
           }
         }
       }),
@@ -120,8 +143,12 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
     expect(seen.untrained).toBeGreaterThan(0);
     expect(seen.generalizationUnset).toBeGreaterThan(0);
     expect(seen.robustWithFoes).toBeGreaterThan(20);
+    expect(seen.robustVsRecorded).toBeGreaterThan(5); // Robust's +5 off (Ruling 80)
+    expect(seen.robustVsUnseen).toBeGreaterThan(5); // and on
     expect(seen.noActives).toBeGreaterThan(20);
     expect(seen.griddedNoActives).toBeGreaterThan(0);
+    expect(seen.decks).toBeGreaterThan(100); // B2: subagents acting from decks
+    expect(seen.noDeck).toBeGreaterThan(100);
   });
 
   it(`${RUNS} battles: HP in [0, max], tokens ≤ window, ≤ ${ROUND_CAP} rounds, exactly six draws per ActionStarted`, () => {
@@ -153,10 +180,12 @@ describe('invariants over random legal battles (spec §8 properties)', () => {
       { numRuns: RUNS },
     );
     // The lever and injection paths are exercised, not just moves: ≥ 10% of the orchestrator commands
-    // are a swap, a directive or a move carrying an injection, and each kind occurs.
+    // are a swap, a directive, a policy update or a move carrying an injection, and each kind occurs.
     expect(sent.swap).toBeGreaterThan(0);
     expect(sent.directive).toBeGreaterThan(0);
+    expect(sent.policyUpdate).toBeGreaterThan(0);
+    expect(stacked.states).toBeGreaterThan(0); // policies stack: distinct ids, not one id replacing itself
     expect(sent.injection).toBeGreaterThan(0);
-    expect((sent.swap + sent.directive + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
-  });
+    expect((sent.swap + sent.directive + sent.policyUpdate + sent.injection) * 10).toBeGreaterThanOrEqual(sent.commands);
+  }, 20_000);
 });

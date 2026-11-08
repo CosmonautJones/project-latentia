@@ -1,3 +1,4 @@
+import type { Deck } from '../../src/cards/model.js';
 import { describe, expect, it } from 'vitest';
 import { SPECIES } from '../../src/content/species.js';
 import { canonicalJson } from '../../src/events/canonical.js';
@@ -204,7 +205,7 @@ describe('validateSetup', () => {
     const g = (generalization: number): CreatureSetup => ({ ...mon(`g${generalization}`, 'blitzr'), generalization });
     const t = { ...mon('t', 'blitzr'), trainedTemperature: 5 } as unknown as CreatureSetup;
     const ok = { ...mon('ok', 'blitzr'), generalization: 0, trainedTemperature: 4 } as CreatureSetup;
-    const deck = {} as never;
+    const deck: Deck = { cards: [], default: { id: 'd', subject: 'self', condition: { category: 'coin' }, move: 'compact', target: 'self' } };
     const s = setupOf(
       { bench: [g(101), g(-1), g(2.5)] },
       { bench: [t, ok], autopilot: { deck, temperature: 7 as never } },
@@ -472,8 +473,8 @@ describe('createBattle', () => {
     expect(extra).toMatchObject({ generalization: 72, trainedTemperature: 3, recordedFoes: ['b-act1'], nextActionMods: [{ kind: 'priority', delta: 1 }], shields: [] });
   });
 
-  it('builds side state: grid copy, default temperature T2 or the Autopilot temperature, not headless', () => {
-    const deck = { cards: [] } as never;
+  it('builds side state: grid copy, default temperature T2 or the Autopilot temperature, not headless, no policy or directive', () => {
+    const deck: Deck = { cards: [], default: { id: 'd', subject: 'self', condition: { category: 'coin' }, move: 'compact', target: 'self' } };
     const state = createBattle(setupOf({}, { autopilot: { deck, temperature: 4 } }), SEED);
     expect(state.sides.a).toEqual({
       grid: l5Grid('a'),
@@ -486,11 +487,14 @@ describe('createBattle', () => {
         { pieceId: 'slot2', occupant: 2 },
       ],
       lastMove: null,
+      policies: [],
+      directive: null,
     });
     expect(state.fields).toEqual([]);
     expect(state.turnOrder).toEqual([]);
     expect(state.sides.b.temperature).toBe(4);
-    expect(state.sides.b.autopilot).toEqual({ deck: { cards: [] }, temperature: 4 });
+    expect(state.sides.b.autopilot).toEqual({ deck, temperature: 4 });
+    expect(state.sides.b.autopilot?.deck).not.toBe(deck);
   });
 
   it('never aliases the caller setup', () => {
@@ -504,7 +508,7 @@ describe('createBattle', () => {
   });
 
   it('is plain data: survives canonicalJson and deep-equals its structuredClone', () => {
-    const deck = { cards: [{ id: 'default' }] } as never;
+    const deck: Deck = { cards: [], default: { id: 'default', subject: 'self', condition: { category: 'coin' }, move: 'ship-it', target: 'lowestHpFoe' } };
     const state = createBattle(setupOf({ active: [{ ...mon('a-act1', 'blitzr'), deck }, mon('a-act2', 'forkling')] }, { grid: null }), SEED);
     expect(() => canonicalJson(state)).not.toThrow();
     expect(structuredClone(state)).toStrictEqual(state);
@@ -519,7 +523,7 @@ describe('assertInvariants', () => {
     if (c === undefined) throw new Error(`fixture has no creature ${i}`);
     return c;
   };
-  const expectViolation = (state: BattleState, actor: number) => {
+  const expectViolation = (state: BattleState, actor: number | undefined) => {
     let caught: unknown;
     try {
       assertInvariants(state);
@@ -534,6 +538,19 @@ describe('assertInvariants', () => {
 
   it('passes on a fresh battle', () => {
     expect(() => assertInvariants(fresh())).not.toThrow();
+  });
+
+  it('rejects a Directive kept past its round and a Policy Update no longer in force', () => {
+    const s = fresh();
+    s.sides.a.directive = { subagent: 1, moveId: 'ship-it', target: 7, round: 0 };
+    expectViolation(s, undefined); // a side's fault: no creature to blame
+    const card = { id: 'p', subject: 'self', condition: { category: 'coin' }, move: 'compact', target: 'self' } as const;
+    const t = fresh();
+    t.round = 3;
+    t.sides.b.policies = [{ card, fromRound: 2, lastRound: 4 }];
+    expect(() => assertInvariants(t)).not.toThrow();
+    t.sides.b.policies = [{ card, fromRound: 1, lastRound: 3 }];
+    expectViolation(t, undefined);
   });
 
   it('rejects HP above max or below 0', () => {

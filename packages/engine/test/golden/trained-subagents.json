@@ -1,7 +1,7 @@
 {
   "name": "trained-subagents",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "35f972a691deec58529467c3e15b45a9",
     "setup": {
       "a": {
@@ -42,7 +42,7 @@
             ],
             "generalization": 80,
             "recordedFoes": [
-              "b-cobolt"
+              "trainer-c"
             ]
           }
         ],
@@ -166,7 +166,7 @@
       }
     ]
   },
-  "expectedHash": "48bce8ca4236a982",
+  "expectedHash": "514b7947bee111d5",
   "rounds": 4,
   "winner": "a"
 }

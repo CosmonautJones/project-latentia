@@ -1,7 +1,7 @@
 {
   "name": "full-rosters-uncommanded",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "bb70351586509142bc45572d16926353",
     "setup": {
       "a": {
@@ -174,11 +174,10 @@
       {},
       {},
       {},
-      {},
       {}
     ]
   },
-  "expectedHash": "7fa65ddbc02327de",
-  "rounds": 9,
+  "expectedHash": "445865e518a88aff",
+  "rounds": 8,
   "winner": "b"
 }

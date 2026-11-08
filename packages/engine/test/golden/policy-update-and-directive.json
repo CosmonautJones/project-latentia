@@ -1,0 +1,285 @@
+{
+  "name": "policy-update-and-directive",
+  "log": {
+    "engineVersion": "0.3.0",
+    "seed": "5cba08d8f8b9c0ce26fafcc00dabb7ff",
+    "setup": {
+      "a": {
+        "orchestrator": {
+          "id": "a-sagelet",
+          "species": "sagelet",
+          "level": 24,
+          "version": "v1",
+          "moves": [
+            "happy-to-help",
+            "chain-of-thought",
+            "step-back-prompt",
+            "proof-by-contradiction"
+          ]
+        },
+        "active": [
+          {
+            "id": "a-cobolt",
+            "species": "cobolt",
+            "level": 22,
+            "version": "v1",
+            "moves": [
+              "batch-job",
+              "refactor",
+              "hotfix",
+              "long-term-recall"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "batch",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "batch-job",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "grind",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "batch-job",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 80
+          },
+          {
+            "id": "a-blitzr",
+            "species": "blitzr",
+            "level": 22,
+            "version": "v1",
+            "moves": [
+              "ship-it",
+              "token-burst",
+              "low-latency",
+              "distilled-strike"
+            ],
+            "deck": {
+              "cards": [
+                {
+                  "id": "finish",
+                  "subject": "foe",
+                  "condition": {
+                    "category": "hp",
+                    "op": "below",
+                    "pct": 50
+                  },
+                  "move": "distilled-strike",
+                  "target": "lowestHpFoe"
+                }
+              ],
+              "default": {
+                "id": "ship",
+                "subject": "self",
+                "condition": {
+                  "category": "hp",
+                  "op": "atLeast",
+                  "pct": 25
+                },
+                "move": "ship-it",
+                "target": "lowestHpFoe"
+              }
+            },
+            "generalization": 50
+          }
+        ],
+        "bench": [],
+        "grid": null,
+        "opponentId": "trainer-b"
+      },
+      "b": {
+        "orchestrator": {
+          "id": "b-cobolt",
+          "species": "cobolt",
+          "level": 20,
+          "version": "v1",
+          "moves": [
+            "batch-job",
+            "refactor",
+            "hotfix",
+            "long-term-recall"
+          ]
+        },
+        "active": [
+          {
+            "id": "b-deprecatter",
+            "species": "deprecatter",
+            "level": 18,
+            "version": "v1",
+            "moves": [
+              "nostalgia-trip",
+              "long-term-recall",
+              "save-state",
+              "episodic-replay"
+            ]
+          },
+          {
+            "id": "b-slopling",
+            "species": "slopling",
+            "level": 18,
+            "version": "v1",
+            "moves": [
+              "six-fingers",
+              "swarm-of-fine-tunes",
+              "adversarial-patch",
+              "weights-dump"
+            ]
+          }
+        ],
+        "bench": [
+          {
+            "id": "b-forkling",
+            "species": "forkling",
+            "level": 16,
+            "version": "v1",
+            "moves": [
+              "hard-fork",
+              "community-patch",
+              "swarm-of-fine-tunes",
+              "leaderboard-flex"
+            ]
+          }
+        ],
+        "grid": null,
+        "opponentId": "trainer-a"
+      },
+      "kind": "trainer"
+    },
+    "rounds": [
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "policyUpdate",
+            "card": {
+              "id": "recall",
+              "subject": "self",
+              "condition": {
+                "category": "hp",
+                "op": "atLeast",
+                "pct": 25
+              },
+              "move": "long-term-recall",
+              "target": "lowestHpFoe"
+            }
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "directive",
+            "subagent": 2,
+            "moveId": "token-burst",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "directive",
+            "subagent": 1,
+            "moveId": "hotfix",
+            "target": 1
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "refactor",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 1
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "none"
+          }
+        }
+      }
+    ]
+  },
+  "expectedHash": "9ad63249a974cc01",
+  "rounds": 6,
+  "winner": "a"
+}

@@ -99,16 +99,26 @@ describe('resolveAction: accuracy', () => {
     expect(ofType(overflow, 'Missed')).toHaveLength(1);
   });
 
-  it('gives a Robust creature +5 only against a foe not in recordedFoes', () => {
+  it('gives a Robust subagent +5 only against an opponent whose id is not in recordedFoes (Ruling 80)', () => {
     const robust = fresh();
     at(robust, 1).generalization = 70;
     expect(dealt(run(robust, 1, 'ship-it', 7, { d3lo: 99 }))).toHaveLength(1); // 95 + 5 = 100
+    // side a faces opponent id 'b' (SideState.opponentId); recorded foes are opponent ids, not creature ids
     const recorded = fresh();
-    Object.assign(at(recorded, 1), { generalization: 90, recordedFoes: ['b-act1'] });
+    Object.assign(at(recorded, 1), { generalization: 90, recordedFoes: ['b'] });
     expect(ofType(run(recorded, 1, 'ship-it', 7, { d3lo: 95 }), 'Missed')).toHaveLength(1);
+    const creatureId = fresh();
+    Object.assign(at(creatureId, 1), { generalization: 90, recordedFoes: ['b-act1', 'a'] });
+    expect(dealt(run(creatureId, 1, 'ship-it', 7, { d3lo: 99 }))).toHaveLength(1);
     const stable = fresh();
     at(stable, 1).generalization = 69;
     expect(ofType(run(stable, 1, 'ship-it', 7, { d3lo: 95 }), 'Missed')).toHaveLength(1);
+  });
+
+  it('never gives the +5 to an orchestrator, however high its generalization (Ruling 80)', () => {
+    const s = fresh();
+    at(s, 0).generalization = 100;
+    expect(ofType(run(s, 0, 'ship-it', 7, { d3lo: 95 }), 'Missed')).toHaveLength(1);
   });
 
   it('applies accuracy and evasion stages at 10 points each', () => {

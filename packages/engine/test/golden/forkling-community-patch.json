@@ -1,7 +1,7 @@
 {
   "name": "forkling-community-patch",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "393b04bc17a75055248fec67c710d310",
     "setup": {
       "a": {
@@ -234,7 +234,7 @@
       }
     ]
   },
-  "expectedHash": "35f6f1319ce13e7d",
+  "expectedHash": "086830a62fff3a98",
   "rounds": 7,
   "winner": "b"
 }

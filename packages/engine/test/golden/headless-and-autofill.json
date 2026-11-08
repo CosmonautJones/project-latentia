@@ -1,7 +1,7 @@
 {
   "name": "headless-and-autofill",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "037e428d63a56f2a40af934b8506119b",
     "setup": {
       "a": {
@@ -247,7 +247,7 @@
       }
     ]
   },
-  "expectedHash": "3d4d82477cc1a363",
+  "expectedHash": "496ff6661ec3973f",
   "rounds": 7,
   "winner": "a"
 }

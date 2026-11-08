@@ -1,4 +1,4 @@
-import type { NonPassiveEffect, StageStat } from '../../content/primitives.js';
+import { STAGE_MAX, STAGE_MIN, STAGE_STATS, type NonPassiveEffect } from '../../content/primitives.js';
 import type { BattleEvent } from '../../events/types.js';
 import type { Token } from '../../context/store.js';
 import type { CreatureState } from '../state.js';
@@ -6,10 +6,8 @@ import { recipients, type EffectContext } from './context.js';
 
 export type StageEffect = Extract<NonPassiveEffect, { kind: 'stage' }>;
 
-export const STAGE_MIN = -3;
-export const STAGE_MAX = 3;
-/** Every stat that carries a stage, in the order `clear` walks them. */
-export const STAGE_STATS: readonly StageStat[] = ['compute', 'robustness', 'latency', 'accuracy', 'evasion'];
+// STAGE_STATS lives with StageStat in content/primitives.ts (shared with generalization/); re-exported for the effects.
+export { STAGE_STATS };
 
 /**
  * Moves `c`'s `stat` stage by `delta`, clamped to −3…+3. Emits one StageChanged with the change actually

@@ -5,8 +5,11 @@ import type { SeedHex } from '../../src/rng/seed.js';
 import type { RoundCommand } from '../../src/battle/log.js';
 import { submitRound } from '../../src/battle/round.js';
 import { createBattle } from '../../src/battle/setup.js';
-import type { BattleState, Card } from '../../src/battle/state.js';
+import type { BattleState } from '../../src/battle/state.js';
+import type { Card } from '../../src/cards/model.js';
 import { at, battle, gridlessSetup, mon } from './helpers.js';
+
+const POLICY_CARD: Card = { id: 'p1', subject: 'self', condition: { category: 'coin' }, move: 'happy-to-help', target: 'lowestHpFoe' };
 
 // The real resolution pipeline under submitRound (round.test.ts mocks resolveAction).
 describe('through submitRound (the real pipeline)', () => {
@@ -73,7 +76,7 @@ describe('through submitRound (the real pipeline)', () => {
       at(s, 0).stats.latency = 1;
       return ok(s, action === undefined ? {} : { b: action }).events.filter((e) => e.type === 'HandoffChain').map((e) => e.chain);
     };
-    expect(chainsWith({ temperature: 2, action: { kind: 'policyUpdate', card: {} as Card } })).toEqual([[1], [0]]);
+    expect(chainsWith({ temperature: 2, action: { kind: 'policyUpdate', card: POLICY_CARD } })).toEqual([[1], [0]]);
     expect(chainsWith({ temperature: 2, action: { kind: 'none' } })).toEqual([[1], [1, 0]]);
   });
 });

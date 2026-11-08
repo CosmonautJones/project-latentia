@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { EngineInvariantError } from '../../src/math/bp.js';
 import { effectiveStat } from '../../src/math/stats.js';
-import { defaultIntent, planEntries, sortActions, type ActionEntry } from '../../src/battle/order.js';
+import { defaultIntent, sortActions, type ActionEntry } from '../../src/battle/order.js';
+import { planEntries } from '../../src/battle/plan.js';
 import type { OrchestratorAction } from '../../src/battle/log.js';
-import type { BattleState, Card } from '../../src/battle/state.js';
+import type { BattleState } from '../../src/battle/state.js';
+import type { Card } from '../../src/cards/model.js';
 import { at, battle, faint } from './helpers.js';
 
 const entry = (actor: number, priority: number, latency: number, tieBreak: number): ActionEntry => ({
@@ -214,7 +216,7 @@ describe('planEntries', () => {
   });
 
   it('carries the whole lever action: none at 0, Directive and Policy Update at 0, Swap at +3', () => {
-    const card = { id: 'c1' } as unknown as Card;
+    const card: Card = { id: 'c1', subject: 'foe', condition: { category: 'hp', op: 'below', pct: 50 }, move: 'chain-of-thought', target: 'lowestHpFoe' };
     const cases: [OrchestratorAction, number][] = [
       [{ kind: 'none' }, 0],
       [{ kind: 'directive', subagent: 1, moveId: 'token-burst', target: 8 }, 0],

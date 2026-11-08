@@ -115,7 +115,7 @@ The asymmetry is intentional and easy to learn: **overflow you choose costs Drif
 
 Each well-received innovation in the genre adds **one legible resource per decision**. Temtem's stamina lets you overspend into HP, which Game Informer called "a clever solution to spamming powerful attacks" ([Game Informer](https://www.gameinformer.com/review/temtem/competitive-evolution)). The exact rule is that overexertion costs HP per missing point and forces a Rest-only next turn ([Temtem wiki](https://temtem.wiki.gg/wiki/Stamina)). Cassette Beasts refunds +1 AP for a type-advantage hit ([Cassette Beasts wiki](https://wiki.cassettebeasts.com/wiki/AP)). Monster Sanctuary's combo counter rewards allies who stack hits ([Turn Based Lovers](https://turnbasedlovers.com/review/monster-sanctuary-2/)). Criticism clusters on unreadable webs and long fights. Cassette Beasts' type chemistry is "dizzying and hard to keep track of," its late fights drag, and it has no speed-up ([RPGamer](https://rpgamer.com/review/cassette-beasts-review/)). Digimon bosses come down to "who hits harder and heals faster" ([Kotaku](https://kotaku.com/digimon-story-time-stranger-the-kotaku-review-2000630341)). Pokémon Showdown proves the replay model: a seed plus an input log reproduces a battle exactly ([Showdown RNG](https://pokemonshowdown.com/pages/rng)).
 
-The battle design follows from those lessons. Context is the only move-cost resource, with no mana. Overflow is soft and punishing, Temtem-style. Super-effective hits refund a cell. A **Handoff Chain** gives each consecutive allied hit on the same target within a round +10% (cap +30%), and an enemy action in between breaks the chain. Type effects are damage-only, with no immunities in v1. Normal fights aim for 5–8 rounds, with 2× and 4× speed toggles, since ghost battles are watched rather than played.
+The battle design follows from those lessons. Context is the only move-cost resource, with no mana. Overflow is soft and punishing, Temtem-style. Super-effective hits refund a cell. A **Handoff Chain** gives each consecutive allied hit on the same target within a round after the first +15% more (+15% on the 2nd hit, +30% cap on the 3rd), and an enemy action in between breaks the chain. Type effects are damage-only, with no immunities in v1. Normal fights aim for 5–8 rounds, with 2× and 4× speed toggles, since ghost battles are watched rather than played.
 
 ### The type chart is regular, so it can be learned in an hour
 
@@ -384,6 +384,58 @@ Each creature is a behaviour gag with a battle mechanic attached, so the joke is
 
 The slice's type logic has a deliberate shape. Sagelet gets an easy first gym, because Reasoning hits Code 2×. Blitzr and Forkling players are steered toward Embeddingo (Search hits Code 2×) or Hallucinat in the forest. Forkling's Open hits Agentoad's Speed half. This mirrors the classic "first gym favours one starter" curve while guaranteeing every starter a route answer. Kip always takes your counter-type.
 
+## The satire pass: Make No Mistakes, Slop and Vibes
+
+The jokes follow the same rule as everything else here: each one is a mechanic. The targets are AI culture's rituals, such as prompt superstitions, vibe coding, slop, sycophancy, hype and benchmark-maxxing. The jokes never target players or real people, and no real lab or product is named (see the legal table).
+
+### Moves (candidates)
+
+The 57-move launch list stays the slice baseline. Each candidate below is built from existing engine effect primitives unless marked **new**. Phase C's simulator decides which ones swap in, for balance, before slice content is locked (milestone 9). The three marked ★ are the recommended slice swap-ins.
+
+| Move | Type · stats | Effect | Gag |
+|---|---|---|---|
+| ★ **Make No Mistakes** | Reasoning · util·1 | The next move can't miss and can't crit (`cannotMiss`; −crit). 25% chance the user becomes Hallucinating anyway | The prompt suffix everyone swears by. Battle text: "…make no mistakes." Then, sometimes: "Mistakes were made." |
+| ★ **Vibe Code** | Code · 95·2·80 | Heavy hit; the user takes +1 Junk token (tech debt) | "Didn't read the diff. Shipped it." The TM version of Vibrat's Accept All |
+| ★ **Slop Cannon** | Open · 20×3·1·80 | Three low hits, each adding 1 Junk token to the target | Volume over quality. Each hit pops a six-fingered thumbnail |
+| **You're Absolutely Right!** | Voice · guard·1·+4 | Halves the incoming hit; the attacker −1 accuracy (`incomingDamageBp`, `stage`) | Concedes everything, wins nothing, de-escalates anyway |
+| **Delve** | Search · 70·2·100 | Ignores evasion (`ignoreEvasion`); 30% chance the user takes 1 Junk token | Pop-text: "It's not just a hit — it's a journey." The Junk token is drawn as an em dash |
+| **Ultrathink** | Reasoning · util·3 | The next move gets +30 power and +2 crit stages; the user −1 Latency | Status bar: "Thought for 47 seconds" |
+| **Ship It** | Speed · 80·1·90·+1 | Fast heavy hit with 15% recoil (**new**: a recoil rider unless Move Fast's passive is reused) | Reviewer comment: "LGTM 🚀". Recoil text: "prod is down" |
+| **Works On My Machine** | Code · def·1 | −50% damage to the user only, this round | Allies are visibly not on its machine |
+| **Just One More GPU** | Memory · buff·2 | +1 Compute and +1 Robustness; costs +1 cell per consecutive use (`costAdd`) | Scaling laws, but for your wallet |
+| **Prompt Engineer** | System · util·1 | The next ally move costs 1 cell less (`costAdd −1`) | Rewrites your sentence, adds "please" and "step by step" |
+| **Benchmaxx** | Reasoning · buff·1 | +2 Compute for 2 rounds, then −2 (**new**: a delayed stage reversal) | Goodhart's law as a buff: "SOTA on the test, mid in prod" |
+| **Seed Round** | Open · buff·2 | +2 Compute now, then −1 per round after round 3 (**new**: burn-rate decay) | "We're pre-revenue but post-hype" |
+
+### Items and key items
+
+- **"No Mistakes" Sticky Note** (held): the holder's first move each battle can't miss. Description: "Laminated. Blessed. Placebo-adjacent."
+- **Slop Filter** (held): blocks the first Junk token each battle.
+- **Em-Dash Remover** (consumable): removes all Junk tokens. "Makes your writing sound 40% more human."
+- **Free Tier Token** (consumable): +2 context cells once. The label reads "Usage limits may apply."
+- **Enterprise Plan** (key item): shown in the shop with no price, only "Contact Sales"; it does nothing.
+- **Vibes Crystal** (key item): opens the Vibes Guild door. Its inspect text is "You can't explain it. You just feel it."
+
+### Lore, trainers and lines
+
+- **The Order of No Mistakes**, at Patchwater's Retraining Center. Robed monks end every sentence with "…make no mistakes." Their trainers' Autopilot decks open with Make No Mistakes and use it every time. Beating one makes it mutter, "I said no mistakes."
+- **The Vibes Guild**, in Throughput City. "We don't read the code. We feel it." Each guild member's subagent runs Vibe Code on cooldown. The guild hall's door is held shut by 4,000 unreviewed changes.
+- **Act 2's slop**: the Spam Marshes gain **Slop Farms**, which are content mills where Content Farmer trainers field Slopling swarms. Each farm's sign updates hourly with a different AI-written headline.
+- **New trainer classes**:
+  - Vibe Coder
+  - Prompt Bro ("this one prompt changed everything")
+  - Thread Guy (pre-battle text: "🧵 1/37")
+  - Benchmark Maxxer
+  - Wrapper Founder
+  - Content Farmer
+  - Hype Bro
+- **Battle lines**:
+  - "It's not a bug — it's an emergent capability."
+  - "You're absolutely right! I apologize for the confusion." (after losing)
+  - "Let me delve into this battle."
+  - "As requested, I have made no mistakes." (it has)
+  - Compile Hall leader: "I accepted all the changes. What could go wrong?"
+
 ## Levels teach one verb per space: Localhost, the Deprecated Forest and the Compile Hall
 
 ### Evidence: one rule per room, trainers as optional tolls, visible creatures
@@ -556,6 +608,40 @@ A hill-climbing search over 8-card decks hunts dominant strategies before player
 
 A ghost upload stores the seed, ruleset and engine version, and the team, deck and grid JSON. Prompts are never stored. The server, for example a Supabase Edge Function running the same TS engine package, validates the team against the player's legal progression state (card counts, grid capacity, levels) and re-simulates reported results before accepting them. The server also rate-limits uploads, weights sampling so no single ghost dominates, version-tags and retires ghosts after patches, and ties each checkpoint to a team-power budget so "smurf ghosts" can't sit low. Telemetry logs every ghost battle's input log, which is cheap because it is replay-complete.
 
+### Design: saves are local-first, versioned and replay-backed
+
+The slice is a 45–75 minute playthrough on phones, where the OS kills background tabs, so saving is required from the first overworld build, not a full-game feature. The full arc (three acts, eight badges) only raises the stakes.
+
+**What a save holds.** One JSON document, `SaveFile`:
+- `schemaVersion` and `engineVersion`
+- trainer name and id, play time, and settings (text speed, 1×/2×/4× battle speed, audio)
+- `location`: map id, tile and facing
+- `flags`: a set of story-flag ids, for example `intro.done`, `forest.grunt1.beaten` and `badge.code`
+- the party:
+  - the orchestrator, with species, version, level, XP, moves and grid layout
+  - each subagent, with the same fields plus its deck, Generalization and trained temperature
+- storage (the box), the Example Card inventory and items
+- recorded ghost logs, which Specialist needs
+- `suspendedBattle`, which is null outside a fight
+
+Content is referenced by id only, like the engine's battle state.
+
+**Mid-battle saves cost nothing.** `suspendedBattle` is the battle's `BattleLog` (seed, setup and the commands so far). Loading replays it to the exact same moment. If the stored `engineVersion` no longer matches after an update, the fight restarts from its setup with the same seed rather than replaying under new rules.
+
+**When it saves.**
+- Autosave fires on every map transition, after every battle and every round inside one, and when the page is hidden (`visibilitychange`), which is the moment mobile apps get killed.
+- A manual Save in the menu is shown as a checkpoint gag: "Saving weights… do not unplug the GPU."
+- One slot, plus the two previous autosaves kept as rolling backups, so a corrupted write never costs a run.
+
+**Where it lives.**
+- Web/PWA: IndexedDB, with `navigator.storage.persist()` requested. WebKit can clear storage for a site the player hasn't used in a while unless it is installed to the home screen, so the demo nudges an install and offers **Export save** and **Import save** as a file.
+- Capacitor: the app's filesystem.
+- Steam: a file in the user-data folder, synced by Steam Auto-Cloud.
+
+**Versioning.** `schemaVersion` is an integer. Ordered migration functions upgrade older saves one step at a time and never rewrite fields in place. The tests load a fixture save from every past version.
+
+**Cloud sync (optional).** A player who signs in gets the same document in a Supabase `saves` table: `user_id`, `slot`, `schema_version`, `updated_at` and a `jsonb` body, with owner-only row-level security. It is last-write-wins unless both copies changed since the last sync, in which case the player picks one from a side-by-side summary (badges, play time, party). Local saves are never trusted for competitive play: the ghost server already re-checks progression legality, so editing a save only cheats yourself.
+
 ### Design: platforms and monetization in the decided order
 
 **Free web demo (PWA).** It launches *months* before a Next Fest, given the 2.5× finding. It ends with a trainer card, a Wishlist button, and locked "full release" buttons for routes and modes, as GMTK recommends ([GMTK](https://gmtk.substack.com/p/how-to-make-a-great-steam-next-fest)).
@@ -573,14 +659,14 @@ The ordering follows FF12's warning that you can't tell whether a gambit system 
 | 3 | Headless sim harness and archetype decks; tune the grid rule, headroom floor, triangle, temperature and graft/spin-up | Balance targets met within tolerance on slice content |
 | 4 | Phaser 4 + Vite shell: integer scaling, portrait two-band layout, desktop layout, D-pad/A/B plus touch, BitmapFonts | Crisp on 3 real phones and a desktop |
 | 5 | Greybox battle scene and second-screen grid editor (drag with ghost preview, tap to rotate, long-press info) | Five testers complete a packing decision unaided |
-| 6 | Overworld: Tiled loader, grid movement, warps, edges, trainer sight, visible wild behaviours | Walk the lab to the forest with no softlocks |
+| 6 | Overworld: Tiled loader, grid movement, warps, edges, trainer sight, visible wild behaviours; local saves (autosave, backups, migrations, mid-battle resume) | Walk the lab to the forest with no softlocks; kill the app mid-route or mid-battle and resume exactly there |
 | 7 | Greybox maps: lab, Localhost, Deprecated Forest, Patchwater, Compile Hall rooms with puzzle entities | 45–75 minute playthrough; every puzzle room is solvable and resets |
 | 8 | Distillation (graft/spin-up, Clean), XP curve, grid expansion, v2 evolution, Record Example, Dry Run | First distill arrives by 4:00; first expansion at L4 |
 | 9 | Slice content data: 17 species, Kip, 3 forest trainers, 2 grunts, 2 gym trainers, Gary Rebase | All fights 5–8 rounds in sims |
 | 10 | Writing pass and laugh log: cold open, NPC lines, Team Scrape, the Old v1.2 beat | Every kept joke got a laugh from at least 2 of 5 testers |
 | 11 | Art: palette lock, starter lines (v1/v2 full, v3.5 as overlay), 14 species, ~500 tiles, UI 9-slices, VFX | Silhouette test passes; contact-sheet QA |
 | 12 | Audio: Furnace stems, battle vertical layers, SFX set | Layers swap on HP, last-enemy and context state |
-| 13 | Supabase ghosts: upload, re-simulation validation, seed ghosts, trailhead kiosk, post-gym Arena | A tampered result is rejected; empty buckets fall back to seed ghosts |
+| 13 | Supabase ghosts: upload, re-simulation validation, seed ghosts, trailhead kiosk, post-gym Arena; optional cloud save sync | A tampered result is rejected; empty buckets fall back to seed ghosts; a save moves between phone and desktop |
 | 14 | Shareables, funnel telemetry, PWA deploy, Steam page | KPI dashboard live; demo shipped months ahead of a Next Fest |
 
 ### Open questions to settle in playtest or simulation

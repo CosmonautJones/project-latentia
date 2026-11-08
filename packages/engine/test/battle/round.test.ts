@@ -173,7 +173,7 @@ describe('submitRound: win check after every action (Ruling 32)', () => {
     drawAction(ref); // the first entry only
     expect(state.rng).toEqual(ref);
     expect(started(events).map((e) => e.actor)).toEqual([0]);
-    expect(events.map((e) => e.type)).toEqual(['RoundStart', 'ActionStarted', 'RoundEnd', 'BattleEnd']);
+    expect(events.map((e) => e.type)).toEqual(['RoundStart', 'IntentsPlanned', 'ActionStarted', 'RoundEnd', 'BattleEnd']);
     expect(events.at(-1)).toEqual({ round: 1, type: 'BattleEnd', winner: 0, reason: 'knockout' });
     expect(seam.resolveAction).toHaveBeenCalledTimes(1);
     expect(state.result).toBe('a');

@@ -1,7 +1,7 @@
 {
   "name": "off-by-wasp-stack-trace",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "62472151b258f0b4543467ec4ec28bc5",
     "setup": {
       "a": {
@@ -186,7 +186,7 @@
       }
     ]
   },
-  "expectedHash": "a65a9acb8d65ff18",
+  "expectedHash": "bdc7724133820547",
   "rounds": 5,
   "winner": "a"
 }

@@ -1,3 +1,4 @@
+import { BAND_MIN } from '../../cards/evaluate.js';
 import type { MoveDef, NonPassiveEffect, Passive, PassiveTrigger } from '../../content/primitives.js';
 import { deepFreeze } from '../../content/primitives.js';
 import { SPECIES, type SpeciesId } from '../../content/species.js';
@@ -34,8 +35,12 @@ import { applyTokens } from './tokens.js';
 // The effect pipeline shared by moves, copied moves and passives: the dispatcher, accuracy, the guard check,
 // the effect list, post-move bookkeeping, and the passive runner (they call each other, so they live together).
 
-/** Robust band (generalization ≥ 70) and its accuracy bonus against foes not in its recorded examples. */
-export const ROBUST_MIN_GENERALIZATION = 70;
+/**
+ * Robust band (generalization ≥ 70) and its accuracy bonus, for subagents only, against foes of an opponent its
+ * examples were not recorded from: `recordedFoes` holds opponent ids, matched against the id of the opponent its
+ * side faces (`SideState.opponentId`), like Specialist's `recordedFrom` (Ruling 80).
+ */
+export const ROBUST_MIN_GENERALIZATION = BAND_MIN.robust;
 export const ROBUST_ACCURACY_BONUS = 5;
 const STAGE_MIN = -3;
 const STAGE_MAX = 3;
@@ -96,7 +101,7 @@ export function effectList(move: MoveDef, t: Temperature): readonly NonPassiveEf
 
 /**
  * Accuracy (spec §5): a move with accuracy hits when lo(D3, 100) < clamp(MoveAcc ± `accuracy` modifiers +
- * TempMod − 8 × Drift + 10 × (AccStages − EvaStages) [+ 5 Robust vs a foe not in recordedFoes], 30, 100).
+ * TempMod − 8 × Drift + 10 × (AccStages − EvaStages) [+ 5 Robust subagent vs an unrecorded opponent], 30, 100).
  * Both stages are taken after Quantized's −1 (statStage, Ruling 78) — stages are combined first, then the
  * special rules apply (Ruling 49): AccStages add Saliency Map's field stages (clamped −3…+3);
  * `ignoreEvasion` ignores a positive evasion stage; `cannotMiss` always hits. Drift is read after paying.
@@ -104,10 +109,11 @@ export function effectList(move: MoveDef, t: Temperature): readonly NonPassiveEf
 function accuracyHits(ctx: EffectContext, user: CreatureState, target: CreatureState): boolean {
   if (ctx.move.accuracy === null || ctx.accMods.cannotMiss) return true;
   const robust =
+    !user.isOrchestrator &&
     user.generalization !== null &&
     user.generalization >= ROBUST_MIN_GENERALIZATION &&
     target.side !== user.side &&
-    !(user.recordedFoes ?? []).includes(target.id);
+    !(user.recordedFoes ?? []).includes(ctx.state.sides[user.side].opponentId);
   const evasion = statStage(target, 'evasion');
   const chance = hitChance({
     moveAcc: ctx.move.accuracy + ctx.accMods.accuracy,

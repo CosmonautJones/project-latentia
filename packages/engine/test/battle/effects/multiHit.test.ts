@@ -55,12 +55,12 @@ describe('multiHit', () => {
     expect(damages(run(t4, 1, 'speculative-decoding', 7, { d5hi: 5 }))).toHaveLength(7);
   });
 
-  it('counts once for the Handoff chain: the next allied hit is the second (11000)', () => {
+  it('counts once for the Handoff chain: the next allied hit is the second (11500)', () => {
     const s = fresh();
     const multi = run(s, 1, 'speculative-decoding', 7, { d5hi: 3 });
     expect(multi.filter((e) => e.type === 'HandoffChain')).toEqual([{ round: 2, type: 'HandoffChain', actor: 1, chain: [1] }]);
     const next = run(s, 2, 'hard-fork', 7);
-    expect(damages(next).map((e) => e.amount)).toEqual([expected(s, 2, 7, 70, { type: 20000, native: 12500, roll: 10000, handoff: 11000 })]);
+    expect(damages(next).map((e) => e.amount)).toEqual([expected(s, 2, 7, 70, { type: 20000, native: 12500, roll: 10000, handoff: 11500 })]);
   });
 
   it('stops when the target faints and emits Fainted once', () => {

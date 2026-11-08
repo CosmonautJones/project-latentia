@@ -6,10 +6,11 @@ import { createBattle, UNIVERSAL_MOVES } from '../../src/battle/setup.js';
 import { simulate, type BattleResult } from '../../src/battle/simulate.js';
 import type { Outcome } from '../../src/battle/state.js';
 import { STATUS_IDS, type StatusId } from '../../src/content/ids.js';
-import { moveDef } from '../../src/content/moves.js';
+import { moveDef, MOVES } from '../../src/content/moves.js';
 import type { Effect } from '../../src/content/primitives.js';
 import { SPECIES } from '../../src/content/species.js';
-import type { BattleEventType } from '../../src/events/types.js';
+import { HANDOFF_MAX_BP, HANDOFF_STEP_BP } from '../../src/battle/handoff.js';
+import type { BattleEventType, CardSkipReason } from '../../src/events/types.js';
 import { SCENARIOS } from './scenarios.js';
 import { scriptedSource } from './script.js';
 
@@ -70,8 +71,8 @@ describe('golden files', () => {
 // --- coverage ----------------------------------------------------------------------------------
 
 /**
- * Moves a Phase A battle can only reach through a deck (none: subagents use their default intent and every
- * species move is also usable by a gridless orchestrator of that species, so commands reach them all).
+ * Moves a battle can only reach through a deck (none: every species move is also usable by a gridless
+ * orchestrator of that species, so commands reach them all).
  */
 const DECK_ONLY_MOVES: readonly string[] = [];
 
@@ -81,6 +82,21 @@ function reachableMoves(): string[] {
   for (const s of Object.values(SPECIES)) for (const m of s.moves) moves.add(m);
   return [...moves].filter((m) => !DECK_ONLY_MOVES.includes(m)).sort();
 }
+
+/**
+ * Registry moves no legal battle can use, so no golden can (Ruling 110): no slice species knows them. A creature may
+ * list only its species' moves (validateSetup moveNotKnown), a gridded orchestrator may graft only species signatures,
+ * deck and Policy Update cards fire only moves their creature knows, and hallucination, Drift, copies and Prompt
+ * Injected all pick from the user's own moveset. They are the bible's launch moves outside the slice's 17 species;
+ * the coverage test checks this list is exactly the registry moves no slice species knows.
+ */
+const UNLEARNABLE_MOVES: readonly string[] = [
+  'captcha-wall', 'deep-research', 'deepfake-call', 'deliberate', 'earnest-apology', 'embedding-cache', 'filibuster', 'fork', 'permissive-license',
+  'pixel-peep', 'red-team', 'refusal', 'saliency-map', 'screenshot', 'speculative-decoding', 'temperature-spike', 'throttle', 'tree-search',
+];
+
+/** The lever ids (Ruling 90: Directive and Policy Update also emit MoveUsed with these ids; Swap and none do not). */
+const LEVER_IDS = { directive: 'directive', policyUpdate: 'policy-update', swap: 'swap', none: 'none' } as const;
 
 /**
  * Statuses no Phase A battle can apply, each for a stated reason. Anything not listed here must appear.
@@ -118,13 +134,73 @@ const EVENT_TYPES: Record<BattleEventType, true> = {
   HandoffChain: true, Swapped: true, Fainted: true, HeadlessMode: true, BrittleRepeat: true, RoundEnd: true, BattleEnd: true,
 };
 
-/** Event types the Phase A engine never emits: decks, intents and traces arrive in B2/B3, Brittle generalization in B5. */
-const PHASE_B_EVENTS: readonly BattleEventType[] = ['IntentsPlanned', 'CardTrace', 'BrittleRepeat'];
+/** Every reason a card can be skipped, so the list below is checked complete by the type checker. */
+const SKIP_REASONS: Record<CardSkipReason, true> = { conditionFalse: true, insufficientContext: true, moveDisabled: true, notActive: true, disobeyed: true };
+
+/** The golden named `name` and its replayed events. */
+function goldenNamed(name: string): { golden: Golden; events: BattleResult['events'] } {
+  const at = GOLDENS.findIndex((g) => g.file === name);
+  const golden = GOLDENS[at]?.golden;
+  if (golden === undefined) throw new Error(`missing golden ${name}`);
+  return { golden, events: replays()[at]?.events ?? [] };
+}
 
 describe('golden coverage', () => {
-  it('every reachable move is used in some golden battle', () => {
+  it('golden coverage includes every move and every lever: every MoveUsed id and lever that took effect, against the move registry (Ruling 110)', () => {
+    // Directive and Policy Update count by their MoveUsed (emitted only when the lever resolves); a Swap only when its
+    // Swapped event follows the orchestrator's ActionStarted with the commanded creatures (Ruling 115); `none` by command.
     const used = new Set(replays().flatMap((r) => r.events.flatMap((e) => (e.type === 'MoveUsed' ? [e.moveId] : []))));
-    expect(reachableMoves().filter((m) => !used.has(m))).toEqual([]);
+    GOLDENS.forEach(({ golden }, g) => {
+      const events = replays()[g]?.events ?? [];
+      const orch = (side: 'a' | 'b'): number => createBattle(golden.log.setup, golden.log.seed).creatures.find((c) => c.side === side && c.isOrchestrator)?.index ?? -1;
+      golden.log.rounds.forEach((cmd, i) => {
+        for (const side of ['a', 'b'] as const) {
+          const action = cmd[side]?.action;
+          if (action?.kind === 'none') used.add(LEVER_IDS.none);
+          if (action?.kind !== 'swap') continue;
+          const at = events.findIndex((e) => e.type === 'ActionStarted' && e.round === i + 1 && e.actor === orch(side));
+          const next = events[at + 1];
+          if (at >= 0 && next?.type === 'Swapped' && next.outIndex === action.out && next.inIndex === action.in) used.add(LEVER_IDS.swap);
+        }
+      });
+    });
+    expect(Object.values(LEVER_IDS).filter((id) => !used.has(id))).toEqual([]);
+    const registry = Object.keys(MOVES).sort();
+    expect(registry.filter((m) => !used.has(m))).toEqual([...UNLEARNABLE_MOVES]);
+    const learnable = new Set(reachableMoves());
+    expect(registry.filter((m) => !learnable.has(m) && !Object.values(LEVER_IDS).includes(m as never))).toEqual([...UNLEARNABLE_MOVES]);
+  });
+
+  it('handoff-chain-high-damage: 3-hit chains whose 2nd and 3rd hits are large enough to pin 11500 and 13000 (Ruling 97)', () => {
+    expect([HANDOFF_STEP_BP, HANDOFF_MAX_BP]).toEqual([1500, 13000]);
+    const { events } = goldenNamed('handoff-chain-high-damage');
+    const chains = events.flatMap((e, i) => (e.type === 'HandoffChain' && e.chain.length === 3 ? [i] : []));
+    expect(chains.length).toBeGreaterThan(0);
+    for (const at of chains) {
+      // The chain's hits, in order: the Damage event just before each of its HandoffChain events.
+      const chain = events[at];
+      if (chain?.type !== 'HandoffChain') throw new Error('not a chain');
+      const hits = chain.chain.map((actor) => events.slice(0, at + 1).reverse().find((e) => e.type === 'Damage' && e.actor === actor && e.round === chain.round));
+      expect(new Set(hits.map((h) => (h?.type === 'Damage' ? h.target : -1))).size).toBe(1);
+      // A hit's damage is about x·m/10000 for its pre-Handoff damage x. Ruling 39's 11000 / 12000 would differ from
+      // 11500 / 13000 by x/20 and x/10, so neither can floor to the same amount once x ≥ 20 — i.e. a 2nd hit of 24+.
+      for (const h of hits.slice(1)) expect(h?.type === 'Damage' ? h.amount : 0).toBeGreaterThanOrEqual(24);
+    }
+  });
+
+  it('default-disabled-fallback: a status disables the Default card — it is traced moveDisabled once and the default intent acts (Ruling 86)', () => {
+    const { golden, events } = goldenNamed('default-disabled-fallback');
+    const deck = golden.log.setup.a.active[0]?.deck;
+    if (deck === undefined) throw new Error('no deck');
+    const traces = events.filter((e) => e.type === 'CardTrace' && e.skipped.some((k) => k.cardId === deck.default.id && k.reason === 'moveDisabled'));
+    expect(traces.length).toBeGreaterThan(0);
+    for (const t of traces) {
+      if (t.type !== 'CardTrace') continue;
+      expect(t.firedCardId).toBe(deck.default.id);
+      expect(t.skipped.filter((k) => k.cardId === deck.default.id)).toEqual([{ cardId: deck.default.id, reason: 'moveDisabled' }]);
+      const used = events.find((e) => e.type === 'MoveUsed' && e.round === t.round && e.actor === t.actor);
+      expect(used?.type === 'MoveUsed' ? used.moveId : null).not.toBe(deck.default.move);
+    }
   });
 
   it('every status id is applied in some golden battle, except the stated unreachable ones', () => {
@@ -138,10 +214,49 @@ describe('golden coverage', () => {
     expect(reachable.filter((s) => !applied.has(s))).toEqual([]);
   });
 
-  it('every event type the Phase A engine emits occurs in some golden battle', () => {
+  it('every event type occurs in some golden battle', () => {
     const seen = new Set(replays().flatMap((r) => r.events.map((e) => e.type)));
-    const expected = (Object.keys(EVENT_TYPES) as BattleEventType[]).filter((t) => !PHASE_B_EVENTS.includes(t));
-    expect(expected.filter((t) => !seen.has(t))).toEqual([]);
+    expect((Object.keys(EVENT_TYPES) as BattleEventType[]).filter((t) => !seen.has(t))).toEqual([]);
+  });
+
+  it('deck battles trace every skip reason, and IntentsPlanned names deck cards (B2)', () => {
+    const events = replays().flatMap((r) => r.events);
+    const traced = new Set(events.flatMap((e) => (e.type === 'CardTrace' ? e.skipped.map((s) => s.reason) : [])));
+    expect((Object.keys(SKIP_REASONS) as CardSkipReason[]).filter((r) => !traced.has(r))).toEqual([]);
+    expect(events.some((e) => e.type === 'IntentsPlanned' && e.intents.some((i) => i.cardId !== null))).toBe(true);
+  });
+
+  it('policy-update-and-directive: the policy is in force for rounds 1-3 only; the first Directive is spent, the second lands (B3)', () => {
+    const at = GOLDENS.findIndex((g) => g.file === 'policy-update-and-directive');
+    const golden = GOLDENS[at]?.golden;
+    const events = replays()[at]?.events ?? [];
+    if (golden === undefined) throw new Error('missing golden');
+    const policy = golden.log.rounds[0]?.a?.action;
+    if (policy?.kind !== 'policyUpdate') throw new Error('round 1 is not a Policy Update');
+    const traced = events.flatMap((e) => (e.type === 'CardTrace' && (e.firedCardId === policy.card.id || e.skipped.some((k) => k.cardId === policy.card.id)) ? [e.round] : []));
+    expect([...new Set(traced)]).toEqual([1, 2, 3]);
+    expect(events.some((e) => e.type === 'CardTrace' && e.round === 1 && e.firedCardId === policy.card.id)).toBe(true);
+    // A Directive landed when the directed subagent used the directed move that round, not from its deck.
+    const landed = golden.log.rounds.flatMap((cmd, i) => {
+      const a = cmd.a?.action;
+      if (a?.kind !== 'directive') return [];
+      const mine = events.filter((e) => e.round === i + 1 && 'actor' in e && e.actor === a.subagent);
+      return [mine.some((e) => e.type === 'MoveUsed' && e.moveId === a.moveId) && !mine.some((e) => e.type === 'CardTrace')];
+    });
+    expect(landed).toEqual([false, true]);
+  });
+
+  it('autopilot-both-sides: every round is {}, and both orchestrators are listed in IntentsPlanned and traced (B4)', () => {
+    const at = GOLDENS.findIndex((g) => g.file === 'autopilot-both-sides');
+    const golden = GOLDENS[at]?.golden;
+    const events = replays()[at]?.events ?? [];
+    if (golden === undefined) throw new Error('missing golden');
+    expect(golden.log.rounds.every((cmd) => Object.keys(cmd).length === 0)).toBe(true);
+    const orchs = createBattle(golden.log.setup, golden.log.seed).creatures.filter((c) => c.isOrchestrator).map((c) => c.index);
+    for (const o of orchs) {
+      expect(events.some((e) => e.type === 'IntentsPlanned' && e.intents.some((i) => i.actor === o && i.cardId !== null))).toBe(true);
+      expect(new Set(events.flatMap((e) => (e.type === 'CardTrace' && e.actor === o ? [e.firedCardId] : []))).size).toBeGreaterThan(1);
+    }
   });
 
   it('a T4-trained subagent uses a move with a wildT4 list, a Robust subagent has recordedFoes, and a side starts with no active subagent (Ruling 77)', () => {
@@ -158,12 +273,11 @@ describe('golden coverage', () => {
     expect(GOLDENS.some((g) => g.golden.log.setup.a.active.length === 0 || g.golden.log.setup.b.active.length === 0)).toBe(true);
   });
 
-  it('the logs pull every Phase A lever at every temperature, and the outcomes include a cap and a draw', () => {
+  it('the logs pull every lever at every temperature, and the outcomes include a cap and a draw', () => {
     const commands = GOLDENS.flatMap((g) => g.golden.log.rounds);
     const sides = commands.flatMap((c) => [c.a, c.b]);
     const given = sides.flatMap((sc) => (sc === undefined ? [] : [sc]));
-    // Policy Update is not covered: Card is opaque until B1, so no Card value exists to send.
-    expect(new Set(given.map((sc) => sc.action.kind))).toEqual(new Set(['move', 'swap', 'directive', 'none']));
+    expect(new Set(given.map((sc) => sc.action.kind))).toEqual(new Set(['move', 'swap', 'directive', 'policyUpdate', 'none']));
     expect(given.some((sc) => sc.action.kind === 'move' && sc.action.injection !== undefined)).toBe(true);
     expect(sides.some((sc) => sc === undefined)).toBe(true);
     expect(new Set(given.map((sc) => sc.temperature))).toEqual(new Set([0, 1, 2, 3, 4]));

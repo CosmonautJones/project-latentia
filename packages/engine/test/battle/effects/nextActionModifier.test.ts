@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planEntries } from '../../../src/battle/order.js';
+import { planEntries } from '../../../src/battle/plan.js';
 import { submitRound } from '../../../src/battle/round.js';
 import type { BattleEvent } from '../../../src/events/types.js';
 import { at } from '../helpers.js';

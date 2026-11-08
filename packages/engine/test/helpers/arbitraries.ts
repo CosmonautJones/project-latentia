@@ -1,17 +1,17 @@
 import fc from 'fast-check';
-import { validateCommand } from '../../src/battle/errors.js';
-import type { OrchestratorAction, RoundCommand } from '../../src/battle/log.js';
 import type { BattleSetup, CreatureSetup, SideSetup } from '../../src/battle/setup.js';
-import type { CommandSource } from '../../src/battle/simulate.js';
-import { VERSIONS, type BattleState, type SideId, type Temperature } from '../../src/battle/state.js';
-import { moveDef, SIGNATURE_MOVE_IDS } from '../../src/content/moves.js';
+import { orchestratorMoves } from '../../src/battle/validate-setup.js';
+import { VERSIONS, type SideId, type Temperature } from '../../src/battle/state.js';
+import { SIGNATURE_MOVE_IDS } from '../../src/content/moves.js';
 import { SPECIES, type SpeciesDef } from '../../src/content/species.js';
+import type { Deck } from '../../src/cards/model.js';
 import type { GridLayout, PlacedPiece } from '../../src/grid/model.js';
 import type { SeedHex } from '../../src/rng/seed.js';
+import { arbDeck } from './decks.js';
 
 // fast-check arbitraries for the property and fuzz suites. Every value they produce is LEGAL:
-// setups pass validateSetup, seeds pass parseSeed, scripted commands pass validateCommand, so the
-// properties exercise battles rather than validation.
+// setups pass validateSetup and seeds pass parseSeed, so the properties exercise battles rather than
+// validation. The scripted-command arbitraries live in commands.ts.
 
 export const SPECIES_IDS = Object.keys(SPECIES);
 const HEX = '0123456789abcdef';
@@ -56,26 +56,30 @@ const named = (id: string, d: Draft): CreatureSetup => ({ id, species: d.species
 
 /**
  * A subagent's training (Ruling 77), each part present or absent: trainedTemperature 0-4, generalization
- * 0-100, and `foeMask`, which picks its recordedFoes from the opposing creature ids once both sides exist
- * (bit i = the i-th opposing creature in canonical order; see withRecordedFoes).
+ * 0-100, `foeMask`, which picks its recordedFoes from opponent ids once the side exists (bit i = the i-th of
+ * recordedFoeCandidates; see withRecordedFoes), and a deck (added by arbSubDraft).
  */
-type Training = { trainedTemperature: Temperature | undefined; generalization: number | undefined; foeMask: number | undefined };
+type Training = { trainedTemperature: Temperature | undefined; generalization: number | undefined; foeMask: number | undefined; deck?: Deck | undefined };
 type SubDraft = Draft & { training: Training };
 
 const arbTraining: fc.Arbitrary<Training> = fc.record({
   trainedTemperature: fc.option(fc.constantFrom<Temperature>(0, 1, 2, 3, 4), { nil: undefined }),
   generalization: fc.option(fc.integer({ min: 0, max: 100 }), { nil: undefined }),
-  foeMask: fc.option(fc.integer({ min: 0, max: 0x3f }), { nil: undefined }),
+  foeMask: fc.option(fc.integer({ min: 0, max: 0x7 }), { nil: undefined }),
 });
 
+/** A subagent draft with its training, and sometimes a deck over its moves (B2). */
 const arbSubDraft = (minLevel: number, maxLevel: number): fc.Arbitrary<SubDraft> =>
-  fc.tuple(arbDraft(minLevel, maxLevel), arbTraining).map(([d, training]) => ({ ...d, training }));
+  fc
+    .tuple(arbDraft(minLevel, maxLevel), arbTraining)
+    .chain(([d, training]) => fc.option(arbDeck(d.moves), { nil: undefined }).map((deck) => ({ ...d, training: { ...training, deck } })));
 
 /** A subagent with its trainedTemperature and generalization; its recordedFoes come later (withRecordedFoes). */
 function subagent(id: string, d: SubDraft): CreatureSetup {
   const c = named(id, d);
   if (d.training.trainedTemperature !== undefined) c.trainedTemperature = d.training.trainedTemperature;
   if (d.training.generalization !== undefined) c.generalization = d.training.generalization;
+  if (d.training.deck !== undefined) c.deck = d.training.deck;
   return c;
 }
 
@@ -186,16 +190,25 @@ const arbGridded = (tag: SideId): fc.Arbitrary<DraftSide> =>
       };
     });
 
-/** Mostly gridless sides (1 in 3 gridded). */
+/** An Autopilot config (B4): 0-12 cards and a Default over the orchestrator's moves, at temperature 0-4. */
+const arbAutopilot = (side: SideSetup): fc.Arbitrary<NonNullable<SideSetup['autopilot']>> =>
+  fc.record({ deck: arbDeck(orchestratorMoves(side), 12), temperature: fc.constantFrom<Temperature>(0, 1, 2, 3, 4) });
+
+/** Mostly gridless sides (1 in 3 gridded); half of them carry an Autopilot deck (an AI trainer or ghost). */
 const arbSide = (tag: SideId): fc.Arbitrary<DraftSide> =>
-  fc.oneof({ arbitrary: arbGridless(tag), weight: 2 }, { arbitrary: arbGridded(tag), weight: 1 });
+  fc
+    .oneof({ arbitrary: arbGridless(tag), weight: 2 }, { arbitrary: arbGridded(tag), weight: 1 })
+    .chain((d) => fc.oneof(fc.constant(d), arbAutopilot(d.side).map((autopilot) => ({ ...d, side: { ...d.side, autopilot } }))));
 
-/** Every creature id on a side, in canonical order (orchestrator, active, bench). */
-const idsOf = (side: SideSetup): string[] => [side.orchestrator, ...side.active, ...side.bench].map((c) => c.id);
+/**
+ * The opponent ids a subagent's recordedFoes are picked from (Ruling 80: opponent ids, not creature ids): the
+ * opponent its side faces, so Robust's +5 is off, then two other opponents, which leave it on.
+ */
+export const recordedFoeCandidates = (side: SideSetup): string[] => [side.opponentId, 'ghost-1', 'ghost-2'];
 
-/** Gives each masked subagent its recordedFoes: the opposing ids whose bit is set in its mask (possibly none). */
-function withRecordedFoes(own: DraftSide, foe: SideSetup): SideSetup {
-  const foes = idsOf(foe);
+/** Gives each masked subagent its recordedFoes: the candidate opponent ids whose bit is set in its mask (possibly none). */
+function withRecordedFoes(own: DraftSide): SideSetup {
+  const foes = recordedFoeCandidates(own.side);
   const pick = (c: CreatureSetup): CreatureSetup => {
     const mask = own.masks.get(c.id);
     return mask === undefined ? c : { ...c, recordedFoes: foes.filter((_, i) => (mask >>> i) & 1) };
@@ -205,99 +218,9 @@ function withRecordedFoes(own: DraftSide, foe: SideSetup): SideSetup {
 
 /**
  * A legal setup from the slice species (validateSetup passes). Subagents carry trainedTemperature,
- * generalization and recordedFoes (subsets of the opposing creature ids), each sometimes absent, and a side
- * may have no active subagent (Ruling 77).
+ * generalization and recordedFoes (subsets of recordedFoeCandidates), each sometimes absent, a side
+ * may have no active subagent (Ruling 77), and about half the sides carry an Autopilot deck (B4).
  */
 export const arbLegalSetup: fc.Arbitrary<BattleSetup> = fc
   .record({ a: arbSide('a'), b: arbSide('b'), kind: fc.constantFrom('trainer' as const, 'wild' as const, 'ghost' as const) })
-  .map(({ a, b, kind }) => ({ a: withRecordedFoes(a, b.side), b: withRecordedFoes(b, a.side), kind }));
-
-// --- commands ----------------------------------------------------------------------------------
-
-/** Choices per round: for each side, temperature, kind, pick and injection pick. */
-const PER_SIDE = 4;
-const PER_ROUND = 2 * PER_SIDE;
-const ROUNDS = 50;
-
-const SIDE_IDS: readonly SideId[] = ['a', 'b'];
-
-const legal = (state: BattleState, side: SideId, action: OrchestratorAction): boolean =>
-  validateCommand(state, { [side]: { temperature: 2, action } }) === null;
-
-/** Targets worth trying for `moveId`: the user alone for self/none moves, every creature otherwise. */
-function targetsFor(state: BattleState, user: number, moveId: string): number[] {
-  const def = moveDef(moveId);
-  if (def === null) return [];
-  return def.target === 'self' || def.target === 'none' ? [user] : state.creatures.map((c) => c.index);
-}
-
-/**
- * Every legal orchestrator action for a side, by kind, each one accepted by validateCommand:
- * - `move`: each orchestrator move × legal target (a self/none move once, aimed at the user);
- * - `swap`: each allied active creature out × each living allied bench creature in;
- * - `directive`: each live allied subagent × each of its moves × legal target.
- * Policy Update is not generated: Card is opaque until B1 and no Card value can be built without a cast.
- * Injections are added at pick time (scriptedFrom), onto a legal move.
- */
-export function legalActions(state: BattleState, side: SideId): { move: OrchestratorAction[]; swap: OrchestratorAction[]; directive: OrchestratorAction[] } {
-  const out = { move: [] as OrchestratorAction[], swap: [] as OrchestratorAction[], directive: [] as OrchestratorAction[] };
-  const orch = state.creatures.find((c) => c.side === side && c.isOrchestrator);
-  if (orch === undefined) return out;
-  const add = (list: OrchestratorAction[], action: OrchestratorAction): void => {
-    if (legal(state, side, action)) list.push(action);
-  };
-  for (const moveId of orch.moves) for (const target of targetsFor(state, orch.index, moveId)) add(out.move, { kind: 'move', moveId, target });
-  const allies = state.creatures.filter((c) => c.side === side && !c.isOrchestrator);
-  for (const o of allies.filter((c) => c.slot === 'active')) for (const i of allies.filter((c) => c.slot === 'bench')) add(out.swap, { kind: 'swap', out: o.index, in: i.index });
-  for (const sub of allies.filter((c) => c.slot === 'active' && !c.fainted)) {
-    for (const moveId of sub.moves) for (const target of targetsFor(state, sub.index, moveId)) add(out.directive, { kind: 'directive', subagent: sub.index, moveId, target });
-  }
-  return out;
-}
-
-/**
- * A move with an injection choice (Deepfake Call's Prompt Injected pick, spec §6): a foe's known move and
- * a canonical index, picked by `pick`. No slice species knows Deepfake Call, so the choice is carried to the
- * entry but never applied; it still exercises the command, planning and resolution paths for injections.
- */
-function withInjection(state: BattleState, side: SideId, move: OrchestratorAction, pick: number): OrchestratorAction {
-  if (move.kind !== 'move') return move;
-  const foes = state.creatures.filter((c) => c.side !== side);
-  const foe = foes[pick % foes.length];
-  const moveId = foe?.moves[(pick >>> 4) % Math.max(1, foe.moves.length)];
-  if (moveId === undefined) return move;
-  const injected: OrchestratorAction = { ...move, injection: { moveId, target: (pick >>> 8) % state.creatures.length } };
-  return legal(state, side, injected) ? injected : move;
-}
-
-/**
- * A scripted source from precomputed choices: each round, for each side, a temperature and one legal
- * orchestrator action picked from the current state — a kind among those with a legal action (move, move
- * with an injection, swap, directive), then one action of that kind; `none` when nothing is legal (e.g.
- * while charging). `next` is a pure function of the state, so the same source replays the same battle
- * every time it is simulated, and it never mutates the state.
- */
-export function scriptedFrom(choices: readonly number[]): CommandSource {
-  const choice = (round: number, k: number): number => choices[(round * PER_ROUND + k) % choices.length] ?? 0;
-  return {
-    kind: 'scripted',
-    next: (state: BattleState): RoundCommand => {
-      const cmd: RoundCommand = {};
-      SIDE_IDS.forEach((side, s) => {
-        const c = (k: number): number => choice(state.round, s * PER_SIDE + k);
-        const { move, swap, directive } = legalActions(state, side);
-        const kinds = [move, move, swap, directive].map((list, k) => ({ list, inject: k === 1 })).filter((x) => x.list.length > 0);
-        const kind = kinds[c(1) % Math.max(1, kinds.length)];
-        const picked = kind?.list[c(2) % kind.list.length];
-        const action = picked === undefined ? { kind: 'none' as const } : kind?.inject === true ? withInjection(state, side, picked, c(3)) : picked;
-        cmd[side] = { temperature: (c(0) % 5) as Temperature, action };
-      });
-      return cmd;
-    },
-  };
-}
-
-/** A scripted command source built from fast-check's seeded random choices. */
-export const arbScriptedCommands: fc.Arbitrary<CommandSource> = fc
-  .array(fc.integer({ min: 0, max: 0xffff }), { minLength: ROUNDS * PER_ROUND, maxLength: ROUNDS * PER_ROUND })
-  .map(scriptedFrom);
+  .map(({ a, b, kind }) => ({ a: withRecordedFoes(a), b: withRecordedFoes(b), kind }));

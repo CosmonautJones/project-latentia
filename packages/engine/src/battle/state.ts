@@ -1,3 +1,4 @@
+import type { Card, Deck } from '../cards/model.js';
 import type { TypeId } from '../content/ids.js';
 import type { FieldEffect, GuardKind, NextActionMod } from '../content/primitives.js';
 import type { ContextState } from '../context/store.js';
@@ -10,11 +11,6 @@ import type { StatusHolder } from '../status/apply.js';
 // BattleState is plain JSON-compatible data (spec §4 "State representation"): numbers, strings,
 // booleans, arrays and plain objects only. Absent values are `null`, never `undefined`, so a state
 // survives canonicalJson, JSON round-trips and structuredClone unchanged. Content is referenced by id.
-
-/** Opaque until B1 replaces it with the real type in cards/model.ts. */
-export type Deck = unknown & { readonly __brand: 'Deck' };
-/** Opaque until B1 replaces it with the real type in cards/model.ts. */
-export type Card = unknown & { readonly __brand: 'Card' };
 
 export type Version = 'v1' | 'v2' | 'v3.5' | 'v4';
 export const VERSIONS: readonly Version[] = ['v1', 'v2', 'v3.5', 'v4'];
@@ -108,6 +104,7 @@ export type CreatureState = StatusHolder & {
   deck: Deck | null;
   generalization: number | null;
   trainedTemperature: Temperature | null;
+  /** Opponent ids (SideState.opponentId values) its training examples were recorded from (Robust, Ruling 80). */
   recordedFoes: string[] | null;
   charging: ChargingState | null;
   /** Pending modifiers for the creature's next action (or next hit taken, for `incomingDamageBp`). */
@@ -147,11 +144,24 @@ export type CreatureState = StatusHolder & {
  */
 export type SlotState = { pieceId: string | null; occupant: number | null };
 
+/**
+ * A Policy Update card in force (spec §5 "Orchestrator levers"): it sits above every allied deck's active cards
+ * for rounds `fromRound` (the round its entry resolved) to `lastRound` (its expiry round, fromRound + 2).
+ */
+export type PolicyState = { card: Card; fromRound: number; lastRound: number };
+
+/**
+ * A Directive that landed this round (Ruling 74): the directed subagent's entry, still to resolve in `round`,
+ * uses `moveId` at `target` instead of its own action. Cleared when that entry resolves and at end of round.
+ */
+export type DirectiveState = { subagent: number; moveId: string; target: number; round: number };
+
 export type SideState = {
   /** A copy of the setup grid; loadout pieces are fixed at battle start. */
   grid: GridLayout | null;
   temperature: Temperature;
   autopilot: { deck: Deck; temperature: Temperature } | null;
+  /** The id of the opponent this side faces (a trainer, wild model or ghost): Specialist and Robust match against it. */
   opponentId: string;
   /** True once the orchestrator is KO'd (spec §5 Headless Mode). */
   headless: boolean;
@@ -162,6 +172,10 @@ export type SideState = {
    * its final target. A copy records the move it copied, with the copier as `actor`. Null before any.
    */
   lastMove: { actor: number; moveId: string; target: number } | null;
+  /** Policy Update cards in force, newest first (each sits above the older ones); expired ones are dropped at end of round. */
+  policies: PolicyState[];
+  /** This round's landed Directive, or null. */
+  directive: DirectiveState | null;
 };
 
 /**

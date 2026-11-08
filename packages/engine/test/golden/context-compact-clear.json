@@ -1,7 +1,7 @@
 {
   "name": "context-compact-clear",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "95331a3d2b51554dd24189d7b9a31a08",
     "setup": {
       "a": {
@@ -187,7 +187,7 @@
       }
     ]
   },
-  "expectedHash": "76afcffeab8e0d9b",
+  "expectedHash": "0c85c78e047efe40",
   "rounds": 5,
   "winner": "a"
 }

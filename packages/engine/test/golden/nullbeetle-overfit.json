@@ -1,7 +1,7 @@
 {
   "name": "nullbeetle-overfit",
   "log": {
-    "engineVersion": "0.2.0",
+    "engineVersion": "0.3.0",
     "seed": "c82e3bd70ccfdc14ec881b6d15fcbba5",
     "setup": {
       "a": {
@@ -323,7 +323,7 @@
       }
     ]
   },
-  "expectedHash": "9aad761659079162",
+  "expectedHash": "16b0e20217462db5",
   "rounds": 14,
   "winner": "a"
 }

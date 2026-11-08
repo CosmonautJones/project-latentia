@@ -36,7 +36,10 @@ export const LAUNCH_MOVE_IDS: readonly MoveId[] = deepFreeze(Object.keys(LAUNCH)
 /** One signature per slice species. */
 export const SIGNATURE_MOVE_IDS: readonly MoveId[] = deepFreeze(Object.keys(SIGNATURE_MOVES) as MoveId[]);
 
+/** Every move by id: moveDef runs on every card judged and every move resolved. */
+const BY_ID: ReadonlyMap<string, MoveDef> = new Map(Object.entries(MOVES));
+
 /** The move with this id, or null for an id that is not a move (lever names, typos, prototype keys). */
 export function moveDef(moveId: string): MoveDef | null {
-  return Object.prototype.hasOwnProperty.call(MOVES, moveId) ? MOVES[moveId as MoveId] : null;
+  return BY_ID.get(moveId) ?? null;
 }
