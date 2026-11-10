@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "e2e": "vite build --mode test --outDir dist-test && playwright test",
+    "e2e": "vite build --mode test --outDir dist-test && vite build && playwright test",
     "screenshots": "vite build --mode test --outDir dist-test && SCREENSHOTS=1 playwright test screenshots",
     "measure-loop": "tsx scripts/measure-loop.ts"
   },
