@@ -289,7 +289,7 @@ The triangle is a cycle (Blitzr > Sagelet > Forkling > Blitzr), and each starter
 
 - Every probe that softens one edge hardens another. Forkling > Blitzr does not move off 100% (median 2 rounds: Hard Fork kills Blitzr in two hits while the decoy eats Blitzr's first).
 - Distilled Strike does not move Blitzr > Sagelet because the role deck's signature card ("where super effective") plays Ship It against Sagelet. Ship It 45 does move that edge (99.3 → 96.5), but only because the template plays the signature over a stronger move. That is the Review Focus's "60/40 by accident of deck templates", so it is not a candidate.
-- Reaching 55–65% needs either coverage (a non-own-type damaging move for each starter, which is new content or learnsets, out of scope) or a softer chart (settled in D2). This is reported, not tuned. No starter number was changed in D4, so the triangle rows are 99.3 / 91.2 / 100.0 throughout.
+- Reaching 55–65% needs either coverage (a non-own-type damaging move for each starter, which is new content or learnsets, out of scope) or a softer chart (settled in D2). This is reported, not tuned. No starter number was changed to fix the triangle, and the triangle rows are 99.3 / 91.2 / 100.0 throughout. K3 (Swarm of Fine-Tunes 20 → 15 per hit) did change Forkling's own move, but the role deck never plays it (Hard Fork is stronger), so the solo rows did not move.
 
 ### Target 4, the Off-By-Wasp graft: blocked by targeting, not value
 
@@ -303,6 +303,7 @@ The graft row (base team + Off-By-One graft vs the base team, Sagelet + Tokenibb
 
 - The graft card aims at `lowestHpFoe`, and the off-by-one redirect then hits the other, healthier foe, so the graft splits damage away from the kill. The signature's value would need about 150 power at cost 1 to overcome that. That breaks the wasp's seven archetypes: at 95 power, speed-rush-blitzr already rose 1.7 pp in screening while the row moved only 22.5 → 25.5%.
 - The cause is the gag's targeting meeting the template's aim, not the content value. The fix belongs to the target template (aim the graft card so that one tile left is the intended foe) or to a ruling; it is not a D4 content change.
+- **Template-only fix, probed late.** Re-aiming the graft card at `highestAtkFoe` with Off-By-One left at power 75 reaches about 55.8% on the graft row: borderline and inconclusive, not a clean pass. When the aim lands on `highestAtkFoe`, the off-by-one redirect puts the hit on Sagelet, and Code into Reasoning is resisted (⅔), a likely reason the template fix stops near 56% rather than clearing the band.
 - Side finding (screen c26, below): Token Nibble 55 → 45, the base team's intern, flips this row to 63.5% at scale 0.1, so the row also depends on how fast the intern ends fights. It was rejected for other rows.
 
 ### Candidates on the baseline state (scale 0.1; reference `scratch-d4-s01-base`, summed excess 88.7, 8 vs-field rows failing, dial 59.0%)
@@ -552,7 +553,7 @@ Vs-field rows failing 6 → 6; summed excess over 55% 82.6 → 76.7 pp.
 | c29 | Tangle 65 → 55 | Spaghettopus's signature, to make room under the gatekeeper | 76.8 → 78.6 | 6 → 6 | none | rejected: an enabler only; vs field moves away |
 | c30 | T4 self-hallucination 12% → 9% | full-seed dial 54.7% [52.5, 56.9] (10% gives 55.1%, a fail) | 76.8 → 78.1 | 6 → 7 | speed-rush-agentoad 53.9 → 57.1 | rejected: the T4-native agentoad crosses 55% |
 
-Full-seed dial probes on the K3 state (official labels, 2,000 battles): K3 55.55% [53.4, 57.7] (sweep mean 55.7%); T4 self-hallucination 10% 55.10%, 9% 54.70%; T4 accuracy −8 54.35%. Every T4 buff lifts speed-rush-agentoad, which plays at T4, so the dial is blocked by agentoad at 53.2% unless agentoad comes down first.
+Full-seed dial probes on the K3 state (official labels, 2,000 battles): K3 55.55% [53.4, 57.7] (sweep mean 55.7%); T4 self-hallucination 10% 55.10%, 9% 54.70%; T4 accuracy −8 54.35%. Every T4 buff lifts speed-rush-agentoad, which plays at T4, so the dial is deferred, not blocked: agentoad (53.2%) has to come down first. A two-step path was probed at full dial scale but not confirmed: first Agentoad HP 65 → 55 (c28, which already passes the keep rule), then T4 self-hallucination 12% → 9%. That put the dial at about 54.6% (inconclusive) and speed-rush-agentoad at 53.8%.
 
 ### K4 attempt: Leaderboard Flex base 65 → 55 (rejected at full scale)
 
@@ -617,6 +618,14 @@ Vs-field rows failing 6 → 7; summed excess over 55% 76.7 → 72.4 pp.
 ### Re-prioritisation (coordinator, after an environment restart)
 
 The agentoad candidate's full run was killed by an environment restart. The coordinator then time-boxed D4 to at most four more kept changes or about three hours of runs. They also re-prioritised it toward "playable and not broken": first no matchup at or near 100% (the starter triangle, then the dominant archetypes), then fight length staying at a median of 5–8. From here, candidates are judged first on the worst-matchup target (its rows' total shortfall below 30%) and on the blowout counts from a 200-seed round-robin, still under the rule that no target may leave its band. The agentoad candidate only made room for a dial change, which is not in those priorities, so it was not re-run. The 200-seed round-robin at K3 lists the remaining blowouts: 16 pairings at or beyond 99/1. Every one is a Search team (Embeddingo, Scrapion) or a Reasoning nuke (Sagelet, Hallucinat) against a Code-lock, Memory or Open team, or Slopling or mixed-starter-forkling against code-lock-nullbeetle.
+
+### Candidates not screened
+
+Three candidates from first-balance-pass.md §d were never screened in D4:
+
+- **Drift accuracy penalty 8 → 10–12 per stack** (§d move 7). It acts on whether a Compact card survives the deck search, a weak signal about deck shape, and on no target row (first-balance-pass.md:387 lists its verification as re-running the four searches). The targets table cannot show whether it helps, so the keep rule has nothing to judge it by.
+- **Nostalgia Trip power 50 → ~65** (§d move 2, the alternative to Deprecatter's stats). Not screened: K4 took the stats half of move 2, and the time-box ended after K4. Its effect on the Memory teams is therefore untested; it remains an available Memory lever.
+- **Distilled Strike cost 1 → 2** (§d move 6, the cost half). Not screened. Its power half was (c15, 75 → 65): it lowered Blitzr but raised reasoning-nuke-sagelet by 1.6 pp, because Blitzr is Sagelet's main check, so it was rejected. The cost change also weakens Blitzr and was expected to push the same way; that is an inference, not a measurement.
 
 ### Blowout candidates on the K3 state (scale 0.1 targets against `scratch-d4-s01-k3`; 200-seed round-robin against `scratch-d4-rr-k3`: 16 at or beyond 99/1, 30 at or beyond 95/5, 51 at or beyond 90/10, 81 at or beyond 80/20)
 
@@ -690,7 +699,7 @@ A first pass of these three ran with a quoting slip that applied no change. All 
 
 Vs-field rows failing 6 → 6; summed excess over 55% 76.7 → 74.7 pp.
 
-- **Decision:** kept. Blowouts fall (200-seed round-robin: pairings at or beyond 95/5 30 → 26, at or beyond 99/1 16 → 15, at or beyond 90/10 51 → 48). memory-stall-deprecatter rises 43.6 → 47.0 and memory-stall-retro 19.7 → 22.3. Vs field moves toward its band (excess 76.7 → 74.7 pp; every failing row falls 0.2–0.6). code-lock-spaghettopus goes inconclusive → pass (54.4) and first mover inconclusive → pass (50.8). No row left its band. The dial is 55.7% (from 55.5%, still a fail). The worst-matchup rows are unchanged within noise: each archetype's single worst pairing is still a type blowout.
+- **Decision:** kept. Blowouts fall (200-seed round-robin: pairings at or beyond 95/5 30 → 26, at or beyond 99/1 16 → 15, at or beyond 90/10 51 → 48). memory-stall-deprecatter rises 43.6 → 47.0 and memory-stall-retro 19.7 → 22.3. Its effect on the targets is small: vs-field excess 76.7 → 74.7 pp (−2.0; every failing row falls 0.2–0.6), and the dial moved 0.2 pp the wrong way. Its clear wins are the Memory teams (memory-stall-deprecatter and memory-stall-retro) and first mover, not the targets. code-lock-spaghettopus goes inconclusive → pass (54.4) and first mover inconclusive → pass (50.8). No row left its band. The dial is 55.7% (from 55.5%, still a fail). The worst-matchup rows are unchanged within noise: each archetype's single worst pairing is still a type blowout.
 
 ### Blowout candidates on the K4 state (scale 0.1 targets and 200-seed round-robin against the K4 state, which is screen b2: excess 74.7; blowouts 15 · 26 · 48 · 81)
 
@@ -706,7 +715,7 @@ D4 stops at four kept changes, inside both the eight-change cap and the coordina
 
 - **Vs field and blowouts.** The six failing archetypes (reasoning-nuke-sagelet, reasoning-nuke-hallucinat, speed-rush-blitzr, open-swarm-forkling, search-anti-hallu-embeddingo, mixed-starter-forkling) mostly lose to one another. A nerf to one lifts the others and the four mid teams at 53–55% (spaghettopus, scrapion, mixed-sagelet, agentoad), so most single numbers that lower the excess tip a mid team over 55%. The remaining blowouts (15 pairings at or beyond 99/1) are Reasoning and Search hitting mono-Code and Memory teams at 1.5× and taking ⅔ back. No species or move number screened in D4 flips them. Moving them needs a softer chart (settled in D2), coverage moves (out of scope) or less Code-heavy archetypes (settled in D3).
 - **Starter triangle.** Blocked for single starter numbers (the cycle argument above).
-- **Temperature dial.** 55.7%, 0.7 pp out. Every T4 buff that reaches the band lifts the T4-native speed-rush-agentoad over 55%.
+- **Temperature dial.** 55.7%, 0.7 pp out. Deferred, not blocked: every single T4 buff that reaches the band lifts the T4-native speed-rush-agentoad over 55%, but the two-step path (Agentoad HP 65 → 55, then T4 self-hallucination 12% → 9%) probed at about 54.6% (inconclusive) with agentoad at 53.8%. It was not confirmed or committed.
 - **Off-By-Wasp graft.** Blocked by its targeting, not its value.
 - **Worst matchup.** Each archetype's worst pairing is a type blowout and did not move.
 
@@ -792,6 +801,8 @@ Vs-field rows failing 8 → 6; summed excess over 55% 87.9 → 74.7 pp.
 | median fight length (round-robin) | 7 (p25 6, p75 9) | 7 (p25 6, p75 9, min 2, max 50) |
 | round-cap hits, 380,000 battles | 129 at D2 (pre-D3 decks; not like-for-like) | 210 (0.06%) |
 
+The 1,000-seed round-robin (labels `round-robin:…`) is the held-out replicate of the `targets:` seeds: it uses different seeds for the same archetypes, and its per-archetype scores agree with the targets table within about 1 pp (reasoning-nuke-sagelet 80.6% against 80.4%, speed-rush-blitzr 67.9% against 67.6%, search-anti-hallu-embeddingo 62.3% against 62.0%).
+
 Still at or beyond 99/1 at 0.4.1: the Search teams and the Reasoning nukes against the mono-Code and Memory teams (for example reasoning-nuke-sagelet against open-swarm-forkling and code-lock-nullbeetle, and search-anti-hallu-embeddingo against memory-stall-retro and code-lock-cobolt).
 
 ### Timing (criterion 7) and gates
@@ -813,6 +824,6 @@ Re-recorded once, at the 0.4.1 bump. With the four old values put back and the e
 
 - **Starter triangle (99.3 / 91.2 / 100.0).** Needs coverage moves or a ruling: single starter numbers redistribute the cycle without lowering it.
 - **Vs field.** Six failing rows: reasoning-nuke-sagelet 80.4%, reasoning-nuke-hallucinat 71.6%, speed-rush-blitzr 67.6%, search-anti-hallu-embeddingo 62.0%, mixed-starter-forkling 62.1%, open-swarm-forkling 61.0%. The six mostly beat each other's victims, and the mid teams sit at 53–54.4%. The remaining gap is the Code-heavy field meeting the chart.
-- **Temperature dial (55.7%).** Each T4 buff that would reach the band lifts the T4-native speed-rush-agentoad over 55%. A dial fix probably needs agentoad's own numbers first (Agentoad HP 65 → 55 screened well, c28, but was not confirmed).
+- **Temperature dial (55.7%).** Each T4 buff that would reach the band lifts the T4-native speed-rush-agentoad over 55%. Deferred: the two-step path (Agentoad HP 65 → 55, which passes the keep rule on its own as c28, then T4 self-hallucination 12% → 9%) was probed at full dial scale at about 54.6% (inconclusive) with agentoad at 53.8%, but not confirmed or committed.
 - **Off-By-Wasp graft (23.3%).** Its targeting meets the template's `lowestHpFoe` aim; this is a template or ruling question, not a content value.
 - **Embeddingo card.** Its `compact-speed-type` card (D3 note) was left alone: it is an archetype deck card, and D3 settled the decks.

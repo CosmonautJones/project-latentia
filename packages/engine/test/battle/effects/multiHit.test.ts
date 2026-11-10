@@ -7,7 +7,7 @@ import type { BattleState } from '../../../src/battle/state.js';
 import { at, battle, draws, entry, type DrawHalves } from '../helpers.js';
 
 // 1 a-act1 blitzr, 2 a-act2 forkling, 7 b-act1 blitzr. Speculative Decoding: speed, 22 per hit, 2–5 hits
-// (Wild 2–6, WildT4 2–7) from hi(d5, span). Swarm of Fine-Tunes: open, 20 per hit, 1 + other open allies.
+// (Wild 2–6, WildT4 2–7) from hi(d5, span). Swarm of Fine-Tunes: open, 15 per hit, 1 + other open allies.
 
 function fresh(): BattleState {
   const s = battle();

@@ -77,7 +77,7 @@ export const PLAYER_AUTOPILOT: Deck = {
   default: card('chain', 'self', ALWAYS, 'chain-of-thought', 'lowestHpFoe'),
 };
 
-/** The subagent's attack: Swarm of Fine-Tunes, a weak poke (one 20-power hit with no Open ally) that never needs a heal to fit. */
+/** The subagent's attack: Swarm of Fine-Tunes, a weak poke (one 15-power hit with no Open ally) that never needs a heal to fit. */
 export const ATTACK = card('attack', 'self', ALWAYS, 'swarm-of-fine-tunes', 'lowestHpFoe');
 /** The heal: Community Patch (30%) on the lowest-HP ally whenever an ally is below half HP. */
 export const HEAL = card('heal', 'self', { category: 'allyHp', op: 'below', pct: 50 }, 'community-patch', 'lowestHpAlly');
