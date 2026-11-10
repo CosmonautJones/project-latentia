@@ -6,7 +6,8 @@ import type { Archetype, MatchStats, Score } from './types.js';
 // assignments — 20 archetypes → 190 unordered pairings → 380 ordered pairings — and the scores read off it.
 
 export type OrderedPairing = { a: string; b: string; stats: MatchStats };
-export type RoundRobin = { ids: string[]; seeds: number; ordered: OrderedPairing[] };
+/** `label`: the run's seedFor label family; pairing a-vs-b ran on `pairingLabel`. */
+export type RoundRobin = { ids: string[]; seeds: number; label: string; ordered: OrderedPairing[] };
 
 /**
  * `seeds` battles per ordered pairing, `a` on side a, seeded `seedFor(<label>:<a id>:<b id>, i)`, in archetype order
@@ -19,8 +20,11 @@ export function roundRobin(archetypes: readonly Archetype[], seeds: number, labe
     for (const b of archetypes) if (b !== a) ordered.push({ a: a.id, b: b.id, stats: runMatch(a, b, seeds, `${label}:${a.id}:${b.id}`) });
     onArchetype?.(i + 1, archetypes.length);
   });
-  return { ids: archetypes.map((a) => a.id), seeds, ordered };
+  return { ids: archetypes.map((a) => a.id), seeds, label, ordered };
 }
+
+/** The seedFor label an ordered pairing ran on: battle i used `seedFor(pairingLabel(rr, p), i)`. */
+export const pairingLabel = (rr: Pick<RoundRobin, 'label'>, p: Pick<OrderedPairing, 'a' | 'b'>): string => `${rr.label}:${p.a}:${p.b}`;
 
 /** `x`'s Score in one ordered pairing (whichever side it played). */
 function scoreIn(p: OrderedPairing, x: string): Score {

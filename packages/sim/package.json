@@ -8,7 +8,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "sim": "tsx src/bin.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "triangle-solo": "tsx scripts/triangle-solo.ts"
+    "triangle-solo": "tsx scripts/triangle-solo.ts",
+    "diagnostics": "tsx scripts/diagnostics.ts"
   },
   "dependencies": {
     "@latentia/engine": "workspace:*"

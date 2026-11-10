@@ -1,6 +1,10 @@
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UsageError } from '../src/args.js';
-import { commands, main } from '../src/cli.js';
+import { commands, gitRevision, main } from '../src/cli.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -58,7 +62,7 @@ describe('main', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     await main([]);
     const text = String(err.mock.calls[0]?.[0]);
-    for (const line of ['round-robin [--seeds N] [--tag <tag>]', 'matchup <a> <b> [--seeds N] [--tag <tag>]', 'fuzz [--battles N] [--tag <tag>]', 'targets [--seeds-scale k] [--tag <tag>]', 'search --archetype <id> --budget N [--seed <hex>] [--tag <tag>]']) expect(text).toContain(line);
+    for (const line of ['round-robin [--seeds N] [--tag <tag>]', 'matchup <a> <b> [--seeds N] [--one-sided] [--tag <tag>]', 'fuzz [--battles N] [--tag <tag>]', 'targets [--seeds-scale k] [--tag <tag>]', 'search --archetype <id> --budget N [--seed <hex>] [--tag <tag>]']) expect(text).toContain(line);
     expect(text).toContain('reports/<command>-<YYYY-MM-DD>[-<tag>].md');
     expect(text).toMatch(/same day overwrites/);
     expect(text).toMatch(/--tag scratch.*git-ignored/s);
@@ -74,5 +78,31 @@ describe('main', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(await main([])).toBe(0);
     expect(err).toHaveBeenCalledOnce();
+  });
+});
+
+describe('gitRevision (Ruling 143 I5: read in the CLI layer)', () => {
+  it('gives the HEAD SHA, dirty when anything outside reports/ differs, and null outside a repository', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'latentia-git-'));
+    try {
+      expect(gitRevision(dir)).toBeNull();
+      const git = (...a: string[]) => execFileSync('git', a, { cwd: dir, encoding: 'utf8' }).trim();
+      git('init', '-q');
+      writeFileSync(join(dir, 'a.txt'), 'a');
+      git('add', '.');
+      git('-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-qm', 'x');
+      const sha = git('rev-parse', 'HEAD');
+      expect(gitRevision(dir)).toEqual({ sha, dirty: false });
+      mkdirSync(join(dir, 'reports'));
+      writeFileSync(join(dir, 'reports', 'r.md'), 'report');
+      expect(gitRevision(dir)).toEqual({ sha, dirty: false });
+      writeFileSync(join(dir, 'a.txt'), 'changed');
+      expect(gitRevision(dir)).toEqual({ sha, dirty: true });
+      git('checkout', '-q', 'a.txt');
+      writeFileSync(join(dir, 'new.ts'), 'untracked');
+      expect(gitRevision(dir)).toEqual({ sha, dirty: true });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

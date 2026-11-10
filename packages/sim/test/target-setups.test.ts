@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { cardFires } from '../src/archetypes/headlines.js';
 import { ARCHETYPES, mirrorOf, starterGrid } from '../src/archetypes/index.js';
 import { seedFor } from '../src/runner.js';
-import { GRAFT_SPECIES, GRAFT_STARTER, graftVariant, rolesOf, spinUpVariant, starterSide, temperatureSides, TRIANGLE } from '../src/target-setups.js';
+import { GRAFT_SPECIES, GRAFT_STARTER, graftVariant, rolesOf, soloPair, soloSide, SPIN_UP_LEVEL, spinUpVariant, spunUpMoves, starterSide, temperaturePair, TRIANGLE } from '../src/target-setups.js';
 import type { Archetype } from '../src/types.js';
 
 // The balance targets' setups (Rulings 133–134): their structure, and for each target a "setup is live" check that its
@@ -90,6 +90,28 @@ describe('starter triangle setup', () => {
   });
 });
 
+describe('partnerless triangle diagnostic (Rulings 136, 143 I1)', () => {
+  it.each(STARTERS)('%s solo is the official side with no subagent and its slot left empty', (s) => {
+    const official = starterSide(s).side;
+    const solo = soloSide(s).side;
+    expect(solo.active).toEqual([]);
+    expect(solo.bench).toEqual([]);
+    expect(solo.autopilot).toEqual(official.autopilot);
+    expect(solo.orchestrator).toEqual(official.orchestrator);
+    expect(headroom(solo.grid)).toBe(headroom(official.grid));
+    expect(solo.grid?.pieces.some((p) => p.subagentId !== undefined)).toBe(false);
+    expect(solo.grid?.pieces.map((p) => p.id)).toEqual(official.grid?.pieces.map((p) => p.id));
+  });
+  it.each(TRIANGLE)('is live, %s vs %s solo: valid, both orchestrators act, and the favoured one deals damage', (fav, beaten) => {
+    const [x, y] = soloPair(fav, beaten);
+    expect(valid(x, y)).toEqual([]);
+    const rs = both(x, y, 'live:solo', 5);
+    const count = (side: Archetype, type: 'MoveUsed' | 'Damage') => rs.reduce((n, r) => n + r.events.filter((e) => e.type === type && indicesOf(r, side).includes(e.actor)).length, 0);
+    for (const side of [x, y]) expect(count(side, 'MoveUsed'), side.id).toBeGreaterThan(0);
+    expect(count(x, 'Damage'), x.id).toBeGreaterThan(0);
+  });
+});
+
 describe('graft vs spin-up setup (Ruling 134: base team Sagelet + Tokenibble)', () => {
   it('uses the first three slice species, not a starter or Tokenibble, whose graft fits the base grid', () => {
     expect(GRAFT_SPECIES).toEqual(['stochastiparrot', 'nullbeetle', 'off-by-wasp']);
@@ -117,13 +139,24 @@ describe('graft vs spin-up setup (Ruling 134: base team Sagelet + Tokenibble)', 
     expect(g.grid?.pieces.filter((p) => p !== graft)).toEqual(starterGrid(GRAFT_STARTER, 8, g.active[0]?.id ?? '').pieces);
     expect(headroom(g.grid)).toBe(8 - SPECIES[species].graftShape.length);
     // S: the base grid plus a 2×2 slot B for the species. The L8 grid holds no extra Example Card (headroom would fall
-    // below 4), so slot B shares slot A's two right-hand Example Cards: 2 active cards, headroom exactly 4.
-    expect(s.active.map((c) => [c.species, c.level])).toEqual([['tokenibble', 8], [species, 8]]);
+    // below 4), so slot B shares slot A's two right-hand Example Cards: 2 active cards, headroom exactly 4. The
+    // spun-up subagent joins at L5, the defeated wild model's level (Ruling 145), with its 3 moves and no signature
+    // (bible:250, Ruling 143).
+    expect(SPIN_UP_LEVEL).toBe(5);
+    expect(s.active.map((c) => [c.species, c.level, c.version])).toEqual([['tokenibble', 8, 'v2'], [species, 5, 'v1']]);
+    const spun = s.active[1];
+    const sig = SPECIES[species].signature;
+    expect(spun?.moves).toEqual(SPECIES[species].moves.filter((m) => m !== sig));
+    expect(spun?.moves).toEqual(spunUpMoves(species));
+    expect(spun?.moves).toHaveLength(3);
+    const spunCards = [...(spun?.deck?.cards ?? []), spun?.deck?.default];
+    expect(spunCards.map((c) => c?.move)).not.toContain(sig);
+    expect(spunCards.map((c) => c?.id)).toEqual(['setup', 'power', 'default']);
     const slotB = s.grid?.pieces.find((p) => p.id === 'slot-B');
     expect(slotB).toMatchObject({ kind: 'subagentSlot', subagentId: s.active[1]?.id, anchor: [3, 1], shape: [[0, 0], [1, 0], [0, 1], [1, 1]] });
     expect(s.grid?.pieces.filter((p) => p !== slotB)).toEqual(starterGrid(GRAFT_STARTER, 8, s.active[0]?.id ?? '').pieces);
     if (s.grid === null) throw new Error('no grid');
-    expect(activeCardCount(s.grid, 'slot-B', 'v2')).toBe(2);
+    expect(activeCardCount(s.grid, 'slot-B', 'v1')).toBe(2);
     expect(activeCardCount(s.grid, 'slot-A', 'v2')).toBe(3);
     expect(headroom(s.grid)).toBe(4);
     expect(s.active[1]?.deck?.cards.length).toBe(2);
@@ -134,28 +167,37 @@ describe('graft vs spin-up setup (Ruling 134: base team Sagelet + Tokenibble)', 
     expect(gCards.find((c) => c.id === 'graft')?.move).toBe(SPECIES[species].signature);
   });
 
-  it.each(GRAFT_SPECIES)('is live, %s: the graft card fires in G', (species) => {
+  it.each(GRAFT_SPECIES)('is live, %s: the graft card fires in G, and S’s L5 spun-up subagent acts without its signature', (species) => {
     const G = graftVariant(species);
-    const rs = both(G, spinUpVariant(species), `live:graft:${species}`, 20);
+    const S = spinUpVariant(species);
+    const rs = both(G, S, `live:graft:${species}`, 20);
     expect(fired(rs, G.side.orchestrator.id, 'graft')).toBeGreaterThan(0);
-    const used = rs.reduce((n, r) => n + r.events.filter((e) => e.type === 'MoveUsed' && e.moveId === SPECIES[species].signature && indicesOf(r, G)[0] === e.actor).length, 0);
+    const sig = SPECIES[species].signature;
+    const used = rs.reduce((n, r) => n + r.events.filter((e) => e.type === 'MoveUsed' && e.moveId === sig && indicesOf(r, G)[0] === e.actor).length, 0);
     expect(used).toBeGreaterThan(0);
+    // The spun-up subagent is S's third creature (orchestrator, Tokenibble, it), and it plays at L5.
+    const spunMoves = rs.flatMap((r) => r.events.filter((e) => e.type === 'MoveUsed' && e.actor === indicesOf(r, S)[2]).map((e) => (e.type === 'MoveUsed' ? e.moveId : '')));
+    expect(spunMoves.length).toBeGreaterThan(0);
+    expect(spunMoves).not.toContain(sig);
+    expect(createBattle(setupOf(G, S), seedFor('live:graft-level', 0)).creatures.find((c) => c.id === S.side.active[1]?.id)?.level).toBe(SPIN_UP_LEVEL);
   });
 });
 
-describe('temperature dial setup', () => {
+describe('temperature dial setup (Ruling 143 I2: every archetype)', () => {
   const first = ARCHETYPES.find((a) => a.id.startsWith('mixed-'));
   if (first === undefined) throw new Error('no mixed archetype');
-  const [t0, t4] = temperatureSides();
+  const [t0, t4] = temperaturePair(first);
 
-  it('mirrors the first mixed archetype with one Autopilot at temperature 0 and the other at 4', () => {
-    expect([t0.id, t4.id]).toEqual([first.id, first.id]);
-    expect(t0.side.autopilot?.temperature).toBe(0);
-    expect(t4.side.autopilot?.temperature).toBe(4);
+  it.each(ARCHETYPES.map((a) => a.id))('mirrors %s with one Autopilot at temperature 0 and the other at 4', (id) => {
+    const x = ARCHETYPES.find((a) => a.id === id) as Archetype;
+    const [c, h] = temperaturePair(x);
+    expect([c.id, h.id]).toEqual([x.id, x.id]);
+    expect(c.side.autopilot?.temperature).toBe(0);
+    expect(h.side.autopilot?.temperature).toBe(4);
     const strip = (s: SideSetup) => ({ ...s, autopilot: { ...s.autopilot, temperature: null } });
-    expect(strip(t0.side)).toEqual(strip(first.side));
-    expect(strip(t4.side)).toEqual(strip(mirrorOf(first, 't4').side));
-    expect(valid(t0, t4)).toEqual([]);
+    expect(strip(c.side)).toEqual(strip(x.side));
+    expect(strip(h.side)).toEqual(strip(mirrorOf(x, 't4').side));
+    expect(valid(c, h)).toEqual([]);
   });
 
   it('is live: the engine runs the sides at T0 and T4, and only the T4 orchestrator hallucinates a move', () => {

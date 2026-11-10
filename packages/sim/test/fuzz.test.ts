@@ -1,6 +1,7 @@
-import { EngineInvariantError, replay, simulate, validateSetup, type BattleResult } from '@latentia/engine';
+import { ENGINE_VERSION, EngineInvariantError, replay, simulate, validateSetup, type BattleResult } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { fuzzCase, fuzzCommand, runFuzz, type FuzzEngine } from '../src/commands/fuzz.js';
+import { PROVENANCE_COLUMNS } from '../src/report.js';
 import { csvRows, readOut, testContext } from './helpers/context.js';
 
 describe('fuzzCase', () => {
@@ -53,7 +54,7 @@ describe('fuzz command', () => {
     expect(await fuzzCommand(['--battles', '25'], ctx)).toBe(0);
     expect(readOut(ctx, 'fuzz-2026-01-02.md')).toContain('- battles: 25');
     const rows = csvRows(readOut(ctx, 'fuzz-2026-01-02.csv'));
-    expect(rows[0]).toEqual(['battles', 'exceptions', 'invariant_errors', 'replay_mismatches', 'cap_hits']);
+    expect(rows[0]).toEqual(['battles', 'exceptions', 'invariant_errors', 'replay_mismatches', 'cap_hits', ...PROVENANCE_COLUMNS]);
     expect(rows[1]?.slice(0, 4)).toEqual(['25', '0', '0', '0']);
   });
   it('returns 1 and lists the failures when any battle fails', async () => {
@@ -62,6 +63,6 @@ describe('fuzz command', () => {
     const md = readOut(ctx, 'fuzz-2026-01-02.md');
     expect(md).toContain('- verdict: FAILED');
     expect(md).toContain('| 0 |');
-    expect(csvRows(readOut(ctx, 'fuzz-2026-01-02.csv'))[1]).toEqual(['6', '1', '1', '1', '1']);
+    expect(csvRows(readOut(ctx, 'fuzz-2026-01-02.csv'))[1]?.slice(0, 6)).toEqual(['6', '1', '1', '1', '1', ENGINE_VERSION]);
   });
 });

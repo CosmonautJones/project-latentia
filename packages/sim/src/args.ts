@@ -1,8 +1,8 @@
 // Command-line parsing for the sim commands (Ruling 137). Each command declares its flags and how many positionals it
 // takes; anything else — an unknown or misspelt flag, a flag given twice, a flag with no value, too many or too few
 // positionals — is a UsageError, which the CLI prints and exits 2 on. Nothing is silently ignored, so a typo never
-// launches a run at its defaults. Flags take one value, as `--name value` or `--name=value`. A bare `--` ends the
-// flags: every argument after it is a positional.
+// launches a run at its defaults. Flags take one value, as `--name value` or `--name=value`, except switches (`bool`),
+// which take none. A bare `--` ends the flags: every argument after it is a positional.
 
 export class UsageError extends Error {
   constructor(message: string) {
@@ -13,9 +13,10 @@ export class UsageError extends Error {
 
 /**
  * `int`: a positive integer; `num`: a positive finite number; `tag` and `id`: lowercase letters, digits and dashes (a
- * file-name tag, an archetype id); `seed`: a seed, 32 lowercase hex characters, not all zero.
+ * file-name tag, an archetype id); `seed`: a seed, 32 lowercase hex characters, not all zero; `bool`: a switch, given
+ * bare (`--one-sided`), with no value.
  */
-export type FlagKind = 'int' | 'num' | 'tag' | 'id' | 'seed';
+export type FlagKind = 'int' | 'num' | 'tag' | 'id' | 'seed' | 'bool';
 export type CommandSpec = {
   name: string;
   /** Positional names, in order (the command takes exactly these). */
@@ -24,14 +25,14 @@ export type CommandSpec = {
   /** Flags the command cannot run without (a missing one is a UsageError). */
   required?: readonly string[];
 };
-export type Parsed = { positionals: string[]; flags: ReadonlyMap<string, number | string> };
+export type Parsed = { positionals: string[]; flags: ReadonlyMap<string, number | string | true> };
 
-const PLACEHOLDER: Record<FlagKind, string> = { int: 'N', num: 'k', tag: '<tag>', id: '<id>', seed: '<hex>' };
+const PLACEHOLDER: Record<FlagKind, string> = { int: 'N', num: 'k', tag: '<tag>', id: '<id>', seed: '<hex>', bool: '' };
 
 /** One usage line: `name <pos>… --required <kind>… [--flag <kind>]…`. */
 export function usageLine(spec: CommandSpec): string {
   const required = new Set(spec.required ?? []);
-  const flag = ([f, k]: [string, FlagKind]): string => `--${f} ${PLACEHOLDER[k]}`;
+  const flag = ([f, k]: [string, FlagKind]): string => (k === 'bool' ? `--${f}` : `--${f} ${PLACEHOLDER[k]}`);
   const entries = Object.entries(spec.flags);
   return [spec.name, ...spec.positionals.map((p) => `<${p}>`), ...entries.filter(([f]) => required.has(f)).map(flag), ...entries.filter(([f]) => !required.has(f)).map((e) => `[${flag(e)}]`)].join(' ');
 }
@@ -54,7 +55,7 @@ function value(kind: FlagKind, name: string, v: string): number | string {
 export function parseArgs(args: readonly string[], spec: CommandSpec): Parsed {
   const usage = `usage: ${usageLine(spec)}`;
   const positionals: string[] = [];
-  const flags = new Map<string, number | string>();
+  const flags = new Map<string, number | string | true>();
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as string;
     if (a === '--') {
@@ -70,6 +71,11 @@ export function parseArgs(args: readonly string[], spec: CommandSpec): Parsed {
     const kind = Object.prototype.hasOwnProperty.call(spec.flags, name) ? spec.flags[name] : undefined;
     if (kind === undefined) throw new UsageError(`unknown flag --${name}\n${usage}`);
     if (flags.has(name)) throw new UsageError(`--${name} given twice\n${usage}`);
+    if (kind === 'bool') {
+      if (eq >= 0) throw new UsageError(`--${name} takes no value\n${usage}`);
+      flags.set(name, true);
+      continue;
+    }
     const v = eq < 0 ? args[++i] : a.slice(eq + 1);
     if (v === undefined || (eq < 0 && v.startsWith('--'))) throw new UsageError(`--${name} needs a value\n${usage}`);
     flags.set(name, value(kind, name, v));
@@ -97,3 +103,8 @@ export function tag(p: Parsed, name: string): string | undefined {
 
 /** A string flag's value (an id, a seed): the same reader as `tag`, named for what it reads. */
 export const str = tag;
+
+/** Whether a switch (a `bool` flag) was given. */
+export function flag(p: Parsed, name: string): boolean {
+  return p.flags.get(name) === true;
+}

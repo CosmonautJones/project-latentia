@@ -77,6 +77,7 @@ export function fuzzReport(r: FuzzResult, run: { date: string; tag?: string | un
     date: run.date,
     tag: run.tag,
     args: run.args,
+    seedScale: { value: String(r.battles), unit: 'battles: fuzz cases 0 to N − 1' },
     meta: [
       ['battles', fmtCount(r.battles)],
       ['exceptions', String(r.exceptions)],
@@ -102,7 +103,7 @@ export async function fuzzCommand(args: string[], ctx: CommandContext, engine: F
   const battles = num(p, 'battles', 500);
   const t0 = ctx.now();
   const r = runFuzz(battles, { engine, onProgress: (done) => ctx.progress(`fuzz: ${fmtCount(done)}/${fmtCount(battles)}`) });
-  const paths = writeReport(fuzzReport(r, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0 }), ctx.outDir);
+  const paths = writeReport(fuzzReport(r, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0 }), ctx);
   ctx.progress(`wrote ${paths.md} and ${paths.csv}`);
   return fuzzClean(r) ? 0 : 1;
 }

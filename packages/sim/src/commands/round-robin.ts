@@ -1,7 +1,7 @@
 import { num, parseArgs, tag, type CommandSpec } from '../args.js';
 import { ARCHETYPES } from '../archetypes/index.js';
 import { fmtCount, fmtInterval, fmtPct, fmtSeconds, writeReport, type Report } from '../report.js';
-import { allRounds, fieldScore, roundRobin, totalCapHits, unorderedPairings, worstPairing, type RoundRobin } from '../round-robin.js';
+import { allRounds, fieldScore, pairingLabel, roundRobin, totalCapHits, unorderedPairings, worstPairing, type RoundRobin } from '../round-robin.js';
 import { scoreA } from '../runner.js';
 import { median, rate, wilson95 } from '../stats.js';
 import type { CommandContext } from '../types.js';
@@ -24,6 +24,7 @@ export function roundRobinReport(rr: RoundRobin, run: { date: string; tag?: stri
     date: run.date,
     tag: run.tag,
     args: run.args,
+    seedScale: { value: String(rr.seeds), unit: 'seeds per ordered pairing' },
     meta: [
       ['seeds', seedText],
       ['pairings', `${rr.ids.length} archetypes → ${unorderedPairings(rr).length} unordered pairings → ${rr.ordered.length} ordered pairings`],
@@ -45,10 +46,11 @@ export function roundRobinReport(rr: RoundRobin, run: { date: string; tag?: stri
       },
     ],
     csv: {
-      columns: ['a', 'b', 'battles', 'wins_a', 'wins_b', 'draws', 'score_a', 'median_rounds'],
+      // seed_label: battle i of the pairing ran on seedFor(seed_label, i).
+      columns: ['a', 'b', 'battles', 'wins_a', 'wins_b', 'draws', 'score_a', 'median_rounds', 'seed_label'],
       rows: rr.ordered.map((p) => {
         const s = scoreA(p.stats);
-        return [p.a, p.b, s.n, p.stats.winsA, p.stats.winsB, p.stats.draws, rate(s), median(p.stats.rounds)];
+        return [p.a, p.b, s.n, p.stats.winsA, p.stats.winsB, p.stats.draws, rate(s), median(p.stats.rounds), pairingLabel(rr, p)];
       }),
     },
   };
@@ -59,7 +61,7 @@ export async function roundRobinCommand(args: string[], ctx: CommandContext): Pr
   const seeds = num(p, 'seeds', 1000);
   const t0 = ctx.now();
   const rr = roundRobin(ARCHETYPES, seeds, 'round-robin', (done, total) => ctx.progress(`round-robin: ${done}/${total} archetypes`));
-  const paths = writeReport(roundRobinReport(rr, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0 }), ctx.outDir);
+  const paths = writeReport(roundRobinReport(rr, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0 }), ctx);
   ctx.progress(`wrote ${paths.md} and ${paths.csv}`);
   return 0;
 }

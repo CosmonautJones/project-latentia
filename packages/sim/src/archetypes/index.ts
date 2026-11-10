@@ -13,7 +13,7 @@ import { VOICE_PRESSURE } from './voice-injection.js';
 // each a gridded side of 1 orchestrator, 2 active subagents and 1 bench creature (Ruling 130), every subagent on a
 // deck. Creature ids are `<archetype id>/<local id>`; mirrorOf renames a copy for a mirror match (Ruling 129).
 
-export const ARCHETYPES: readonly Archetype[] = [
+export const ARCHETYPES: readonly Archetype[] = Object.freeze([
   ...SPEED_RUSH,
   ...REASONING_NUKE,
   ...OPEN_SWARM,
@@ -22,7 +22,7 @@ export const ARCHETYPES: readonly Archetype[] = [
   ...MEMORY_STALL,
   ...SEARCH_ANTI_HALLU,
   ...MIXED,
-];
+]);
 
 export { mirrorOf } from './build.js';
 export { starterGrid, type StarterId } from './starter-grids.js';

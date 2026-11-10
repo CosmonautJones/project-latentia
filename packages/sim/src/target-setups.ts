@@ -1,13 +1,19 @@
-import { activeCardCount, moveDef, SPECIES, SPECIES_IDS, type Card, type Condition, type Deck, type GridLayout, type PlacedPiece, type SpeciesId, type Subject, type TargetSelector, type Temperature } from '@latentia/engine';
+import { activeCardCount, moveDef, SPECIES, SPECIES_IDS, validateSetup, type Card, type Condition, type Deck, type GridLayout, type PlacedPiece, type SpeciesId, type Subject, type TargetSelector, type Temperature } from '@latentia/engine';
 import { ALWAYS, archetype, card, cooldown, deck, FULL, OPENER, orchestrator, subagent, versionFor, WEAK_TO_MOVE } from './archetypes/build.js';
 import { ARCHETYPES, mirrorOf, starterGrid, type StarterId } from './archetypes/index.js';
 import type { Archetype } from './types.js';
 
 // The balance targets' own setups (spec §9 table, Rulings 133–134). Ruling 130's 1 + 2 + 1 team rule is for ARCHETYPES
 // and does not apply here; every setup still passes validateSetup, and each has a "setup is live" test
-// (target-setups.test.ts). All creatures are L8 (v2). Decks are built by role from move data, never by move index.
+// (target-setups.test.ts). Every creature is L8 (v2) except graft vs spin-up's spun-up subagent, which joins at L5
+// (Ruling 145). Decks are built by role from move data, never by move index.
 
 const LEVEL = 8;
+/**
+ * The spun-up subagent's level in graft vs spin-up (Ruling 145): a spun-up subagent joins at the level of the wild
+ * model it was distilled from, not the orchestrator's; L5 is a mid-Deprecated-Forest wild level.
+ */
+export const SPIN_UP_LEVEL = 5;
 const STARTERS: readonly StarterId[] = ['sagelet', 'blitzr', 'forkling'];
 /** Every template-built Autopilot runs at the engine's default temperature, the middle of the dial. */
 const TEMPLATE_TEMPERATURE: Temperature = 2;
@@ -46,7 +52,11 @@ const isBuff = (m: string): boolean => {
 };
 
 export function rolesOf(species: SpeciesId): Roles {
-  const moves = SPECIES[species].moves;
+  return rolesAmong(species, SPECIES[species].moves);
+}
+
+/** The roles read off `moves` (some of `species`' moves); `sig` stays the species' signature. */
+function rolesAmong(species: SpeciesId, moves: readonly string[]): Roles {
   const damaging = moves.filter((m) => strength(m) >= 0);
   const power = strongest(damaging);
   if (power === undefined) throw new Error(`${species} has no damaging move`);
@@ -79,6 +89,16 @@ export function subagentTemplate(species: SpeciesId, activeCards: number): Deck 
   return deck(aimed('default', 'self', ALWAYS, r.affordable, 'lowestHpFoe'), ...cards.slice(0, activeCards));
 }
 
+/** A spun-up subagent's three moves (bible:250): its species' moves without the signature. */
+export const spunUpMoves = (species: SpeciesId): string[] => SPECIES[species].moves.filter((m) => m !== SPECIES[species].signature);
+
+/** The subagent template on the spun-up moves alone: setup on turn 1, strongest move, Default affordable — no signature card. */
+export function spunUpTemplate(species: SpeciesId, activeCards: number): Deck {
+  const r = rolesAmong(species, spunUpMoves(species));
+  const cards = [aimed('setup', 'self', OPENER, r.setup, 'highestAtkFoe'), aimed('power', 'self', ALWAYS, r.power, 'lowestHpFoe')];
+  return deck(aimed('default', 'self', ALWAYS, r.affordable, 'lowestHpFoe'), ...cards.slice(0, activeCards));
+}
+
 /** Tokenibble L8, the starter's bundled intern, on the subagent template for the starter grid's slot (3 active cards at v2). */
 const intern = () => subagent('tokenibble', 'tokenibble', LEVEL, { deck: subagentTemplate('tokenibble', 3), ...SUBAGENT_TRAINING });
 
@@ -100,6 +120,26 @@ export function starterSide(s: StarterId): Archetype {
     autopilot: autopilotTemplate(rolesOf(s)),
     temperature: TEMPLATE_TEMPERATURE,
   });
+}
+
+/**
+ * The partnerless triangle diagnostic's side (Rulings 136, 143 I1): the official starter side with its partner
+ * removed — no active subagent, and the grid's slot left unbound (empty), so headroom is unchanged.
+ */
+export function soloSide(s: StarterId): Archetype {
+  const { id, side } = starterSide(s);
+  if (side.grid === null) throw new Error(`${id} has no grid`);
+  const unbind = (p: PlacedPiece): PlacedPiece => Object.fromEntries(Object.entries(p).filter(([k]) => k !== 'subagentId')) as PlacedPiece;
+  const pieces = side.grid.pieces.map((p) => (p.subagentId === undefined ? p : unbind(p)));
+  return { id: `${id}-solo`, side: { ...side, active: [], bench: [], grid: { ...side.grid, pieces } } };
+}
+
+/** A solo pairing, checked with the engine's own validation first (an invalid diagnostic must not run). */
+export function soloPair(fav: StarterId, beaten: StarterId): [Archetype, Archetype] {
+  const [x, y] = [soloSide(fav), soloSide(beaten)];
+  const v = validateSetup({ a: { ...x.side, opponentId: y.id }, b: { ...y.side, opponentId: x.id }, kind: 'trainer' });
+  if (!v.ok) throw new Error(`${x.id} vs ${y.id} is invalid: ${JSON.stringify(v.errors)}`);
+  return [x, y];
 }
 
 // --- graft vs spin-up (Ruling 134: Ruling 133 literally) --------------------------------------------------------
@@ -219,13 +259,18 @@ export function graftVariant(species: SpeciesId): Archetype {
   });
 }
 
-/** Variant S (spin up): the base team plus `species` L8 as a second subagent in slot B, on the subagent template cut to its active cards. */
+/**
+ * Variant S (spin up): the base team plus `species` as a second subagent in slot B, spun up as the bible has it: at
+ * SPIN_UP_LEVEL, the defeated wild model's level (Ruling 145), with its 3 moves and no signature (bible:250, Ruling
+ * 143), on the spun-up template cut to its active cards.
+ */
 export function spinUpVariant(species: SpeciesId): Archetype {
   const grid = spinUpGrid(species);
-  const active = activeCardCount(grid, 'slot-B', versionFor(LEVEL));
+  const active = activeCardCount(grid, 'slot-B', versionFor(SPIN_UP_LEVEL));
+  const spun = { ...subagent(species, species, SPIN_UP_LEVEL, { deck: spunUpTemplate(species, active), ...SUBAGENT_TRAINING }), moves: spunUpMoves(species) };
   return archetype(`graft-${species}-s`, {
     orchestrator: graftOrchestrator(),
-    active: [intern(), subagent(species, species, LEVEL, { deck: subagentTemplate(species, active), ...SUBAGENT_TRAINING })],
+    active: [intern(), spun],
     grid,
     autopilot: autopilotTemplate(rolesOf(GRAFT_STARTER)),
     temperature: TEMPLATE_TEMPERATURE,
@@ -241,9 +286,20 @@ function atTemperature(a: Archetype, t: Temperature): Archetype {
   return { id: a.id, side: { ...a.side, autopilot: { deck: ap.deck, temperature: t } } };
 }
 
-/** The first `mixed-*` archetype (ARCHETYPES order) at Autopilot temperature 0, and its mirror at 4. */
-export function temperatureSides(): [Archetype, Archetype] {
-  const a = ARCHETYPES.find((x) => x.id.startsWith('mixed-'));
-  if (a === undefined) throw new Error('no mixed archetype');
+/** The temperature dial's pairing for `a` (Ruling 143 I2: every archetype takes part): `a` at Autopilot T0, and its mirror at T4. */
+export function temperaturePair(a: Archetype): [Archetype, Archetype] {
   return [atTemperature(a, 0), atTemperature(mirrorOf(a, 't4'), 4)];
+}
+
+// --- every setup ------------------------------------------------------------------------------------------------
+
+/** Every target setup object, for the reports' content fingerprint (Ruling 143 I5). */
+export function targetSetups(): Record<string, unknown> {
+  return {
+    triangle: TRIANGLE,
+    starters: STARTERS.map(starterSide),
+    solo: STARTERS.map(soloSide),
+    graft: GRAFT_SPECIES.map((sp) => [graftVariant(sp), spinUpVariant(sp)]),
+    temperature: ARCHETYPES.map(temperaturePair),
+  };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { num, parseArgs, tag, usageLine, UsageError, type CommandSpec } from '../src/args.js';
+import { flag, num, parseArgs, tag, usageLine, UsageError, type CommandSpec } from '../src/args.js';
 
 const SPEC: CommandSpec = { name: 'demo', positionals: ['a', 'b'], flags: { seeds: 'int', 'seeds-scale': 'num', tag: 'tag' } };
 const bad = (args: string[]) => () => parseArgs(args, SPEC);
@@ -52,6 +52,15 @@ describe('parseArgs (Ruling 137)', () => {
     expect(() => parseArgs(['--budget', '5'], S)).toThrow(/missing --archetype\nusage: search --archetype <id> --budget N \[--seed <hex>\] \[--tag <tag>\]/);
     expect(() => parseArgs(['--archetype', 'a'], S)).toThrow(/missing --budget/);
     expect(() => parseArgs([], S)).toThrow(UsageError);
+  });
+  it('reads a switch (bool flag) given bare, and rejects a value on it', () => {
+    const S: CommandSpec = { name: 'm', positionals: ['a'], flags: { seeds: 'int', 'one-sided': 'bool' } };
+    expect(flag(parseArgs(['x', '--one-sided', '--seeds', '3'], S), 'one-sided')).toBe(true);
+    expect(flag(parseArgs(['x'], S), 'one-sided')).toBe(false);
+    // The next argument stays a positional: a switch never takes it as its value.
+    expect(parseArgs(['--one-sided', 'x'], S).positionals).toEqual(['x']);
+    expect(() => parseArgs(['x', '--one-sided=true'], S)).toThrow(/--one-sided takes no value/);
+    expect(usageLine(S)).toBe('m <a> [--seeds N] [--one-sided]');
   });
   it('writes a usage line from the spec', () => {
     expect(usageLine(SPEC)).toBe('demo <a> <b> [--seeds N] [--seeds-scale k] [--tag <tag>]');

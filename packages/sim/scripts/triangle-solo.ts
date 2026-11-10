@@ -1,4 +1,6 @@
-// The partnerless starter-triangle diagnostic (Ruling 136, Task C5). Not a target row.
+// The partnerless starter-triangle diagnostic (Ruling 136, Task C5). `pnpm sim targets` now carries the solo rows as
+// diagnostic rows on the same seed labels (Ruling 143 I1), so this script reproduces both the official and the
+// diagnostic rows of the targets report; the solo setup is soloPair (target-setups.ts).
 //
 // The official starter-triangle target (targets.ts) gives every starter its bundled Tokenibble, a Speed-type intern,
 // so the partner's type favours whoever Speed beats. This script separates the type triangle from that confound: each
@@ -10,32 +12,14 @@
 //
 //   pnpm --filter @latentia/sim triangle-solo
 
-import { validateSetup, type PlacedPiece } from '@latentia/engine';
 import type { StarterId } from '../src/archetypes/index.js';
 import { runPooled } from '../src/runner.js';
 import { median, rate, verdict, wilson95 } from '../src/stats.js';
-import { starterSide, TRIANGLE } from '../src/target-setups.js';
+import { soloPair, starterSide, TRIANGLE } from '../src/target-setups.js';
 import { targetById } from '../src/targets.js';
-import type { Archetype, Score } from '../src/types.js';
+import type { Score } from '../src/types.js';
 
 const PER_SIDE = 1000;
-
-/** The official starter side with its partner removed: no active subagent, and the grid's slot unbound (left empty). */
-function soloSide(s: StarterId): Archetype {
-  const { id, side } = starterSide(s);
-  if (side.grid === null) throw new Error(`${id} has no grid`);
-  const unbind = (p: PlacedPiece): PlacedPiece => Object.fromEntries(Object.entries(p).filter(([k]) => k !== 'subagentId')) as PlacedPiece;
-  const pieces = side.grid.pieces.map((p) => (p.subagentId === undefined ? p : unbind(p)));
-  return { id: `${id}-solo`, side: { ...side, active: [], bench: [], grid: { ...side.grid, pieces } } };
-}
-
-/** The solo pairing, checked with the engine's own validation first (an invalid diagnostic must not run). */
-function soloPair(fav: StarterId, beaten: StarterId): [Archetype, Archetype] {
-  const [x, y] = [soloSide(fav), soloSide(beaten)];
-  const v = validateSetup({ a: { ...x.side, opponentId: y.id }, b: { ...y.side, opponentId: x.id }, kind: 'trainer' });
-  if (!v.ok) throw new Error(`${x.id} vs ${y.id} is invalid: ${JSON.stringify(v.errors)}`);
-  return [x, y];
-}
 
 const pct = (x: number): string => `${(x * 100).toFixed(1)}%`;
 const band = targetById('starter-triangle').band as [number, number];

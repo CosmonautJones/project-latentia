@@ -1,4 +1,5 @@
 import type { SideSetup } from '@latentia/engine';
+import type { Provenance } from './report.js';
 
 /** A named team, grid and Autopilot deck the simulator can put on either side of a battle. */
 export type Archetype = { id: string; side: SideSetup };
@@ -15,8 +16,9 @@ export type Verdict = 'pass' | 'fail' | 'inconclusive';
 export type Score = { points: number; n: number };
 
 /**
- * What a command gets from the CLI layer (Ruling 126: the date and the wall clock come only from there): where to write
- * reports, the report date (YYYY-MM-DD), a millisecond clock for wall times, and a sink for progress lines (stderr).
- * Tests inject a temp dir, a fixed date and a fake clock.
+ * What a command gets from the CLI layer (Ruling 126: the date, the wall clock and git come only from there): where to
+ * write reports, the report date (YYYY-MM-DD), a millisecond clock for wall times, a sink for progress lines (stderr),
+ * and the reports' provenance (content fingerprint, git revision). Tests inject a temp dir, a fixed date, a fake clock
+ * and a fixed revision.
  */
-export type CommandContext = { outDir: string; date: string; now: () => number; progress: (line: string) => void };
+export type CommandContext = { outDir: string; date: string; now: () => number; progress: (line: string) => void; provenance: Provenance };

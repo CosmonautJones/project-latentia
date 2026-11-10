@@ -31,6 +31,7 @@ export function searchReport(
     date: run.date,
     tag: run.tag,
     args: run.args,
+    seedScale: { value: String(r.k), unit: 'k: seeds per foe per side in each evaluation' },
     meta: [
       ['archetype', base.id],
       ['seed', run.seed],
@@ -93,7 +94,7 @@ export async function searchCommand(args: string[], ctx: CommandContext, opts: {
   });
   const held: HeldOut = { base: heldOut(base, field, k), final: heldOut(withDeck(base, r.deck), field, k), baseSearch: r.history[0] as number };
   const report = searchReport(base, r, held, { date: ctx.date, tag: tag(p, 'tag'), args, wallMs: ctx.now() - t0, budget, seed, foes: field.length });
-  const paths = writeReport(report, ctx.outDir);
+  const paths = writeReport(report, ctx);
   ctx.progress(`wrote ${paths.md} and ${paths.csv}`);
   return 0;
 }

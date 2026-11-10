@@ -17,6 +17,7 @@ import { ALWAYS, HURT, layout } from '../src/archetypes/build.js';
 import { HEADLINES, cardFires } from '../src/archetypes/headlines.js';
 import { ARCHETYPES, mirrorOf, starterGrid } from '../src/archetypes/index.js';
 import { runMatch, seedFor } from '../src/runner.js';
+import type { Archetype } from '../src/types.js';
 
 // Task C2 (spec §9): twenty archetype teams as data, under Rulings 120–124.
 
@@ -142,6 +143,9 @@ describe('ARCHETYPES', () => {
     };
     for (const a of ARCHETYPES) walk(a, a.id);
     for (const c of [ALWAYS, HURT]) expect(Object.isFrozen(c)).toBe(true);
+    // The array itself too (Ruling 143): no archetype can be added, removed or swapped.
+    expect(Object.isFrozen(ARCHETYPES)).toBe(true);
+    expect(() => (ARCHETYPES as Archetype[]).push(ARCHETYPES[0] as Archetype)).toThrow(TypeError);
   });
 
   it('gives every subagent a deck within MAX_DECK_CARDS, a generalization and a trained temperature', () => {

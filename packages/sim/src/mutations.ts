@@ -2,7 +2,7 @@ import {
   CONDITION_CATEGORIES,
   moveDef,
   MOVES,
-  SPECIES,
+  orchestratorMoves,
   STATUS_IDS,
   TARGET_SELECTORS,
   TYPES,
@@ -12,7 +12,6 @@ import {
   type Deck,
   type FieldKind,
   type SideSetup,
-  type SpeciesId,
   type Subject,
   type TargetSelector,
 } from '@latentia/engine';
@@ -61,15 +60,12 @@ const UNIVERSAL_MOVE_IDS = Object.values(MOVES)
   .map((m) => m.id);
 
 /**
- * The moves an Autopilot card may name: the orchestrator's stored moveset — its species' signature and its grid's
- * Skills and grafts (the listed moves of an ungridded one) — then the universal moves, without repeats.
+ * The moves an Autopilot card may name: the orchestrator's stored moveset, as the engine itself derives it
+ * (orchestratorMoves: its species' signature and its grid's Skills and grafts, or the listed moves of an ungridded
+ * one), then the universal moves, without repeats.
  */
 export function movePool(side: SideSetup): string[] {
-  const own =
-    side.grid === null
-      ? side.orchestrator.moves
-      : [SPECIES[side.orchestrator.species as SpeciesId].signature, ...side.grid.pieces.flatMap((p) => ((p.kind === 'skill' || p.kind === 'graft') && p.moveId !== undefined ? [p.moveId] : []))];
-  return [...new Set([...own, ...UNIVERSAL_MOVE_IDS])];
+  return [...new Set([...orchestratorMoves(side), ...UNIVERSAL_MOVE_IDS])];
 }
 
 /** What a mutation draws from: the moves the deck's cards may name, and the moves a foeLastMove condition may name. */

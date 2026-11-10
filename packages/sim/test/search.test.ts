@@ -1,4 +1,4 @@
-import { MOVES, validateSetup, type Deck, type TargetSelector } from '@latentia/engine';
+import { MOVES, orchestratorMoves, validateSetup, type Deck, type TargetSelector } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { UsageError } from '../src/args.js';
 import { card, cooldown, OPENER, WEAK } from '../src/archetypes/build.js';
@@ -9,6 +9,7 @@ import { drawCandidate, movePool, mutate, mutationPools, MUTATIONS, randomCondit
 import { ACCEPT_MARGIN, DEFAULT_K, evaluate, heldOut, searchDeck, withDeck } from '../src/search.js';
 import { Sfc32 } from '../src/sfc32.js';
 import type { Archetype } from '../src/types.js';
+import { PROVENANCE_COLUMNS } from '../src/report.js';
 import { csvRows, readOut, testContext } from './helpers/context.js';
 
 // Task C4 (Rulings 139 and 141): a budgeted hill-climbing search over an archetype's 8-card Autopilot deck.
@@ -102,8 +103,14 @@ describe('mutations', () => {
   const pool = movePool(BASE.side);
   const pools = mutationPools(BASE, FIELD);
 
-  it('draws moves from the orchestrator’s known moves: its signature, its grid Skills and grafts, and the universals', () => {
-    expect(new Set(pool)).toEqual(new Set(['ship-it', 'token-burst', 'distilled-strike', 'compact', 'clear', 'guardrail']));
+  it('draws moves from the orchestrator’s known moves: its signature, its grid Skills and grafts, and the universals, in that order', () => {
+    // The order is part of the search stream (C4 m1: it must not change when movePool reads the engine's rule).
+    expect(pool).toEqual(['ship-it', 'token-burst', 'distilled-strike', 'compact', 'clear', 'guardrail']);
+  });
+
+  it('takes the orchestrator’s moves from the engine’s own orchestratorMoves (C4 m1), then the universals', () => {
+    const universal = Object.values(MOVES).filter((m) => m.universal === true).map((m) => m.id);
+    for (const a of ARCHETYPES) expect(movePool(a.side), a.id).toEqual([...new Set([...orchestratorMoves(a.side), ...universal])]);
   });
 
   it('applies each of the four mutations as a single change to a new 8-card deck', () => {
@@ -250,7 +257,7 @@ describe('search command', () => {
     expect(md).toMatch(/\| default \|/);
     expect(md).toMatch(/IF (self|orchestrator|foe) /);
     const rows = csvRows(readOut(ctx, 'search-2026-01-02-scratch.csv'));
-    expect(rows[0]).toEqual(['evaluation', 'mutation', 'score', 'accepted', 'best', 'battles_used']);
+    expect(rows[0]).toEqual(['evaluation', 'mutation', 'score', 'accepted', 'best', 'battles_used', ...PROVENANCE_COLUMNS]);
     expect(rows).toHaveLength(1 + r.evaluations);
     expect(rows.at(-1)?.[5]).toBe(String(r.battlesUsed));
     expect(rows.filter((x) => x[3] === 'yes').map((x) => Number(x[2]))).toEqual(r.history);

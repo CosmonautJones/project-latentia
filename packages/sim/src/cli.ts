@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { usageLine, UsageError } from './args.js';
 import { FUZZ, fuzzCommand } from './commands/fuzz.js';
@@ -5,23 +6,41 @@ import { MATCHUP, matchupCommand } from './commands/matchup.js';
 import { ROUND_ROBIN, roundRobinCommand } from './commands/round-robin.js';
 import { SEARCH, searchCommand } from './commands/search.js';
 import { TARGETS_COMMAND, targetsCommand } from './commands/targets.js';
+import { contentFingerprint } from './fingerprint.js';
+import type { GitRevision } from './report.js';
 import type { CommandContext } from './types.js';
 
-// The CLI layer: the only place the sim reads the date and the wall clock (Ruling 126). Commands get them, the
-// report directory (`reports/` at the repo root) and a stderr progress sink through a CommandContext.
+// The CLI layer: the only place the sim reads the date, the wall clock and git (Rulings 126, 143 I5). Commands get
+// them, the report directory (`reports/` at the repo root), a stderr progress sink and the reports' provenance
+// through a CommandContext.
 
 /** A command's handler: its exit code (void is 0). */
 export type Command = (args: string[]) => Promise<number | void> | number | void;
 
+const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const REPORTS_DIR = fileURLToPath(new URL('../../../reports/', import.meta.url));
 
-/** The real context: today's UTC date, performance.now, stderr. */
+/**
+ * The checked-out commit, and whether anything outside reports/ differs from it (modified, staged or untracked, but not
+ * ignored): reports/ is excluded because a run writes there. Null when git is unavailable.
+ */
+export function gitRevision(cwd: string = REPO_ROOT): GitRevision {
+  const git = (...args: string[]): string => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  try {
+    return { sha: git('rev-parse', 'HEAD'), dirty: git('status', '--porcelain', '--', '.', ':(exclude)reports') !== '' };
+  } catch {
+    return null;
+  }
+}
+
+/** The real context: today's UTC date, performance.now, stderr, and the provenance (read once per command). */
 function cliContext(): CommandContext {
   return {
     outDir: REPORTS_DIR,
     date: new Date().toISOString().slice(0, 10),
     now: () => performance.now(),
     progress: (line) => process.stderr.write(`${line}\n`),
+    provenance: { fingerprint: contentFingerprint(), git: gitRevision() },
   };
 }
 
