@@ -156,7 +156,7 @@ four archetypes under 30%. The worst-matchup target is the one that catches the 
 
 ### 2. Worst-matchup blowouts are the norm (confirmed)
 
-- All 21 worst-matchup rows fail. Of the 190 unordered pairings (2,000 battles each):
+- All 20 counted worst-matchup rows fail (plus the overall summary row). Of the 190 unordered pairings (2,000 battles each):
   - 130 are worse than 70/30;
   - 99 are worse than 80/20;
   - 70 are worse than 90/10;
