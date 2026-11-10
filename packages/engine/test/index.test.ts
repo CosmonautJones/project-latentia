@@ -44,6 +44,8 @@ describe('public surface (spec §4, so far)', () => {
         // grid sizes (C2 fix round 1)
         'GRID_SIZE_BY_LEVEL',
         'gridSizeFor',
+        // the orchestrator's stored moveset (C4 m1, for the sim's deck search)
+        'orchestratorMoves',
       ].sort(),
     );
     expect(engine.ENGINE_VERSION).toBe('0.3.0');
@@ -65,6 +67,15 @@ describe('public surface (spec §4, so far)', () => {
     expect('error' in again ? again.error : again.hash).toBe(result.hash);
     const bad: { error: engine.ReplayError } | engine.BattleResult = engine.replay({} as engine.BattleLog);
     expect(bad).toEqual({ error: { code: 'malformed' } });
+  });
+
+  it('exports the orchestrator’s stored moveset (C4 m1): listed moves, or the signature then grid Skills and grafts', () => {
+    const o: engine.CreatureSetup = { id: 'o', species: 'sagelet', level: 8, version: 'v2', moves: [] };
+    const piece = (id: string, kind: engine.PieceKind, moveId?: string): engine.PlacedPiece => ({ id, kind, shape: [[0, 0]], anchor: [0, 0], rotation: 0, ...(moveId === undefined ? {} : { moveId }) });
+    const grid: engine.GridLayout = { width: 5, height: 5, pieces: [piece('sp', 'systemPrompt'), piece('s1', 'skill', 'chain-of-thought'), piece('t', 'tool'), piece('g', 'graft', 'null-chomp')] };
+    const side = (s: Partial<engine.SideSetup>): engine.SideSetup => ({ orchestrator: o, active: [], bench: [], grid: null, opponentId: 'x', ...s });
+    expect(engine.orchestratorMoves(side({ grid }))).toEqual(['happy-to-help', 'chain-of-thought', 'null-chomp']);
+    expect(engine.orchestratorMoves(side({ orchestrator: { ...o, moves: ['step-back-prompt'] } }))).toEqual(['step-back-prompt']);
   });
 
   it('computes Generalization from a deck, the Deprecated Forest suite and active slots (B5)', () => {

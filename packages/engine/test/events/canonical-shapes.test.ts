@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { canonicalJson, eventStreamHash } from '../../src/events/canonical';
+import { canonicalJson, eventStreamHash, SHAPES_MAX, shapeCacheEntries } from '../../src/events/canonical';
 import { fnv1a64Hex } from '../../src/events/fnv';
 import type { BattleEvent } from '../../src/events/types';
 
@@ -56,5 +56,32 @@ describe('canonicalJson key shapes (C3.5)', () => {
       }),
       { numRuns: 500 },
     );
+  });
+});
+
+describe('canonicalJson key-shape trie bound (C3.5 m3)', () => {
+  // Adversarial prefix-key records: every key list is a prefix of the next, so the trie gains one node per record
+  // while each new node stores a key list as long as the record. Counting nodes alone would retain O(n²) labels.
+  const prefixRecord = (n: number): Record<string, number> => Object.fromEntries(Array.from({ length: n }, (_, i) => [`key${i}`, i]));
+
+  it('retains at most SHAPES_MAX entries (nodes plus stored keys and labels) for prefix-key records', () => {
+    for (let n = 1; n <= 400; n++) {
+      const o = prefixRecord(n);
+      expect(canonicalJson(o)).toBe(reference(o));
+      expect(shapeCacheEntries()).toBeLessThanOrEqual(SHAPES_MAX);
+    }
+  });
+
+  it('retains at most SHAPES_MAX entries after one record wider than the bound, and still gives the canonical text', () => {
+    const wide = prefixRecord(SHAPES_MAX + 10);
+    expect(canonicalJson(wide)).toBe(reference(wide));
+    expect(shapeCacheEntries()).toBeLessThanOrEqual(SHAPES_MAX);
+    expect(canonicalJson(reordered(wide))).toBe(reference(wide));
+    expect(shapeCacheEntries()).toBeLessThanOrEqual(SHAPES_MAX);
+  });
+
+  it('still caches ordinary shapes (an event-sized record is retained)', () => {
+    canonicalJson({ type: 'Damage', round: 1, actor: 0 });
+    expect(shapeCacheEntries()).toBeGreaterThan(0);
   });
 });

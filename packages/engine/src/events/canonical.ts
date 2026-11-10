@@ -38,19 +38,37 @@ function sortKeys(keys: readonly string[]): string[] {
 /**
  * Key shapes (C3.5): a trie over a record's own keys in insertion order (`Object.keys`), each node reached the first
  * time keeping that key list sorted and its labels — `"key":`, with a leading comma after the first. Events of a kind
- * share a few shapes, so sorting and quoting their keys happens once per shape, not once per event. Emptied, like the
- * string caches, when it reaches SHAPES_MAX nodes; it never changes the output.
+ * share a few shapes, so sorting and quoting their keys happens once per shape, not once per event. It never changes
+ * the output.
+ *
+ * Bounded by what it retains, not by node count (C3.5 m3): every node is one entry and every stored sorted key and
+ * label is one more, so a node at depth d costs 1 + 2d. One record of n keys adds at most 3n entries, so the trie is
+ * emptied first whenever that could take it past SHAPES_MAX, and a record wider than the whole bound (3n > SHAPES_MAX)
+ * is sorted and labelled without being cached. Retention therefore never exceeds SHAPES_MAX entries for any input to
+ * the public eventStreamHash, including adversarial prefix-key records (each key list a prefix of the next).
  */
 type Shape = { next: Map<string, Shape>; sorted: string[] | null; labels: string[] | null };
-const SHAPES_MAX = 4096;
+export const SHAPES_MAX = 4096;
 const newShape = (): Shape => ({ next: new Map(), sorted: null, labels: null });
 let shapes = newShape();
-let shapeCount = 0;
+let retained = 0;
 
-function shapeOf(keys: readonly string[]): Shape & { sorted: string[]; labels: string[] } {
-  if (shapeCount >= SHAPES_MAX) {
+/** Entries the trie retains: its nodes plus every stored sorted key and label (read by tests). */
+export function shapeCacheEntries(): number {
+  return retained;
+}
+
+function sortedLabels(keys: readonly string[]): { sorted: string[]; labels: string[] } {
+  const sorted = sortKeys(keys);
+  return { sorted, labels: sorted.map((k, i) => (i === 0 ? '' : ',') + JSON.stringify(k) + ':') };
+}
+
+function shapeOf(keys: readonly string[]): { sorted: string[]; labels: string[] } {
+  const most = 3 * keys.length;
+  if (most > SHAPES_MAX) return sortedLabels(keys);
+  if (retained + most > SHAPES_MAX) {
     shapes = newShape();
-    shapeCount = 0;
+    retained = 0;
   }
   let node = shapes;
   for (let i = 0; i < keys.length; i++) {
@@ -59,14 +77,15 @@ function shapeOf(keys: readonly string[]): Shape & { sorted: string[]; labels: s
     if (child === undefined) {
       child = newShape();
       node.next.set(k, child);
-      shapeCount++;
+      retained++;
     }
     node = child;
   }
   if (node.sorted === null || node.labels === null) {
-    const sorted = sortKeys(keys);
-    node.sorted = sorted;
-    node.labels = sorted.map((k, i) => (i === 0 ? '' : ',') + JSON.stringify(k) + ':');
+    const made = sortedLabels(keys);
+    node.sorted = made.sorted;
+    node.labels = made.labels;
+    retained += 2 * keys.length;
   }
   return node as Shape & { sorted: string[]; labels: string[] };
 }

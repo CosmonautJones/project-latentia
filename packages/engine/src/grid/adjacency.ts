@@ -81,11 +81,16 @@ export function toolStepsFor(grid: GridLayout, pieceId: string): number {
 /** Card slots per subagent version (spec §5 grid): the most active cards it can ever have. */
 export const VERSION_SLOTS = { v1: 3, v2: 5, 'v3.5': 7, v4: 8 } as const;
 
-/** Active cards for a subagent slot: min(version slots, adjacent Example Cards). Non-slot or unknown id -> 0. */
-export function activeCardCount(grid: GridLayout, slotId: string, version: 'v1' | 'v2' | 'v3.5' | 'v4'): number {
+/** Example Cards orthogonally adjacent to a subagent slot, before any version cap. Non-slot or unknown id -> 0. */
+export function slotExampleCards(grid: GridLayout, slotId: string): number {
   const slot = findPiece(grid, slotId);
   if (slot === undefined || slot.kind !== 'subagentSlot') return 0;
-  const cards = countAdjacentOfKind(grid, slotId, 'exampleCard');
+  return countAdjacentOfKind(grid, slotId, 'exampleCard');
+}
+
+/** Active cards for a subagent slot: min(version slots, adjacent Example Cards). Non-slot or unknown id -> 0. */
+export function activeCardCount(grid: GridLayout, slotId: string, version: 'v1' | 'v2' | 'v3.5' | 'v4'): number {
+  const cards = slotExampleCards(grid, slotId);
   const cap = VERSION_SLOTS[version];
   return cards < cap ? cards : cap;
 }

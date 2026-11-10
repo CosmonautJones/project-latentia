@@ -1,4 +1,4 @@
-import { activeCardCount, toolStepsFor, VERSION_SLOTS } from './adjacency.js';
+import { slotExampleCards, toolStepsFor, VERSION_SLOTS } from './adjacency.js';
 import type { GridLayout, PlacedPiece } from './model.js';
 
 // Per-battle memo of the grid derivations a battle asks for every round (C3.5, Ruling 135): a subagent's active-card
@@ -17,7 +17,7 @@ import type { GridLayout, PlacedPiece } from './model.js';
 // The public adjacency functions (index.ts activeCardCount) stay uncached: callers may edit their own layouts.
 
 type Derived = {
-  /** Subagent Slot piece id → Example Cards orthogonally adjacent to it (activeCardCount before the version cap). */
+  /** Subagent Slot piece id → Example Cards orthogonally adjacent to it (slotExampleCards: before the version cap). */
   exampleCards: Map<string, number>;
   /** Skill piece id → its Tool steps (toolStepsFor). */
   toolSteps: Map<string, number>;
@@ -41,8 +41,8 @@ export function gridActiveCards(grid: GridLayout, slotId: string, version: keyof
   const d = derivedOf(grid);
   let cards = d.exampleCards.get(slotId);
   if (cards === undefined) {
-    // Capped at v4's 8, the largest cap: min(min(n, 8), cap) = min(n, cap) for every version cap.
-    cards = activeCardCount(grid, slotId, 'v4');
+    // The uncapped count, so any VERSION_SLOTS cap applies to it below (C3.5 m1: no hard-coded largest version).
+    cards = slotExampleCards(grid, slotId);
     d.exampleCards.set(slotId, cards);
   }
   const cap = VERSION_SLOTS[version];

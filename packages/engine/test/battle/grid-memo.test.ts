@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { RoundCommand } from '../../src/battle/log.js';
 import type { BattleSetup, SideSetup } from '../../src/battle/setup.js';
+import type { BattleState } from '../../src/battle/state.js';
 import { validateSetup } from '../../src/battle/setup.js';
 import { simulate, type BattleResult } from '../../src/battle/simulate.js';
 import type { Deck } from '../../src/cards/model.js';
 import type { PlacedPiece } from '../../src/grid/model.js';
+import type { SeedHex } from '../../src/rng/seed.js';
 import { mon, seedFor, setup } from '../golden/builders.js';
 import { SCENARIOS } from '../golden/scenarios.js';
 import { scriptedSource } from '../golden/script.js';
@@ -110,6 +113,42 @@ describe('grid memo (C3.5): same events with it on and off', () => {
     for (const s of SCENARIOS) {
       const { on, off } = both(() => simulate(s.setup, s.seed, scriptedSource(s.scripts)));
       expect(on.hash, s.name).toBe(off.hash);
+    }
+  });
+});
+
+/** Plays `setup` with `source`'s commands and returns the result and the final battle state (simulate advances one state in place). */
+function finalState(setup: BattleSetup, seed: SeedHex, next: (s: BattleState) => RoundCommand): { result: BattleResult; state: BattleState } {
+  let state: BattleState | null = null;
+  const result = simulate(setup, seed, {
+    kind: 'scripted',
+    next: (s) => {
+      state = s;
+      return next(s);
+    },
+  });
+  if (state === null) throw new Error('no round was played');
+  return { result, state };
+}
+
+describe('battle grids are never edited (C3.5 m2: the memo relies on it)', () => {
+  it('after every golden scenario, each side’s battle grid deep-equals its setup grid', () => {
+    for (const s of SCENARIOS) {
+      const source = scriptedSource(s.scripts);
+      if (source.kind !== 'scripted') throw new Error('golden scripts are scripted');
+      const { state } = finalState(s.setup, s.seed, source.next);
+      expect(state.sides.a.grid, `${s.name} a`).toEqual(s.setup.a.grid);
+      expect(state.sides.b.grid, `${s.name} b`).toEqual(s.setup.b.grid);
+    }
+  });
+
+  it('after the memo fixture’s compacting fights, each side’s battle grid deep-equals its setup grid', () => {
+    for (let i = 0; i < 40; i++) {
+      // `{}` every round is exactly the Autopilot source (Ruling 95): the same battle, with the state in hand.
+      const { result, state } = finalState(FIGHT, seedFor(`grid-memo:${i}`), () => ({}));
+      expect(result.hash).toBe(simulate(FIGHT, seedFor(`grid-memo:${i}`), { kind: 'autopilot' }).hash);
+      expect(state.sides.a.grid).toEqual(FIGHT.a.grid);
+      expect(state.sides.b.grid).toEqual(FIGHT.b.grid);
     }
   });
 });
