@@ -74,7 +74,9 @@ export interface TrainerTuning {
  *   - P2's Grad (L6, T2, hype then Accept All / Segfault at the lowest-HP foe): bad 97.0, good 99.7.
  *
  * The level depends on the starter, the way Kip's pick does. The weak spot is Blitzr on the graft path (30%): its
- * best hit, Distilled Strike, is neutral on Code and Blitzr is frail.
+ * best hit, Distilled Strike, is neutral on Code and Blitzr is frail. The graft loss hint (journey-text.ts GRAFT_HINTS)
+ * is measured too: following it takes the graft path from 91.5/30.0/88.0% to 99.0/51.5/93.0% (Token Nibble when 4 or
+ * fewer cells are free for Sagelet and Forkling; T0 for Blitzr, whose hits all cost 1 like Token Nibble).
  */
 export const BOOTCAMP_GRAD: TrainerTuning = {
   level: { sagelet: 7, blitzr: 7, forkling: 6 },

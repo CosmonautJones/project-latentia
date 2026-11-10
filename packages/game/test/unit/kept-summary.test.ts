@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { naiveCommand } from '../../scripts/loop-balance.js';
 import { trainerBattle } from '../../src/content/battles.js';
 import { graftSummary, keptSummary, type KeptCreature } from '../../src/journey/kept-summary.js';
+import { GRAFT_HINTS } from '../../src/content/journey-text.js';
 
 const moveName = (id: string) => moveDef(id)?.name ?? id;
 const ALWAYS = { category: 'turn', op: 'atLeast', round: 1 } as const;
@@ -67,9 +68,10 @@ describe('graftSummary: the graft path has no card, so the hint is about the gra
       { round: 2, type: 'MoveUsed', actor: 2, moveId: 'token-nibble', target: 0 },
       { round: 3, type: 'MoveUsed', actor: 0, moveId: 'distilled-strike', target: 2 },
     ];
-    const lines = graftSummary({ events, playerIndex: 0, graftMove: 'token-nibble', moveName });
+    const lines = graftSummary({ events, playerIndex: 0, graftMove: 'token-nibble', moveName, hint: GRAFT_HINTS.forkling });
     expect(lines[0]).toBe('You used Token Nibble once in 3 turns.');
-    expect(lines[1]).toMatch(/Token Nibble/);
-    expect(graftSummary({ events: [], playerIndex: 0, graftMove: 'token-nibble', moveName })[0]).toBe('You never used Token Nibble.');
+    expect(lines[1]).toBe(GRAFT_HINTS.forkling);
+    expect(lines[1]).toMatch(/^Your grafted Token Nibble is cheap: it costs just 1\. When 4 or fewer cells are FREE, use it/);
+    expect(graftSummary({ events: [], playerIndex: 0, graftMove: 'token-nibble', moveName, hint: GRAFT_HINTS.blitzr })[0]).toBe('You never used Token Nibble.');
   });
 });

@@ -21,6 +21,8 @@ import {
 } from '@latentia/engine';
 import type { BattleDef } from '../content/battles.js';
 import { GRAFT_MOVE } from '../content/grids.js';
+import { GRAFT_HINTS } from '../content/journey-text.js';
+import { STARTERS, type StarterId } from '../flow/flow.js';
 import type { FightReport } from '../flow/telemetry.js';
 import { fightReport } from '../journey/fight-report.js';
 import { graftSummary, keptSummary, type KeptCreature } from '../journey/kept-summary.js';
@@ -272,8 +274,10 @@ export class BattleSession {
    */
   report(outcome: Outcome, cardId: string | null): FightReport {
     const graft = this.def.setup.a.grid !== null;
+    const species = this.def.setup.a.orchestrator.species;
+    const hint = (STARTERS as readonly string[]).includes(species) ? GRAFT_HINTS[species as StarterId] : GRAFT_HINTS.sagelet;
     const kept = graft
-      ? graftSummary({ events: this.allEvents, playerIndex: this.playerIndex, graftMove: GRAFT_MOVE, moveName })
+      ? graftSummary({ events: this.allEvents, playerIndex: this.playerIndex, graftMove: GRAFT_MOVE, moveName, hint })
       : keptSummary({ events: this.allEvents, creatures: this.start, deckOf: (i) => this.deckOf(i), moveName });
     return fightReport({ battle: this.def.id, outcome, rounds: this.round, events: this.allEvents, cardId, kept, mine: (i) => this.sideOf(i) === 0 });
   }

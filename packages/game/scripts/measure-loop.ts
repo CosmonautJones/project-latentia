@@ -8,7 +8,7 @@
 import type { Card, Condition, Deck, Temperature } from '@latentia/engine';
 import { BOOTCAMP_GRAD, type TrainerTuning } from '../src/content/trainers.js';
 import { STARTERS } from '../src/flow/flow.js';
-import { measureLoop, measureRival, pooledWinRate, type LoopRow } from './loop-balance.js';
+import { measureGraftHint, measureLoop, measureRival, pooledWinRate, type LoopRow } from './loop-balance.js';
 
 const seeds = Number(process.argv[2] ?? 200);
 if (!Number.isSafeInteger(seeds) || seeds < 1) throw new Error(`seeds must be a positive integer, got ${process.argv[2]}`);
@@ -79,3 +79,6 @@ report('counterfactual: no Token Burst answer (drop week3)', { ...BOOTCAMP_GRAD,
 report('counterfactual: no buff answer (drop outdo)', { ...BOOTCAMP_GRAD, deck: without(BOOTCAMP_GRAD.deck, 'outdo') });
 report('counterfactual: aims at the lowest-HP foe', { ...BOOTCAMP_GRAD, deck: retarget(BOOTCAMP_GRAD.deck, 'highestAtkFoe', 'lowestHpFoe') });
 report("counterfactual: P2's Grad", P2_GRAD);
+
+const hint = measureGraftHint(seeds);
+console.log(`\nGraft path, naive vs following the loss hint (GRAFT_HINTS): ${STARTERS.map((s) => `${s} ${pct(hint[s].naive / seeds)} -> ${pct(hint[s].hinted / seeds)}`).join(', ')}`);

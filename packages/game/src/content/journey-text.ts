@@ -28,5 +28,16 @@ export const CARD_TUTORIAL_HINT =
   "CARDS: a subagent acts on its own, from example cards. A card reads IF this THEN that. Tokenibble has room for one card. When no card fits, it uses its Default: Token Burst.";
 export const CARD_TUTORIAL_TITLE = 'TEACH TOKENIBBLE ONE CARD';
 
-/** The graft path's debrief hint, after a loss: there is no card to swap, so it's about using the grafted move. */
-export const GRAFT_HINT = "Token Nibble hits softer than your best move, but costs just 1 and makes the foe's next move cost 1 more. Try it when your context is tight.";
+/**
+ * The graft path's debrief hint, per starter: there is no card to swap, so it's about the grafted move. Each one is
+ * measured (scripts/loop-balance.ts GRAFT_HINT_PLAY, test/unit/loop-balance.test.ts): following it beats naive play,
+ * which never picks Token Nibble. Blitzr's hits all cost 1 like Token Nibble, so its hint is the dial instead.
+ */
+const NIBBLE_WHEN_TIGHT =
+  "Your grafted Token Nibble is cheap: it costs just 1. When 4 or fewer cells are FREE, use it instead of your big hit, and you keep swinging without a Compact.";
+export const GRAFT_HINTS: Readonly<Record<StarterId, string>> = {
+  sagelet: NIBBLE_WHEN_TIGHT,
+  blitzr:
+    'Your grafted Token Nibble costs 1, the same as Distilled Strike, so it saves Blitzr no context. Turn the dial down to T0 instead: steady hits beat lucky ones here.',
+  forkling: NIBBLE_WHEN_TIGHT,
+};

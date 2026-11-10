@@ -4,7 +4,6 @@
 
 import type { BattleEvent, Card, Deck } from '@latentia/engine';
 import { cardText, conditionFalseText, type MoveNamer } from '../battle/card-text.js';
-import { GRAFT_HINT } from '../content/journey-text.js';
 
 export interface KeptCreature {
   readonly index: number;
@@ -86,6 +85,8 @@ export interface GraftInput {
   readonly playerIndex: number;
   readonly graftMove: string;
   readonly moveName: MoveNamer;
+  /** What to do with the grafted move, for this starter (content/journey-text.ts GRAFT_HINTS). */
+  readonly hint: string;
 }
 
 /** The graft path's debrief: how often you used the grafted move, and what it is good for. */
@@ -93,5 +94,5 @@ export function graftSummary(input: GraftInput): string[] {
   const yours = input.events.filter((e): e is Extract<BattleEvent, { type: 'MoveUsed' }> => e.type === 'MoveUsed' && e.actor === input.playerIndex);
   const used = yours.filter((e) => e.moveId === input.graftMove).length;
   const move = input.moveName(input.graftMove);
-  return [used === 0 ? `You never used ${move}.` : `You used ${move} ${times(used)} in ${yours.length} turns.`, GRAFT_HINT];
+  return [used === 0 ? `You never used ${move}.` : `You used ${move} ${times(used)} in ${yours.length} turns.`, input.hint];
 }
