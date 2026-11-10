@@ -21,6 +21,8 @@ export type UiStep =
   | { readonly kind: 'context'; readonly target: number; readonly used: number }
   | { readonly kind: 'faint'; readonly target: number }
   | { readonly kind: 'swap'; readonly side: number; readonly out: number; readonly in: number }
+  /** A reveal landed: side `bySide` can now see `target`'s intent (or top card) this round. */
+  | { readonly kind: 'reveal'; readonly target: number; readonly bySide: number; readonly what: string }
   /** A deck card fired: the scene keeps it for the "why?" popup. */
   | { readonly kind: 'trace'; readonly trace: CardTrace }
   /** The intents the engine actually planned this round (refreshes the preview). */
@@ -36,6 +38,8 @@ export interface MapContext {
   /** "Sagelet", "Kip's Blitzr". */
   name(index: number): string;
   moveName(moveId: string): string;
+  /** The creature's side number (0 = the player's). */
+  side(index: number): number;
 }
 
 type Handlers = { readonly [K in BattleEventType]: (e: Extract<BattleEvent, { type: K }>, c: MapContext) => UiStep[] };
@@ -89,7 +93,10 @@ export const EVENT_HANDLERS: Handlers = {
   Revealed: (e, c) =>
     e.what === 'telegraph'
       ? [minor(`${c.name(e.actor)} is winding up something big...`)]
-      : [minor(`${c.name(e.actor)} can see ${c.name(e.target)}'s ${e.what === 'nextIntent' ? 'next move' : 'top card'}.`)],
+      : [
+          { kind: 'reveal', target: e.target, bySide: c.side(e.actor), what: e.what },
+          minor(`${c.name(e.actor)} can see ${c.name(e.target)}'s ${e.what === 'nextIntent' ? 'next move' : 'top card'}.`),
+        ],
   ContextAdded: (e) => [{ kind: 'context', target: e.target, used: e.tokensAfter }],
   DriftChanged: (e, c) => [
     { kind: 'drift', target: e.target, drift: e.drift },

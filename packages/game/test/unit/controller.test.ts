@@ -78,4 +78,33 @@ describe('FlowController', () => {
     flow.send({ type: 'newGame' });
     expect(steps).toEqual(['title', 'lab']);
   });
+
+  it('first-time hints are remembered in the save without switching scenes, and newGame/continue reset/restore them', () => {
+    const { storage, scenes, flow } = setup();
+    flow.start();
+    flow.markHintSeen('early');
+    expect(storage.data.has(SAVE_KEY)).toBe(false);
+    flow.send({ type: 'newGame' });
+    expect(flow.hasSeenHint('early')).toBe(false);
+    flow.send({ type: 'starterPicked', starter: 'sagelet' });
+    const switches = scenes.length;
+    flow.markHintSeen('battle.prompt');
+    flow.markHintSeen('battle.prompt');
+    expect(scenes.length).toBe(switches);
+    expect(flow.hasSeenHint('battle.prompt')).toBe(true);
+    expect(loadSave(storage)).toMatchObject({ save: { progress: { step: 'rival' }, hintsSeen: ['battle.prompt'] } });
+    // Kept across step saves.
+    flow.send({ type: 'battleWon' });
+    expect(loadSave(storage)).toMatchObject({ save: { progress: { step: 'walk' }, hintsSeen: ['battle.prompt'] } });
+    // Continue in a new session restores them.
+    const again = new FlowController(storage, () => undefined);
+    again.start();
+    const saved = loadSave(storage);
+    if (saved.status !== 'ok') throw new Error('no save');
+    again.send({ type: 'continue', progress: saved.save.progress });
+    expect(again.hasSeenHint('battle.prompt')).toBe(true);
+    again.send({ type: 'backToTitle' });
+    again.send({ type: 'newGame' });
+    expect(again.hasSeenHint('battle.prompt')).toBe(false);
+  });
 });

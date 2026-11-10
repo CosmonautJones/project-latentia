@@ -74,6 +74,30 @@ describe('battle content', () => {
     const [tok] = setup.a.active;
     expect(tok).toMatchObject({ species: 'tokenibble', level: 3 });
     expect(tok?.deck?.cards).toEqual([preset.card]);
+    // Spun up, it keeps its three non-signature moves; Token Nibble does not come along (ruling V3).
+    expect(tok?.moves).toEqual(['token-burst', 'early-exit', 'low-latency']);
+  });
+
+  it('the three tutorial presets are a real choice: one good, one situational, one bad, none using Token Nibble', () => {
+    expect(TOKENIBBLE_PRESETS.map((p) => p.verdict).sort()).toEqual(['bad', 'good', 'situational']);
+    expect(TOKENIBBLE_PRESETS.map((p) => p.id)).toEqual(['tutorial.a', 'tutorial.b', 'tutorial.c']);
+    for (const p of TOKENIBBLE_PRESETS) expect(p.card.move).not.toBe('token-nibble');
+    // Measured: with the player only Compacting, how much damage Tokenibble's deck deals the Grad's Vibrat.
+    const dealt = (presetId: string): number => {
+      let total = 0;
+      for (const s of STARTERS) {
+        for (let attempt = 0; attempt < 20; attempt++) {
+          const def = trainerBattle(s, 'spinUp', presetId, attempt);
+          const r = simulate(def.setup, def.seed, { kind: 'scripted', next: (st) => (st.creatures[0]?.fainted ? {} : { a: { temperature: 2, action: { kind: 'move', moveId: 'compact', target: 0 } } }) });
+          for (const e of r.events) if (e.type === 'Damage' && e.actor === 1) total += e.amount;
+        }
+      }
+      return total;
+    };
+    const by = (v: string) => TOKENIBBLE_PRESETS.find((p) => p.verdict === v)?.id ?? '';
+    const [good, situational, bad] = [dealt(by('good')), dealt(by('situational')), dealt(by('bad'))];
+    expect(good).toBeGreaterThan(situational);
+    expect(situational).toBeGreaterThan(bad * 2);
   });
 
   it('a different attempt gets a different seed; the same attempt the same seed', () => {

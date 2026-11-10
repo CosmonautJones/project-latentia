@@ -38,6 +38,9 @@ function creature(id: string, species: Species, level: number, extra: Partial<Cr
   return { id, species, level, version: versionAt(level), moves: [...SPECIES[species].moves], ...extra };
 }
 
+/** A spun-up subagent's moves (bible "spin-up": it keeps the three launch moves; its signature stays behind). */
+const spunUpMoves = (species: Species): string[] => SPECIES[species].moves.filter((m) => m !== SPECIES[species].signature);
+
 const side = (orchestrator: CreatureSetup, opponentId: string, extra: Partial<SideSetup> = {}): SideSetup => ({
   orchestrator,
   active: [],
@@ -90,13 +93,13 @@ export function wildBattle(starter: StarterId, attempt: number): BattleDef {
 
 /**
  * The Bootcamp Grad. On the spin-up path Tokenibble fights beside the starter from its taught deck (one card above
- * Default). The graft path's grid, with Token Nibble grafted onto the orchestrator, is P4's; until then a grafting
+ * Default), with its three non-signature moves. The graft path's grid, with Token Nibble grafted onto the orchestrator, is P4's; until then a grafting
  * player brings the starter alone.
  */
 export function trainerBattle(starter: StarterId, distill: DistillChoice | null, tutorialCardId: string | null, attempt: number): BattleDef {
   const active =
     distill === 'spinUp'
-      ? [creature('you.tokenibble', 'tokenibble', WILD_LEVEL, { deck: tokenibbleDeck(tutorialCardId), generalization: 55, trainedTemperature: 2 })]
+      ? [creature('you.tokenibble', 'tokenibble', WILD_LEVEL, { moves: spunUpMoves('tokenibble'), deck: tokenibbleDeck(tutorialCardId), generalization: 55, trainedTemperature: 2 })]
       : [];
   return {
     id: 'trainer',

@@ -6,6 +6,8 @@ export const GAME_WIDTH = 320;
 export const GAME_HEIGHT = 180;
 /** Portrait mode keeps at least this much CSS height below the game for the touch band. */
 export const MIN_BAND_CSS = 200;
+/** A touch landscape screen wants this much CSS width each side of the game for the D-pad and the A/B pair. */
+export const SIDE_CONTROLS_CSS = 150;
 
 export interface Viewport {
   /** CSS px. */
@@ -25,8 +27,11 @@ export interface Rect {
 }
 
 export type LayoutMode = 'landscape' | 'portrait';
-/** Where the touch controls go: in the portrait band, overlaid on a touch landscape screen, or hidden. */
-export type ControlsPlacement = 'band' | 'overlay' | 'none';
+/**
+ * Where the touch controls go: in the portrait band; beside the game on a touch landscape screen (`sides`, so they
+ * never cover the menus); overlaid when even 1x leaves no room beside it; or hidden.
+ */
+export type ControlsPlacement = 'band' | 'sides' | 'overlay' | 'none';
 
 export interface Layout {
   readonly mode: LayoutMode;
@@ -63,7 +68,18 @@ export function computeLayout(v: Viewport): Layout {
     };
   }
 
-  const scale = fitScale(wDev, hDev);
+  let scale = fitScale(wDev, hDev);
+  let controls: ControlsPlacement = v.touch ? 'overlay' : 'none';
+  if (v.touch) {
+    // The largest scale that leaves SIDE_CONTROLS_CSS free on each side.
+    for (let s = scale; s >= 1; s--) {
+      if (wDev - GAME_WIDTH * s >= 2 * SIDE_CONTROLS_CSS * dpr) {
+        scale = s;
+        controls = 'sides';
+        break;
+      }
+    }
+  }
   const gw = GAME_WIDTH * scale;
   const gh = GAME_HEIGHT * scale;
   const gx = Math.max(0, Math.floor((wDev - gw) / 2));
@@ -73,6 +89,6 @@ export function computeLayout(v: Viewport): Layout {
     scale,
     game: { x: gx / dpr, y: gy / dpr, width: gw / dpr, height: gh / dpr },
     band: null,
-    controls: v.touch ? 'overlay' : 'none',
+    controls,
   };
 }

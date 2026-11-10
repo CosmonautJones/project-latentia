@@ -54,7 +54,8 @@ game pixel is an exact square of device pixels.
 
 - **Landscape** (the viewport is wider than it is tall): the largest integer scale that fits, centred and
   letterboxed. For example, 1920×1080 gets 6× with no bars, and 1366×768 gets 4× (1280×720 at 43, 24). On touch
-  devices the D-pad and A/B overlay the bottom corners at partial opacity.
+  devices the scale steps down until 150 CSS px are free on each side, and the D-pad and A/B sit there (844×390 at
+  DPR 3 gets 5×); only when no scale leaves that room do they overlay the corners at partial opacity.
 - **Portrait**: the screen sits at the top, scaled to the width while leaving at least 200 CSS px below it. Below
   it is a DS-style **bottom band** holding the touch controls, plus an empty `#band-panel` reserved for battle menus
   and the grid editor.
@@ -79,19 +80,29 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 
 - **Content** (`src/content/battles.ts`, decks in `src/content/trainers.ts`): the rival fight (Kip picks the starter
   that counters yours — Speed > Reasoning > Open > Speed — both L5 and solo, Ruling 146), the wild L3 Tokenibble,
-  and the Bootcamp Grad (an L6 Vibrat; on the spin-up path the player brings Tokenibble L3 with a one-card deck).
+  and the Bootcamp Grad (an L6 Vibrat; on the spin-up path the player brings Tokenibble L3 with a one-card deck). A
+  spun-up Tokenibble keeps only Token Burst, Early Exit and Low Latency (its signature stays behind); the three
+  tutorial presets are one good, one situational and one bad card, measured in a unit test.
   Every setup is checked with `validateSetup` in `test/unit/battles.test.ts`. Kip's deck is a coin flip between a
   weak jab and Compact, because at L5 a counter-type that attacked every round could not be beaten.
 - **UI** at 320×180: foe and player panels (name, level, HP with a lagging ghost chunk, context bar, status chips),
-  the foe intent preview (and a subagent's, over its sprite), the temperature dial (T0–T4, with a tooltip per
-  notch), a move menu with context costs (moves that would overflow are greyed with an "overflow → Drift" hint, and
-  stay selectable because the engine allows it), **WHY?** (the latest CardTrace of each deck-driven creature in plain
-  words), and a 1×/2× speed toggle. B backs out of every submenu. In landscape the menus are on the canvas; in
-  portrait they are DOM buttons in the bottom band (`src/battle-ui/band-menu.ts`), drawn in the game font.
+  the intent preview (your subagents' plans in full; a foe's shows "?" unless your side reveals it: Red Team,
+  Saliency Map, Socratic Method), the temperature dial (named "T2·1.0", with a tooltip per notch), a move menu with
+  context costs (moves that would overflow are greyed with an "overflow → Drift" warning, and stay selectable because
+  the engine allows it), **WHY?** (each deck-driven creature's latest CardTrace in plain words, only ever after it
+  acted), **LOG** (the last 40 battle lines) and a 1×/2× speed toggle. B backs out of every submenu.
+- **Input**: keys and the D-pad act at once; on touch and pointer a move, notch or target takes two taps (the first
+  selects it and shows its hint, the second commits). A click or tap on the screen advances dialogue.
+- **Layout**: in landscape the menus are on the canvas; in portrait they are DOM buttons (44 CSS px rows, scrolling
+  on short phones) in the bottom band (`src/battle-ui/band-menu.ts`), drawn in the game font. Touch landscape steps
+  the game scale down so the D-pad and A/B sit beside the game, not over it.
+- **First-time hints** explain PROMPT, context (CX, COST, Drift and the DR chip), the dial, WHY? and the intent
+  preview (taught at the first battle with your own subagent), once each; the save remembers them (schema v2).
 - **Playback**: `src/battle/event-steps.ts` maps every engine event type to UI steps (a text fallback at least;
   the unit test enumerates the event union), and `src/battle/timeline.ts` paces them: windup, a 3-frame hit-stop
-  with a white flash, HP drain, status icons, faint, swap, context and Drift. A round fits in 1.4 s at 1× and half
-  that at 2×.
+  with a white flash, HP drain, status icons, faint, swap, context and Drift. A round's animation fits in 1.4 s at
+  1×; each line stays up for its dwell (about 640 ms for a major line) while the animation runs on under it. 2×
+  halves both.
 - **Result**: a win sends `battleWon`; a loss (or a round-cap draw) sends `battleLost`, which restarts the fight. A
   loss to the trainer also says what the player's deck-driven teammates kept doing (`summarizeTraces`).
 
@@ -112,18 +123,20 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 - **Flow.** `src/flow/flow.ts` is the v0 journey as a pure state machine: title → lab → rival → walk → wild →
   distill → card tutorial (spin-up only) → trainer → end. Losing a battle restarts that battle. `FlowController`
   applies events, saves, and switches scenes.
-- **Saves.** These go in localStorage under `latentia.save.v0`, as `{ schemaVersion: 1, engineVersion, progress }`,
-  at every journey step. Continue resumes at the start of the saved step.
+- **Saves.** These go in localStorage under `latentia.save.v0`, as `{ schemaVersion: 2, engineVersion, progress,
+  hintsSeen }`, at every journey step (and when a first-time hint is shown). Continue resumes at the start of the
+  saved step. v1 saves upgrade to v2 with no hints seen.
   - Corrupt saves and saves from a newer schema are ignored, and the game starts fresh.
-  - Older schemas upgrade through `MIGRATIONS` in `src/save/save.ts`, one version at a time.
+  - Older schemas upgrade through `MIGRATIONS` in `src/save/save.ts`, one version at a time (v1 → v2 adds
+    `hintsSeen`).
   - If storage is unavailable (for example in a sandboxed frame), the game plays on with an in-memory store.
 
 ## Dev and test hook
 
 In dev and in the test build only, `window.__latentia` exposes:
 
-- `flow()`, `scene()`, `menu()`, `layout()` and `battle()` (phase, round, moves, intents, the why text, per-round
-  playback times and the result) for reading state;
+- `flow()`, `scene()`, `menu()`, `layout()` and `battle()` (phase, round, moves, intents as shown, the why text,
+  the log, per-round timings and the result) for reading state;
 - `press(button)`, `pick(menuId, index)` and `send(flowEvent)` for injecting actions.
 
 Production builds don't contain it.

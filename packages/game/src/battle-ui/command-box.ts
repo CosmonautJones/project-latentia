@@ -1,22 +1,24 @@
-// The in-canvas battle text and menus. The bottom 320×44 box carries playback messages and the prompt; in landscape
-// it also holds the 2×2 root grid and the temperature notches, and a framed panel over the left side lists moves or
-// targets. In portrait the band menu takes the buttons, and this box keeps the prompt and the highlighted item's hint.
-// Rebuilt from the menu state on every change (a few dozen objects).
+// The in-canvas battle text and menus. The bottom box (the DialogueBox's exact frame, so a popup over it shows one
+// border) carries playback messages and the prompt. In landscape it also holds the root grid and the temperature
+// notches, a framed panel over the left side lists moves or targets, and a full-width panel shows the round log. In
+// portrait the band menu has the buttons, and this box keeps the prompt or the highlighted item's hint. Rebuilt from
+// the menu state on every change (a few dozen objects).
 
 import Phaser from 'phaser';
 import type { Temperature } from '@latentia/engine';
-import { menuView, MENU_IDS, moveHint, TEMPERATURE_TIPS, type BattleMenuState, type MenuData } from '../battle/battle-menu.js';
+import { armedHere, menuView, MENU_IDS, moveHint, TEMPERATURE_TIPS, type BattleMenuState, type MenuData } from '../battle/battle-menu.js';
 import { TYPE_COLORS } from '../battle/labels.js';
 import type { App } from '../app.js';
 import { GAME_HEIGHT, GAME_WIDTH } from '../layout/compute.js';
 import { addPixelText, textWidth } from '../text/phaser-font.js';
 import { wrapText } from '../text/wrap.js';
+import { BOX_HEIGHT, BOX_Y } from '../ui/dialogue-box.js';
 import { COLOR } from '../ui/palette.js';
 
-export const BOX_Y = 136;
-const BOX_H = GAME_HEIGHT - BOX_Y;
 /** The move/target list panel: left of the player panel, down to the bottom edge. */
 const LIST = { x: 0, y: 56, w: 186, row: 12 } as const;
+/** The log panel: full width above the box. */
+const LOG = { y: 2, lines: 12, chars: 51 } as const;
 
 export type BoxModel =
   | { readonly kind: 'message'; readonly text: string }
@@ -31,6 +33,8 @@ export type BoxModel =
       readonly whyFresh: boolean;
     };
 
+const typeColor = (type: string): number => (type === 'system' ? COLOR.mist : (TYPE_COLORS[type as keyof typeof TYPE_COLORS]?.fill ?? COLOR.mist));
+
 export class CommandBox {
   private readonly layer: Phaser.GameObjects.Container;
 
@@ -39,8 +43,8 @@ export class CommandBox {
     private readonly app: App,
   ) {
     const g = scene.add.graphics();
-    g.fillStyle(COLOR.cloud).fillRect(0, BOX_Y, GAME_WIDTH, BOX_H);
-    g.fillStyle(COLOR.ink).fillRect(1, BOX_Y + 1, GAME_WIDTH - 2, BOX_H - 2);
+    g.fillStyle(COLOR.cloud).fillRect(0, BOX_Y, GAME_WIDTH, BOX_HEIGHT);
+    g.fillStyle(COLOR.ink).fillRect(1, BOX_Y + 1, GAME_WIDTH - 2, BOX_HEIGHT - 2);
     g.fillStyle(COLOR.slate).fillRect(2, BOX_Y + 2, GAME_WIDTH - 4, 1);
     g.setDepth(50);
     this.layer = scene.add.container(0, 0).setDepth(51);
@@ -49,11 +53,12 @@ export class CommandBox {
   render(model: BoxModel): void {
     this.layer.removeAll(true);
     if (model.kind === 'message') {
-      this.lines(model.text, 8, BOX_Y + 5, 50, 4, COLOR.white);
+      this.lines(model.text, 8, BOX_Y + 6, 50, 3, COLOR.white);
       return;
     }
     const { menu, data } = model;
     const view = menuView(menu, data);
+    const armed = armedHere(menu);
     switch (menu.screen) {
       case 'root':
         this.lines(model.prompt, 8, BOX_Y + 6, model.buttons ? 25 : 50, 3, COLOR.white);
@@ -61,33 +66,41 @@ export class CommandBox {
         return;
       case 'moves': {
         const m = data.moves[menu.moveIndex];
-        const hint = m === undefined ? '' : moveHint(m);
+        const hint = `${m === undefined ? '' : moveHint(m)}${armed ? ' TAP AGAIN TO USE.' : ''}`;
+        const color = m?.affordable === false ? COLOR.amber : COLOR.cloud;
         if (model.buttons) {
           this.list(MENU_IDS.moves, view.items, view.index, `PROMPT   T${menu.temperature}`, (i) => {
             const opt = data.moves[i];
-            return opt === undefined ? null : { cost: String(opt.cost), ok: opt.affordable, color: opt.type === 'system' ? COLOR.mist : TYPE_COLORS[opt.type as keyof typeof TYPE_COLORS]?.fill ?? COLOR.mist };
+            return opt === undefined ? null : { cost: String(opt.cost), ok: opt.affordable, color: typeColor(opt.type) };
           });
-          this.lines(hint, 198, BOX_Y + 6, 19, 3, m?.affordable === false ? COLOR.amber : COLOR.cloud);
-          this.text(GAME_WIDTH - 6 - textWidth('B: BACK'), BOX_Y + 34, 'B: BACK', COLOR.steel);
+          // Two lines of hint, then the next step: the second tap after a first one, else the way back.
+          this.lines(m === undefined ? '' : moveHint(m), 198, BOX_Y + 5, 19, 2, color);
+          this.text(198, BOX_Y + 27, armed ? 'TAP AGAIN TO USE' : 'B: BACK', armed ? COLOR.amber : COLOR.steel);
         } else {
           this.lines(`${m?.name ?? ''}: ${hint}`, 8, BOX_Y + 6, 50, 3, m?.affordable === false ? COLOR.amber : COLOR.white);
         }
         return;
       }
-      case 'targets':
+      case 'targets': {
+        const text = armed ? 'Tap again to use it on this one.' : 'Pick a target.';
         if (model.buttons) {
           this.list(MENU_IDS.targets, view.items, view.index, 'TARGET?', () => null);
-          this.text(198, BOX_Y + 6, 'Pick a target.', COLOR.cloud);
+          this.lines(text, 198, BOX_Y + 5, 19, 3, COLOR.cloud);
         } else {
-          this.lines('Pick a target.', 8, BOX_Y + 6, 50, 3, COLOR.white);
+          this.lines(text, 8, BOX_Y + 6, 50, 3, COLOR.white);
         }
         return;
+      }
       case 'temp': {
         const tip = TEMPERATURE_TIPS[menu.tempIndex as Temperature];
-        this.lines(tip, 8, BOX_Y + 6, model.buttons ? 26 : 50, 3, COLOR.cloud);
-        if (model.buttons) this.notches(view.index);
+        this.lines(tip, 8, BOX_Y + 5, model.buttons ? 26 : 50, 3, COLOR.cloud);
+        if (model.buttons) this.notches(view.index, armed);
         return;
       }
+      case 'log':
+        if (model.buttons) this.logPanel(view.items, view.index);
+        this.lines('ROUND LOG.  UP/DOWN: SCROLL   A/B: BACK', 8, BOX_Y + 6, 50, 3, COLOR.cloud);
+        return;
     }
   }
 
@@ -114,24 +127,29 @@ export class CommandBox {
     this.text(x, y, '▶', COLOR.amber);
   }
 
+  private frame(x: number, y: number, w: number, h: number): Phaser.GameObjects.Graphics {
+    const g = this.scene.add.graphics();
+    g.fillStyle(COLOR.cloud).fillRect(x, y, w, h);
+    g.fillStyle(COLOR.ink).fillRect(x + 1, y + 1, w - 2, h - 2);
+    this.layer.add(g);
+    return g;
+  }
+
+  /** PROMPT TEMP / WHY? LOG / SPEED, two to a row. */
   private rootGrid(items: readonly string[], index: number, whyFresh: boolean): void {
     items.forEach((item, i) => {
-      const x = 176 + (i % 2) * 74;
-      const y = BOX_Y + 5 + Math.floor(i / 2) * 18;
+      const x = 182 + (i % 2) * 70;
+      const y = BOX_Y + 2 + Math.floor(i / 2) * 13;
       if (i === index) this.cursor(x - 9, y + 3);
       this.text(x, y + 3, item, i === index ? COLOR.white : COLOR.mist);
       if (i === 2 && whyFresh) this.text(x + textWidth(item) + 2, y + 3, '!', COLOR.amber);
-      this.zone(x - 10, y, 72, 18, MENU_IDS.root, i);
+      this.zone(x - 10, y, 68, 13, MENU_IDS.root, i);
     });
   }
 
   private list(menuId: string, items: readonly string[], index: number, header: string, meta: (i: number) => { cost: string; ok: boolean; color: number } | null): void {
-    const g = this.scene.add.graphics();
-    const h = GAME_HEIGHT - LIST.y;
-    g.fillStyle(COLOR.cloud).fillRect(LIST.x, LIST.y, LIST.w, h);
-    g.fillStyle(COLOR.ink).fillRect(LIST.x + 1, LIST.y + 1, LIST.w - 2, h - 2);
+    const g = this.frame(LIST.x, LIST.y, LIST.w, GAME_HEIGHT - LIST.y);
     g.fillStyle(COLOR.slate).fillRect(LIST.x + 2, LIST.y + 13, LIST.w - 4, 1);
-    this.layer.add(g);
     this.text(LIST.x + 6, LIST.y + 3, header, COLOR.cream);
     items.forEach((item, i) => {
       const y = LIST.y + 15 + i * LIST.row;
@@ -145,16 +163,26 @@ export class CommandBox {
     });
   }
 
-  private notches(index: number): void {
+  private notches(index: number, armed: boolean): void {
     for (let t = 0; t <= 4; t++) {
       const x = 180 + t * 27;
-      const y = BOX_Y + 8;
+      const y = BOX_Y + 7;
       const g = this.scene.add.graphics();
       g.fillStyle(t === index ? COLOR.amber : COLOR.slate).fillRect(x - 2, y - 2, 22, 14);
       this.layer.add(g);
       this.text(x + 3, y + 1, `T${t}`, t === index ? COLOR.ink : COLOR.cloud);
       this.zone(x - 2, y - 2, 22, 14, MENU_IDS.temp, t);
     }
-    this.text(176, BOX_Y + 28, 'A: SET  B: BACK', COLOR.steel);
+    this.text(176, BOX_Y + 26, armed ? 'TAP AGAIN TO SET' : 'A: SET  B: BACK', armed ? COLOR.amber : COLOR.steel);
+  }
+
+  /** The last lines up to the cursor, newest at the bottom. */
+  private logPanel(lines: readonly string[], index: number): void {
+    this.frame(0, LOG.y, GAME_WIDTH, LOG.lines * 10 + 6);
+    const first = Math.max(0, index - LOG.lines + 1);
+    lines.slice(first, index + 1).forEach((line, i) => {
+      const clipped = [...line].length > LOG.chars ? `${[...line].slice(0, LOG.chars - 1).join('')}…` : line;
+      this.text(6, LOG.y + 4 + i * 10, clipped, first + i === index ? COLOR.white : COLOR.mist);
+    });
   }
 }

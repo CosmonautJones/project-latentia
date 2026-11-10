@@ -48,6 +48,7 @@ const NAMES = ['Sagelet', "Kip's Blitzr", 'Tokenibble'];
 const ctx: MapContext = {
   name: (i) => NAMES[i] ?? `#${i}`,
   moveName: (id) => id.toUpperCase(),
+  side: (i) => (i === 1 ? 1 : 0),
 };
 
 const texts = (steps: readonly UiStep[]) => steps.flatMap((s) => (s.kind === 'text' ? [s.text] : []));
@@ -110,6 +111,11 @@ describe('event → UI step mapper', () => {
     expect(texts(mapEvent(SAMPLES.TypeEffect, ctx))[0]).toMatch(/on-distribution/i);
     expect(texts(mapEvent({ ...SAMPLES.TypeEffect, multiplierBp: 5000 }, ctx))[0]).toMatch(/out of distribution/i);
     expect(mapEvent({ ...SAMPLES.TypeEffect, multiplierBp: 10000 }, ctx)).toEqual([{ kind: 'beat' }]);
+  });
+
+  it('a reveal says who can now see which creature, for the intent preview', () => {
+    expect(mapEvent(SAMPLES.Revealed, ctx)).toContainEqual({ kind: 'reveal', target: 1, bySide: 0, what: 'nextIntent' });
+    expect(mapEvent({ ...SAMPLES.Revealed, actor: 1, target: 0 }, ctx)).toContainEqual({ kind: 'reveal', target: 0, bySide: 1, what: 'nextIntent' });
   });
 
   it('the card trace and the battle end are carried through for the scene', () => {

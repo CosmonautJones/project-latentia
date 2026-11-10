@@ -21,6 +21,7 @@ import {
 } from '@latentia/engine';
 import type { BattleDef } from '../content/battles.js';
 import { explainTrace, summarizeTraces, type TraceContext } from './card-text.js';
+import { revealedFoes } from './intent-visibility.js';
 
 export interface CreatureView {
   readonly index: number;
@@ -98,9 +99,19 @@ export class BattleSession {
     return new BattleSession(def);
   }
 
-  /** The latest engine state, read-only to every caller. */
-  get state(): Readonly<BattleState> {
-    return this.current;
+  /** The engine state as canonical-ish JSON text, for tests and debugging (the state itself never leaves). */
+  fingerprint(): string {
+    return JSON.stringify(this.current);
+  }
+
+  /** 0 for the player's side, 1 for the opponent's. */
+  sideOf(index: number): 0 | 1 {
+    return this.current.creatures[index]?.side === 'b' ? 1 : 0;
+  }
+
+  /** Foes whose intents the player's side has revealed into the coming round (Red Team, Saliency Map). */
+  revealedFoes(): Set<number> {
+    return revealedFoes(this.current.fields, (i) => this.sideOf(i));
   }
 
   get round(): number {

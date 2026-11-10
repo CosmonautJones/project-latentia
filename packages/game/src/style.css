@@ -44,19 +44,32 @@ body {
 #band-panel {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-  padding: 10px 12px 0;
+  /* A short phone scrolls the move list rather than clipping it; the panel is its own scroll container. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 0 12px 8px;
   box-sizing: border-box;
 }
 
 .band-menu {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.band-menu:has(.band-header) {
+  padding-top: 0;
 }
 
 .band-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   min-height: 16px;
+  padding: 10px 0 6px;
+  background: #262b44;
   line-height: 0;
 }
 
@@ -87,12 +100,8 @@ body {
   border: 0;
   background: #181425;
   box-shadow: inset 2px 2px 0 #3a4466, inset -2px -2px 0 #3a4466;
-  touch-action: manipulation;
+  touch-action: pan-y;
   cursor: pointer;
-}
-
-.band-buttons.list .band-btn {
-  min-height: 40px;
 }
 
 .band-buttons.row .band-btn {
@@ -102,6 +111,22 @@ body {
 
 .band-btn.cursor {
   box-shadow: inset 2px 2px 0 #feae34, inset -2px -2px 0 #feae34;
+}
+
+/* Selected by a first tap: the next tap commits. */
+.band-btn.armed {
+  background: #3a4466;
+}
+
+.band-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 0;
+}
+
+.band-log-line svg {
+  margin-bottom: 2px;
 }
 
 .band-btn .tick {
@@ -129,6 +154,38 @@ body {
   padding: 0 calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
   pointer-events: none;
   opacity: 0.55;
+}
+
+/* Touch landscape with room beside the game: the D-pad in the left margin, A/B in the right, vertically centred. */
+#controls[data-placement='sides'] {
+  position: fixed;
+  inset: 0;
+  padding: 0 calc(8px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+#controls[data-placement='sides'] .touch-btn {
+  pointer-events: auto;
+}
+
+#controls[data-placement='sides'] .dpad {
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(3, 44px);
+}
+
+#controls[data-placement='sides'] .dpad .touch-btn {
+  width: 44px;
+  height: 44px;
+}
+
+#controls[data-placement='sides'] .ab {
+  flex-direction: column-reverse;
+  gap: 12px;
+}
+
+#controls[data-placement='sides'] .ab .btn-b,
+#controls[data-placement='sides'] .ab .btn-a {
+  margin: 0;
 }
 
 #controls[data-placement='overlay'] .touch-btn {

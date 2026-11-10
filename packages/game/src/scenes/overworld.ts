@@ -1,16 +1,15 @@
 // Overworld (stub): the walk to the trailhead, and the card tutorial menu over it. P3 builds the real map and
-// P4 the real card presets; the ids below are placeholders.
+// P4 the real tutorial; the menu already offers the real Tokenibble presets.
 
+import { moveDef } from '@latentia/engine';
 import type { App } from '../app.js';
+import { cardText } from '../battle/card-text.js';
+import { TOKENIBBLE_PRESETS } from '../content/trainers.js';
 import { DialogueBox } from '../ui/dialogue-box.js';
 import { MenuList } from '../ui/menu-list.js';
 import { BaseScene } from './base-scene.js';
 
-const STUB_CARDS = [
-  { id: 'tutorial.a', label: 'IF foe HP < 50% THEN attack' },
-  { id: 'tutorial.b', label: 'IF my HP < 30% THEN guard' },
-  { id: 'tutorial.c', label: 'IF context full THEN rest' },
-] as const;
+const STUB_CARDS = TOKENIBBLE_PRESETS.map((p) => ({ id: p.id, label: cardText(p.card, (m) => moveDef(m)?.name ?? m) }));
 
 export class OverworldScene extends BaseScene {
   constructor(app: App) {

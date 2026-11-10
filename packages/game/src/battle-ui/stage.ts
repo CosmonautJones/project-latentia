@@ -5,7 +5,7 @@
 import Phaser from 'phaser';
 import type { Intent, Temperature } from '@latentia/engine';
 import type { UiStep } from '../battle/event-steps.js';
-import { formatIntent } from '../battle/intent-text.js';
+import { intentLine } from '../battle/intent-visibility.js';
 import type { BattleSession, CreatureView } from '../battle/session.js';
 import { GAME_WIDTH } from '../layout/compute.js';
 import { addPixelText, textWidth } from '../text/phaser-font.js';
@@ -16,7 +16,7 @@ import { TemperatureDial } from './temperature-dial.js';
 
 /** Bottom edges of sprites (feet sit 6 px above), panel corners, intent anchors. */
 const SLOTS = {
-  foe: { sprite: { x: 248, y: 74 }, panel: { x: 6, y: 6 }, variant: 'foe', intent: { x: 6, y: 38, align: 'left', chars: 32 } },
+  foe: { sprite: { x: 248, y: 74 }, panel: { x: 6, y: 6 }, variant: 'foe', intent: { x: 6, y: 40, align: 'left', chars: 32 } },
   foeSub: { sprite: { x: 188, y: 64 }, panel: { x: 6, y: 52 }, variant: 'foe', intent: { x: 6, y: 84, align: 'left', chars: 28 } },
   player: { sprite: { x: 64, y: 140 }, panel: { x: 188, y: 90 }, variant: 'player', intent: null },
   playerSub: { sprite: { x: 136, y: 142 }, panel: { x: 188, y: 72 }, variant: 'sub', intent: { x: 136, y: 62, align: 'center', chars: 24 } },
@@ -43,6 +43,9 @@ const wait = (scene: Phaser.Scene, ms: number): Promise<void> =>
 export class BattleStage {
   private readonly slots: Slot[] = [];
   readonly dial: TemperatureDial;
+  /** The intents last shown, and the foes the player can see this round (hidden "?" otherwise). */
+  private intents: readonly Intent[] = [];
+  private revealed: Set<number> = new Set();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -59,7 +62,7 @@ export class BattleStage {
       this.slots.push({ name: slotFor(v), index: v.index, sprite, panel, intent });
     }
     const p = SLOTS.player.panel;
-    this.dial = new TemperatureDial(scene, p.x + 100, p.y + 10);
+    this.dial = new TemperatureDial(scene, p.x + 93, p.y + 10);
   }
 
   private drawBackdrop(): void {
@@ -78,18 +81,36 @@ export class BattleStage {
     return this.slots.find((s) => s.index === index);
   }
 
-  /** The preview of what every deck-driven creature on the field plans next round. */
-  setIntents(intents: readonly Intent[]): void {
+  /**
+   * The preview of what every deck-driven creature on the field plans: the player's subagents in full, a foe as "?"
+   * unless the player's side has revealed it (ruling V2).
+   */
+  setIntents(intents: readonly Intent[], revealed: ReadonlySet<number> = this.revealed): void {
+    this.intents = intents;
+    this.revealed = new Set(revealed);
+    this.drawIntents();
+  }
+
+  /** The intent lines as on screen, for the dev probe. */
+  intentLines(): { actor: number; line: string }[] {
+    return this.intents.map((i) => ({ actor: i.actor, line: this.lineFor(i, 40) }));
+  }
+
+  private lineFor(intent: Intent, chars: number): string {
     const ctx = { shortName: (i: number) => this.session.shortName(i), moveName: (m: string) => this.session.moveName(m) };
+    return intentLine(intent, ctx, (i) => this.session.sideOf(i), this.revealed, chars);
+  }
+
+  private drawIntents(): void {
     for (const s of this.slots) {
       if (s.intent === null) continue;
       const def = SLOTS[s.name].intent;
-      const intent = intents.find((i) => i.actor === s.index);
+      const intent = this.intents.find((i) => i.actor === s.index);
       if (intent === undefined || def === null) {
         s.intent.setText('');
         continue;
       }
-      const text = `▶${formatIntent(intent, ctx, def.chars - 1)}`;
+      const text = `▶${this.lineFor(intent, def.chars - 1)}`;
       s.intent.setText(text);
       if (def.align === 'center') s.intent.setX(def.x - Math.floor(textWidth(text) / 2));
     }
@@ -155,6 +176,13 @@ export class BattleStage {
       }
       case 'intents':
         this.setIntents(step.intents);
+        return;
+      case 'reveal':
+        // Socratic Method and friends: the player sees this foe's move for the rest of the round.
+        if (step.bySide === 0 && step.what === 'nextIntent' && this.session.sideOf(step.target) === 1) {
+          this.revealed.add(step.target);
+          this.drawIntents();
+        }
         return;
       // Text is the command box's; the rest carry no picture of their own.
       default:

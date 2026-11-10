@@ -2,7 +2,7 @@
 // Phaser-free (the scene switch is injected), so it is unit-tested with a fake switcher and storage.
 
 import { initialFlow, sceneForStep, toProgress, transition, type FlowEvent, type FlowState, type SceneKey } from './flow.js';
-import { writeSave, type KeyValueStorage } from '../save/save.js';
+import { loadSave, writeSave, type KeyValueStorage } from '../save/save.js';
 
 export type SceneSwitcher = (scene: SceneKey, state: FlowState) => void;
 export type FlowListener = (state: FlowState) => void;
@@ -10,6 +10,8 @@ export type FlowListener = (state: FlowState) => void;
 export class FlowController {
   private current: FlowState = initialFlow();
   private listeners: FlowListener[] = [];
+  /** One-time hints already shown in this playthrough; saved alongside the progress. */
+  private hints: readonly string[] = [];
 
   constructor(
     private readonly storage: KeyValueStorage,
@@ -36,14 +38,30 @@ export class FlowController {
   send(event: FlowEvent): boolean {
     const r = transition(this.current, event);
     if (!r.ok) return false;
+    if (event.type === 'newGame') this.hints = [];
+    if (event.type === 'continue') {
+      const saved = loadSave(this.storage);
+      this.hints = saved.status === 'ok' ? saved.save.hintsSeen : [];
+    }
     this.enter(r.state);
     return true;
+  }
+
+  hasSeenHint(id: string): boolean {
+    return this.hints.includes(id);
+  }
+
+  /** Remember a shown hint and save it now, without leaving the scene (outside the title). */
+  markHintSeen(id: string): void {
+    if (this.hints.includes(id)) return;
+    this.hints = [...this.hints, id];
+    if (this.current.step !== 'title') writeSave(this.storage, toProgress(this.current), this.hints);
   }
 
   private enter(state: FlowState): void {
     this.current = state;
     // The title is never a resume point; every journey step is (Continue resumes at the step's start).
-    if (state.step !== 'title') writeSave(this.storage, toProgress(state));
+    if (state.step !== 'title') writeSave(this.storage, toProgress(state), this.hints);
     for (const l of this.listeners) l(state);
     this.switchScene(sceneForStep(state.step), state);
   }

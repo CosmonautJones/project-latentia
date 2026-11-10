@@ -5,12 +5,14 @@ import { ENGINE_VERSION } from '@latentia/engine';
 import { DISTILL_CHOICES, isConsistentProgress, STARTERS, STEPS, type Progress } from '../flow/flow.js';
 
 export const SAVE_KEY = 'latentia.save.v0';
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
-export interface SaveFileV1 {
-  readonly schemaVersion: 1;
+export interface SaveFileV2 {
+  readonly schemaVersion: 2;
   readonly engineVersion: string;
   readonly progress: Progress;
+  /** Ids of the one-time first-encounter hints already shown (v2). */
+  readonly hintsSeen: readonly string[];
 }
 
 /** The storage surface the save needs; `window.localStorage` fits, and tests pass an in-memory one. */
@@ -22,16 +24,20 @@ export interface Migration {
   readonly migrate: (raw: unknown) => unknown;
 }
 
-/** Ordered upgrade steps. v1 is the first schema, so there are none yet; v2 adds `{ from: 1, migrate }` here. */
-export const MIGRATIONS: readonly Migration[] = [];
+const isRecordLike = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Ordered upgrade steps. v1 → v2 adds `hintsSeen` (no hints seen yet). */
+export const MIGRATIONS: readonly Migration[] = [
+  { from: 1, migrate: (raw) => (isRecordLike(raw) ? { ...raw, schemaVersion: 2, hintsSeen: [] } : raw) },
+];
 
 export type LoadResult =
-  | { readonly status: 'ok'; readonly save: SaveFileV1 }
+  | { readonly status: 'ok'; readonly save: SaveFileV2 }
   | { readonly status: 'empty' }
   | { readonly status: 'corrupt'; readonly reason: string }
   | { readonly status: 'unsupported'; readonly version: number };
 
-const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const isRecord = isRecordLike;
 const oneOf = <T extends string>(values: readonly T[], v: unknown): v is T => typeof v === 'string' && (values as readonly string[]).includes(v);
 const corrupt = (reason: string): LoadResult => ({ status: 'corrupt', reason });
 
@@ -46,11 +52,13 @@ function parseProgress(v: unknown): Progress | null {
   return isConsistentProgress(progress) ? progress : null;
 }
 
-function parseV1(raw: Record<string, unknown>): LoadResult {
+function parseV2(raw: Record<string, unknown>): LoadResult {
   if (typeof raw['engineVersion'] !== 'string') return corrupt('engineVersion is not a string');
   const progress = parseProgress(raw['progress']);
   if (!progress) return corrupt('progress is missing or invalid');
-  return { status: 'ok', save: { schemaVersion: 1, engineVersion: raw['engineVersion'], progress } };
+  const hints = raw['hintsSeen'];
+  if (!Array.isArray(hints) || !hints.every((h) => typeof h === 'string')) return corrupt('hintsSeen is not a list of ids');
+  return { status: 'ok', save: { schemaVersion: 2, engineVersion: raw['engineVersion'], progress, hintsSeen: [...(hints as string[])] } };
 }
 
 const versionOf = (raw: unknown): number | null =>
@@ -80,7 +88,7 @@ export function parseSave(text: string, migrations: readonly Migration[] = MIGRA
     version = versionOf(raw);
     if (version !== from + 1) return corrupt(`migration from v${from} did not produce v${from + 1}`);
   }
-  return parseV1(raw as Record<string, unknown>);
+  return parseV2(raw as Record<string, unknown>);
 }
 
 export function loadSave(storage: KeyValueStorage): LoadResult {
@@ -93,9 +101,9 @@ export function loadSave(storage: KeyValueStorage): LoadResult {
   return text === null ? { status: 'empty' } : parseSave(text);
 }
 
-/** Write the progress. Returns false when storage refuses (quota, private mode); the game plays on unsaved. */
-export function writeSave(storage: KeyValueStorage, progress: Progress): boolean {
-  const file: SaveFileV1 = { schemaVersion: SCHEMA_VERSION, engineVersion: ENGINE_VERSION, progress };
+/** Write the progress and hints. Returns false when storage refuses (quota, private mode); the game plays on unsaved. */
+export function writeSave(storage: KeyValueStorage, progress: Progress, hintsSeen: readonly string[] = []): boolean {
+  const file: SaveFileV2 = { schemaVersion: SCHEMA_VERSION, engineVersion: ENGINE_VERSION, progress, hintsSeen };
   try {
     storage.setItem(SAVE_KEY, JSON.stringify(file));
     return true;

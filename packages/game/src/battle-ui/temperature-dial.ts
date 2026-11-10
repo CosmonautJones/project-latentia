@@ -1,5 +1,5 @@
-// The 24×24 temperature dial on the player panel (bible): five notches labelled 0.0–2.0, a needle that sweeps from
-// cool blue to hot red, and a 1 px jitter with sparks when hot (T3+).
+// The 24×24 temperature dial on the player panel (bible): five notches, 0.0–2.0, labelled "T2·1.0" style under the
+// dial; a needle that sweeps from cool blue to hot red, and a 1 px jitter with sparks when hot (T3+).
 
 import Phaser from 'phaser';
 import type { Temperature } from '@latentia/engine';
@@ -8,7 +8,8 @@ import { COLOR } from '../ui/palette.js';
 
 const SIZE = 24;
 const NEEDLE = [0x0099db, 0x2ce8f5, 0xfee761, 0xf77622, 0xe43b44] as const;
-const LABELS = ['0.0', '0.5', '1.0', '1.5', '2.0'] as const;
+/** "Tn·x.x", the dial's name everywhere (tooltips say "Tn · x.x"). */
+const LABELS = ['T0·0.0', 'T1·0.5', 'T2·1.0', 'T3·1.5', 'T4·2.0'] as const;
 /** Needle angles from straight left (T0) over the top to straight right (T4). */
 const angle = (t: number): number => Math.PI + (t * Math.PI) / 4;
 

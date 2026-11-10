@@ -9,6 +9,7 @@ import {
   SCHEMA_VERSION,
   writeSave,
   type KeyValueStorage,
+  MIGRATIONS,
   type Migration,
 } from '../../src/save/save.js';
 
@@ -40,20 +41,27 @@ const throwing: KeyValueStorage = {
 const progress: Progress = { step: 'cardTutorial', starter: 'blitzr', distill: 'spinUp', tutorialCardId: null };
 
 describe('save: constants', () => {
-  it('uses the v0 key and schema version 1', () => {
+  it('uses the v0 key and schema version 2 (v2 added the first-time hints seen)', () => {
     expect(SAVE_KEY).toBe('latentia.save.v0');
-    expect(SCHEMA_VERSION).toBe(1);
+    expect(SCHEMA_VERSION).toBe(2);
   });
 });
 
 describe('save: round trip', () => {
-  it('writes versioned JSON under the key and reads the same progress back', () => {
+  it('writes versioned JSON under the key and reads the same progress and hints back', () => {
     const store = new MemoryStorage();
-    expect(writeSave(store, progress)).toBe(true);
+    expect(writeSave(store, progress, ['battle.prompt'])).toBe(true);
     const raw = JSON.parse(store.getItem(SAVE_KEY) as string) as Record<string, unknown>;
-    expect(raw['schemaVersion']).toBe(1);
+    expect(raw['schemaVersion']).toBe(2);
     expect(raw['engineVersion']).toBe(ENGINE_VERSION);
-    expect(loadSave(store)).toEqual({ status: 'ok', save: { schemaVersion: 1, engineVersion: ENGINE_VERSION, progress } });
+    expect(loadSave(store)).toEqual({ status: 'ok', save: { schemaVersion: 2, engineVersion: ENGINE_VERSION, progress, hintsSeen: ['battle.prompt'] } });
+    writeSave(store, progress);
+    expect(loadSave(store)).toMatchObject({ save: { hintsSeen: [] } });
+  });
+
+  it('a v1 save (before hints) upgrades to v2 with no hints seen', () => {
+    const v1 = JSON.stringify({ schemaVersion: 1, engineVersion: '0.3.0', progress });
+    expect(parseSave(v1)).toEqual({ status: 'ok', save: { schemaVersion: 2, engineVersion: '0.3.0', progress, hintsSeen: [] } });
   });
 
   it('an empty store loads as empty', () => {
@@ -80,6 +88,8 @@ describe('save: corrupt data starts fresh and never throws', () => {
     ['unknown starter', JSON.stringify({ schemaVersion: 1, engineVersion: ENGINE_VERSION, progress: { ...progress, starter: 'not-a-starter' } })],
     ['inconsistent progress', JSON.stringify({ schemaVersion: 1, engineVersion: ENGINE_VERSION, progress: { ...progress, distill: null } })],
     ['engineVersion not a string', JSON.stringify({ schemaVersion: 1, engineVersion: 3, progress })],
+    ['hintsSeen not an array', JSON.stringify({ schemaVersion: 2, engineVersion: ENGINE_VERSION, progress, hintsSeen: 'all' })],
+    ['hintsSeen with a non-string', JSON.stringify({ schemaVersion: 2, engineVersion: ENGINE_VERSION, progress, hintsSeen: ['a', 3] })],
   ];
   it.each(bad)('%s', (_name, text) => {
     const store = new MemoryStorage();
@@ -130,11 +140,11 @@ describe('save: versions and migrations', () => {
         },
       },
     ];
-    const r = parseSave(JSON.stringify({ schemaVersion: -1, stage: 'lab' }), migrations);
+    const r = parseSave(JSON.stringify({ schemaVersion: -1, stage: 'lab' }), [...migrations, ...MIGRATIONS]);
     expect(calls).toEqual([-1, 0]);
     expect(r).toEqual({
       status: 'ok',
-      save: { schemaVersion: 1, engineVersion: 'unknown', progress: { step: 'lab', starter: null, distill: null, tutorialCardId: null } },
+      save: { schemaVersion: 2, engineVersion: 'unknown', progress: { step: 'lab', starter: null, distill: null, tutorialCardId: null }, hintsSeen: [] },
     });
   });
 

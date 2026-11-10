@@ -21,8 +21,8 @@ interface Geometry {
 }
 
 const GEOMETRY: Readonly<Record<PanelVariant, Geometry>> = {
-  foe: { width: 120, height: 30, hpBar: { x: 18, y: 14, w: 64, h: 4 }, ctxBar: { x: 18, y: 22, w: 64, h: 3 }, chips: { x: 86, y: 12, max: 2 }, numbers: false },
-  player: { width: 126, height: 44, hpBar: { x: 18, y: 14, w: 72, h: 4 }, ctxBar: { x: 18, y: 30, w: 72, h: 3 }, chips: { x: 4, y: 35, max: 4 }, numbers: true },
+  foe: { width: 120, height: 32, hpBar: { x: 18, y: 13, w: 64, h: 4 }, ctxBar: { x: 18, y: 23, w: 64, h: 3 }, chips: { x: 86, y: 12, max: 2 }, numbers: false },
+  player: { width: 126, height: 44, hpBar: { x: 18, y: 14, w: 68, h: 4 }, ctxBar: { x: 18, y: 30, w: 68, h: 3 }, chips: { x: 4, y: 35, max: 4 }, numbers: true },
   sub: { width: 126, height: 16, hpBar: { x: 84, y: 4, w: 38, h: 3 }, ctxBar: { x: 84, y: 10, w: 38, h: 2 }, chips: { x: 126, y: 4, max: 0 }, numbers: false },
 };
 
@@ -61,6 +61,7 @@ export class CreaturePanel {
     frame.fillStyle(COLOR.slate).fillRect(2, g.height - 3, g.width - 4, 1);
     const label = (text: string, ly: number) => addPixelText(scene, 4, ly, text, { color: COLOR.mist });
     const parts: Phaser.GameObjects.GameObject[] = [frame];
+    // Labels sit one full text row apart (8 px glyphs), level with their bars.
     if (variant !== 'sub') parts.push(label('HP', g.hpBar.y - 2), label('CX', g.ctxBar.y - 3));
     const track = (b: Geometry['hpBar']) => scene.add.rectangle(b.x, b.y, b.w, b.h, COLOR.night).setOrigin(0);
     this.hpGhost = scene.add.rectangle(g.hpBar.x, g.hpBar.y, 0, g.hpBar.h, COLOR.white).setOrigin(0);

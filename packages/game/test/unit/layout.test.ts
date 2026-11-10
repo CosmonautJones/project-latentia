@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeLayout, MIN_BAND_CSS } from '../../src/layout/compute.js';
+import { computeLayout, MIN_BAND_CSS, SIDE_CONTROLS_CSS } from '../../src/layout/compute.js';
 
 describe('computeLayout', () => {
   it('portrait phone 390x844 at DPR 3: 3 device px per game px (320 CSS px wide) at the top, band below', () => {
@@ -34,12 +34,20 @@ describe('computeLayout', () => {
     expect(l.game).toEqual({ x: 0, y: 45, width: 1440, height: 810 });
   });
 
-  it('landscape on a touch device overlays the controls', () => {
+  it('landscape on a touch device steps the scale down so the controls fit in the side margins, off the game', () => {
     const l = computeLayout({ width: 844, height: 390, dpr: 3, touch: true });
     expect(l.mode).toBe('landscape');
-    expect(l.scale).toBe(6);
-    expect(l.game).toEqual({ x: 102, y: 15, width: 640, height: 360 });
+    // 6x (640 CSS px) would leave 102 px a side; 5x (533.33) leaves 155, enough for the D-pad and A/B.
+    expect(l.scale).toBe(5);
+    expect(l.controls).toBe('sides');
+    expect(l.game.x).toBeGreaterThanOrEqual(SIDE_CONTROLS_CSS);
+    expect(844 - l.game.x - l.game.width).toBeGreaterThanOrEqual(SIDE_CONTROLS_CSS);
+  });
+
+  it('a touch landscape too narrow for side controls at any scale overlays them instead', () => {
+    const l = computeLayout({ width: 480, height: 300, dpr: 1, touch: true });
     expect(l.controls).toBe('overlay');
+    expect(l.scale).toBe(1);
   });
 
   it('portrait keeps at least MIN_BAND_CSS of band below the game', () => {

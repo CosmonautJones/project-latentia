@@ -32,6 +32,11 @@ describe('BattleSession', () => {
     expect(s.outcome).toBeNull();
   });
 
+  it('knows which side each creature is on', () => {
+    const s = BattleSession.start(trainerBattle('sagelet', 'spinUp', 'tutorial.a', 0));
+    expect([0, 1, 2].map((i) => s.sideOf(i))).toEqual([0, 0, 1]);
+  });
+
   it('a wild creature is named as wild', () => {
     expect(BattleSession.start(wildBattle('forkling', 0)).name(1)).toBe('Wild Tokenibble');
   });
@@ -74,30 +79,30 @@ describe('BattleSession', () => {
 
   it('submits a round and returns its events; the read methods never change the engine state', () => {
     const s = BattleSession.start(rivalBattle('blitzr', 0));
-    const before = JSON.stringify(s.state);
+    const before = s.fingerprint();
     s.creatures();
     s.intents();
     s.moveOptions();
     s.targetsFor('ship-it');
-    expect(JSON.stringify(s.state)).toBe(before);
-    const old = s.state;
+    s.revealedFoes();
+    s.explainLatestTraces();
+    expect(s.fingerprint()).toBe(before);
     const r = s.submit({ temperature: 3, moveId: 'ship-it', target: 1 });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.events[0]).toMatchObject({ type: 'RoundStart', round: 1 });
     expect(s.round).toBe(1);
-    expect(JSON.stringify(old)).toBe(before);
-    expect(s.state).not.toBe(old);
+    expect(s.fingerprint()).not.toBe(before);
   });
 
   it('a rejected command changes nothing and says why', () => {
     const s = BattleSession.start(rivalBattle('blitzr', 0));
-    const before = JSON.stringify(s.state);
+    const before = s.fingerprint();
     const r = s.submit({ temperature: 2, moveId: 'ship-it', target: 0 });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.code).toBe('illegalTarget');
-    expect(JSON.stringify(s.state)).toBe(before);
+    expect(s.fingerprint()).toBe(before);
   });
 
   it('keeps every CardTrace for the why popup and knows each deck-driven creature’s deck', () => {
@@ -111,6 +116,15 @@ describe('BattleSession', () => {
     expect(s.explainLastTrace()).toMatch(/^Kip's Blitzr (fired|fell back)/);
     expect(s.traceSummary(1)).toHaveLength(1);
     expect(s.traceSummary(0)).toEqual([]);
+  });
+
+  it('WHY? only ever explains actions already taken: no trace before the first round, none from a future round', () => {
+    const s = BattleSession.start(rivalBattle('forkling', 1));
+    expect(s.explainLatestTraces()).toEqual([]);
+    for (let i = 0; i < 3 && !s.ended; i++) {
+      s.submit({ temperature: 2, moveId: 'compact', target: 0 });
+      for (const t of s.traces()) expect(t.round).toBeLessThanOrEqual(s.round);
+    }
   });
 
   it('plays every v0 battle to a result', () => {

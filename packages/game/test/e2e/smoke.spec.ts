@@ -42,7 +42,7 @@ test('boots to the title, starts a new game by keyboard and reaches the Lab', as
 
   // Entering the Lab saved the journey step.
   const saved = await page.evaluate(() => window.localStorage.getItem('latentia.save.v0'));
-  expect(JSON.parse(saved ?? 'null')).toMatchObject({ schemaVersion: 1, progress: { step: 'lab' } });
+  expect(JSON.parse(saved ?? 'null')).toMatchObject({ schemaVersion: 2, progress: { step: 'lab' }, hintsSeen: [] });
 
   // After a reload the title offers Continue, and Continue resumes at the Lab.
   await page.reload();

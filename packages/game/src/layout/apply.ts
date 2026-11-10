@@ -34,7 +34,7 @@ export function applyLayout(layout: Layout, els: LayoutElements): void {
   els.controls.dataset['placement'] = layout.controls;
   els.controls.hidden = layout.controls === 'none';
   if (layout.controls === 'band' && els.controls.parentElement !== els.band) els.band.append(els.controls);
-  if (layout.controls === 'overlay' && els.controls.parentElement === els.band) els.band.after(els.controls);
+  if ((layout.controls === 'overlay' || layout.controls === 'sides') && els.controls.parentElement === els.band) els.band.after(els.controls);
 }
 
 /** Lay out now and on every viewport change (coalesced to one per frame). Calls `onLayout` after each apply. */

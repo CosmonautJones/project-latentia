@@ -28,11 +28,17 @@ for (const s of SIZES) {
   });
 }
 
-// Battle screenshots: the rival fight after one round, with the move menu open (landscape: on the canvas; portrait:
-// in the band), and a moment of playback.
-for (const s of SIZES) {
-  const name = s.name.replace('title', 'battle');
-  test(name, async ({ browser }) => {
+// Battle screenshots: the rival fight after one round with the move menu open (landscape: on the canvas; portrait: in
+// the band; landscape touch: with the D-pad and A/B beside the game), then a moment of playback.
+const BATTLE_SIZES = [
+  { name: 'battle-1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
+  { name: 'battle-390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  { name: 'battle-375x667', width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  { name: 'battle-844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+] as const;
+
+for (const s of BATTLE_SIZES) {
+  test(s.name, async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: s.width, height: s.height },
       deviceScaleFactor: s.deviceScaleFactor,
@@ -41,6 +47,7 @@ for (const s of SIZES) {
     });
     const page = await context.newPage();
     const hook = <T>(fn: () => T) => page.evaluate(fn);
+    const pick = (menuId: string, i: number) => page.evaluate(([m, n]) => window.__latentia?.pick(m as string, n as number), [menuId, i] as const);
     await page.goto('/');
     await expect.poll(() => hook(() => window.__latentia?.scene() ?? null)).toBe('Title');
     await hook(() => window.__latentia?.send({ type: 'newGame' }));
@@ -49,22 +56,25 @@ for (const s of SIZES) {
       expect
         .poll(async () => {
           const phase = await hook(() => window.__latentia?.battle()?.phase ?? null);
-          if (phase === 'intro') await hook(() => window.__latentia?.press('a'));
+          if (phase === 'intro' || phase === 'hint') await hook(() => window.__latentia?.press('a'));
           return phase;
-        })
+        }, { timeout: 20_000 })
         .toBe('command');
     await toCommand();
-    // Round 1: Step-Back Prompt (a buff), so round 2 shows a stage change and some context used.
-    await hook(() => window.__latentia?.pick('battle-root', 0));
-    await hook(() => window.__latentia?.pick('battle-moves', 2));
+    // Round 1: Step-Back Prompt (a buff), so round 2 shows context used and a damaged bar.
+    await pick('battle-root', 0);
     await toCommand();
-    await hook(() => window.__latentia?.pick('battle-root', 0));
+    await pick('battle-moves', 2);
+    await pick('battle-moves', 2);
+    await toCommand();
+    await pick('battle-root', 0);
+    // A first tap on Happy to Help: selected, its hint up, waiting for the second tap.
+    await pick('battle-moves', 0);
     await page.waitForTimeout(150);
-    await page.screenshot({ path: `test/screenshots/${name}.png` });
-    // Happy to Help, caught mid-playback.
-    await hook(() => window.__latentia?.pick('battle-moves', 0));
+    await page.screenshot({ path: `test/screenshots/${s.name}.png` });
+    await pick('battle-moves', 0);
     await page.waitForTimeout(450);
-    await page.screenshot({ path: `test/screenshots/${name}-playback.png` });
+    await page.screenshot({ path: `test/screenshots/${s.name}-playback.png` });
     await context.close();
   });
 }

@@ -4,10 +4,10 @@ import { CELL_HEIGHT, CELL_WIDTH, fontSheet } from '../../src/text/font-sheet.js
 import { glyphSvg } from '../../src/text/glyph-svg.js';
 
 const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('');
-const SYMBOLS = '…→✓×';
+const SYMBOLS = '…→✓×·';
 
 describe('glyphs', () => {
-  it('cover printable ASCII plus … → ✓ ×', () => {
+  it('cover printable ASCII plus … → ✓ × ·', () => {
     for (const ch of ASCII + SYMBOLS) expect(FONT_CHARS, `missing ${JSON.stringify(ch)}`).toContain(ch);
   });
 

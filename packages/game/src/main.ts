@@ -3,7 +3,7 @@
 import Phaser from 'phaser';
 import './style.css';
 import type { App, Probe, Screen } from './app.js';
-import { installHook, shouldExposeHook } from './dev/hook.js';
+import { installHook } from './dev/hook.js';
 import { FlowController } from './flow/controller.js';
 import type { SceneKey } from './flow/flow.js';
 import { InputHub } from './input/hub.js';
@@ -89,4 +89,5 @@ game = new Phaser.Game({
   scene: [new BootScene(app), new TitleScene(app), new LabScene(app), new OverworldScene(app), new BattleScene(app), new EndScene(app)],
 });
 
-if (shouldExposeHook(import.meta.env)) installHook(window, { flow: app.flow, input, probe, layout: () => layout });
+// The static form of shouldExposeHook (dev/hook.ts), so production folds it away and drops the hook entirely.
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') installHook(window, { flow: app.flow, input, probe, layout: () => layout });

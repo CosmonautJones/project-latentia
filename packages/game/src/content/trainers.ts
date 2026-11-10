@@ -10,6 +10,7 @@ const OPENER: Condition = { category: 'turn', op: 'below', round: 2 };
 const FULL: Condition = { category: 'contextFill', op: 'atLeast', pct: 75 };
 const FOE_HURT: Condition = { category: 'hp', op: 'below', pct: 50 };
 const FOE_HEALTHY: Condition = { category: 'hp', op: 'atLeast', pct: 50 };
+const SELF_HEALTHY: Condition = { category: 'hp', op: 'atLeast', pct: 50 };
 const COIN: Condition = { category: 'coin' };
 
 const card = (id: string, subject: Card['subject'], condition: Condition, move: string, target: TargetSelector): Card => ({ id, subject, condition, move, target });
@@ -51,18 +52,24 @@ export const BOOTCAMP_GRAD_DECK: Deck = deck(
 );
 
 /**
- * The three example cards the card tutorial offers for Tokenibble (P1's placeholder ids). Each is the one active card
- * above Tokenibble's Default (Token Burst at the weakest foe). P4 tunes them for the lose → teach → rematch loop.
+ * The three example cards the card tutorial offers a spun-up Tokenibble (ruling V3: it keeps only its three
+ * non-signature moves, Token Burst, Early Exit and Low Latency). Each is the one active card above its Default (Token
+ * Burst at the weakest foe), and they are a real choice for P4's lose → teach → rematch loop. Measured with the player
+ * only Compacting (test/unit/battles.test.ts): `good` deals the most, `situational` less, `bad` next to nothing.
  */
 export interface CardPreset {
   readonly id: string;
   readonly card: Card;
+  readonly verdict: 'good' | 'situational' | 'bad';
 }
 
 export const TOKENIBBLE_PRESETS: readonly CardPreset[] = [
-  { id: 'tutorial.a', card: card('tutorial.a', 'foe', FOE_HEALTHY, 'token-nibble', 'highestAtkFoe') },
-  { id: 'tutorial.b', card: card('tutorial.b', 'foe', FOE_HURT, 'token-nibble', 'lowestHpFoe') },
-  { id: 'tutorial.c', card: card('tutorial.c', 'self', OPENER, 'low-latency', 'self') },
+  // Finisher: Early Exit's +3 priority only once the foe is under half HP; Token Burst until then.
+  { id: 'tutorial.a', verdict: 'situational', card: card('tutorial.a', 'foe', FOE_HURT, 'early-exit', 'lowestHpFoe') },
+  // Early Exit every round: a stronger hit that always goes first.
+  { id: 'tutorial.b', verdict: 'good', card: card('tutorial.b', 'self', ALWAYS, 'early-exit', 'lowestHpFoe') },
+  // Speed buffs while healthy: Tokenibble keeps stretching instead of fighting.
+  { id: 'tutorial.c', verdict: 'bad', card: card('tutorial.c', 'self', SELF_HEALTHY, 'low-latency', 'self') },
 ];
 
 export const TOKENIBBLE_DEFAULT_CARD: Card = card('default', 'self', ALWAYS, 'token-burst', 'lowestHpFoe');
