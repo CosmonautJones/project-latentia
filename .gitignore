@@ -4,3 +4,6 @@ coverage/
 .superpowers/
 *.tsbuildinfo
 reports/*scratch*
+packages/game/dist-test/
+packages/game/test-results/
+packages/game/playwright-report/
