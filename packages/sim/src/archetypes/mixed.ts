@@ -2,7 +2,7 @@ import type { Archetype } from '../types.js';
 import { ALLY_HURT, ALWAYS, archetype, hasStatus, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 import { STARTER_SKILLS, type StarterId } from './starter-grids.js';
 
-// Mixed builds (spec §9): the three starters as a player brings them to the gym — the bundled intern Tokenibble and a
+// Mixed builds (spec §9): the three starters as a player brings them to the gym — Tokenibble (the first wild model) and a
 // forest catch active, a second catch on the bench — and a Heisenmoth tempo build.
 
 /**
@@ -23,7 +23,7 @@ const INTERN = deck(
   card('burst', 'self', OPENER, 'token-burst', 'randomFoe'),
 );
 
-/** The bundled Tokenibble at the starter's level (Stable, trained warm). */
+/** Tokenibble (the first wild model, spun up) at the starter's level (Stable, trained warm). */
 const intern = (level: number) => subagent('intern', 'tokenibble', level, { deck: INTERN, generalization: 55, trainedTemperature: 2 });
 
 const SAGELET_STARTER = archetype('mixed-starter-sagelet', {

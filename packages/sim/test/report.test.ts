@@ -139,7 +139,7 @@ describe('targetsReport', () => {
       expect(md).toContain(`${fav} L${s.orchestrator.level} alone vs ${beaten} L8 alone`);
     }
     const base = baseTeam().side;
-    expect(md).toContain(`the base team (${base.orchestrator.species} L8 + tokenibble L8) plus a graft against the same base team without it`);
+    expect(md).toContain(`the base team (${base.orchestrator.species} L8 + tokenibble L8, headroom 8) plus a graft against the same base team without it`);
     expect(md).toContain(`each of the ${ARCHETYPES.length} archetypes at Autopilot T0 vs its own mirror at T4, both sides, pooled`);
     for (const sp of GRAFT_SPECIES) {
       const g = graftVariant(sp).side;
@@ -147,7 +147,7 @@ describe('targetsReport', () => {
       const graft = g.grid?.pieces.find((p) => p.kind === 'graft');
       const spun = s.active[1];
       const active = s.grid === null ? 0 : activeCardCount(s.grid, 'slot-B', 'v1');
-      expect(md).toContain(`${sp}: G = base team + graft ${graft?.moveId} (${graft?.shape.length} cells); S = base team + ${sp} L${spun?.level} spun up with moves ${spun?.moves.join(', ')} (no signature) on ${active} active card`);
+      expect(md).toContain(`${sp}: G = base team + graft ${graft?.moveId} (${graft?.shape.length} cells, headroom ${8 - (graft?.shape.length ?? 0)}); S = base team + ${sp} L${spun?.level} spun up with moves ${spun?.moves.join(', ')} (no signature) on ${active} active card`);
       expect(active).toBe(1);
       expect(md).toContain(`${sp} L${SPIN_UP_LEVEL}`);
     }

@@ -72,19 +72,19 @@ describe('starter triangle setup', () => {
       expect(byId).toEqual({ setup: r.setup, sig: r.sig, power: r.power, tidy: 'compact', default: r.affordable });
     }
   });
-  it.each(TRIANGLE)('is live, %s vs %s: both orchestrators act, and the favoured one deals damage, fires its top card and attacks with its power or signature move', (fav, beaten) => {
+  it.each(TRIANGLE)('is live, %s vs %s: every side acts, fires its top card and attacks with its power or signature move, and the favoured one deals damage', (fav, beaten) => {
     const x = starterSide(fav);
     const y = starterSide(beaten);
     const rs = both(x, y, 'live:triangle', 10);
-    const count = (side: Archetype, type: 'MoveUsed' | 'Damage') => rs.reduce((n, r) => n + r.events.filter((e) => e.type === type && indicesOf(r, side).includes(e.actor)).length, 0);
-    for (const side of [x, y]) expect(count(side, 'MoveUsed'), side.id).toBeGreaterThan(0);
-    expect(count(x, 'Damage'), x.id).toBeGreaterThan(0);
-    const mine = rs.map((r) => indicesOf(r, x));
-    const top = x.side.autopilot?.deck.cards[0]?.id ?? '';
-    expect(fired(rs, x.side.orchestrator.id, top), `${x.id} ${top}`).toBeGreaterThan(0);
-    const r = rolesOf(fav);
-    const attacks = rs.reduce((n, b, i) => n + b.events.filter((e) => e.type === 'MoveUsed' && e.actor === mine[i]?.[0] && (e.moveId === r.power || e.moveId === r.sig)).length, 0);
-    expect(attacks, `${x.id} uses ${r.power} or ${r.sig}`).toBeGreaterThan(0);
+    expect(rs.reduce((n, r) => n + r.events.filter((e) => e.type === 'Damage' && indicesOf(r, x).includes(e.actor)).length, 0), `${x.id} deals damage`).toBeGreaterThan(0);
+    for (const side of [x, y]) {
+      const mine = rs.map((r) => indicesOf(r, side));
+      const top = side.side.autopilot?.deck.cards[0]?.id ?? '';
+      expect(fired(rs, side.side.orchestrator.id, top), `${side.id} ${top}`).toBeGreaterThan(0);
+      const r = rolesOf(side.side.orchestrator.species as (typeof STARTERS)[number]);
+      const attacks = rs.reduce((n, b, i) => n + b.events.filter((e) => e.type === 'MoveUsed' && e.actor === mine[i]?.[0] && (e.moveId === r.power || e.moveId === r.sig)).length, 0);
+      expect(attacks, `${side.id} uses ${r.power} or ${r.sig}`).toBeGreaterThan(0);
+    }
   });
 });
 
