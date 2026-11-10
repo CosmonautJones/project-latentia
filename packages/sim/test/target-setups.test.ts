@@ -201,6 +201,9 @@ describe('temperature dial setup (Ruling 143 I2: every archetype)', () => {
     // An Autopilot always obeys, so a MoveUsed that differs from the move of the card it fired is a substitution
     // (a T3+ self-hallucination, spec §5 D2): never at T0, and seen at T4 over 80 battles. Drift (5% random move per
     // stack, spec §5 D1) also substitutes a move, so only rounds where the orchestrator holds no Drift count.
+    // The exclusion is conservative: it discards every substitution made while Drift is held, hallucinations included, so it can
+    // only hide a T0 substitution from the zero check (a T0 Drift substitution is legitimate) and the T4 check still has to see one
+    // outside Drift. It never turns a battle with no substitution into one with.
     const substitutions = (x: Archetype) => {
       let n = 0;
       for (const r of both(t0, t4, 'live:temperature', 40)) {

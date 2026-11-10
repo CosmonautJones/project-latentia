@@ -113,7 +113,7 @@ const RETRO_STALL = archetype('memory-stall-retro', {
     card('save', 'self', cooldown(3), 'save-state', 'self'),
     card('recall', 'foe', HURT, 'long-term-recall', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('search-5', 'foe', BUFFED, 'save-state', 'lowestHpAlly'),
+    card('save-state-buffed', 'foe', BUFFED, 'save-state', 'lowestHpAlly'),
     card('punish', 'foe', BUFFED, 'long-term-recall', 'highestAtkFoe'),
     card('low', 'self', WEAK, 'guardrail', 'self'),
     card('finish', 'foe', WEAK, 'nostalgia-trip', 'lowestHpFoe'),

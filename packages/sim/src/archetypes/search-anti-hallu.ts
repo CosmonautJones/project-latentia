@@ -63,7 +63,7 @@ const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
     card('drift', 'self', isType('speed'), 'compact', 'self'),
     card('tidy', 'foe', inField('revealTopDeckCard'), 'compact', 'self'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('reasoner', 'self', cooldown(2), 'citation-needed', 'highestAtkFoe'),
+    card('reasoner', 'foe', isType('reasoning'), 'citation-needed', 'highestAtkFoe'),
     card('coin', 'self', COIN, 'cosine-sniff', 'randomFoe'),
   ),
   temperature: 2,
@@ -118,7 +118,7 @@ const SCRAPION_GROUND = archetype('search-anti-hallu-scrapion', {
   autopilot: deck(
     card('scrape', 'self', ALWAYS, 'scrape', 'highestAtkFoe'),
     card('steal', 'foe', BUFFED, 'scrape', 'highestAtkFoe'),
-    card('search-15', 'orchestrator', WEAK_TO_MOVE, 'compact', 'orchestrator'),
+    card('compact-weak-to-move', 'orchestrator', WEAK_TO_MOVE, 'compact', 'orchestrator'),
     card('finish', 'foe', WEAK, 'retrieval-strike', 'lowestHpFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
     card('check', 'self', cooldown(3), 'fact-check', 'highestAtkFoe'),

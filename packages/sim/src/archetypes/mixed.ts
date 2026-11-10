@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, hasStatus, HEALTHY, HURT, inField, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, hasStatus, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 import { STARTER_SKILLS, type StarterId } from './starter-grids.js';
 
 // Mixed builds (spec §9): the three starters as a player brings them to the gym — Tokenibble (the first wild model) and a
@@ -59,7 +59,7 @@ const SAGELET_STARTER = archetype('mixed-starter-sagelet', {
     card('weak', 'foe', WEAK_TO_MOVE, 'happy-to-help', 'foeWeakToMove'),
     card('punish', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('tidy', 'self', FULL, 'proof-by-contradiction', 'orchestratorTarget'),
+    card('proof-by-contradiction-context-above-75', 'self', FULL, 'proof-by-contradiction', 'orchestratorTarget'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
     card('coin', 'self', COIN, 'happy-to-help', 'randomFoe'),
   ),
@@ -99,7 +99,7 @@ const BLITZR_STARTER = archetype('mixed-starter-blitzr', {
     card('weak', 'foe', WEAK_TO_MOVE, 'distilled-strike', 'foeWeakToMove'),
     card('tidy', 'foe', hasStatus('glazed'), 'compact', 'self'),
     card('strike', 'foe', HURT, 'distilled-strike', 'lowestHpFoe'),
-    card('drift', 'self', DRIFT, 'guardrail', 'self'),
+    card('guardrail-status-drift', 'self', DRIFT, 'guardrail', 'self'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
     card('coin', 'self', COIN, 'distilled-strike', 'randomFoe'),
   ),
@@ -134,12 +134,12 @@ const FORKLING_STARTER = archetype('mixed-starter-forkling', {
   grid: teamGrid('forkling', 'heisenmoth'),
   autopilot: deck(
     card('fork', 'self', ALWAYS, 'hard-fork', 'lowestHpFoe'),
-    card('search-3', 'orchestrator', inField('revealIntents'), 'guardrail', 'self'),
+    card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),
     card('flex', 'self', HEALTHY, 'leaderboard-flex', 'highestAtkFoe'),
     card('swarm', 'foe', WEAK, 'swarm-of-fine-tunes', 'lowestHpFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),
-    card('drift', 'self', DRIFT, 'community-patch', 'self'),
+    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('drift', 'self', DRIFT, 'clear', 'self'),
     card('selfpatch', 'self', HURT, 'community-patch', 'self'),
     card('coin', 'self', COIN, 'hard-fork', 'randomFoe'),
   ),
@@ -196,9 +196,9 @@ const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
     card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
     card('box', 'self', cooldown(3), 'bounding-box', 'self'),
     card('coin', 'foe', hasStatus('glazed'), 'token-nibble', 'randomFoe'),
-    card('search-2', 'self', hasStatus('overfit'), 'flash-inference', 'foeWeakToMove'),
-    card('search-23', 'foe', BUFFED, 'flash-inference', 'highestAtkFoe'),
-    card('tidy', 'self', FULL, 'flash-inference', 'lowestHpFoe'),
+    card('flash-inference-status-overfit', 'self', hasStatus('overfit'), 'flash-inference', 'foeWeakToMove'),
+    card('flash-inference-buffed', 'foe', BUFFED, 'flash-inference', 'highestAtkFoe'),
+    card('flash-inference-context-above-75', 'self', FULL, 'flash-inference', 'lowestHpFoe'),
     card('nibble', 'foe', WEAK, 'token-nibble', 'lowestHpFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
   ),

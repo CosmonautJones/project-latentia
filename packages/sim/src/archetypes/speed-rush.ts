@@ -111,7 +111,7 @@ const AGENTOAD_RUSH = archetype('speed-rush-agentoad', {
   autopilot: deck(
     card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'off-by-one', 'lowestHpFoe'),
-    card('tidy', 'self', FULL, 'tool-call', 'highestAtkFoe'),
+    card('tool-call-context-above-75', 'self', FULL, 'tool-call', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'clear', 'self'),
     card('tools', 'foe', HEALTHY, 'tool-call', 'highestAtkFoe'),
     card('trace', 'foe', BUFFED, 'stack-trace', 'highestAtkFoe'),
@@ -173,10 +173,10 @@ const GRAFT_RUSH = archetype('speed-rush-graft', {
     card('weak', 'foe', WEAK_TO_MOVE, 'null-chomp', 'foeWeakToMove'),
     card('opener', 'self', OPENER, 'distilled-strike', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('search-16', 'orchestrator', BUFFED, 'distilled-strike', 'randomFoe'),
+    card('distilled-strike-buffed', 'orchestrator', BUFFED, 'distilled-strike', 'randomFoe'),
     card('hurt', 'foe', HURT, 'ship-it', 'lowestHpFoe'),
-    card('search-8', 'self', BUFFED, 'guardrail', 'self'),
-    card('coin', 'self', COIN, 'distilled-strike', 'randomFoe'),
+    card('guardrail-buffed', 'self', BUFFED, 'guardrail', 'self'),
+    card('distilled-strike-coin', 'self', COIN, 'distilled-strike', 'randomFoe'),
   ),
   temperature: 2,
 });
