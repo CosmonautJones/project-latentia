@@ -111,7 +111,8 @@ test('every stub scene renders without errors through to the end card and back t
     [{ type: 'reachedTrailhead' }, 'Battle'],
     [{ type: 'battleWon' }, 'Battle'],
     [{ type: 'distillChosen', choice: 'spinUp' }, 'Overworld'],
-    [{ type: 'cardChosen', cardId: 'tutorial.a' }, 'Battle'],
+    [{ type: 'cardChosen', cardId: 'tutorial.a' }, 'Overworld'],
+    [{ type: 'trainerEngaged' }, 'Battle'],
     [{ type: 'battleWon' }, 'End'],
     [{ type: 'backToTitle' }, 'Title'],
   ];

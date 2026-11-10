@@ -18,6 +18,8 @@ export interface MenuListOptions {
   readonly rowHeight?: number;
   readonly onConfirm: (index: number) => void;
   readonly onCancel?: () => void;
+  /** Display depth, for a menu drawn over a scene (default 0). */
+  readonly depth?: number;
 }
 
 const CURSOR_GAP = 10;
@@ -39,10 +41,14 @@ export class MenuList {
     this.state = createMenu(opts.id, opts.items);
     this.rowHeight = opts.rowHeight ?? 14;
     const textDy = Math.floor((this.rowHeight - CELL_HEIGHT) / 2) + 1;
-    this.labels = opts.items.map((item, i) => addPixelText(scene, opts.x + CURSOR_GAP, opts.y + i * this.rowHeight + textDy, item));
-    this.cursor = addPixelText(scene, opts.x, opts.y + textDy, '▶', { color: COLOR.amber });
+    // Pinned to the screen (scroll factor 0), so a menu over a scrolled overworld camera stays where it is drawn.
+    const depth = opts.depth ?? 0;
+    this.labels = opts.items.map((item, i) =>
+      addPixelText(scene, opts.x + CURSOR_GAP, opts.y + i * this.rowHeight + textDy, item).setScrollFactor(0).setDepth(depth),
+    );
+    this.cursor = addPixelText(scene, opts.x, opts.y + textDy, '▶', { color: COLOR.amber }).setScrollFactor(0).setDepth(depth);
     this.zones = opts.items.map((_, i) => {
-      const z = scene.add.zone(opts.x - 4, opts.y + i * this.rowHeight, opts.width + 8, this.rowHeight).setOrigin(0);
+      const z = scene.add.zone(opts.x - 4, opts.y + i * this.rowHeight, opts.width + 8, this.rowHeight).setOrigin(0).setScrollFactor(0).setDepth(depth);
       z.setInteractive({ useHandCursor: true });
       z.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
         if (this.active) app.input.pick(opts.id, i);

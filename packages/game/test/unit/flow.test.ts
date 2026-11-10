@@ -3,6 +3,7 @@ import {
   BATTLE_STEPS,
   initialFlow,
   isConsistentProgress,
+  OVERWORLD_STEPS,
   STARTERS,
   STEPS,
   sceneForStep,
@@ -33,6 +34,7 @@ const ALL_EVENTS: FlowEvent[] = [
   { type: 'distillChosen', choice: 'spinUp' },
   { type: 'distillChosen', choice: 'graft' },
   { type: 'cardChosen', cardId: 'tutorial.a' },
+  { type: 'trainerEngaged' },
   { type: 'backToTitle' },
 ];
 
@@ -57,7 +59,7 @@ const reachable = (): FlowState[] => {
 };
 
 describe('flow: the happy paths', () => {
-  it('spin-up path: title → lab → rival → walk → wild → distill → card tutorial → trainer → end → title', () => {
+  it('spin-up path: title → lab → rival → walk → wild → distill → card tutorial → forest → trainer → end → title', () => {
     const steps: Step[] = [];
     let s = initialFlow();
     steps.push(s.step);
@@ -69,16 +71,17 @@ describe('flow: the happy paths', () => {
       { type: 'battleWon' },
       { type: 'distillChosen', choice: 'spinUp' },
       { type: 'cardChosen', cardId: 'tutorial.b' },
+      { type: 'trainerEngaged' },
       { type: 'battleWon' },
       { type: 'backToTitle' },
     ] satisfies FlowEvent[]) {
       s = run([e], s);
       steps.push(s.step);
     }
-    expect(steps).toEqual(['title', 'lab', 'rival', 'walk', 'wild', 'distill', 'cardTutorial', 'trainer', 'end', 'title']);
+    expect(steps).toEqual(['title', 'lab', 'rival', 'walk', 'wild', 'distill', 'cardTutorial', 'forest', 'trainer', 'end', 'title']);
   });
 
-  it('graft path skips the card tutorial', () => {
+  it('graft path skips the card tutorial and walks straight on into the forest', () => {
     const s = run([
       { type: 'newGame' },
       { type: 'starterPicked', starter: 'sagelet' },
@@ -87,7 +90,7 @@ describe('flow: the happy paths', () => {
       { type: 'battleWon' },
       { type: 'distillChosen', choice: 'graft' },
     ]);
-    expect(s.step).toBe('trainer');
+    expect(s.step).toBe('forest');
     expect(s.distill).toBe('graft');
     expect(s.tutorialCardId).toBeNull();
   });
@@ -101,8 +104,19 @@ describe('flow: the happy paths', () => {
       { type: 'battleWon' },
       { type: 'distillChosen', choice: 'spinUp' },
       { type: 'cardChosen', cardId: 'tutorial.c' },
+      { type: 'trainerEngaged' },
     ]);
     expect(toProgress(s)).toEqual({ step: 'trainer', starter: 'forkling', distill: 'spinUp', tutorialCardId: 'tutorial.c' });
+  });
+
+  it('the forest trainer engages only after the distill (the walk to the trailhead cannot skip ahead)', () => {
+    const walk = run([{ type: 'newGame' }, { type: 'starterPicked', starter: 'sagelet' }, { type: 'battleWon' }]);
+    expect(walk.step).toBe('walk');
+    expect(transition(walk, { type: 'trainerEngaged' }).ok).toBe(false);
+    const forest = run([{ type: 'reachedTrailhead' }, { type: 'battleWon' }, { type: 'distillChosen', choice: 'graft' }], walk);
+    expect(run([{ type: 'trainerEngaged' }], forest).step).toBe('trainer');
+    // The wild patch is calm by then: it cannot start a second encounter.
+    expect(transition(forest, { type: 'reachedTrailhead' }).ok).toBe(false);
   });
 });
 
@@ -194,6 +208,9 @@ describe('flow: graph properties', () => {
     for (const step of STEPS) expect(sceneForStep(step)).toMatch(/^(Title|Lab|Overworld|Battle|End)$/);
     expect(sceneForStep('rival')).toBe('Battle');
     expect(sceneForStep('walk')).toBe('Overworld');
+    expect(sceneForStep('forest')).toBe('Overworld');
+    expect(OVERWORLD_STEPS.filter((st) => sceneForStep(st) !== 'Overworld')).toEqual([]);
+    expect(STEPS.filter((st) => sceneForStep(st) === 'Overworld')).toEqual([...OVERWORLD_STEPS]);
   });
 });
 
@@ -204,5 +221,9 @@ describe('isConsistentProgress', () => {
     expect(isConsistentProgress({ step: 'trainer', starter: 'sagelet', distill: 'graft', tutorialCardId: 'tutorial.a' })).toBe(false);
     expect(isConsistentProgress({ step: 'trainer', starter: 'sagelet', distill: 'spinUp', tutorialCardId: null })).toBe(false);
     expect(isConsistentProgress({ step: 'lab', starter: null, distill: null, tutorialCardId: null })).toBe(true);
+    expect(isConsistentProgress({ step: 'forest', starter: 'sagelet', distill: 'spinUp', tutorialCardId: null })).toBe(false);
+    expect(isConsistentProgress({ step: 'forest', starter: 'sagelet', distill: 'spinUp', tutorialCardId: 'tutorial.a' })).toBe(true);
+    expect(isConsistentProgress({ step: 'forest', starter: 'sagelet', distill: 'graft', tutorialCardId: null })).toBe(true);
+    expect(isConsistentProgress({ step: 'forest', starter: 'sagelet', distill: null, tutorialCardId: null })).toBe(false);
   });
 });

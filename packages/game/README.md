@@ -118,10 +118,34 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 - **Back view (v0 stand-in):** the player's creatures are the front art flipped to face right and darkened with a
   multiply tint. Real back sprites come with the final art.
 
+## Overworld
+
+- **The map** is `src/content/maps/localhost.ts`: Prof. Epoch's lab (12×8), then one 48×13 exterior running west to
+  east through Localhost, a short path and the Deprecated Forest trailhead (sign, the "unindexed data" patch where
+  Tokenibble waits, then Bootcamp Grad in the one-tile gap beyond). 16×16 tiles.
+- **Format:** typed character grids, one char per tile, read through `LEGEND` in `src/overworld/map.ts`
+  (`W` wall, `K` server rack, `_` floor, `D` door, `R` roof, `.` grass, `,` path, `#` tree, `%` autumn tree, `S`
+  sign, `"` the wild patch). Signs, NPCs, the trainer, warps, the encounter and each overworld step's spawn are
+  plain data beside the grids, addressed as `{ area, x, y }`. Chosen over Tiled JSON: type-checked, diffable,
+  editable by hand.
+- **Validation** (`src/overworld/validate.ts`, run in `test/unit/overworld-map.test.ts`): warps land on walkable
+  tiles and never on another warp, spawns are walkable, sign tiles have text, NPCs stand on open ground, the
+  trainer's sightline is clear, the lab connects to the trainer, the patch can't be walked around, and the trainer
+  really blocks the way on.
+- **Rules** are pure (`src/overworld/`): `walker.ts` (a tile per step, 250 ms, hold to walk, tap to turn), `rules.ts`
+  (collision, what a finished step sets off, what A does), `sight.ts`, `camera.ts` (2×1-tile deadzone, clamped,
+  small rooms centred), `reach.ts` (BFS through warps). Tiles and figures are generated from Endesga 32
+  (`tile-art.ts`, `figure-art.ts`); the patch sways on 2 frames.
+- **Triggers:** the patch starts the wild battle on the first walk only (`reachedTrailhead`); after the distill the
+  flow's `forest` step makes the patch calm and Bootcamp Grad's sight (4 tiles) live: "!", it walks over, says its
+  line, then `trainerEngaged` starts the battle. Before the distill the Grad only blocks the way with a line.
+- **Steps on the map:** `walk` (spawns in the lab), `cardTutorial` (P1's stub card menu over the trailhead, for P4)
+  and `forest` (spawns in the calm patch). Continue and a won battle land at the step's spawn.
+
 ## Flow and saves
 
 - **Flow.** `src/flow/flow.ts` is the v0 journey as a pure state machine: title → lab → rival → walk → wild →
-  distill → card tutorial (spin-up only) → trainer → end. Losing a battle restarts that battle. `FlowController`
+  distill → card tutorial (spin-up only) → forest → trainer → end. Losing a battle restarts that battle. `FlowController`
   applies events, saves, and switches scenes.
 - **Saves.** These go in localStorage under `latentia.save.v0`, as `{ schemaVersion: 2, engineVersion, progress,
   hintsSeen }`, at every journey step (and when a first-time hint is shown). Continue resumes at the start of the
@@ -135,8 +159,9 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 
 In dev and in the test build only, `window.__latentia` exposes:
 
-- `flow()`, `scene()`, `menu()`, `layout()` and `battle()` (phase, round, moves, intents as shown, the why text,
-  the log, per-round timings and the result) for reading state;
+- `flow()`, `scene()`, `menu()`, `layout()`, `battle()` (phase, round, moves, intents as shown, the why text,
+  the log, per-round timings and the result) and `overworld()` (the player's tile and facing, the scene's mode, the
+  dialogue on screen, the trainer's tile, fps) for reading state;
 - `press(button)`, `pick(menuId, index)` and `send(flowEvent)` for injecting actions.
 
 Production builds don't contain it.
@@ -144,5 +169,5 @@ Production builds don't contain it.
 ## Credits
 
 The Endesga 32 palette is by Endesga ([Lospec](https://lospec.com/palette-list/endesga-32)). The font, the
-placeholder creatures and all other visuals are generated in code for this project. The three starter battle idles
+placeholder creatures, the overworld tiles and figures, and all other visuals are generated in code for this project. The three starter battle idles
 come from the Fable style test on the `art/style-test` branch (see "Creature art").

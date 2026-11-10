@@ -41,8 +41,9 @@ export class DialogueBox {
     g.fillStyle(COLOR.slate).fillRect(2, y + 2, GAME_WIDTH - 4, 1);
     this.text = addPixelText(scene, 8, y + 6, '');
     this.more = addPixelText(scene, GAME_WIDTH - 12, y + BOX_HEIGHT - CELL_HEIGHT - 1, '▼', { color: COLOR.amber });
-    this.container = scene.add.container(0, 0, [g, this.text, this.more]).setVisible(false).setDepth(100);
-    this.clickZone = scene.add.zone(0, 0, GAME_WIDTH, GAME_HEIGHT).setOrigin(0).setDepth(101).setInteractive();
+    // Pinned to the screen (scroll factor 0), so it stays put over a scrolling overworld camera.
+    this.container = scene.add.container(0, 0, [g, this.text, this.more]).setVisible(false).setDepth(100).setScrollFactor(0);
+    this.clickZone = scene.add.zone(0, 0, GAME_WIDTH, GAME_HEIGHT).setOrigin(0).setDepth(101).setScrollFactor(0).setInteractive();
     this.clickZone.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
       if (this.state) this.onA();
     });

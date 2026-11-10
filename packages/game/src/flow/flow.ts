@@ -1,8 +1,16 @@
 // The v0 journey as a pure state machine (plan "The v0 player journey"). No Phaser, no storage: scenes send
 // events, `transition` answers with the next state or a rejection, and the controller does the side effects.
 
-export const STEPS = ['title', 'lab', 'rival', 'walk', 'wild', 'distill', 'cardTutorial', 'trainer', 'end'] as const;
+export const STEPS = ['title', 'lab', 'rival', 'walk', 'wild', 'distill', 'cardTutorial', 'forest', 'trainer', 'end'] as const;
 export type Step = (typeof STEPS)[number];
+
+/**
+ * The steps played on the overworld map: `walk` (lab to the trailhead, the wild patch live), `cardTutorial` (a menu over
+ * the trailhead) and `forest` (after the distill, on to Bootcamp Grad, whose sight starts the trainer battle).
+ */
+export const OVERWORLD_STEPS = ['walk', 'cardTutorial', 'forest'] as const satisfies readonly Step[];
+export type OverworldStep = (typeof OVERWORLD_STEPS)[number];
+export const isOverworldStep = (step: Step): step is OverworldStep => (OVERWORLD_STEPS as readonly Step[]).includes(step);
 
 export const BATTLE_STEPS = ['rival', 'wild', 'trainer'] as const satisfies readonly Step[];
 export type BattleStep = (typeof BATTLE_STEPS)[number];
@@ -36,6 +44,8 @@ export type FlowEvent =
   | { readonly type: 'reachedTrailhead' }
   | { readonly type: 'distillChosen'; readonly choice: DistillChoice }
   | { readonly type: 'cardChosen'; readonly cardId: string }
+  /** Bootcamp Grad spotted the player (or was talked to) on the forest walk. */
+  | { readonly type: 'trainerEngaged' }
   | { readonly type: 'backToTitle' };
 
 export type TransitionResult = { readonly ok: true; readonly state: FlowState } | { readonly ok: false; readonly error: string };
@@ -52,6 +62,7 @@ const SCENE_FOR_STEP: Readonly<Record<Step, SceneKey>> = {
   distill: 'Battle',
   // The card tutorial is a menu over the trailhead, before the forest trainer.
   cardTutorial: 'Overworld',
+  forest: 'Overworld',
   trainer: 'Battle',
   end: 'End',
 };
@@ -77,7 +88,7 @@ export function isConsistentProgress(p: Progress): boolean {
   if (atOrAfter(p.step, 'rival') !== (p.starter !== null)) return false;
   if (atOrAfter(p.step, 'cardTutorial') !== (p.distill !== null)) return false;
   if (p.step === 'cardTutorial' && p.distill !== 'spinUp') return false;
-  const cardDue = p.distill === 'spinUp' && atOrAfter(p.step, 'trainer');
+  const cardDue = p.distill === 'spinUp' && atOrAfter(p.step, 'forest');
   return cardDue === (p.tutorialCardId !== null);
 }
 
@@ -102,13 +113,16 @@ export function transition(s: FlowState, e: FlowEvent): TransitionResult {
     case 'battleLost':
       // No game over: the same battle starts again.
       return isBattleStep(s.step) ? { ok: true, state: { ...s, attempt: s.attempt + 1 } } : reject(s, e);
+    // The trailhead's wild patch: live only on the first walk, so the encounter fires once.
     case 'reachedTrailhead':
       return s.step === 'walk' ? go(s, { step: 'wild' }) : reject(s, e);
     case 'distillChosen':
       if (s.step !== 'distill') return reject(s, e);
-      return go(s, { step: e.choice === 'spinUp' ? 'cardTutorial' : 'trainer', distill: e.choice });
+      return go(s, { step: e.choice === 'spinUp' ? 'cardTutorial' : 'forest', distill: e.choice });
     case 'cardChosen':
-      return s.step === 'cardTutorial' ? go(s, { step: 'trainer', tutorialCardId: e.cardId }) : reject(s, e);
+      return s.step === 'cardTutorial' ? go(s, { step: 'forest', tutorialCardId: e.cardId }) : reject(s, e);
+    case 'trainerEngaged':
+      return s.step === 'forest' ? go(s, { step: 'trainer' }) : reject(s, e);
     case 'backToTitle':
       // From the end card, or quitting mid-journey: the save stays, so Continue picks it up.
       return s.step !== 'title' ? go(s, { step: 'title' }) : reject(s, e);

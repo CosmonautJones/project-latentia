@@ -59,6 +59,11 @@ body {
   padding-top: 10px;
 }
 
+.band-caption {
+  gap: 8px;
+  line-height: 0;
+}
+
 .band-menu:has(.band-header) {
   padding-top: 0;
 }

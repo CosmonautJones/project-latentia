@@ -45,7 +45,7 @@ const switchScene = (key: SceneKey) => {
   }, 0);
 };
 
-const probe: Probe = { scene: null, menu: null, battle: null };
+const probe: Probe = { scene: null, menu: null, battle: null, overworld: null };
 const storage = browserStorage(window);
 
 let layout: Layout = computeLayout(readViewport(window));
