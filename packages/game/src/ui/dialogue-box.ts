@@ -1,5 +1,6 @@
 // The one dialogue box all story text goes through: a typewriter over the pixel font in a 320x42 panel at the
-// bottom of the screen (design bible: 3 lines of at most 36 characters). A advances; holding A or B speeds up.
+// bottom of the screen (design bible: 3 lines of at most 36 characters). A finishes a typing page, then advances;
+// holding A or B speeds up. A popup opened with `closeOnB` also closes on B (a back path for "why?").
 
 import Phaser from 'phaser';
 import type { App } from '../app.js';
@@ -21,6 +22,7 @@ export class DialogueBox {
   private readonly more: Phaser.GameObjects.BitmapText;
   private state: TypewriterState | null = null;
   private resolve: (() => void) | null = null;
+  private closeOnB = false;
   private blinkMs = 0;
 
   constructor(
@@ -37,7 +39,9 @@ export class DialogueBox {
     this.container = scene.add.container(0, 0, [g, this.text, this.more]).setVisible(false).setDepth(100);
 
     const off = app.input.subscribe((a) => {
-      if (this.state && a.kind === 'press' && a.button === 'a') this.onA();
+      if (!this.state || a.kind !== 'press') return;
+      if (a.button === 'a') this.onA();
+      else if (a.button === 'b' && this.closeOnB) this.close();
     });
     const onUpdate = (_time: number, delta: number) => this.update(delta);
     scene.events.on(Phaser.Scenes.Events.UPDATE, onUpdate);
@@ -51,8 +55,9 @@ export class DialogueBox {
     return this.state !== null;
   }
 
-  /** Type `text` out; resolves once the player has read the last page and pressed A. */
-  say(text: string): Promise<void> {
+  /** Type `text` out; resolves once the player has read the last page and pressed A (or B, with `closeOnB`). */
+  say(text: string, opts: { readonly closeOnB?: boolean } = {}): Promise<void> {
+    this.closeOnB = opts.closeOnB === true;
     this.state = createTypewriter(text, { maxChars: DIALOGUE_MAX_CHARS, maxLines: DIALOGUE_MAX_LINES, charsPerSecond: CHARS_PER_SECOND });
     this.container.setVisible(true);
     this.render();
@@ -65,14 +70,18 @@ export class DialogueBox {
     if (!this.state) return;
     this.state = advance(this.state);
     if (this.state.closed) {
-      this.state = null;
-      this.container.setVisible(false);
-      const done = this.resolve;
-      this.resolve = null;
-      done?.();
+      this.close();
       return;
     }
     this.render();
+  }
+
+  private close(): void {
+    this.state = null;
+    this.container.setVisible(false);
+    const done = this.resolve;
+    this.resolve = null;
+    done?.();
   }
 
   private update(deltaMs: number): void {

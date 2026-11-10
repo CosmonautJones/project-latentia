@@ -40,9 +40,77 @@ body {
   display: none;
 }
 
-/* Reserved for battle menus and the grid editor (P2+). */
+/* Battle menus (P2) and, later, the grid editor. */
 #band-panel {
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 12px 0;
+  box-sizing: border-box;
+}
+
+.band-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.band-header {
+  min-height: 16px;
+  line-height: 0;
+}
+
+.band-header svg {
+  margin-bottom: 4px;
+}
+
+.band-buttons {
+  display: grid;
+  gap: 6px;
+}
+
+.band-buttons.grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.band-buttons.row {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.band-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  background: #181425;
+  box-shadow: inset 2px 2px 0 #3a4466, inset -2px -2px 0 #3a4466;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.band-buttons.list .band-btn {
+  min-height: 40px;
+}
+
+.band-buttons.row .band-btn {
+  justify-content: center;
+  padding: 0;
+}
+
+.band-btn.cursor {
+  box-shadow: inset 2px 2px 0 #feae34, inset -2px -2px 0 #feae34;
+}
+
+.band-btn .tick {
+  width: 4px;
+  height: 14px;
+}
+
+.band-btn .right {
+  margin-left: auto;
 }
 
 #controls {

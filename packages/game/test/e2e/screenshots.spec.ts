@@ -27,3 +27,44 @@ for (const s of SIZES) {
     await context.close();
   });
 }
+
+// Battle screenshots: the rival fight after one round, with the move menu open (landscape: on the canvas; portrait:
+// in the band), and a moment of playback.
+for (const s of SIZES) {
+  const name = s.name.replace('title', 'battle');
+  test(name, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: s.width, height: s.height },
+      deviceScaleFactor: s.deviceScaleFactor,
+      isMobile: s.isMobile,
+      hasTouch: s.hasTouch,
+    });
+    const page = await context.newPage();
+    const hook = <T>(fn: () => T) => page.evaluate(fn);
+    await page.goto('/');
+    await expect.poll(() => hook(() => window.__latentia?.scene() ?? null)).toBe('Title');
+    await hook(() => window.__latentia?.send({ type: 'newGame' }));
+    await hook(() => window.__latentia?.send({ type: 'starterPicked', starter: 'sagelet' }));
+    const toCommand = () =>
+      expect
+        .poll(async () => {
+          const phase = await hook(() => window.__latentia?.battle()?.phase ?? null);
+          if (phase === 'intro') await hook(() => window.__latentia?.press('a'));
+          return phase;
+        })
+        .toBe('command');
+    await toCommand();
+    // Round 1: Step-Back Prompt (a buff), so round 2 shows a stage change and some context used.
+    await hook(() => window.__latentia?.pick('battle-root', 0));
+    await hook(() => window.__latentia?.pick('battle-moves', 2));
+    await toCommand();
+    await hook(() => window.__latentia?.pick('battle-root', 0));
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: `test/screenshots/${name}.png` });
+    // Happy to Help, caught mid-playback.
+    await hook(() => window.__latentia?.pick('battle-moves', 0));
+    await page.waitForTimeout(450);
+    await page.screenshot({ path: `test/screenshots/${name}-playback.png` });
+    await context.close();
+  });
+}

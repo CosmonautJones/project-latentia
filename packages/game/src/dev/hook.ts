@@ -1,6 +1,7 @@
 // `window.__latentia`: the automation hook for Playwright and for poking at the game in dev. It exists only in
 // dev and in the test build (`vite build --mode test`); production builds never install it.
 
+import type { BattleProbe } from '../battle/probe.js';
 import type { Button } from '../input/actions.js';
 import type { InputHub } from '../input/hub.js';
 import type { FlowController } from '../flow/controller.js';
@@ -15,6 +16,8 @@ export interface LatentiaHook {
   scene(): string | null;
   /** The menu that currently has the cursor, if any. */
   menu(): MenuState | null;
+  /** The battle in progress (or just finished), if the Battle scene is running one. */
+  battle(): BattleProbe | null;
   layout(): Layout;
   /** Inject a button tap (press and release) into the action stream. */
   press(button: Button): void;
@@ -27,7 +30,7 @@ export interface LatentiaHook {
 export interface HookDeps {
   readonly flow: FlowController;
   readonly input: InputHub;
-  readonly probe: { readonly scene: string | null; readonly menu: MenuState | null };
+  readonly probe: { readonly scene: string | null; readonly menu: MenuState | null; readonly battle: BattleProbe | null };
   readonly layout: () => Layout;
 }
 
@@ -46,6 +49,7 @@ export function installHook(target: Window, deps: HookDeps): void {
     flow: () => deps.flow.state,
     scene: () => deps.probe.scene,
     menu: () => deps.probe.menu,
+    battle: () => deps.probe.battle,
     layout: deps.layout,
     press: (button) => deps.input.tap(button),
     pick: (menuId, index) => deps.input.pick(menuId, index),

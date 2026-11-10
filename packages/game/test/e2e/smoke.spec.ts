@@ -81,12 +81,13 @@ test('the touch band and the hook drive the same flow: lab dialogue, starter pic
   await expect.poll(() => scene(page)).toBe('Battle');
   expect(await page.evaluate(() => window.__latentia?.flow())).toMatchObject({ step: 'rival', starter: 'blitzr', attempt: 0 });
 
-  // Losing restarts the same battle.
-  await page.evaluate(() => window.__latentia?.pick('battle-result', 1));
+  // The real battle opens; in portrait its menu lives in the band. A loss restarts the same battle.
+  await expect.poll(() => page.evaluate(() => window.__latentia?.battle()?.id ?? null)).toBe('rival');
+  expect(await page.evaluate(() => window.__latentia?.send({ type: 'battleLost' }))).toBe(true);
   await expect.poll(() => page.evaluate(() => window.__latentia?.flow().attempt)).toBe(1);
   await expect.poll(() => scene(page)).toBe('Battle');
-  await expect.poll(() => menu(page)).toMatchObject({ id: 'battle-result' });
-  await page.evaluate(() => window.__latentia?.pick('battle-result', 0));
+  await expect.poll(() => page.evaluate(() => window.__latentia?.battle()?.phase ?? null)).toBe('intro');
+  expect(await page.evaluate(() => window.__latentia?.send({ type: 'battleWon' }))).toBe(true);
   await expect.poll(() => step(page)).toBe('walk');
   await expect.poll(() => scene(page)).toBe('Overworld');
 

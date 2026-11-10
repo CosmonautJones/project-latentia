@@ -2,7 +2,7 @@
 
 import Phaser from 'phaser';
 import './style.css';
-import type { App, Probe } from './app.js';
+import type { App, Probe, Screen } from './app.js';
 import { installHook, shouldExposeHook } from './dev/hook.js';
 import { FlowController } from './flow/controller.js';
 import type { SceneKey } from './flow/flow.js';
@@ -29,6 +29,7 @@ const byId = (id: string): HTMLElement => {
 const frame = byId('frame');
 const band = byId('band');
 const controls = byId('controls');
+const bandPanel = byId('band-panel');
 
 const input = new InputHub();
 bindKeyboard(window, input);
@@ -44,16 +45,29 @@ const switchScene = (key: SceneKey) => {
   }, 0);
 };
 
-const probe: Probe = { scene: null, menu: null };
+const probe: Probe = { scene: null, menu: null, battle: null };
 const storage = browserStorage(window);
-const app: App = { input, flow: new FlowController(storage, switchScene), storage, probe };
 
 let layout: Layout = computeLayout(readViewport(window));
+let layoutListeners: ((l: Layout) => void)[] = [];
+const screen: Screen = {
+  layout: () => layout,
+  onLayout: (listener) => {
+    layoutListeners = [...layoutListeners, listener];
+    return () => {
+      layoutListeners = layoutListeners.filter((l) => l !== listener);
+    };
+  },
+  bandPanel,
+};
+const app: App = { input, flow: new FlowController(storage, switchScene), storage, probe, screen };
+
 watchLayout(window, { frame, band, controls }, (l) => {
   layout = l;
   // refresh() alone reuses the cached parent size; re-read it first.
   game?.scale.getParentBounds();
   game?.scale.refresh();
+  for (const listener of layoutListeners) listener(l);
 });
 
 game = new Phaser.Game({

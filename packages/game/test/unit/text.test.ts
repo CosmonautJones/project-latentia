@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { textSvg } from '../../src/text/glyph-svg.js';
 import { paginate, sanitize, wrapText } from '../../src/text/wrap.js';
 import {
   advance,
@@ -74,9 +75,16 @@ describe('typewriter', () => {
     expect(visibleText(fast).replace('\n', '').length).toBe(Math.min(10, FAST_MULTIPLIER));
   });
 
-  it('A does nothing while the page is still typing', () => {
-    const s = tick(make('hello world again'), 200, false);
-    expect(advance(s)).toBe(s);
+  it('A while the page is still typing finishes the page at once (tap-to-finish), without turning it', () => {
+    const s = tick(make('hello world again'), 50, false);
+    expect(isPageComplete(s)).toBe(false);
+    const done = advance(s);
+    expect(isPageComplete(done)).toBe(true);
+    expect(done.page).toBe(0);
+    expect(done.closed).toBe(false);
+    expect(visibleText(done)).toBe(visibleText(tick(s, 5000, false)));
+    // The next A turns the finished page as usual.
+    expect(advance(done).page).toBe(1);
   });
 
   it('A on a complete page goes to the next page; A on the last complete page closes', () => {
@@ -95,5 +103,16 @@ describe('typewriter', () => {
   it('ticking a closed or complete box is a no-op', () => {
     const done = tick(make('hi'), 5000, false);
     expect(tick(done, 1000, true)).toBe(done);
+  });
+});
+
+describe('textSvg', () => {
+  it('draws a line of the pixel font at an integer scale, descenders included', () => {
+    const svg = textSvg('Ag', 2, '#ffffff');
+    expect(svg).toContain('width="22" height="16"');
+    expect(svg).toContain('fill="#ffffff"');
+    expect((svg.match(/<rect /g) ?? []).length).toBeGreaterThan(10);
+    // Characters the font lacks become ?.
+    expect(textSvg('€', 1, '#000')).toBe(textSvg('?', 1, '#000'));
   });
 });

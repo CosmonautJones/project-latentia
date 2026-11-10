@@ -11,7 +11,7 @@ import { BaseScene } from './base-scene.js';
 
 const LOGO = 'LATENTIA';
 const LOGO_SCALE = 3;
-const TAGLINE = "Gotta fine-tune 'em all.";
+const TAGLINE = 'Teach your models. Beat the benchmarks.';
 
 // Fixed star field (no randomness): a small integer hash picks which cells of a coarse grid get a mote.
 const motes = (): { x: number; y: number; bright: boolean }[] => {

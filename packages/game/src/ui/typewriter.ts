@@ -1,5 +1,6 @@
 // The pure model behind the dialogue box: text revealed a character at a time, page by page.
-// A advances a finished page (or closes the last one); holding A or B reveals FAST_MULTIPLIER times faster.
+// A finishes a page that is still typing (tap-to-finish), then turns it (or closes the last one); holding A or B
+// reveals FAST_MULTIPLIER times faster.
 
 import { paginate, sanitize, wrapText } from '../text/wrap.js';
 
@@ -41,9 +42,10 @@ export function tick(s: TypewriterState, dtMs: number, fast: boolean): Typewrite
   return { ...s, shown, carryMs: shown >= pageLength(s) ? 0 : total - add * msPerChar };
 }
 
-/** The A button: next page, or close after the last. Ignored while the page is still typing. */
+/** The A button: finish a page still typing; else the next page, or close after the last. */
 export function advance(s: TypewriterState): TypewriterState {
-  if (s.closed || !isPageComplete(s)) return s;
+  if (s.closed) return s;
+  if (!isPageComplete(s)) return { ...s, shown: pageLength(s), carryMs: 0 };
   if (isLastPage(s)) return { ...s, closed: true };
   return { ...s, page: s.page + 1, shown: 0, carryMs: 0 };
 }

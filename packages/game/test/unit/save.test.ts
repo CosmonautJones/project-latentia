@@ -77,7 +77,7 @@ describe('save: corrupt data starts fresh and never throws', () => {
     ['schemaVersion is a string', JSON.stringify({ schemaVersion: '1', engineVersion: ENGINE_VERSION, progress })],
     ['missing progress', JSON.stringify({ schemaVersion: 1, engineVersion: ENGINE_VERSION })],
     ['unknown step', JSON.stringify({ schemaVersion: 1, engineVersion: ENGINE_VERSION, progress: { ...progress, step: 'gym' } })],
-    ['unknown starter', JSON.stringify({ schemaVersion: 1, engineVersion: ENGINE_VERSION, progress: { ...progress, starter: 'pikachu' } })],
+    ['unknown starter', JSON.stringify({ schemaVersion: 1, engineVersion: ENGINE_VERSION, progress: { ...progress, starter: 'not-a-starter' } })],
     ['inconsistent progress', JSON.stringify({ schemaVersion: 1, engineVersion: ENGINE_VERSION, progress: { ...progress, distill: null } })],
     ['engineVersion not a string', JSON.stringify({ schemaVersion: 1, engineVersion: 3, progress })],
   ];
