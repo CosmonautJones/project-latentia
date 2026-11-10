@@ -1,7 +1,7 @@
 {
   "name": "deck-subagents",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "ddd078a7b000920e43741fecd60efb3f",
     "setup": {
       "a": {

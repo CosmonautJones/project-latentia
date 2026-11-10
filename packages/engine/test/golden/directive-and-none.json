@@ -1,7 +1,7 @@
 {
   "name": "directive-and-none",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "f8325c620f93f6ccf9f02aaca08697dd",
     "setup": {
       "a": {
@@ -251,7 +251,7 @@
       }
     ]
   },
-  "expectedHash": "1a9c7b3f42c99e9e",
+  "expectedHash": "9c8220d40638106f",
   "rounds": 9,
   "winner": "b"
 }

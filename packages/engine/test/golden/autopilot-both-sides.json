@@ -1,7 +1,7 @@
 {
   "name": "autopilot-both-sides",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "92702e15ca13c10e6b7f03d463ce823f",
     "setup": {
       "a": {
@@ -352,7 +352,7 @@
       {}
     ]
   },
-  "expectedHash": "500b8be842d4650e",
+  "expectedHash": "b1a370d867b05f67",
   "rounds": 6,
   "winner": "a"
 }

@@ -1,7 +1,7 @@
 {
   "name": "deprecatter-save-state",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "a3235ce8b880a6ed6cbdefe0ee1faf28",
     "setup": {
       "a": {
@@ -153,7 +153,9 @@
         "a": {
           "temperature": 2,
           "action": {
-            "kind": "none"
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 5
           }
         },
         "b": {
@@ -161,7 +163,7 @@
           "action": {
             "kind": "move",
             "moveId": "merge-conflict",
-            "target": 2
+            "target": 0
           }
         }
       },
@@ -196,10 +198,42 @@
             "target": 2
           }
         }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "segfault",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 2
+          }
+        }
       }
     ]
   },
-  "expectedHash": "a1c345c230ab03b0",
-  "rounds": 6,
+  "expectedHash": "b6cb391e2b6c3025",
+  "rounds": 8,
   "winner": "b"
 }

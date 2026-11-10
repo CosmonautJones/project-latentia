@@ -1,7 +1,7 @@
 {
   "name": "slopling-stacking",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "cd19e66c75326965ef14afaf4af79940",
     "setup": {
       "a": {
@@ -145,7 +145,7 @@
       }
     ]
   },
-  "expectedHash": "aafdb19b9409c32f",
+  "expectedHash": "12ef4448b5b60935",
   "rounds": 5,
   "winner": "a"
 }

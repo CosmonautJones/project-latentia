@@ -48,7 +48,7 @@ describe('public surface (spec §4, so far)', () => {
         'orchestratorMoves',
       ].sort(),
     );
-    expect(engine.ENGINE_VERSION).toBe('0.4.0');
+    expect(engine.ENGINE_VERSION).toBe('0.4.1');
   });
 
   it('runs and replays a battle through the public surface alone', () => {

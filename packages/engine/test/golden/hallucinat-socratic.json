@@ -1,7 +1,7 @@
 {
   "name": "hallucinat-socratic",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "dc244662bd775df4a1e70abfec01cb05",
     "setup": {
       "a": {
@@ -169,70 +169,6 @@
           "action": {
             "kind": "move",
             "moveId": "socratic-method",
-            "target": 4
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 4,
-          "action": {
-            "kind": "move",
-            "moveId": "confident-citation",
-            "target": 4
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "adversarial-patch",
-            "target": 4
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 4,
-          "action": {
-            "kind": "move",
-            "moveId": "proof-by-contradiction",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "socratic-method",
             "target": 5
           }
         },
@@ -265,118 +201,6 @@
           "action": {
             "kind": "move",
             "moveId": "adversarial-patch",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 4,
-          "action": {
-            "kind": "move",
-            "moveId": "proof-by-contradiction",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "socratic-method",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 4,
-          "action": {
-            "kind": "move",
-            "moveId": "confident-citation",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "adversarial-patch",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 4,
-          "action": {
-            "kind": "move",
-            "moveId": "proof-by-contradiction",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "socratic-method",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 4,
-          "action": {
-            "kind": "move",
-            "moveId": "confident-citation",
             "target": 5
           }
         },
@@ -389,7 +213,7 @@
       }
     ]
   },
-  "expectedHash": "ba3cebe76d76d53d",
-  "rounds": 18,
-  "winner": "b"
+  "expectedHash": "33daca93fb99789d",
+  "rounds": 7,
+  "winner": "a"
 }

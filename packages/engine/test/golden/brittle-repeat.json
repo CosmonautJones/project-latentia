@@ -1,7 +1,7 @@
 {
   "name": "brittle-repeat",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "859269810b567abaefa62d6574c0f88b",
     "setup": {
       "a": {
@@ -301,10 +301,26 @@
             "target": 2
           }
         }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "confident-citation",
+            "target": 2
+          }
+        }
       }
     ]
   },
-  "expectedHash": "b18c5bebcc9e4b0a",
-  "rounds": 4,
+  "expectedHash": "04be4cc8b2c25985",
+  "rounds": 5,
   "winner": "b"
 }

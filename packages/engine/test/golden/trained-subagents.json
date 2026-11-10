@@ -1,7 +1,7 @@
 {
   "name": "trained-subagents",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "35f972a691deec58529467c3e15b45a9",
     "setup": {
       "a": {
@@ -216,7 +216,7 @@
       }
     ]
   },
-  "expectedHash": "57a72f28549fa97a",
+  "expectedHash": "76ee14bbe96a1080",
   "rounds": 7,
   "winner": "a"
 }

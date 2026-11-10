@@ -1,7 +1,7 @@
 {
   "name": "policy-update-and-directive",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "5cba08d8f8b9c0ce26fafcc00dabb7ff",
     "setup": {
       "a": {
@@ -281,7 +281,7 @@
       }
     ]
   },
-  "expectedHash": "ff77ec873aaeb7f7",
+  "expectedHash": "4fac57daa4294641",
   "rounds": 6,
   "winner": "a"
 }

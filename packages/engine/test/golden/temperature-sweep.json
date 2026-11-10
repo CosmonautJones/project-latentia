@@ -1,7 +1,7 @@
 {
   "name": "temperature-sweep",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "e9ff92156085f0a16bfbd50f1abaac3c",
     "setup": {
       "a": {
@@ -169,7 +169,7 @@
       }
     ]
   },
-  "expectedHash": "1307a0de8749d09f",
+  "expectedHash": "a1565afda8f2511b",
   "rounds": 4,
   "winner": "a"
 }

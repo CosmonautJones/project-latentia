@@ -1,7 +1,7 @@
 {
   "name": "stochastiparrot-glazed",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "a5b0b8ebd3ca1eb493139e2561ace9c5",
     "setup": {
       "a": {
@@ -185,7 +185,7 @@
       }
     ]
   },
-  "expectedHash": "56812f8ed07c0d63",
+  "expectedHash": "4b9dde3b4d3557ef",
   "rounds": 5,
   "winner": "b"
 }

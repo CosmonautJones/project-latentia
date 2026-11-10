@@ -1,7 +1,7 @@
 {
   "name": "tokenibble-early-exit",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "575520a4444ccd6abb82af78a4e6e9db",
     "setup": {
       "a": {
@@ -179,7 +179,7 @@
       }
     ]
   },
-  "expectedHash": "75abde6cbf598112",
+  "expectedHash": "a42683f363c03095",
   "rounds": 6,
   "winner": "a"
 }

@@ -1,7 +1,7 @@
 {
   "name": "drift-wild-t4",
   "log": {
-    "engineVersion": "0.4.0",
+    "engineVersion": "0.4.1",
     "seed": "3b5c5aaeac73d527c17c8bcbfe77fe9a",
     "setup": {
       "a": {
