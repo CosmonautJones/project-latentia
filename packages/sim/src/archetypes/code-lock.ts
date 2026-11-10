@@ -55,7 +55,7 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
     card('loop', 'foe', BUFFED, 'infinite-loop', 'highestAtkFoe'),
     card('infinite-loop-ally-hp-below-75', 'self', { category: 'allyHp', op: 'below', pct: 75 }, 'infinite-loop', 'highestAtkFoe'),
     card('leak', 'self', cooldown(3), 'memory-leak', 'lowestHpFoe'),
-    card('tidy', 'foe', hasStatus('hallucinating'), 'compact', 'self'),
+    card('compact-status-hallucinating', 'foe', hasStatus('hallucinating'), 'compact', 'self'),
     card('merge', 'foe', HURT, 'merge-conflict', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'tangle', 'lowestHpFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),

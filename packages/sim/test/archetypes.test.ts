@@ -123,7 +123,14 @@ describe('ARCHETYPES', () => {
       const rates = headlineRates(a, ARCHETYPES.filter((b) => b !== a));
       const cards = HEADLINES[a.id] ?? [];
       expect(cards.length, a.id).toBeGreaterThan(0);
-      for (const { creature, card, preD3Rate } of cards) {
+      const members = [a.side.orchestrator, ...a.side.active, ...a.side.bench];
+      for (const { creature, card, subject, category, preD3Rate } of cards) {
+        // The card keeps its subject and condition category (Ruling 149); its parameters may change.
+        const owner = members.find((m) => m.id === `${a.id}/${creature}`);
+        const deckCards = owner === a.side.orchestrator ? a.side.autopilot?.deck.cards : owner?.deck?.cards;
+        const found = deckCards?.find((c) => c.id === card);
+        expect(found, `${a.id}/${creature} ${card} is in its deck`).toBeDefined();
+        expect([found?.subject, found?.condition.category], `${a.id}/${creature} ${card}: subject and condition category`).toEqual([subject, category]);
         const rate = rates[`${creature}#${card}`] ?? 0;
         expect(rate, `${a.id}/${creature} ${card}`).toBeGreaterThan(0);
         expect(rate, `${a.id}/${creature} ${card}: floor ${(50 * preD3Rate).toFixed(1)}%`).toBeGreaterThanOrEqual(0.5 * preD3Rate);

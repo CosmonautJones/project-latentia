@@ -56,7 +56,7 @@ const FORKLING_SWARM = archetype('open-swarm-forkling', {
     card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),
     card('selfpatch', 'self', HURT, 'community-patch', 'self'),
     card('guardrail-telegraphing', 'self', { category: 'telegraphing' }, 'guardrail', 'orchestrator'),
-    card('tidy', 'orchestrator', BUFFED, 'compact', 'self'),
+    card('compact-buffed', 'orchestrator', BUFFED, 'compact', 'self'),
     card('flex', 'self', HEALTHY, 'leaderboard-flex', 'highestAtkFoe'),
     card('finish', 'foe', WEAK, 'swarm-of-fine-tunes', 'lowestHpFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),

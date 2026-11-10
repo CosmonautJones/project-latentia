@@ -80,7 +80,8 @@ This section was rewritten in fix round 1 (Rulings 149–151). The first pass ad
   - A headline outside the Autopilot deck (a subagent's) that falls under its floor makes the deck unusable.
   - Each rate is the share of battles in which the card fired at least once, over the field: 19 foes × 2 sides × 6 seeds = 228 battles (`src/headline-rates.ts`, seeds `headline:<foe id>`). The pre-D3 rates were measured at 77335b6 and are recorded in `headlines.ts` as `preD3Rate`; the headline test asserts at least half of each on the committed decks.
 - `packages/sim/scripts/d3-rebaseline.ts` does the restoring and the two held-out scores; it reproduces only from the pre-D3 archetype data (77335b6), because the search field is the other archetypes' base decks.
-- Searched cards in adopted decks have names from their move and condition (`hot-take-buffed`, not `search-14` or a stale `tidy`). Data only: eight archetype files changed (Autopilot deck cards); no grid, species or level.
+- Searched cards in adopted decks have names from their move and condition (`hot-take-buffed`, not `search-14`; fix round 2 also renamed the stale `tidy`, `drift` and `coin` ids that no longer matched their cards, e.g. `compact-status-quantized`, `token-nibble-status-glazed`). No id is a headline or floor key.
+- Headlines also record their subject and condition category in `headlines.ts`, and the archetype test asserts them on the committed decks (a Reasoner back on "self, cooldown" fails it). Data only: eight archetype files changed (Autopilot deck cards); no grid, species or level.
 
 ### Per-archetype results
 
@@ -109,11 +110,11 @@ Scores are percentages, a draw counting 0.5. Held-out columns read "label 1 / la
 | mixed-starter-forkling | `482a827adb2b5c9e482a827adb2b5c9e` | 64.3 → 72 | 65.6 / 65.1 | 73.7 / 71.4 | no: the search final (+8.1 / +6.3) drops forkling patch to 0% (floor 11.8%); restoring and repositioning it reaches only 8.3%, so no deck clears the floor | search deck broke it (forkling#patch fires in 0% of battles, floor 11.8%; patch dropped); not restorable |
 | mixed-heisenmoth-tempo | `834889a10ab3ab16834889a10ab3ab16` | 25.5 → 47.2 (committed 38.3) | 25 / 27.3 | 50.7 / 50 (committed 37.7 / 41.1) | yes: restored deck, +12.7 / +13.8 pp | search deck broke it (heisenmoth#box fires in 0% of battles, floor 50%; box dropped); restored, floors met |
 
-Adopted: 16 of 20 (7 are the search's own final deck, 9 are restored decks): blitzr, agentoad, graft, sagelet, hallucinat, forkling, slopling, spaghettopus, nullbeetle, parrot, retro, embeddingo, scrapion, mixed-sagelet, mixed-blitzr, heisenmoth. Kept base: cobolt, vibrat, deprecatter and mixed-starter-forkling (no deck cleared both gates and its headline floor). Compared with the first pass, mixed-starter-forkling no longer adopts and open-swarm-forkling and code-lock-spaghettopus adopt smaller, restored decks (+2.5 / +8.0 and +10.0 / +9.7 pp against +5.3 and +12.7). Open-swarm-slopling still clears the second label (+4.1 pp on mine; the reviewer's own second set may differ).
+Adopted: 16 of 20 (6 are the search's own final deck, 10 are restored decks): blitzr, agentoad, graft, sagelet, hallucinat, forkling, slopling, spaghettopus, nullbeetle, parrot, retro, embeddingo, scrapion, mixed-sagelet, mixed-blitzr, heisenmoth. Kept base: cobolt, vibrat, deprecatter and mixed-starter-forkling (no deck cleared both gates and its headline floor). Compared with the first pass, mixed-starter-forkling no longer adopts and open-swarm-forkling and code-lock-spaghettopus adopt smaller, restored decks (+2.5 / +8.0 and +10.0 / +9.7 pp against +5.3 and +12.7). Open-swarm-slopling still clears the second label (+4.1 pp on mine; the reviewer's own second set may differ).
 
 ### Headline fire rates, before and after
 
-Before is the pre-D3 rate at 77335b6; the floor is half of it; after is the committed decks against the committed field (the headline test's pass). Every row is at or above its floor.
+Before is the pre-D3 rate at 77335b6; the floor is half of it; after is the committed decks against the committed field (the headline test's pass). Every row is at or above its floor. The pre-D3 rates here come from this log's seed set (`headline:<foe id>`, seeds 0–5, both sides); the earlier review's seed set gave a few points different rates (for example spaghettopus Loop 48% there, 41% here), so the floors are specific to this set and the headline test uses the same one.
 
 | archetype | headline card | pre-D3 rate | floor (50%) | after D3 | status |
 |---|---|---|---|---|---|
@@ -238,10 +239,18 @@ Per archetype (before, D2 report; after, this run):
 | Round-robin inside targets (380,000 battles) | 479.0 s | 450.4 s | 572.9 s |
 | `pnpm sim targets` wall time | 519.5 s | 489.0 s | 622.7 s |
 
-The round-robin is 123 s slower than the first pass on the same engine and a different set of decks (the cause is not isolated; the median fight length is still 7), and 27 s under the 600 s limit of criterion 7. The machine was otherwise idle; re-time it before D5.
+The round-robin is 123 s slower than the first pass, 27 s under the 600 s limit of criterion 7. This is machine variance, not deck content: the reviewer's like-for-like round-robin runs on the 77335b6, 53d7ccc and 5815618 decks, on one machine, are within about 3% of each other. The median fight length is 7 throughout. Re-time it before D5 for the record.
 
 ### Tests
 
 - `test/archetypes.test.ts`: the headline test asserts every headline card fires and fires at least half as often as its `preD3Rate`, over 228 battles per archetype (60 s timeout).
 - `test/target-setups.test.ts`, temperature live check: counts a substitution only while the orchestrator holds no Drift (the mixed-starter-sagelet deck can reach Drift at T0, where 5% per stack is a legitimate substitution). The exclusion is conservative: it discards every substitution made under Drift, so it can only hide a T0 substitution, and the T4 check still needs one outside Drift.
 - `test/search.test.ts`, "keeps exactly 8 cards…": climbs from a deliberately weak synthetic deck (every card and the Default only guard) at budget 960, k 8, instead of from archetype data.
+
+### Fingerprint
+
+Fix round 2 renamed card ids only, so the content fingerprint is now a7b116a0136a651b (the targets report above carries 8451d71bea9df836 and was run before the rename). Behaviour is unchanged: ids are not read by the engine's decisions, and the full test suite passes.
+
+### Notes for D4
+
+- search-anti-hallu-embeddingo's card `compact-speed-type` is `self` + "is speed type" (a foeType category on a self subject, id `drift` before the rename, a leftover of the search). It is unlikely to fire meaningfully; behaviour was left alone in D3. D4 should drop or fix it.

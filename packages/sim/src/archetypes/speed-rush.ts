@@ -53,7 +53,7 @@ const BLITZR_RUSH = archetype('speed-rush-blitzr', {
     card('ship', 'self', ALWAYS, 'ship-it', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'token-burst', 'lowestHpFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'orchestrator', lastMove('socratic-method'), 'compact', 'self'),
+    card('compact-after-socratic-method', 'orchestrator', lastMove('socratic-method'), 'compact', 'self'),
     card('opener', 'self', OPENER, 'distilled-strike', 'highestAtkFoe'),
     card('weak', 'foe', WEAK_TO_MOVE, 'distilled-strike', 'foeWeakToMove'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
