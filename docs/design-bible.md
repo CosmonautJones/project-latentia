@@ -31,6 +31,17 @@ The minute-to-minute loop is explore, encounter, battle, distill, train, pack, a
 
 The game deliberately excludes punishing login streaks, energy gates, expiring currency, power-granting passes, creatures that are gone forever, and default push notifications. A premium price removes any reason to use them.
 
+### Design: where procedural generation earns its keep
+
+The engine is deterministic and the simulator can already search for decks, so seeded generation is cheap wherever it serves the theme. It is used in these places:
+
+- The **Daily Seeded Prompt** and the **Weekly Benchmark** (above).
+- **Generated Eval Suites.** Beyond each region's fixed 12 scenarios, the game generates fresh held-out scenarios from a seed. This is literally how model evaluation works, and it stops players memorising the test.
+- **Generated opponents.** The deck search builds trainer and ghost decks, which fill the Arena's seed pool so it never looks empty at low population.
+- A post-game **seeded roguelite tower** with generated floors.
+
+It is **not** used for story maps, puzzle rooms, jokes or creature stats. Those are hand-made, because the writing and the creatures' personalities are the product, and creatures have no hidden stats (see Progression).
+
 ### Design: ghost matchmaking that avoids The Bazaar's complaint
 
 The proven async shape is a bounded run against snapshots of other players. Super Auto Pets Arena runs until 10 wins with 5 lives and draws opponents "from a database of teams that other players created, matched on the same turn" ([SAP Wiki](https://superautopets.wiki.gg/wiki/The_Basics)). Backpack Battles runs until 10 wins or 5 losses, serves harder opponents at higher rank, and keeps modified runs out of the ranked pool ([Wikipedia](https://en.wikipedia.org/wiki/Backpack_Battles)). The failure to avoid comes from The Bazaar's players, who met Legend-rank ghosts while in Bronze, said the ladder "isn't really 'ranked'", and asked for Elo-style matching with visible season end dates ([r/PlayTheBazaar](https://redlib.belloworld.it/r/PlayTheBazaar/comments/1gp09du/are_there_plans_to_implement_a_true_skill_based/lwmsguj)). Hearthstone Battlegrounds designers expected early elimination "like battle royale," so a loss feels like a re-queue, not a setback ([Game Developer](https://gamedeveloper.com/design/why-the-i-hearthstone-i-devs-wanted-to-make-an-auto-battler)).
@@ -436,6 +447,26 @@ The 57-move launch list stays the slice baseline. Each candidate below is built 
   - "Let me delve into this battle."
   - "As requested, I have made no mistakes." (it has)
   - Compile Hall leader: "I accepted all the changes. What could go wrong?"
+
+### Water, power and the Datacenter Spire
+
+This is a world-level through-line, not a one-off gag. The compute everyone in Latentia is chasing has to live somewhere, and somewhere is upstream. The satire targets the hype, the PR and the bad statistics on **both** sides. It never preaches.
+
+- **Team Scrape's real plan.** Scraping the lab's ModelDex logs funds a hyperscale campus to be built on the Deprecated Forest. Grunt line: "We're not cutting trees, we're optimising biomass." Their HQ is the endgame's Datacenter Spire, with its racks and coolant rivers.
+- **Patchwater's reservoir.** A water-level gauge in the plaza drops one notch after each badge, as the Spire upstream comes online. The town sign updates with it, for example "Patchwater: now 40% Patch, 60% Mud". When the player shuts a cooling loop off in the Spire, the gauge recovers. This is a visible reward with no mechanical cost.
+- **NPCs.**
+  - A farmer whose irrigation now feeds the cooling towers.
+  - A PR bot that recites "We're water-positive by 2040 (projected)" and "carbon-neutral via offsets we generated ourselves".
+  - A **doom-poster** who insists that every prompt drinks a whole lake. He is off by about 1,000×, and everyone answers him with "Citation needed." The joke cuts both ways, so it lands on bad numbers rather than on players.
+- **The virtual water receipt.** At the end of every run, and at milestones, a satirical receipt appears: "This run used 4.2 L of virtual water and 0.009 kWh. Offsets purchased: 0. — estimates by the Latentia PR department". The figures are deterministic, obviously fake and clearly labelled. They are a shareable stat, not a real claim. (It ships first in playable v0.)
+- **Candidate moves** (evaluated in the same follow-up as the satire candidates):
+
+  | Move | Type and stats | Effect | Primitive status |
+  |---|---|---|---|
+  | **Liquid Cooling** | Memory · heal·2 | Heals; sets a **Drought** field that raises everyone's context costs by +1 for 3 rounds | **new** field |
+  | **Brownout** | Speed · util·2 | Gives all creatures −1 priority for 2 rounds | **new** field |
+  | **Grid Strain** | Code | Power scales with the number of creatures on the field | **new** power rider |
+- **Boss.** **The Hyperscaler**, a gigawatt-class orchestrator in the Spire. Its passive is **Power Purchase Agreement**: it starts each battle with extra context, paid for by draining the field.
 
 ## Levels teach one verb per space: Localhost, the Deprecated Forest and the Compile Hall
 
