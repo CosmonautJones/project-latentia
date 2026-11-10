@@ -254,3 +254,142 @@ Fix round 2 renamed card ids only, so the content fingerprint is now a7b116a0136
 ### Notes for D4
 
 - search-anti-hallu-embeddingo's card `compact-speed-type` is `self` + "is speed type" (a foeType category on a self subject, id `drift` before the rename, a leftover of the search). It is unlikely to fire meaningfully; behaviour was left alone in D3. D4 should drop or fix it.
+
+## Step D4: iterative content tuning (Ruling 152, engine content; ENGINE_VERSION stays 0.4.0 until the one bump to 0.4.1 at the end)
+
+### Method
+
+- One engine-content number per candidate. Each candidate is screened with `pnpm sim targets --seeds-scale 0.1 --tag scratch-d4-<id>`, compared row by row against a 0.1-scale run of the current kept state (the same seeds, so the comparison is paired). Full-scale `pnpm sim targets` confirms a candidate before it is kept, and before the next candidate is screened. Heavy jobs ran one at a time, in the background, with logs.
+- **Keep rule.** A change is kept only if its own target moves toward its band and no other target leaves its band (a pass or inconclusive becoming a fail). For the 20-row vs-field target, "toward" means the summed excess over 55% (Σ max(0, point − 55) over the 20 rows) falls, or a failing row comes into band, with no row becoming a fail.
+- **Screen-scale noise.** At scale 0.1 the first-mover row is 1,000 mirror battles; it reads 48.1% there against 51.1% at full scale, so its 0.1 "fail" flags are noise. First mover is judged at full scale only, where every kept change left it at 51.1–51.2%.
+- **Full-seed dial.** A scratch script (outside the repo) re-runs the official temperature-dial row with its exact `targets:temperature-dial:<id>` labels and 50 battles per side (2,000 battles, the full-scale row), plus the mean of the 20 sweep rows on their own labels. It reproduces the targets row exactly (56.0% at K1 in both).
+- **Blowouts.** The coordinator's priority for this pass is "no matchup at or near 100%" and fight length. `pnpm sim round-robin --seeds 200 --tag scratch-d4-rr-<state>` (200 battles per ordered pairing, 400 per unordered pairing) counts the unordered pairings at or beyond 99/1, 95/5, 90/10 and 80/20.
+- The content fingerprint in the reports (FNV-1a of ARCHETYPES and the target setups) does not cover engine content, so every D4 scratch report carries a7b116a0136a651b. The engine version stays 0.4.0 in them.
+
+### Baseline
+
+`pnpm sim targets` at full scale on 9af6141 (clean, `scratch-d4-base`) reproduces the committed D3 report (`reports/targets-2026-11-10.md`, run on 88c3079) row for row: the D3 fix round 2 card-id renames changed no behaviour. Wall time 563.8 s.
+
+Blowouts at baseline (`scratch-d4-rr-base`): of 190 unordered pairings, 19 at or beyond 99/1, 34 at or beyond 95/5, 57 at or beyond 90/10, 91 at or beyond 80/20, 39 within 40–60; median fight length 7.
+
+### Target 2, the starter triangle: blocked for single starter numbers
+
+The triangle is a cycle (Blitzr > Sagelet > Forkling > Blitzr), and each starter's damaging moves are all of its own type, so on every edge the favoured side deals 1.5 × (1 / ⅔) = 2.25× the type-relative damage, on top of STAB on both sides. A base stat, power or cost change helps or hurts a starter on both of its edges at once: it is favoured on one and the underdog on the other. In a logit picture, stat differences sum to zero around the cycle, so stats can redistribute the three edges but cannot lower all three. Probes, `pnpm --filter @latentia/sim triangle-solo` (2,000 per matchup, blitzr > sagelet / sagelet > forkling / forkling > blitzr; baseline 99.3 / 91.3 / 100.0, median rounds 3, 5, 2):
+
+| probe | blitzr > sagelet | sagelet > forkling | forkling > blitzr |
+|---|---|---|---|
+| Sagelet HP 60 → 70 | 98.6 | 96.9 | 100.0 |
+| Sagelet HP 60 → 80 | 98.4 | 98.3 | 100.0 |
+| Sagelet HP 60 → 95 | 98.4 | 99.7 | 100.0 |
+| Sagelet Latency 55 → 75 | 99.3 | 100.0 | 100.0 |
+| Happy to Help cost 3 → 2 | 94.3 | 100.0 | 100.0 |
+| Forkling Compute 60 → 50 | 99.3 | 97.0 | 100.0 |
+| Distilled Strike 75 → 65 | 99.3 | 91.3 | 100.0 |
+| Ship It 65 → 45 | 96.5 | 91.3 | 100.0 |
+
+- Every probe that softens one edge hardens another. Forkling > Blitzr does not move off 100% (median 2 rounds: Hard Fork kills Blitzr in two hits while the decoy eats Blitzr's first).
+- Distilled Strike does not move Blitzr > Sagelet because the role deck's signature card ("where super effective") plays Ship It against Sagelet. Ship It 45 does move that edge (99.3 → 96.5), but only because the template plays the signature over a stronger move. That is the Review Focus's "60/40 by accident of deck templates", so it is not a candidate.
+- Reaching 55–65% needs either coverage (a non-own-type damaging move for each starter, which is new content or learnsets, out of scope) or a softer chart (settled in D2). This is reported, not tuned. No starter number was changed in D4, so the triangle rows are 99.3 / 91.2 / 100.0 throughout.
+
+### Target 4, the Off-By-Wasp graft: blocked by targeting, not value
+
+The graft row (base team + Off-By-One graft vs the base team, Sagelet + Tokenibble) reads 23.3%. Scratch probes with the graft setup itself (`runPooled(graftVariant('off-by-wasp'), baseTeam(), 500, …)`, 1,000 battles each):
+
+| Off-By-One | graft row |
+|---|---|
+| power 120 (was 75) | 31.9% |
+| power 160 | 67.1% |
+| power 75, target `foe` instead of `foeOffByOne` | 55.0% |
+
+- The graft card aims at `lowestHpFoe`, and the off-by-one redirect then hits the other, healthier foe, so the graft splits damage away from the kill. The signature's value would need about 150 power at cost 1 to overcome that. That breaks the wasp's seven archetypes: at 95 power, speed-rush-blitzr already rose 1.7 pp in screening while the row moved only 22.5 → 25.5%.
+- The cause is the gag's targeting meeting the template's aim, not the content value. The fix belongs to the target template (aim the graft card so that one tile left is the intended foe) or to a ruling; it is not a D4 content change.
+- Side finding (screen c26, below): Token Nibble 55 → 45, the base team's intern, flips this row to 63.5% at scale 0.1, so the row also depends on how fast the intern ends fights. It was rejected for other rows.
+
+### Candidates on the baseline state (scale 0.1; reference `scratch-d4-s01-base`, summed excess 88.7, 8 vs-field rows failing, dial 59.0%)
+
+| id | change | why this number | excess | vs-field rows failing | dial | left band | decision |
+|---|---|---|---|---|---|---|---|
+| c1 | Hallucinat Compute 75 → 65 | first-balance-pass §d move 3 | 88.7 → 97.6 | 8 → 7 | 59.0 → 56.5 | none | rejected: reasoning-nuke-hallucinat rises 71.3 → 79.8 and search-anti-hallu-embeddingo 61.1 → 62.6. Lower Compute stops Hallucinat being the `highestAtkFoe` that foes' cards aim at, so it is focused less |
+| c2 | Chain of Thought ramp cap +60 → +30 | cap at 90 power, level with the cost-3 nukes | 88.7 → 88.4 | 8 → 8 | 59.0 → 59.0 | none | rejected: no measurable effect (the ramp rarely reaches the cap; ≤ 1.1 pp on any row) |
+| c3 | Retrieval Strike 70 → 60 | the slice's most efficient attack (70·1·100) | 88.7 → 88.7 | 8 → 7 | 59.0 → 57.5 | none | rejected: net zero, open-swarm-forkling +1.8 offsets the Search teams' drop |
+| c4 | Swarm of Fine-Tunes 20 → 15 per hit | 45 in a three-Open team instead of 60, at cost 2 and 100 accuracy | 88.7 → 82.9 | 8 → 9 | 59.0 → 59.0 | search-anti-hallu-scrapion 54.7 → 56.1 | rejected on this state; taken later as K3 |
+| c5 | Hard Fork 70 → 60 | Forkling's 100-accuracy signature | 88.7 → 88.5 | 8 → 8 | 59.0 → 59.5 | scrapion 54.7 → 55.8 | rejected |
+| c6 | Sagelet Compute 70 → 60 | the nuke's orchestrator | 88.7 → 98.8 | 8 → 8 | 59.0 → 56.0 | none | rejected: mixed-starter-sagelet +11.9, embeddingo +6.1 (the same `highestAtkFoe` effect as c1) |
+| c7 | Six Fingers 65 → 55 | Slopling's signature | 88.7 → 87.6 | 8 → 8 | 59.0 → 60.0 | none | rejected: small; superseded |
+| c8 | Leaderboard Flex bonus +30 → +15 | open-swarm-forkling's top damage | 88.7 → 88.7 | 8 → 8 | 59.0 → 59.0 | none | rejected: net zero |
+| c9 | Cosine Sniff 70 → 60 | Embeddingo's carry | 88.7 → 86.2 | 8 → 7 | 59.0 → 55.5 | none | superseded by c10 |
+| c10 | Cosine Sniff 70 → 55 | see K2 | 88.7 → 85.7 | 8 → 6 | 59.0 → 55.5 | none | candidate; taken as K2 after K1 |
+| c11 | Scrape 60 → 50 | Scrapion's signature, 25 damage a battle in the Embeddingo team | 88.7 → 88.3 | 8 → 8 | 59.0 → 59.0 | none | rejected: small |
+| c12 | T4 accuracy −15 → −10 | §d move 4; see K1 | 88.7 → 84.6 | 8 → 7 | 59.0 → 57.0 | none | **kept as K1** |
+| c13 | Deprecatter Robustness 45 → 60 | §d move 2 | 88.7 → 86.3 | 8 → 8 | 59.0 → 59.0 | none | not taken: the memory teams gain about 3 pp but no failing row moves more than 0.6; superseded under the 8-change budget |
+| c14 | Adversarial Patch 70 → 60 | Hallucinat's and Slopling's attack | 88.7 → 89.1 | 8 → 8 | 59.0 → 59.5 | none | rejected |
+| c15 | Distilled Strike 75 → 65 | §d move 6 | 88.7 → 90.1 | 8 → 9 | 59.0 → 59.0 | scrapion 54.7 → 55.4 | rejected: reasoning-nuke-sagelet +1.6 (Blitzr is its main check) |
+| c16 | Confident Citation 70 → 60 | Hallucinat's signature | 88.7 → 90.0 | 8 → 9 | 59.0 → 59.0 | scrapion 54.7 → 55.7 | rejected |
+| c17 | Off-By-One 75 → 95 | §d move 5a (target 4) | 88.7 → 88.5 | 8 → 8 | 59.0 → 59.0 | none | rejected: graft row only 22.5 → 25.5, speed-rush-blitzr +1.7 |
+
+Damage breakdowns (scratch, 20 battles per side against each of the 19 others) show why single-move nerfs move these teams so little. Reasoning-nuke-sagelet deals 26.6 damage a battle with Embeddingo's Cosine Sniff and 18.8 with Retrieval Strike, against 24.0 from Sagelet itself (Chain of Thought, Happy to Help and Proof by Contradiction). Open-swarm-forkling deals 34.4 with Leaderboard Flex. Most of their wins are type blowouts against the Code-heavy field, which a 15% damage cut rarely flips. Scrapion (54.5%, its interval touching 55%) is the first gatekeeper: most Open- and Speed-team nerfs push it over.
+
+### K1: T4 accuracy −15 → −10 (kept)
+
+- **Change:** `content/temperature.ts` T4 row, accMod −15 → −10.
+- **Why −10:** it is first-balance-pass §d move 4, and it makes the accuracy column linear (+10, +5, 0, −5, −10). T4 still pays the most for its 60–150% roll, 1/6 crit and 12% self-hallucination. The dial's cold edge came from T4's −15 accuracy against "nearly flat" expected damage (finding 7).
+- **Screen (c12):** dial 59.0 → 57.0, excess 88.7 → 84.6, mixed-starter-sagelet into band, scrapion 54.7 → 54.1.
+- **Full scale** (`scratch-d4-k1`, 577.3 s), before = baseline:
+
+| target | row | before | after | verdict |
+|---|---|---|---|---|
+| vs field (≤ 55%) | speed-rush-blitzr | 66.3% | 67.1% | fail |
+| vs field (≤ 55%) | speed-rush-agentoad | 47.6% | 52.2% | pass |
+| vs field (≤ 55%) | speed-rush-graft | 49.4% | 48.6% | pass |
+| vs field (≤ 55%) | reasoning-nuke-sagelet | 83.5% | 82.9% | fail |
+| vs field (≤ 55%) | reasoning-nuke-hallucinat | 71.3% | 70.5% | fail |
+| vs field (≤ 55%) | open-swarm-forkling | 70.2% | 69.5% | fail |
+| vs field (≤ 55%) | open-swarm-slopling | 57.1% | 56.0% | fail |
+| vs field (≤ 55%) | code-lock-spaghettopus | 53.4% | 52.6% | pass |
+| vs field (≤ 55%) | code-lock-nullbeetle | 17.5% | 16.9% | pass |
+| vs field (≤ 55%) | code-lock-cobolt | 31.1% | 31.4% | pass |
+| vs field (≤ 55%) | voice-pressure-parrot | 36.6% | 39.1% | pass |
+| vs field (≤ 55%) | voice-pressure-vibrat | 36.4% | 39.8% | pass |
+| vs field (≤ 55%) | memory-stall-deprecatter | 42.9% | 42.2% | pass |
+| vs field (≤ 55%) | memory-stall-retro | 19.7% | 18.9% | pass |
+| vs field (≤ 55%) | search-anti-hallu-embeddingo | 61.2% | 60.6% | fail |
+| vs field (≤ 55%) | search-anti-hallu-scrapion | 54.5% | 53.8% | pass |
+| vs field (≤ 55%) | mixed-starter-sagelet | 55.6% | 54.7% | fail → **inconclusive** |
+| vs field (≤ 55%) | mixed-starter-blitzr | 48.7% | 47.7% | pass |
+| vs field (≤ 55%) | mixed-starter-forkling | 62.9% | 61.9% | fail |
+| vs field (≤ 55%) | mixed-heisenmoth-tempo | 34.4% | 33.4% | pass |
+| worst matchup (≥ 30%) | speed-rush-blitzr vs open-swarm-forkling | 13.7% | 14.8% | fail |
+| worst matchup (≥ 30%) | speed-rush-agentoad vs memory-stall-deprecatter | 13.4% | 15.6% | fail |
+| worst matchup (≥ 30%) | speed-rush-graft vs open-swarm-forkling | 1.1% | 1.1% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-sagelet vs speed-rush-blitzr | 21.3% | 19.8% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-hallucinat vs speed-rush-blitzr | 27.3% | 26.1% | fail |
+| worst matchup (≥ 30%) | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | open-swarm-slopling vs reasoning-nuke-sagelet | 0.9% | 0.9% | fail |
+| worst matchup (≥ 30%) | code-lock-spaghettopus vs reasoning-nuke-sagelet | 0.1% | 0.1% | fail |
+| worst matchup (≥ 30%) | code-lock-nullbeetle vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | code-lock-cobolt vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-parrot vs code-lock-spaghettopus | 16.9% | 19.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-vibrat vs reasoning-nuke-sagelet | 5.9% | 7.4% | fail |
+| worst matchup (≥ 30%) | memory-stall-deprecatter vs search-anti-hallu-embeddingo | 0.1% | 0.1% | fail |
+| worst matchup (≥ 30%) | memory-stall-retro vs search-anti-hallu-embeddingo | 0.3% | 0.3% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-embeddingo vs reasoning-nuke-sagelet | 4.2% | 4.2% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-scrapion vs search-anti-hallu-embeddingo | 7.7% | 7.7% | fail |
+| worst matchup (≥ 30%) | mixed-starter-sagelet vs speed-rush-graft | 10.4% | 10.4% | fail |
+| worst matchup (≥ 30%) | mixed-starter-blitzr vs mixed-starter-forkling | 14.7% | 14.7% | fail |
+| worst matchup (≥ 30%) | mixed-starter-forkling vs reasoning-nuke-sagelet | 7.8% | 7.8% | fail |
+| worst matchup (≥ 30%) | mixed-heisenmoth-tempo vs reasoning-nuke-sagelet | 0.4% | 0.4% | fail |
+| starter triangle (55–65%) | blitzr (favoured) vs sagelet | 99.3% | 99.3% | fail |
+| starter triangle (55–65%) | sagelet (favoured) vs forkling | 91.2% | 91.2% | fail |
+| starter triangle (55–65%) | forkling (favoured) vs blitzr | 100.0% | 100.0% | fail |
+| temperature dial (45–55%) | T0 vs T4 mirror, pooled | 57.8% | 56.0% | fail |
+| graft worth taking (≥ 55%) | stochastiparrot | 71.5% | 71.5% | pass |
+| graft worth taking (≥ 55%) | nullbeetle | 81.7% | 81.7% | pass |
+| graft worth taking (≥ 55%) | off-by-wasp | 23.3% | 23.3% | fail |
+| fight length (median 5–8) | median rounds | 7 | 7 | pass |
+| first mover (48–52%) | side A vs mirror, pooled | 51.1% | 51.1% | inconclusive |
+
+Vs-field rows failing 8 → 7; summed excess over 55% 87.9 → 83.6 pp.
+
+(Worst-matchup rows are each archetype's worst pairing in that run; the row names the after run's pairing.)
+
+- **Decision:** kept. The dial moves toward its band (57.8 → 56.0, still a fail) and vs field improves (excess 87.9 → 83.6, mixed-starter-sagelet fail → inconclusive). No row left its band. speed-rush-agentoad (own T4) rises 47.6 → 52.2 and the two voice builds (T4/T3) rise 2–3 pp, all still in band. Bible temperature table updated in the same commit.

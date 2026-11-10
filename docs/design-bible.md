@@ -146,7 +146,7 @@ The player sets the orchestrator's **temperature** each round as a free action, 
 | T1 (0.5) | Cool | 95–105% | +5 | 1/48 | 0% | Reasoning +1 crit stage |
 | T2 (1.0) | Default | 85–110% | 0 | 1/24 | 0% | — |
 | T3 (1.5) | Warm | 75–125% | −5 | 1/12 | 5% | Wild riders trigger |
-| T4 (2.0) | Unhinged | 60–150% | −15 | 1/6 | 12% | Wild riders at double strength; super-effective ×1.25 more |
+| T4 (2.0) | Unhinged | 60–150% | −10 | 1/6 | 12% | Wild riders at double strength; super-effective ×1.25 more |
 
 ### Statuses and guards satirize real failure modes
 
