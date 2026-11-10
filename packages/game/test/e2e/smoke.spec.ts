@@ -54,6 +54,43 @@ test('boots to the title, starts a new game by keyboard and reaches the Lab', as
   expect(errors).toEqual([]);
 });
 
+test('with a save, NEW GAME by keyboard asks first: A A and Escape keep the save, START OVER resets it', async ({ page }) => {
+  const errors = watchErrors(page);
+  const raw = () => page.evaluate(() => window.localStorage.getItem('latentia.save.v0'));
+  await page.goto('/');
+  await expect.poll(() => scene(page)).toBe('Title');
+  await page.evaluate(() => window.__latentia?.send({ type: 'newGame' }));
+  await page.evaluate(() => window.__latentia?.send({ type: 'starterPicked', starter: 'blitzr' }));
+  await expect.poll(() => step(page)).toBe('rival');
+  await page.reload();
+  await expect.poll(() => menu(page)).toMatchObject({ id: 'title', items: ['CONTINUE', 'NEW GAME'], index: 0 });
+  const before = await raw();
+
+  // Down to NEW GAME, then Enter twice: the panel opens on CANCEL, so the second Enter backs out.
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => menu(page)).toMatchObject({ id: 'title-confirm', index: 1 });
+  await page.keyboard.press('Enter');
+  await expect.poll(() => menu(page)).toMatchObject({ id: 'title' });
+  // Escape (B) backs out too.
+  await page.keyboard.press('Enter');
+  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('title-confirm');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('title');
+  expect(await scene(page)).toBe('Title');
+  expect(await raw()).toBe(before);
+
+  // NEW GAME, up to START OVER, Enter: a fresh run in the lab.
+  await page.keyboard.press('Enter');
+  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('title-confirm');
+  await page.keyboard.press('ArrowUp');
+  await expect.poll(() => menu(page)).toMatchObject({ id: 'title-confirm', index: 0 });
+  await page.keyboard.press('Enter');
+  await expect.poll(() => step(page)).toBe('lab');
+  expect(JSON.parse((await raw()) ?? 'null')).toMatchObject({ progress: { step: 'lab', starter: null } });
+  expect(errors).toEqual([]);
+});
+
 test('the touch band and the hook drive the same flow: lab dialogue, starter pick, a lost and a won battle', async ({ page }) => {
   const errors = watchErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });

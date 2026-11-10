@@ -26,6 +26,8 @@ export interface ChoicePanelOptions {
   /** Text above the choices (each entry starts a new paragraph). */
   readonly body?: readonly string[];
   readonly items: readonly ChoiceItem[];
+  /** The row the cursor opens on (default 0). */
+  readonly index?: number;
   /** Top edge in game px (the panel is full width less a margin, and as tall as its content). */
   readonly y?: number;
   readonly onConfirm: (index: number) => void;
@@ -65,7 +67,7 @@ export class ChoicePanel {
     private readonly app: App,
     private readonly opts: ChoicePanelOptions,
   ) {
-    this.state = createMenu(opts.id, opts.items.map((i) => i.label));
+    this.state = createMenu(opts.id, opts.items.map((i) => i.label), opts.index ?? 0);
     this.build();
     this.offs.push(
       app.input.subscribe((a) => {

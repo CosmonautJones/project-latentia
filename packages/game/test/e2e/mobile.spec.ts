@@ -106,6 +106,60 @@ test('the title, a choice panel and the battle menu have 44 px targets in portra
   await close();
 });
 
+test('with a save, the band NEW GAME asks first: one tap never writes, a second tap cancels, START OVER resets', async ({ browser }) => {
+  const { page, close } = await phone(browser);
+  const errors = watchErrors(page);
+  const raw = () => page.evaluate(() => window.localStorage.getItem('latentia.save.v0'));
+  await toRival(page);
+  await send(page, { type: 'battleWon' });
+  await expect.poll(() => page.evaluate(() => window.__latentia?.flow().step)).toBe('walk');
+  await page.reload();
+  await expect.poll(() => menu(page)).toMatchObject({ id: 'title', items: ['CONTINUE', 'NEW GAME'] });
+  const before = await raw();
+  expect(JSON.parse(before ?? 'null')).toMatchObject({ progress: { step: 'walk', starter: 'sagelet' } });
+  // Count every write from here on.
+  await page.evaluate(() => {
+    const w = window as unknown as { __writes: number };
+    w.__writes = 0;
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k: string, v: string) {
+      w.__writes++;
+      set.call(this, k, v);
+    };
+  });
+  const writes = () => page.evaluate(() => (window as unknown as { __writes: number }).__writes);
+  const newGame = page.locator('#band-panel [data-menu="title"][data-index="1"]');
+
+  // One tap: the confirm panel, the cursor on CANCEL, 44 px buttons, nothing written.
+  await newGame.click();
+  await expect.poll(() => menu(page)).toMatchObject({ id: 'title-confirm', items: ['START OVER', 'CANCEL'], index: 1 });
+  expect(await panel(page)).toMatchObject({ title: 'START OVER?', body: ['Your saved run will be erased.'] });
+  await expect(page.locator('#band-panel [data-menu="title"]')).toHaveCount(0);
+  await expect(page.locator('#band-panel [data-menu="title-confirm"]')).toHaveCount(2);
+  await expectTargets(page, PORTRAIT);
+  expect(await writes()).toBe(0);
+
+  // A second tap in the same place is CANCEL: back to the title, the save untouched.
+  await page.locator('#band-panel [data-menu="title-confirm"][data-index="1"]').click();
+  await expect.poll(() => menu(page)).toMatchObject({ id: 'title', items: ['CONTINUE', 'NEW GAME'] });
+  expect(await scene(page)).toBe('Title');
+  // B backs out too.
+  await newGame.click();
+  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('title-confirm');
+  await page.locator('[data-control="btn-b"]').click();
+  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('title');
+  expect(await writes()).toBe(0);
+  expect(await raw()).toBe(before);
+
+  // START OVER erases the run: a fresh lab.
+  await newGame.click();
+  await page.locator('#band-panel [data-menu="title-confirm"][data-index="0"]').click();
+  await expect.poll(() => scene(page)).toBe('Overworld');
+  expect(JSON.parse((await raw()) ?? 'null')).toMatchObject({ progress: { step: 'lab', starter: null }, hintsSeen: [] });
+  expect(errors).toEqual([]);
+  await close();
+});
+
 test('rotating mid-battle keeps the menu, the armed move and keyboard input; the second tap still commits', async ({ browser }) => {
   const { page, close } = await phone(browser);
   const errors = watchErrors(page);

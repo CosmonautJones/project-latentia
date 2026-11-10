@@ -1,10 +1,22 @@
-// Title: the logo, New Game, and Continue when a valid save exists.
+// Title: the logo, New Game, and Continue when a valid save exists. New Game over a save asks before erasing it.
 
 import { ENGINE_VERSION } from '@latentia/engine';
 import type { App } from '../app.js';
 import { GAME_HEIGHT, GAME_WIDTH } from '../layout/compute.js';
+import {
+  CONFIRM_BODY,
+  CONFIRM_DEFAULT,
+  CONFIRM_ITEMS,
+  CONFIRM_MENU_ID,
+  CONFIRM_TITLE,
+  confirmPick,
+  TITLE_MENU_ID,
+  titleItems,
+  titlePick,
+} from '../flow/title-menu.js';
 import { loadSave } from '../save/save.js';
 import { addPixelText, textWidth } from '../text/phaser-font.js';
+import { ChoicePanel } from '../ui/choice-panel.js';
 import { MenuList } from '../ui/menu-list.js';
 import { COLOR } from '../ui/palette.js';
 import { BaseScene } from './base-scene.js';
@@ -40,18 +52,21 @@ export class TitleScene extends BaseScene {
     addPixelText(this, Math.floor((GAME_WIDTH - textWidth(TAGLINE)) / 2), 62, TAGLINE, { color: COLOR.amber });
 
     const save = loadSave(this.app.storage);
-    const items = save.status === 'ok' ? ['CONTINUE', 'NEW GAME'] : ['NEW GAME'];
+    const hasSave = save.status === 'ok';
+    const items = titleItems(hasSave);
     const menuWidth = textWidth('CONTINUE') + 10;
-    new MenuList(this, this.app, {
-      id: 'title',
+    const menu = new MenuList(this, this.app, {
+      id: TITLE_MENU_ID,
       items,
       x: Math.floor((GAME_WIDTH - menuWidth) / 2),
       y: 92,
       width: menuWidth,
       rowHeight: 16,
       onConfirm: (i) => {
-        if (items[i] === 'CONTINUE' && save.status === 'ok') this.send({ type: 'continue', progress: save.save.progress });
-        else this.send({ type: 'newGame' });
+        const pick = titlePick(items[i], hasSave);
+        if (pick === 'continue' && save.status === 'ok') this.send({ type: 'continue', progress: save.save.progress });
+        else if (pick === 'newGame') this.send({ type: 'newGame' });
+        else this.confirmNewGame(menu);
       },
     });
 
@@ -59,6 +74,29 @@ export class TitleScene extends BaseScene {
     const hint = this.sys.game.device.input.touch ? 'A: SELECT' : 'Z/ENTER: SELECT';
     addPixelText(this, GAME_WIDTH - 4 - textWidth(hint), GAME_HEIGHT - 12, hint, { color: COLOR.steel });
     this.ready();
+  }
+
+  /** NEW GAME over a save: ask before erasing it. START OVER starts over; CANCEL or B goes back to the title menu. */
+  private confirmNewGame(menu: MenuList): void {
+    menu.setActive(false);
+    const panel = new ChoicePanel(this, this.app, {
+      id: CONFIRM_MENU_ID,
+      title: CONFIRM_TITLE,
+      body: [CONFIRM_BODY],
+      items: CONFIRM_ITEMS.map((label) => ({ label })),
+      index: CONFIRM_DEFAULT,
+      y: 84,
+      depth: 100,
+      onConfirm: (i) => {
+        if (confirmPick(i) === 'startOver') this.send({ type: 'newGame' });
+        else back();
+      },
+      onCancel: () => back(),
+    });
+    const back = () => {
+      panel.destroy();
+      menu.setActive(true);
+    };
   }
 
   private drawBackdrop(): void {
