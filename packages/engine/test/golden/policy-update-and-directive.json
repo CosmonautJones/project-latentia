@@ -1,7 +1,7 @@
 {
   "name": "policy-update-and-directive",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "5cba08d8f8b9c0ce26fafcc00dabb7ff",
     "setup": {
       "a": {
@@ -212,7 +212,7 @@
             "kind": "directive",
             "subagent": 2,
             "moveId": "token-burst",
-            "target": 3
+            "target": 6
           }
         },
         "b": {
@@ -249,7 +249,7 @@
           "action": {
             "kind": "move",
             "moveId": "chain-of-thought",
-            "target": 3
+            "target": 6
           }
         },
         "b": {
@@ -267,19 +267,21 @@
           "action": {
             "kind": "move",
             "moveId": "happy-to-help",
-            "target": 6
+            "target": 3
           }
         },
         "b": {
           "temperature": 1,
           "action": {
-            "kind": "none"
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 1
           }
         }
       }
     ]
   },
-  "expectedHash": "9ad63249a974cc01",
+  "expectedHash": "4fac57daa4294641",
   "rounds": 6,
   "winner": "a"
 }

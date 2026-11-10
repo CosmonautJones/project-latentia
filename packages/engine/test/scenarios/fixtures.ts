@@ -29,30 +29,44 @@ export const BOOTCAMP_AUTOPILOT: Deck = {
   default: card('trace', 'self', ALWAYS, 'stack-trace', 'lowestHpFoe'),
 };
 
-// Fixture levels, temperatures, the heal condition and the subagent's generalization, tuned for criterion 5 (Rulings 108
-// and 114; no species stat was changed). Each was chosen so
-// that the fight turns on the one thing the arms differ in, whether the subagent heals: the starter Sagelet is the kill
-// engine (Reasoning hits Code 2x) but fragile, and the trainer's Code attacks wear it down in about three rounds; kept
-// alive by Community Patch it wins, left alone it falls before the second kill. Wins (broken / swapped) on the test's
-// 200 seeds, unless noted, against 1 / 199 as tuned:
-//   - Bootcamp Grad's Off-By-Wasp 6 and Nullbeetle 6 (the switchbacks band, wilds Lv2-6): both at 5 → 88 / 200 (the
-//     starter often wins without a heal); both at 7 → 1 / 30 (the heal is outpaced).
+// Fixture levels, temperatures, the heal condition and the subagent's generalization, tuned for criterion 5 (Rulings 108,
+// 114 and, for the levels, 148; no species stat was changed). Each was chosen so that the fight turns on the one thing the
+// arms differ in, whether the subagent heals: the starter Sagelet is the kill engine (Reasoning hits Code 1.5x) but
+// fragile, and the trainer's Code attacks wear it down; kept alive by Community Patch it wins, left alone it falls
+// before the second kill. Wins (broken / swapped) on the test's 200 seeds, unless noted, against 13 / 188 as tuned
+// (33 / 369 on a 400-seed check list, seedFor(`check:${i}`)).
+//
+// Re-tuned for Ruling 148 (type chart 2x/1/2 -> 1.5x/2/3). The old levels (Sagelet 4, Forkling 6, Off-By-Wasp 6,
+// Nullbeetle 6, which every other scenario still uses) gave 0 / 103 under the softer chart: Code hits Reasoning for 2/3 instead of 1/2 and Reasoning hits Code
+// for 1.5x instead of 2x, so the starter is worn down faster and kills slower, and the heal alone no longer saves it.
+// The pre-Ruling 148 tune was 1 / 199 (400-seed list 7 / 393). The fixture is still a knife edge, deliberately a fight
+// decided by a few HP, so a single level moves it a long way. Neighbours of the new tune, one change at a time:
+//   - Sagelet 4 → 3 / 1 (it falls before the heal matters); Sagelet 6 → 122 / 146 (the starter wins alone).
+//   - Forkling 8 → 13 / 180; Forkling 10 → 17 / 183.
+//   - Off-By-Wasp 7 → 81 / 189 (the trainer is too weak); Off-By-Wasp 9 → 13 / 182.
+//   - Nullbeetle 6 → 83 / 176; Nullbeetle 8 → 0 / 22 (the heal is outpaced).
 //   - Bootcamp Grad's Autopilot at T0 ("by the book"): flat rolls and few crits, so a lucky trainer crit seldom decides
-//     the swapped arm. On a 400-seed check list (seedFor(`check:${i}`)): T0 7 / 393, T1 7 / 380, T2 14 / 381.
-//   - Sagelet 4: at 5 → 154 / 200 (it seldom needs the heal). Forkling 6: at 5 → 1 / 44 (too frail to keep healing),
-//     at 7 → 1 / 199 (no change).
-//   - The player's Autopilot at T2 (the default): T0 or T1 → 1 / 200, T3 → 1 / 188, T4 → 3 / 181.
-//   - The heal fires when an ally is below 50%: below 75% → 1 / 199, below 25% → 1 / 158 (too late); healing itself
-//     when the Forkling is below 50% → 1 / 3 (it heals the wrong creature: the trainer is wearing down the starter).
+//     the swapped arm. T1 → 15 / 154, T2 → 29 / 130.
+//   - The player's Autopilot stays at T2 (the default): T0 → 13 / 199, T1 → 12 / 194, T3 → 12 / 171, T4 → 27 / 160.
+//   - The heal fires when an ally is below 50%: below 75% → 13 / 189, below 25% → 13 / 191 (neither separates the arms
+//     better or worse than 50%, so the 50% of the bible's example stays); healing itself instead (Forkling below 50% →
+//     Community Patch on self) → 13 / 13, and an ally-below-50% card aimed at self → 13 / 10: either heals the wrong
+//     creature, since the trainer is wearing down the starter, and the swapped arm loses its edge.
 //   - The Forkling's generalization is FORKLING_G = 85, the deck's honest G: computeGeneralization(SWAPPED_DECK,
 //     DEPRECATED_FOREST_SUITE, 3 active slots), pinned in broken-deck.test.ts. Both arms use it (the broken deck's own G
-//     would be 88), so they differ only in card order. Any Robust value (≥ 70) gives the same 1 / 199, since Robust always
-//     obeys; Stable 65 or 50 → 4 / 177 (5% disobedience costs the swapped arm its gate), 30 → 17 / 148.
+//     would be 88), so they differ only in card order. Any Robust value (>= 70) behaves the same, since Robust always obeys:
+//     G = 100 or 70 → 13 / 188, identical to the tuned value. Stable 65 or 50 → 25 / 177 (disobedience costs the swapped
+//     arm its gate), 30 → 42 / 165.
+// In this battle the trainer is above the bible's switchbacks band (wilds Lv2-6) at Lv8 / Lv7; the fixture is a criterion-5 measuring
+// rig, not slice content.
 
-/** The first Deprecated Forest trainer, Bootcamp Grad, at fixed levels (side b): an Off-By-Wasp orchestrating a Nullbeetle. */
-export function bootcampGrad(): SideSetup {
+/**
+ * The first Deprecated Forest trainer, Bootcamp Grad (side b): an Off-By-Wasp orchestrating a Nullbeetle, at Lv6 / Lv6 unless
+ * `levels` says otherwise (the broken-deck scenario sets its own, see BROKEN_DECK_TRAINER).
+ */
+export function bootcampGrad(levels: { orchestrator: number; subagent: number } = { orchestrator: 6, subagent: 6 }): SideSetup {
   return {
-    ...side('b', { orch: mon('b-wasp', 'off-by-wasp', 6), active: [mon('b-nullbeetle', 'nullbeetle', 6)] }),
+    ...side('b', { orch: mon('b-wasp', 'off-by-wasp', levels.orchestrator), active: [mon('b-nullbeetle', 'nullbeetle', levels.subagent)] }),
     autopilot: { deck: BOOTCAMP_AUTOPILOT, temperature: 0 },
   };
 }
@@ -63,7 +77,7 @@ export const PLAYER_AUTOPILOT: Deck = {
   default: card('chain', 'self', ALWAYS, 'chain-of-thought', 'lowestHpFoe'),
 };
 
-/** The subagent's attack: Swarm of Fine-Tunes, a weak poke (one 20-power hit with no Open ally) that never needs a heal to fit. */
+/** The subagent's attack: Swarm of Fine-Tunes, a weak poke (one 15-power hit with no Open ally) that never needs a heal to fit. */
 export const ATTACK = card('attack', 'self', ALWAYS, 'swarm-of-fine-tunes', 'lowestHpFoe');
 /** The heal: Community Patch (30%) on the lowest-HP ally whenever an ally is below half HP. */
 export const HEAL = card('heal', 'self', { category: 'allyHp', op: 'below', pct: 50 }, 'community-patch', 'lowestHpAlly');
@@ -80,10 +94,13 @@ export const FORKLING_G = 85;
 /** The player's side (side a): the starter Sagelet on its Autopilot, with a Robust Forkling subagent acting from `deck`. */
 export function playerTeam(deck: Deck): SideSetup {
   return {
-    ...side('a', { orch: mon('a-sagelet', 'sagelet', 4), active: [{ ...mon('a-forkling', 'forkling', 6), deck, generalization: FORKLING_G }] }),
+    ...side('a', { orch: mon('a-sagelet', 'sagelet', 5), active: [{ ...mon('a-forkling', 'forkling', 9), deck, generalization: FORKLING_G }] }),
     autopilot: { deck: PLAYER_AUTOPILOT, temperature: 2 },
   };
 }
 
+/** Bootcamp Grad's levels in the criterion-5 battle (re-tuned for Ruling 148, see above); the other scenarios keep the Lv6 / Lv6 default. */
+export const BROKEN_DECK_TRAINER = { orchestrator: 8, subagent: 7 } as const;
+
 /** The criterion-5 battle: the player's team with `deck` against Bootcamp Grad. */
-export const brokenDeckBattle = (deck: Deck): BattleSetup => setup(playerTeam(deck), bootcampGrad());
+export const brokenDeckBattle = (deck: Deck): BattleSetup => setup(playerTeam(deck), bootcampGrad(BROKEN_DECK_TRAINER));

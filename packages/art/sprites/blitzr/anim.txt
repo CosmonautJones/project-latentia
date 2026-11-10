@@ -1,0 +1,60 @@
+# Blitzr idle: fast bounce on the toes. Head leads, quills and tail lag behind.
+delay 75
+
+frame
+tail 40 37
+quill_c 34 33
+quill_b 33 22
+quill_a 28 12
+hood 31 34
+body 17 39
+head 11 22
+
+frame
+tail 40 37
+quill_c 34 33
+quill_b 33 22
+quill_a 28 12
+hood 31 35
+body 17 40 dr=15
+head 10 23
+spark 51 18
+
+frame
+tail 40 38
+quill_c 34 34
+quill_b 33 23
+quill_a 28 13
+hood 31 35
+body 17 40 dr=15
+head 10 24
+spark 53 35
+
+frame
+tail 40 38
+quill_c 34 34
+quill_b 33 23
+quill_a 28 13
+hood 31 34
+body 17 39
+head 11 22
+
+frame
+tail 40 36
+quill_c 34 33
+quill_b 33 22
+quill_a 28 12
+hood 31 33
+body 17 38 ir=15
+head 11 21
+spark 43 8
+
+frame
+tail 40 36
+quill_c 34 32
+quill_b 33 21
+quill_a 28 11
+hood 31 33
+body 17 38 ir=15
+head 11 21
+spark 49 29

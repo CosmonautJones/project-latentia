@@ -7,7 +7,7 @@ describe('temperature', () => {
     expect(TEMPERATURE[1]).toEqual({ rollMinPct: 95, rollMaxPct: 105, accMod: 5, baseCritStage: 1, selfHallucinationPct: 0, wild: false });
     expect(TEMPERATURE[2]).toEqual({ rollMinPct: 85, rollMaxPct: 110, accMod: 0, baseCritStage: 2, selfHallucinationPct: 0, wild: false });
     expect(TEMPERATURE[3]).toEqual({ rollMinPct: 75, rollMaxPct: 125, accMod: -5, baseCritStage: 3, selfHallucinationPct: 5, wild: true });
-    expect(TEMPERATURE[4]).toEqual({ rollMinPct: 60, rollMaxPct: 150, accMod: -15, baseCritStage: 4, selfHallucinationPct: 12, wild: true });
+    expect(TEMPERATURE[4]).toEqual({ rollMinPct: 60, rollMaxPct: 150, accMod: -10, baseCritStage: 4, selfHallucinationPct: 12, wild: true });
     expect(TEMPERATURE).toHaveLength(5);
   });
 

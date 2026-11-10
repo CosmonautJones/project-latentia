@@ -1,7 +1,7 @@
 {
   "name": "swap-lever",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "dd3fce9d12549b1428243f122b9c52a5",
     "setup": {
       "a": {
@@ -235,7 +235,7 @@
           "action": {
             "kind": "move",
             "moveId": "hard-fork",
-            "target": 6
+            "target": 9
           }
         },
         "b": {
@@ -243,7 +243,7 @@
           "action": {
             "kind": "move",
             "moveId": "tangle",
-            "target": 3
+            "target": 4
           }
         }
       },
@@ -303,7 +303,7 @@
       }
     ]
   },
-  "expectedHash": "65756fe490bf939f",
+  "expectedHash": "bd6bf24109fe11d4",
   "rounds": 9,
   "winner": "a"
 }

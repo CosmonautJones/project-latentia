@@ -1,7 +1,7 @@
 {
   "name": "deck-subagents",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "ddd078a7b000920e43741fecd60efb3f",
     "setup": {
       "a": {
@@ -444,24 +444,6 @@
         "a": {
           "temperature": 2,
           "action": {
-            "kind": "move",
-            "moveId": "happy-to-help",
-            "target": 7
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "flattery",
-            "target": 1
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
             "kind": "none"
           }
         },
@@ -469,7 +451,7 @@
           "temperature": 2,
           "action": {
             "kind": "move",
-            "moveId": "hot-take",
+            "moveId": "flattery",
             "target": 1
           }
         }
@@ -501,22 +483,6 @@
           "temperature": 2,
           "action": {
             "kind": "move",
-            "moveId": "flattery",
-            "target": 3
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
             "moveId": "hot-take",
             "target": 3
           }
@@ -524,7 +490,7 @@
       }
     ]
   },
-  "expectedHash": "2a4f4fd68c803694",
-  "rounds": 8,
+  "expectedHash": "642b731a2dcec1f6",
+  "rounds": 6,
   "winner": "b"
 }

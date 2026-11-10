@@ -1,0 +1,15 @@
+{
+  "name": "@latentia/art",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Text-grid pixel art sources and the build script that renders them. Not shipped; the engine never depends on this package.",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "check": "node src/build.mjs --check"
+  },
+  "devDependencies": {
+    "gifenc": "^1.0.3",
+    "pngjs": "^7.0.0"
+  }
+}

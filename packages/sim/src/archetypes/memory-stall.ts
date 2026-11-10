@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, fromRound, HEALTHY, HURT, layout, orchestrator, subagent, WEAK } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, fromRound, FULL, HEALTHY, HURT, layout, orchestrator, subagent, WEAK } from './build.js';
 
 // Memory stall (spec §9): outlast. Save State snapshots HP against the next KO, Long-Term Recall grows with every
 // hit taken from its target, Episodic Replay repeats an ally's move, healers keep the team up, and Caches keep
@@ -113,7 +113,7 @@ const RETRO_STALL = archetype('memory-stall-retro', {
     card('save', 'self', cooldown(3), 'save-state', 'self'),
     card('recall', 'foe', HURT, 'long-term-recall', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('save-state-buffed', 'foe', BUFFED, 'save-state', 'lowestHpAlly'),
     card('punish', 'foe', BUFFED, 'long-term-recall', 'highestAtkFoe'),
     card('low', 'self', WEAK, 'guardrail', 'self'),
     card('finish', 'foe', WEAK, 'nostalgia-trip', 'lowestHpFoe'),

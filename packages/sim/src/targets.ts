@@ -2,7 +2,7 @@ import { ARCHETYPES, mirrorOf } from './archetypes/index.js';
 import { allRounds, fieldScore, roundRobin, worstPairing } from './round-robin.js';
 import { runMatch, runPooled, scoreA } from './runner.js';
 import { addScores, median, pointVerdict, rate, verdict, wilson95 } from './stats.js';
-import { GRAFT_SPECIES, graftVariant, soloPair, spinUpVariant, starterSide, temperaturePair, TRIANGLE } from './target-setups.js';
+import { baseTeam, GRAFT_SPECIES, graftVariant, spinUpVariant, starterSide, temperaturePair, TRIANGLE } from './target-setups.js';
 import { fmtCount } from './report.js';
 import type { Score, Verdict } from './types.js';
 
@@ -10,8 +10,8 @@ import type { Score, Verdict } from './types.js';
 // each with its own setup (target-setups.ts, Ruling 133) and its own seedFor label, so targets are independent and
 // reproducible. Rates are side scores with a draw counted as 0.5; bands are fractions, except fight length (rounds).
 // Besides each target's own rows (role `target`), a target may carry a `summary` row restating one of them (worst
-// matchup's overall worst) and `diagnostic` rows (Ruling 143: the partnerless triangle, the per-archetype temperature
-// sweep). Only `target` rows count toward pass, fail and inconclusive, and toward the target's verdict.
+// matchup's overall worst) and `diagnostic` rows (Ruling 143: the per-archetype temperature sweep; Ruling 147: graft
+// vs spin-up). Only `target` rows count toward pass, fail and inconclusive, and toward the target's verdict.
 
 export type TargetId = 'vs-field' | 'worst-matchup' | 'starter-triangle' | 'temperature-dial' | 'graft-vs-spin-up' | 'fight-length' | 'first-mover';
 
@@ -31,9 +31,9 @@ export type Target = {
 export const TARGETS: readonly Target[] = deepFrozen([
   { id: 'vs-field', name: 'Any archetype vs the field', setup: 'round-robin, pooled over all of the archetype’s battles', seeds: '1,000 per ordered pairing', band: [0, 0.55], bandText: '≤ 55%', pointOnly: false },
   { id: 'worst-matchup', name: 'Worst single matchup', setup: 'round-robin, per unordered pairing with both sides pooled', seeds: '2,000 per pairing', band: [0.3, 1], bandText: '≥ 30%', pointOnly: false },
-  { id: 'starter-triangle', name: 'Starter triangle', setup: 'each starter vs its counter, both sides, slice-level teams', seeds: '2,000', band: [0.55, 0.65], bandText: '55–65% for the favoured side', pointOnly: false },
+  { id: 'starter-triangle', name: 'Starter triangle', setup: 'each starter alone (orchestrator only, role-based decks) vs its counter, both sides pooled', seeds: '2,000', band: [0.55, 0.65], bandText: '55–65% for the favoured side', pointOnly: false },
   { id: 'temperature-dial', name: 'Temperature dial', setup: 'always-T0 vs always-T4, same teams, both sides, every archetype pooled', seeds: '2,000', band: [0.45, 0.55], bandText: 'within 5 points of 50%', pointOnly: false },
-  { id: 'graft-vs-spin-up', name: 'Graft vs spin-up', setup: 'mirror teams differing only in that choice', seeds: '2,000', band: [0.45, 0.55], bandText: '45–55%', pointOnly: false },
+  { id: 'graft-vs-spin-up', name: 'Graft worth taking', setup: 'base team + graft vs the same base team without it, same 3 species, both sides pooled (spin-up is intended to be stronger)', seeds: '2,000', band: [0.55, 1], bandText: '≥ 55% for the graft side', pointOnly: false },
   { id: 'fight-length', name: 'Fight length', setup: 'round-robin', seeds: 'all', band: [5, 8], bandText: 'median 5–8 rounds', pointOnly: true },
   { id: 'first-mover', name: 'First mover', setup: 'perfect mirror, side A vs side B', seeds: '10,000', band: [0.48, 0.52], bandText: '48–52%', pointOnly: false },
 ]);
@@ -112,15 +112,10 @@ export function measureTargets({ scale, now, progress }: MeasureOptions): Target
 
   timed('starter triangle', ['starter-triangle'], () => {
     let battles = 0;
+    // Ruling 146: partnerless, on the seed labels triangle-solo has always used, so earlier numbers reproduce.
     for (const [fav, beaten] of TRIANGLE) {
-      const { score } = runPooled(starterSide(fav), starterSide(beaten), scaled(1000, scale), `targets:starter-triangle:${fav}:${beaten}`);
+      const { score } = runPooled(starterSide(fav), starterSide(beaten), scaled(1000, scale), `triangle-solo:${fav}:${beaten}`);
       rows.push(rateRow('starter-triangle', `${fav} (favoured) vs ${beaten}`, score));
-      battles += score.n;
-    }
-    // Diagnostic (Rulings 136, 143 I1): the same matchups orchestrator only, on triangle-solo's seed labels.
-    for (const [fav, beaten] of TRIANGLE) {
-      const { score } = runPooled(...soloPair(fav, beaten), scaled(1000, scale), `triangle-solo:${fav}:${beaten}`);
-      rows.push(rateRow('starter-triangle', `solo: ${fav} (favoured) vs ${beaten}, no partner`, score, 'diagnostic'));
       battles += score.n;
     }
     return battles;
@@ -140,11 +135,18 @@ export function measureTargets({ scale, now, progress }: MeasureOptions): Target
     return battles;
   });
 
-  timed('graft vs spin-up', ['graft-vs-spin-up'], () => {
+  timed('graft worth taking', ['graft-vs-spin-up'], () => {
     let battles = 0;
     for (const species of GRAFT_SPECIES) {
+      const { score } = runPooled(graftVariant(species), baseTeam(), scaled(1000, scale), `targets:graft-worth-taking:${species}`);
+      rows.push(rateRow('graft-vs-spin-up', `${species}: base team + graft vs base team alone`, score));
+      battles += score.n;
+    }
+    // Diagnostic (Ruling 147): the old G-vs-S rows, S being the spun-up subagent at L5 with 1 active card and no signature.
+    // Spin-up is intended to be stronger, so these read low against the "worth taking" band by design.
+    for (const species of GRAFT_SPECIES) {
       const { score } = runPooled(graftVariant(species), spinUpVariant(species), scaled(1000, scale), `targets:graft-vs-spin-up:${species}`);
-      rows.push(rateRow('graft-vs-spin-up', `${species}: graft (G) vs spin-up (S)`, score));
+      rows.push(rateRow('graft-vs-spin-up', `diagnostic: ${species}: graft (G) vs spin-up (S)`, score, 'diagnostic'));
       battles += score.n;
     }
     return battles;

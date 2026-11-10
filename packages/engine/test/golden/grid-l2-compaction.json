@@ -1,7 +1,7 @@
 {
   "name": "grid-l2-compaction",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "b5b5499a178feffb9698ddb2476a468e",
     "setup": {
       "a": {
@@ -309,6 +309,36 @@
         "b": {
           "temperature": 3,
           "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 3,
+          "action": {
             "kind": "none"
           }
         }
@@ -371,7 +401,7 @@
       }
     ]
   },
-  "expectedHash": "0f9d70b5d3cd7ecf",
-  "rounds": 6,
-  "winner": "a"
+  "expectedHash": "982b13cd166021f1",
+  "rounds": 8,
+  "winner": "b"
 }

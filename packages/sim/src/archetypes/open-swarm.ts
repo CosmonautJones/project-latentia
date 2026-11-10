@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, hasStatus, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, hasStatus, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 
 // Open swarm (spec §9): stack Open-type creatures so Swarm of Fine-Tunes hits 1 + (Open allies) times, keep the
 // team topped up with Community Patch, and let Slopling's stacking Compute grow while it survives.
@@ -52,14 +52,14 @@ const FORKLING_SWARM = archetype('open-swarm-forkling', {
   ),
   autopilot: deck(
     card('fork', 'self', ALWAYS, 'hard-fork', 'lowestHpFoe'),
+    card('coin', 'self', COIN, 'swarm-of-fine-tunes', 'randomFoe'),
     card('patch', 'self', ALLY_HURT, 'community-patch', 'lowestHpAlly'),
     card('selfpatch', 'self', HURT, 'community-patch', 'self'),
-    card('drift', 'self', DRIFT, 'clear', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('guardrail-telegraphing', 'self', { category: 'telegraphing' }, 'guardrail', 'orchestrator'),
+    card('compact-buffed', 'orchestrator', BUFFED, 'compact', 'self'),
     card('flex', 'self', HEALTHY, 'leaderboard-flex', 'highestAtkFoe'),
     card('finish', 'foe', WEAK, 'swarm-of-fine-tunes', 'lowestHpFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('coin', 'self', COIN, 'swarm-of-fine-tunes', 'randomFoe'),
   ),
   temperature: 2,
 });
@@ -113,7 +113,7 @@ const SLOPLING_SWARM = archetype('open-swarm-slopling', {
     card('fingers', 'self', ALWAYS, 'six-fingers', 'lowestHpFoe'),
     card('dump', 'foe', WEAK, 'weights-dump', 'lowestHpFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('clear-hp-below-25', 'orchestrator', WEAK, 'clear', 'orchestrator'),
     card('swarm', 'self', OPENER, 'swarm-of-fine-tunes', 'lowestHpFoe'),
     card('patch', 'foe', WEAK_TO_MOVE, 'adversarial-patch', 'foeWeakToMove'),
     card('haze', 'foe', HEALTHY, 'adversarial-patch', 'highestAtkFoe'),

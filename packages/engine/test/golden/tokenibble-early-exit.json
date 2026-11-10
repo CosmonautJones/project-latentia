@@ -1,7 +1,7 @@
 {
   "name": "tokenibble-early-exit",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "575520a4444ccd6abb82af78a4e6e9db",
     "setup": {
       "a": {
@@ -153,7 +153,7 @@
           "action": {
             "kind": "move",
             "moveId": "token-burst",
-            "target": 6
+            "target": 7
           }
         }
       },
@@ -163,7 +163,7 @@
           "action": {
             "kind": "move",
             "moveId": "early-exit",
-            "target": 7
+            "target": 5
           }
         }
       },
@@ -171,37 +171,15 @@
         "a": {
           "temperature": 2,
           "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
+            "kind": "move",
+            "moveId": "token-nibble",
+            "target": 5
           }
         }
       }
     ]
   },
-  "expectedHash": "ccd8902d04e30df6",
-  "rounds": 9,
+  "expectedHash": "a42683f363c03095",
+  "rounds": 6,
   "winner": "a"
 }

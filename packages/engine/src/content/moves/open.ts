@@ -29,7 +29,7 @@ export const OPEN_MOVES = {
   },
   'swarm-of-fine-tunes': {
     id: 'swarm-of-fine-tunes', name: 'Swarm of Fine-Tunes', type: 'open', target: 'foe',
-    power: 20, cost: 2, accuracy: 100, priority: 0,
+    power: 15, cost: 2, accuracy: 100, priority: 0,
     effects: [{ kind: 'multiHit', who: 'target', count: { kind: 'perAllyOfType', base: 1, type: 'open' } }],
   },
   'leaderboard-flex': {

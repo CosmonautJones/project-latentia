@@ -1,7 +1,7 @@
 {
   "name": "agentoad-rerank",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "50ca6c6f23b8261b195273e94ed1af2e",
     "setup": {
       "a": {
@@ -156,7 +156,7 @@
       }
     ]
   },
-  "expectedHash": "03cbe1b15d27e5c6",
+  "expectedHash": "ae08df2dd9a08db5",
   "rounds": 6,
   "winner": "a"
 }

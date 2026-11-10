@@ -1,0 +1,73 @@
+# Forkling: three stacked rounded cubes with a git-fork tail. Open type.
+# c lit planes (top and front) | b bevel highlight and specular | d cast shadow and form shade
+# e side plane | f mouth | s r t magenta fork (base, shade, light) | j eye glint | p outline
+
+@part cube_low
+......ppppppppppppppp..
+.....pcccccccccccccccp.
+....pccccccccccccccceep
+...pccccccdddddddddeeep
+..pbbbbbcccccccccceeeep
+.pcccccccccccccccceeeep
+pccccccccccccccccceeeep
+pccccccccccccccccceeeep
+pccccccccccccccccceeeep
+pccccccccccccccccceeeep
+pccccccccccccccccceeeep
+pccccccccccccccccceeep.
+pcccccccccccccddddeep..
+.pccccccccddddddddep...
+..pddddddddddddddp.....
+...pppppppppppppp......
+
+@part cube_mid
+.....ppppppppppppp...
+....pcccccccccccccp..
+...pcccccccccccccceep
+..pcccccdddddddddeeep
+..pbbbbccccccccceeeep
+.pcccccccccccccceeeep
+pccccccccccccccceeeep
+pcccccscccsccccceeeep
+pccccccscscccccceeeep
+pcccccccsccccccceeeep
+pcccccccsccccccceeep.
+pcccccccccccddddeep..
+.pccccccddddddddep...
+..pddddddddddddp.....
+...pppppppppppp......
+
+@part cube_top
+.....ppppppppppp...
+....pcccccccccccp..
+...pcbbbbccccccceep
+..pcbbccccccccceeep
+..pbbbbccccdddeeeep
+.pcccccccccccceeeep
+pccccccccccccceeeep
+pccjpcccjppccceeeep
+pccppcccpppccceeeep
+pccppcccpppccceeeep
+pcttcfcfcccttceeep.
+pcccccfccccdddeep..
+.pcccccdddddddep...
+..pddddddddddp.....
+...pppppppppp......
+
+@part tail
+......ppp........
+.....ptttp...ppp.
+.....ptpsp..ptttp
+.....pssrp..ptpsp
+......pssp..pssrp
+......psrp...psrp
+......psrp..pssrp
+......pssrppssrp.
+.......pssssrrp..
+........pssrrp...
+.......pssrrp....
+.....ppssrrp.....
+...ppsssrrp......
+.ppssssrrp.......
+psssrrrpp........
+ppppppp..........

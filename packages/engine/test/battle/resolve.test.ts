@@ -58,13 +58,13 @@ describe('resolveAction: a plain hit', () => {
     expect(at(s, 1)).toMatchObject({ actedThisBattle: true, lastMoveId: 'ship-it', moveHistory: [{ round: 1, moveId: 'ship-it', damaged: [7] }] });
   });
 
-  it('pins one L5 number: Sagelet Happy to Help on Forkling at T2 deals 16', () => {
-    // P 70, Atk 12, Def 11, LF 4: floor(70×12×4×10000 / 550) = 61090 → type 20000: 122180 → native 12500:
-    // 152725 → roll 10000 (a first hit takes no Handoff) → floor(/10000) + 1 = 16.
+  it('pins one L5 number: Sagelet Happy to Help on Forkling at T2 deals 12', () => {
+    // P 70, Atk 12, Def 11, LF 4: floor(70×12×4×10000 / 550) = 61090 → type 15000: 91635 → native 12500:
+    // 114543 → roll 10000 (a first hit takes no Handoff) → floor(/10000) + 1 = 12.
     const s = battle();
     s.round = 1;
-    expect(dealt(run(s, 0, 'happy-to-help', 8))).toEqual([16]);
-    expect(at(s, 8).hp).toBe(at(s, 8).maxHp - 16);
+    expect(dealt(run(s, 0, 'happy-to-help', 8))).toEqual([12]);
+    expect(at(s, 8).hp).toBe(at(s, 8).maxHp - 12);
   });
 });
 
@@ -201,8 +201,8 @@ describe('resolveAction: Wild effect lists', () => {
     s.sides.a.temperature = 4;
     at(s, 0).context.tokens.push({ kind: 'junk', seq: 90 });
     const events = run(s, 0, 'happy-to-help', 8, { d5lo: 40 }); // 60 + 40 → 100%
-    expect(ofType(events, 'TypeEffect')).toEqual([{ round: 1, type: 'TypeEffect', actor: 0, target: 8, multiplierBp: 20000 }]);
-    expect(dealt(events)).toEqual([expected(s, 0, 8, 70, { type: 20000, t4se: 12500, native: 12500, roll: 10000 })]);
+    expect(ofType(events, 'TypeEffect')).toEqual([{ round: 1, type: 'TypeEffect', actor: 0, target: 8, multiplierBp: 15000 }]);
+    expect(dealt(events)).toEqual([expected(s, 0, 8, 70, { type: 15000, t4se: 12500, native: 12500, roll: 10000 })]);
     expect(ofType(events, 'ContextAdded').filter((e) => e.target === 0)).toEqual([
       { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: 3, tokensAfter: 4 },
       { round: 1, type: 'ContextAdded', target: 0, kind: 'cost', tokens: -1, tokensAfter: 3 },
@@ -210,7 +210,7 @@ describe('resolveAction: Wild effect lists', () => {
     expect(at(s, 0).context.tokens.map((t) => t.kind)).toEqual(['junk', 'cost', 'cost']);
     const t3 = fresh();
     t3.sides.a.temperature = 3;
-    expect(dealt(run(t3, 0, 'happy-to-help', 8, { d5lo: 25 }))).toEqual([expected(t3, 0, 8, 70, { type: 20000, native: 12500, roll: 10000 })]);
+    expect(dealt(run(t3, 0, 'happy-to-help', 8, { d5lo: 25 }))).toEqual([expected(t3, 0, 8, 70, { type: 15000, native: 12500, roll: 10000 })]);
   });
 });
 

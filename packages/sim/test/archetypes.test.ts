@@ -14,7 +14,8 @@ import {
 } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { ALWAYS, HURT, layout } from '../src/archetypes/build.js';
-import { HEADLINES, cardFires } from '../src/archetypes/headlines.js';
+import { HEADLINES } from '../src/archetypes/headlines.js';
+import { headlineRates } from '../src/headline-rates.js';
 import { ARCHETYPES, mirrorOf, starterGrid } from '../src/archetypes/index.js';
 import { runMatch, seedFor } from '../src/runner.js';
 import type { Archetype } from '../src/types.js';
@@ -115,21 +116,27 @@ describe('ARCHETYPES', () => {
     }
   });
 
-  it('fires every headline card at least once across a pass over the field (Ruling 132)', () => {
-    const fired = new Map<string, number>();
-    ARCHETYPES.forEach((a, i) => {
-      for (const b of ARCHETYPES) {
-        if (a === b) continue;
-        const r = simulate({ a: { ...a.side, opponentId: b.id }, b: { ...b.side, opponentId: a.id }, kind: 'trainer' }, seedFor(`headline:${b.id}`, i), { kind: 'autopilot' });
-        for (const [creature, cards] of cardFires(r)) for (const [cardId, n] of cards) fired.set(`${creature}#${cardId}`, (fired.get(`${creature}#${cardId}`) ?? 0) + n);
-      }
-    });
+  it('fires every headline card, and at least half as often as before the D3 re-baseline (Ruling 132, Ruling 149)', () => {
     expect(Object.keys(HEADLINES).sort()).toEqual(ARCHETYPES.map((a) => a.id).sort());
-    for (const [id, cards] of Object.entries(HEADLINES)) {
-      expect(cards.length, id).toBeGreaterThan(0);
-      for (const { creature, card } of cards) expect(fired.get(`${id}/${creature}#${card}`) ?? 0, `${id}/${creature} ${card}`).toBeGreaterThan(0);
+    for (const a of ARCHETYPES) {
+      // One pass over the field: each foe on both sides for 6 seeds (228 battles). A rate is the share of battles in which the card fired.
+      const rates = headlineRates(a, ARCHETYPES.filter((b) => b !== a));
+      const cards = HEADLINES[a.id] ?? [];
+      expect(cards.length, a.id).toBeGreaterThan(0);
+      const members = [a.side.orchestrator, ...a.side.active, ...a.side.bench];
+      for (const { creature, card, subject, category, preD3Rate } of cards) {
+        // The card keeps its subject and condition category (Ruling 149); its parameters may change.
+        const owner = members.find((m) => m.id === `${a.id}/${creature}`);
+        const deckCards = owner === a.side.orchestrator ? a.side.autopilot?.deck.cards : owner?.deck?.cards;
+        const found = deckCards?.find((c) => c.id === card);
+        expect(found, `${a.id}/${creature} ${card} is in its deck`).toBeDefined();
+        expect([found?.subject, found?.condition.category], `${a.id}/${creature} ${card}: subject and condition category`).toEqual([subject, category]);
+        const rate = rates[`${creature}#${card}`] ?? 0;
+        expect(rate, `${a.id}/${creature} ${card}`).toBeGreaterThan(0);
+        expect(rate, `${a.id}/${creature} ${card}: floor ${(50 * preD3Rate).toFixed(1)}%`).toBeGreaterThanOrEqual(0.5 * preD3Rate);
+      }
     }
-  });
+  }, 60_000);
 
   it('is deeply frozen and shares no object between archetypes (C4 cannot leak a mutation)', () => {
     const owner = new Map<object, string>();

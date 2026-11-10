@@ -22,8 +22,8 @@ describe('contentFingerprint', () => {
     expect(contentFingerprint()).toBe(want);
     expect(contentFingerprint()).toMatch(/^[0-9a-f]{16}$/);
   });
-  it('covers every setup: the triangle, solo, graft and temperature setups are all in it', () => {
-    expect(Object.keys(targetSetups()).sort()).toEqual(['graft', 'solo', 'starters', 'temperature', 'triangle']);
+  it('covers every setup: the triangle, starters, base team, graft and temperature setups are all in it', () => {
+    expect(Object.keys(targetSetups()).sort()).toEqual(['base', 'graft', 'starters', 'temperature', 'triangle']);
     expect((targetSetups().temperature as unknown[]).length).toBe(ARCHETYPES.length);
   });
   it('changes when any archetype detail changes', () => {

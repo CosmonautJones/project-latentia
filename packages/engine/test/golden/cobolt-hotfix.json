@@ -1,7 +1,7 @@
 {
   "name": "cobolt-hotfix",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "515ff8c8027597ecb5718321da0f8efd",
     "setup": {
       "a": {
@@ -200,10 +200,28 @@
             "target": 0
           }
         }
+      },
+      {
+        "a": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "hotfix",
+            "target": 0
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 0
+          }
+        }
       }
     ]
   },
-  "expectedHash": "d492a91a3bf52e7e",
-  "rounds": 6,
+  "expectedHash": "457698db57d5d8c9",
+  "rounds": 7,
   "winner": "b"
 }

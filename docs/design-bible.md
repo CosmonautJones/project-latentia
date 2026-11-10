@@ -17,9 +17,9 @@ The beat sheet below merges the retention research's minute targets with the lev
 | Time | Beat | Space | What it teaches |
 |---|---|---|---|
 | 0:00–0:45 | Skippable cold open: Prof. Ilse Epoch says *"Here. A frontier model. Well, it WAS frontier. About six weeks ago."* You pick Sagelet, Blitzr or Forkling | Lab interior (16×12) | Starter choice and the tone |
-| ~1:30 | Rival Kip Velocity picks the counter-type and battles you. Your starter commands. The lab's bundled "intern" subagent, Tokenibble, acts from one example card | Lab | Split control, the intent icon, one command |
-| ~3:00–4:00 | First wild model at the Deprecated Forest trailhead. Win, then **distill** it | Trailhead brush | Visible encounters, distillation |
-| ~4:00–5:00 | The new piece won't fit the 4×4 grid. Drop something or choose graft over spin-up | Grid editor | The packing "aha" |
+| ~1:30 | Rival Kip Velocity picks the counter-type and battles you, starter vs starter, one on one. Your starter commands every move | Lab | Commanding, the type chart, one command at a time |
+| ~3:00–4:00 | **Tokenibble** is the first wild model, at the Deprecated Forest trailhead. Win, then **distill** it: it is your first distill, and the natural first **spin-up**, into your first subagent | Trailhead brush | Visible encounters, distillation, subagents (split control, the intent icon) |
+| ~4:00–5:00 | The example-card tutorial: teach Tokenibble its first card. The 4×4 grid is tight, so drop something, or choose graft over spin-up for the next distill | Grid editor | Example cards, the packing "aha" |
 | ~8:00–10:00 | Optional pre-seeded ghost at the trailhead kiosk ("fight a cached run from a beta tester") | Trailhead | Async PvP exists |
 | 12–25 min | Trainers, Team Scrape camp, the Sunset Server checkpoint, side paths | Deprecated Forest | Type matchups, deck tuning |
 | 25–50 min | Patchwater plaza, then the Compile Hall's three puzzle rooms and leader Gary Rebase | Gym | Puzzle verbs, "don't be predictable" |
@@ -30,6 +30,17 @@ The beat sheet below merges the retention research's minute targets with the lev
 The minute-to-minute loop is explore, encounter, battle, distill, train, pack, and repeat. It pays out when a re-packed team beats a gym or ghost it previously lost to. The session loop is one story step or one bounded ghost run with a result card. The weekly loop is a **Weekly Benchmark**: a rotating rule modifier such as "context halved," "open-weights only" or "temperature locked hot," with its own pool and leaderboard. This copies Super Auto Pets' Weekly Pack, which rotates every week and matches only within its own mode ([SAP Wiki](https://superautopets.wiki.gg/wiki/The_Basics)). The daily loop is a **Daily Seeded Prompt**: everyone gets the same rental team and ghost gauntlet, one attempt counts, practice is unlimited, and the result is a spoiler-free share grid. Wordle's daily limit came from wanting "three minutes of your time a day, and that's it." Its emoji grid was productized from a player's own habit, and its author deliberately left a URL out of it ([Game Developer](https://gamedeveloper.com/gdc2022/josh-wardle-reflects-on-the-the-unconventional-road-to-wordle-s-success)). Seasons run 6–8 weeks and add a "model release" event creature and cosmetic rewards. The post-game adds a **Benchmark Tower** (a streak gauntlet), a **Rental Factory** (rental agents, so no grind advantage), rare "Golden-weights" palette variants, a ModelDex that requires a training milestone rather than a bare catch, and a formal **Hallucination Run** toggle in which fainted models are sunset permanently. Coromon shipped a built-in Nuzlocke mode, and its roguelite spin-off uses procedural runs plus a community storyline, which shows that formalizing fan challenge rules works ([Nintendo Life](https://www.nintendolife.com/news/2022/03/video-pokemon-style-monster-battler-coromon-showcases-nuzlocke-mode-out-on-switch-march-31st); [Niche Gamer](https://nichegamer.com/coromon-rogue-planet-announced)).
 
 The game deliberately excludes punishing login streaks, energy gates, expiring currency, power-granting passes, creatures that are gone forever, and default push notifications. A premium price removes any reason to use them.
+
+### Design: where procedural generation earns its keep
+
+The engine is deterministic and the simulator can already search for decks, so seeded generation is cheap wherever it serves the theme. It is used in these places:
+
+- The **Daily Seeded Prompt** and the **Weekly Benchmark** (above).
+- **Generated Eval Suites.** Beyond each region's fixed 12 scenarios, the game generates fresh held-out scenarios from a seed. This is literally how model evaluation works, and it stops players memorising the test.
+- **Generated opponents.** The deck search builds trainer and ghost decks, which fill the Arena's seed pool so it never looks empty at low population.
+- A post-game **seeded roguelite tower** with generated floors.
+
+It is **not** used for story maps, puzzle rooms, jokes or creature stats. Those are hand-made, because the writing and the creatures' personalities are the product, and creatures have no hidden stats (see Progression).
 
 ### Design: ghost matchmaking that avoids The Bazaar's complaint
 
@@ -119,20 +130,20 @@ The battle design follows from those lessons. Context is the only move-cost reso
 
 ### The type chart is regular, so it can be learned in an hour
 
-Every type has exactly two 2× targets and two ½ resistances, so no type is strictly safe. The decided starter triangle, **Speed > Reasoning > Open > Speed**, is embedded in the chart. Each starter's second strength gives it early coverage: Speed hits Search, Reasoning hits Code, and Open hits Voice.
+Every type has exactly two 1.5× targets and two ⅔ resistances, so no type is strictly safe. (Ruling 148 softened the chart from 2× and ½ to 1.5× and ⅔, stored as 15000 and 6667 basis points.) The decided starter triangle, **Speed > Reasoning > Open > Speed**, is embedded in the chart. Each starter's second strength gives it early coverage: Speed hits Search, Reasoning hits Code, and Open hits Voice.
 
 | ATK \ DEF | Rea | Spd | Opn | Cod | Vis | Voi | Sea | Mem |
 |---|---|---|---|---|---|---|---|---|
-| **Reasoning** | 1 | ½ | **2** | **2** | 1 | 1 | 1 | ½ |
-| **Speed** | **2** | 1 | ½ | 1 | ½ | 1 | **2** | 1 |
-| **Open** | ½ | **2** | 1 | 1 | ½ | **2** | 1 | 1 |
-| **Code** | ½ | 1 | 1 | 1 | **2** | 1 | ½ | **2** |
-| **Vision** | 1 | **2** | **2** | ½ | 1 | ½ | 1 | 1 |
-| **Voice** | 1 | 1 | ½ | 1 | **2** | 1 | **2** | ½ |
-| **Search** | 1 | ½ | 1 | **2** | 1 | ½ | 1 | **2** |
-| **Memory** | **2** | 1 | 1 | ½ | 1 | **2** | ½ | 1 |
+| **Reasoning** | 1 | ⅔ | **1.5** | **1.5** | 1 | 1 | 1 | ⅔ |
+| **Speed** | **1.5** | 1 | ⅔ | 1 | ⅔ | 1 | **1.5** | 1 |
+| **Open** | ⅔ | **1.5** | 1 | 1 | ⅔ | **1.5** | 1 | 1 |
+| **Code** | ⅔ | 1 | 1 | 1 | **1.5** | 1 | ⅔ | **1.5** |
+| **Vision** | 1 | **1.5** | **1.5** | ⅔ | 1 | ⅔ | 1 | 1 |
+| **Voice** | 1 | 1 | ⅔ | 1 | **1.5** | 1 | **1.5** | ⅔ |
+| **Search** | 1 | ⅔ | 1 | **1.5** | 1 | ⅔ | 1 | **1.5** |
+| **Memory** | **1.5** | 1 | 1 | ⅔ | 1 | **1.5** | ⅔ | 1 |
 
-Each edge has an in-world reason. Reasoning finds the edge case in your code. Speed answers before the chain of thought finishes. Open forks your fast tier for free. Memory beats Reasoning through benchmark contamination ("it memorized the answers"). Search beats Code because the answer was on a forum all along. Dual types multiply, clamped to 0.25–3.0. A same-type move gets ×1.25, deliberately lower than the mainline games so off-type coverage stays viable. The UI shows labels, never raw multipliers. The final boss Monocultra is the one exception: it takes 1× from everything, then resists whichever type you repeat.
+Each edge has an in-world reason. Reasoning finds the edge case in your code. Speed answers before the chain of thought finishes. Open forks your fast tier for free. Memory beats Reasoning through benchmark contamination ("it memorized the answers"). Search beats Code because the answer was on a forum all along. Dual types multiply (floored in basis points), so the range is 0.4444–2.25: two resistances give 6667 × 6667 → 4444, and two weaknesses give 15000 × 15000 → 22500 (Ruling 148). A same-type move gets ×1.25, deliberately lower than the mainline games so off-type coverage stays viable. The UI shows labels, never raw multipliers. The final boss Monocultra is the one exception: it takes 1× from everything, then resists whichever type you repeat.
 
 ### Core numbers: integer math, five stats, and temperature that reshapes variance
 
@@ -146,7 +157,7 @@ The player sets the orchestrator's **temperature** each round as a free action, 
 | T1 (0.5) | Cool | 95–105% | +5 | 1/48 | 0% | Reasoning +1 crit stage |
 | T2 (1.0) | Default | 85–110% | 0 | 1/24 | 0% | — |
 | T3 (1.5) | Warm | 75–125% | −5 | 1/12 | 5% | Wild riders trigger |
-| T4 (2.0) | Unhinged | 60–150% | −15 | 1/6 | 12% | Wild riders at double strength; super-effective ×1.25 more |
+| T4 (2.0) | Unhinged | 60–150% | −10 | 1/6 | 12% | Wild riders at double strength; super-effective ×1.25 more |
 
 ### Statuses and guards satirize real failure modes
 
@@ -194,7 +205,7 @@ The move list has 48 typed moves (6 per type, except 7 for Code and 5 for Memory
 |---|---|
 | Reasoning | **Chain of Thought** 60·2·100 (+20 power per consecutive Reasoning round, cap +60) · **Deliberate** 130·4·95·−1 (telegraphed 2-turn charge; −30 power if hit while charging) · **Step-Back Prompt** buff·1 (+1 Atk, +1 accuracy) · **Proof by Contradiction** 70·2·90 (×2 power if the target buffed or used a status move last round) · **Socratic Method** util·1 (reveals the target's next intent; −15 to its accuracy) · **Tree Search** 85·3·100 (auto-targets the foe it would hurt most) |
 | Speed | **Token Burst** 40·1·100·+1 · **Speculative Decoding** 22×2–5·2·90 (Wild: up to 6 hits) · **Low Latency** buff·1 (+2 Spd) · **Early Exit** 50·1·100 (subagent swaps out after hitting) · **Distilled Strike** 75·1·95 (can't crit) · **Flash Inference** 90·3·85·+1 (fails if the target already acted) |
-| Open | **Fork** util·1 (copies the target's best buff) · **Community Patch** heal·2 (one ally +30%) · **Weights Dump** 100·3·90 (user −1 Def) · **Permissive License** buff·1 (+1 Atk to *everyone*; Wild: +2) · **Swarm of Fine-Tunes** 20×(1 + Open allies)·2·100 · **Leaderboard Flex** 65·2·100 (+30 power if the user's HP% is higher than the target's) |
+| Open | **Fork** util·1 (copies the target's best buff) · **Community Patch** heal·2 (one ally +30%) · **Weights Dump** 100·3·90 (user −1 Def) · **Permissive License** buff·1 (+1 Atk to *everyone*; Wild: +2) · **Swarm of Fine-Tunes** 15×(1 + Open allies)·2·100 · **Leaderboard Flex** 65·2·100 (+30 power if the user's HP% is higher than the target's) |
 | Code | **Stack Trace** 65·2·100 (reveals the target's top deck card for 3 rounds) · **Hotfix** heal·2·+1 (cures major status, +15%) · **Infinite Loop** util·2·85 (inflicts Overfit) · **Segfault** 110·3·80 (20% chance the target's next move fails) · **Unit Test** guard·1·+3 · **Refactor** util·0 (resets the user's stages, frees 2 cells, cures Quantized) · **Merge Conflict** 55·2·100 (swaps a random buff with the target) |
 | Vision | **Pixel Peep** 50·1·100 (+1 crit stage) · **Bounding Box** util·1 (next move can't miss) · **Adversarial Patch** 70·2·90 (30% Hallucinating) · **Screenshot** util·1 (saves the target's stages; the next use reverts them) · **Saliency Map** buff·2 (3 rounds: all foe intents shown, allies +1 accuracy) · **Captcha Wall** guard·1·+4 (blocks Speed moves fully, halves the rest) |
 | Voice | **Hype Train** buff·1 (+2 Atk, −1 accuracy; Wild: +1 Spd) · **Hot Take** 90·2·85 (Wild: +50% power) · **Deepfake Call** util·3·75 (Prompt Injected) · **Earnest Apology** def·1 (heals 20%, −1 Drift, next hit on the user −30%) · **Filibuster** 40·1·100 (+2 Junk tokens to the target) · **Flattery** util·1·90 (Glazed) |
@@ -248,14 +259,14 @@ Precedents support rewarding performance at capture and charging power in space.
 | | **Graft** (move into the orchestrator) | **Spin up** (new subagent) |
 |---|---|---|
 | You get | The species' signature move as a Skill at 100% power | The creature with 3 moves and a passive; the signature becomes a weaker passive echo |
-| Level | — | Joins at the level of the wild model you beat, not the orchestrator's |
+| Level | — | Joins at the level of the wild model you beat, not the orchestrator's, with **1** active Example Card slot |
 | Control | You aim it every turn | Acts on its own from its deck |
 | Space | Irregular 3–4 cell shape | 2×2 slot plus adjacent cards |
-| Growth | Static; can be fine-tuned +1 tier with currency | Levels, evolves, gains card slots |
+| Growth | Static; can be fine-tuned +1 tier with currency | Levels, evolves, gains card slots (through level, a Clean distill and grid expansion) |
 | Action economy | None | +1 action per round, the big draw |
 | Best when | The grid has odd gaps, or you need a counter | You have a 2×2 hole and want breadth |
 
-Winning with at least 50% HP in at most 6 turns gives a **Clean** distill: the graft shape shrinks by 1 cell, or the subagent starts with +1 card slot. A spun-up subagent can later be distilled *down* into its graft, losing its levels. This one-way path keeps outclassed creatures useful. Wild species respawn, so only rare checkpoint variants are one-shot. For tuning, assume a subagent action is worth about 0.6 of a human-commanded action and a graft about 1.3× a basic Skill. Tune until each option wins 45–55% of mirror sims.
+Winning with at least 50% HP in at most 6 turns gives a **Clean** distill: the graft shape shrinks by 1 cell, or the subagent starts with +1 card slot. A spun-up subagent can later be distilled *down* into its graft, losing its levels. This one-way path keeps outclassed creatures useful. Wild species respawn, so only rare checkpoint variants are one-shot. For tuning, assume a subagent action is worth about 0.6 of a human-commanded action and a graft about 1.3× a basic Skill. Spin-up is intended to be the stronger choice, because its extra action per round is the draw, and its light cost is one active Example Card slot at the start. Tune until a graft is worth taking: the base team plus the graft beats the same base team without it at least 55% of the time, for the same three species.
 
 ### Design: a gentle level curve, visible stats and version-name evolution
 
@@ -348,7 +359,7 @@ Each creature is a behaviour gag with a battle mechanic attached, so the joke is
 | 1 | **Sagelet** S | Reasoning | v1 → v2 → v3.5 Turbo → v4 Max Preview | Opens every move with "I'd be happy to help." Ability **Disclaimer** blocks the first status each fight | Starter |
 | 2 | **Blitzr** S | Speed | Same ladder | Ability **Move Fast**: +1 priority on its first move each battle, with a 15% seeded chance it "ships with a known issue" (10% recoil) | Starter |
 | 3 | **Forkling** S | Open | v1 → v2 → v3.5 Community → v4 Max Preview (Unofficial) | Once per battle, forks a decoy that absorbs one hit; its final form is four forks arguing | Starter |
-| 4 | **Tokenibble** S | Speed | Tokenibble → Tokenibbler → Tokenomnom | Eats tokens: adds cost to a foe's next move | Bundled "intern" subagent |
+| 4 | **Tokenibble** S | Speed | Tokenibble → Tokenibbler → Tokenomnom | Eats tokens: adds cost to a foe's next move | First wild model (trailhead) |
 | 5 | **Stochastiparrot** S | Voice | → v2 | Repeats the foe's last move with a temperature roll; overworld `mimic` | West brush common |
 | 6 | **Nullbeetle** S | Code | — (bug family) | Null-pointer chomps | Trailhead common, grunt team |
 | 7 | **Off-By-Wasp** S | Code | — (bug family) | Always hits one tile left: ±1 retarget | West brush common |
@@ -383,7 +394,7 @@ Each creature is a behaviour gag with a battle mechanic attached, so the joke is
 | 40 | Imminent | ??? | Never ships | Dex: "Arrival expected next quarter" | |
 | 41 | Monocultra | Average of all | Formed by merging | Takes 1× from all types, then resists the type you repeat, and decays as it trains on itself | |
 
-The slice's type logic has a deliberate shape. Sagelet gets an easy first gym, because Reasoning hits Code 2×. Blitzr and Forkling players are steered toward Embeddingo (Search hits Code 2×) or Hallucinat in the forest. Forkling's Open hits Agentoad's Speed half. This mirrors the classic "first gym favours one starter" curve while guaranteeing every starter a route answer. Kip always takes your counter-type.
+The slice's type logic has a deliberate shape. Sagelet gets an easy first gym, because Reasoning hits Code 1.5×. Blitzr and Forkling players are steered toward Embeddingo (Search hits Code 1.5×) or Hallucinat in the forest. Forkling's Open hits Agentoad's Speed for only ⅔. This mirrors the classic "first gym favours one starter" curve while guaranteeing every starter a route answer. Kip always takes your counter-type.
 
 ## The satire pass: Make No Mistakes, Slop and Vibes
 
@@ -436,6 +447,26 @@ The 57-move launch list stays the slice baseline. Each candidate below is built 
   - "Let me delve into this battle."
   - "As requested, I have made no mistakes." (it has)
   - Compile Hall leader: "I accepted all the changes. What could go wrong?"
+
+### Water, power and the Datacenter Spire
+
+This is a world-level through-line, not a one-off gag. The compute everyone in Latentia is chasing has to live somewhere, and somewhere is upstream. The satire targets the hype, the PR and the bad statistics on **both** sides. It never preaches.
+
+- **Team Scrape's real plan.** Scraping the lab's ModelDex logs funds a hyperscale campus to be built on the Deprecated Forest. Grunt line: "We're not cutting trees, we're optimising biomass." Their HQ is the endgame's Datacenter Spire, with its racks and coolant rivers.
+- **Patchwater's reservoir.** A water-level gauge in the plaza drops one notch after each badge, as the Spire upstream comes online. The town sign updates with it, for example "Patchwater: now 40% Patch, 60% Mud". When the player shuts a cooling loop off in the Spire, the gauge recovers. This is a visible reward with no mechanical cost.
+- **NPCs.**
+  - A farmer whose irrigation now feeds the cooling towers.
+  - A PR bot that recites "We're water-positive by 2040 (projected)" and "carbon-neutral via offsets we generated ourselves".
+  - A **doom-poster** who insists that every prompt drinks a whole lake. He is off by about 1,000×, and everyone answers him with "Citation needed." The joke cuts both ways, so it lands on bad numbers rather than on players.
+- **The virtual water receipt.** At the end of every run, and at milestones, a satirical receipt appears: "This run used 4.2 L of virtual water and 0.009 kWh. Offsets purchased: 0. — estimates by the Latentia PR department". The figures are deterministic, obviously fake and clearly labelled. They are a shareable stat, not a real claim. (It ships first in playable v0.)
+- **Candidate moves** (evaluated in the same follow-up as the satire candidates):
+
+  | Move | Type and stats | Effect | Primitive status |
+  |---|---|---|---|
+  | **Liquid Cooling** | Memory · heal·2 | Heals; sets a **Drought** field that raises everyone's context costs by +1 for 3 rounds | **new** field |
+  | **Brownout** | Speed · util·2 | Gives all creatures −1 priority for 2 rounds | **new** field |
+  | **Grid Strain** | Code | Power scales with the number of creatures on the field | **new** power rider |
+- **Boss.** **The Hyperscaler**, a gigawatt-class orchestrator in the Spire. Its passive is **Power Purchase Agreement**: it starts each battle with extra context, paid for by draining the field.
 
 ## Levels teach one verb per space: Localhost, the Deprecated Forest and the Compile Hall
 
@@ -597,9 +628,9 @@ The balance pipeline borrows Mega Crit's approach. Slay the Spire's team tracked
 |---|---|
 | Any archetype against the field | ≤ 55% win rate |
 | Worst single matchup | No worse than 30/70 |
-| Starter triangle | ~60/40, so skill can flip it |
+| Starter triangle | ~60/40, so skill can flip it (orchestrator only, no subagent) |
 | Always-T0 vs always-T4 | Within ~5 points, or the dial is solved |
-| Graft vs spin-up mirrors | 45–55% |
+| Graft worth taking | ≥ 55% for the graft side vs the same team without it (spin-up is intended to be stronger) |
 | Median fight length | 5–8 rounds |
 | First-mover mirror | 50 ± 2% |
 

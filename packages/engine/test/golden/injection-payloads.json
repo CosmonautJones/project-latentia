@@ -1,7 +1,7 @@
 {
   "name": "injection-payloads",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "708cb0c6ad21d24119cf0f9a5cbbe5dc",
     "setup": {
       "a": {
@@ -127,7 +127,7 @@
           "action": {
             "kind": "move",
             "moveId": "retrieval-strike",
-            "target": 4,
+            "target": 5,
             "injection": {
               "moveId": "deepfake-call",
               "target": 3
@@ -171,7 +171,7 @@
           "action": {
             "kind": "move",
             "moveId": "scrape",
-            "target": 5,
+            "target": 3,
             "injection": {
               "moveId": "happy-to-help",
               "target": 1
@@ -193,7 +193,7 @@
           "action": {
             "kind": "move",
             "moveId": "retrieval-strike",
-            "target": 5,
+            "target": 3,
             "injection": {
               "moveId": "deepfake-call",
               "target": 3
@@ -205,17 +205,35 @@
           "action": {
             "kind": "move",
             "moveId": "happy-to-help",
-            "target": 0,
+            "target": 2,
             "injection": {
               "moveId": "token-burst",
               "target": 0
             }
           }
         }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "merge-conflict",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "step-back-prompt",
+            "target": 1
+          }
+        }
       }
     ]
   },
-  "expectedHash": "fc82b63828364824",
-  "rounds": 5,
-  "winner": "b"
+  "expectedHash": "d877ffab3d8b18b7",
+  "rounds": 6,
+  "winner": "a"
 }

@@ -1,7 +1,7 @@
 {
   "name": "embeddingo-hallucination-cures",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "a7a37d3f54596947a7e6a9a29d8d753a",
     "setup": {
       "a": {
@@ -167,7 +167,7 @@
       }
     ]
   },
-  "expectedHash": "519f129085a897ee",
+  "expectedHash": "08e580bc6583d7c0",
   "rounds": 4,
   "winner": "b"
 }

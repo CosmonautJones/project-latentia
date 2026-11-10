@@ -3,7 +3,7 @@
 - **Project:** Latentia (working codename; the region name, not a final title)
 - **Sub-project:** 1 of 5 — the headless battle engine and balance simulator
 - **Date:** 2026-11-07
-- **Status:** Revision 3.3 — plus normative rulings in docs/superpowers/notes/phase-a-rulings.md (1–80) and docs/superpowers/notes/phase-b-rulings.md (81–119) and docs/superpowers/notes/phase-c-rulings.md (120–145)
+- **Status:** Revision 3.4 — plus normative rulings in docs/superpowers/notes/phase-a-rulings.md (1–80) and docs/superpowers/notes/phase-b-rulings.md (81–119) and docs/superpowers/notes/phase-c-rulings.md (120–145) and docs/superpowers/notes/phase-d-rulings.md (146–154)
 - **Source of truth for game rules:** `docs/design-bible.md` (sections "One Context Grid…", "Battles run on eight types…", "Training is example cards…", "Determinism makes ghosts…"). This spec turns those rules into a buildable engine. Where this spec and the bible differ, this spec wins and the bible gets updated.
 - **Normative rulings:** `docs/superpowers/notes/phase-a-rulings.md` and `docs/superpowers/notes/phase-b-rulings.md` hold the rulings made while Phases A and B were built; they amend this spec, and where a ruling and this spec differ, the ruling wins.
 
@@ -210,7 +210,7 @@ Damage is carried at ×10000 precision so small modifiers matter at slice levels
 1. **Effective power `P`**, in this order, each multiplicative step `P = floor(P × m / 10000)`: start from the move's base power → add additive bonuses (Chain of Thought, Long-Term Recall, Leaderboard Flex) → conditional multipliers (e.g., Proof by Contradiction ×2 = 20000, Wild ×1.5 = 15000) → Tool steps (11000 each) → Compaction Summary (5000).
 2. `LF = floor(2 × L / 5) + 2`.
 3. `d = floor(P × Atk × LF × 10000 / (Def × 50))` using effective Atk and Def. A crit ignores the defender's positive Robustness stages.
-4. Apply each modifier `m` (basis points) in this exact order with `d = floor(d × m / 10000)`, skipping any that don't apply: **Type** (chart product, clamped 2500–30000) → **T4 super-effective** (12500) → **Native** same-type (12500) → **Crit** (15000) → **Roll** (temperature roll, as basis points) → **Handoff** (none on a side's first hit on the target; 11500 on the 2nd consecutive hit, 13000 from the 3rd: Ruling 97) → **Specialist** (11500) → **Overfit** (11500 same target / 7000 other) → **Glazed** (7000 vs its glazer) → **Observation** (9000) → **Guard** (Guardrail, or Captcha Wall against a non-Speed move: 5000) → **Refusal penalty / Earnest Apology** (5000 / 7000). A Captcha Wall block of a Speed move counts as a miss.
+4. Apply each modifier `m` (basis points) in this exact order with `d = floor(d × m / 10000)`, skipping any that don't apply: **Type** (chart product, clamped 4444–22500) → **T4 super-effective** (12500) → **Native** same-type (12500) → **Crit** (15000) → **Roll** (temperature roll, as basis points) → **Handoff** (none on a side's first hit on the target; 11500 on the 2nd consecutive hit, 13000 from the 3rd: Ruling 97) → **Specialist** (11500) → **Overfit** (11500 same target / 7000 other) → **Glazed** (7000 vs its glazer) → **Observation** (9000) → **Guard** (Guardrail, or Captcha Wall against a non-Speed move: 5000) → **Refusal penalty / Earnest Apology** (5000 / 7000). A Captcha Wall block of a Speed move counts as a miss.
 5. `damage = floor(d / 10000) + 1`.
 6. Every intermediate value **must** satisfy `Number.isSafeInteger`; the engine asserts it. Two basis-point values are never multiplied without dividing by 10000 in between.
 7. Multi-hit moves roll accuracy, crit and damage roll once and apply them to every hit; the whole move counts as one Handoff hit.
@@ -312,7 +312,7 @@ A unit test **must** show that a 10% modifier changes damage for a typical L5 at
 | `stealStage` | Scrapion's theft (simplified) |
 | `passive` (trigger, effect, chance) | Disclaimer, Move Fast, Slopling's stacking buff (simplified), Vibrat's Junk (simplified) |
 
-- A content test checks: every species' moves and signature exist; the chart has all 64 cells; every row **and** column has exactly two 20000 and two 5000 entries (verified for the bible's chart); every move maps to known primitives; every chance and duration names its draw slot.
+- A content test checks: every species' moves and signature exist; the chart has all 64 cells; every row **and** column has exactly two 15000 and two 6667 entries (verified for the bible's chart); every move maps to known primitives; every chance and duration names its draw slot.
 
 ---
 
@@ -353,9 +353,9 @@ A unit test **must** show that a 10% modifier changes damage for a typical L5 at
 |---|---|---|---|
 | Any archetype vs the field | round-robin, pooled over all of the archetype's battles | 1,000 per ordered pairing | ≤ 55% |
 | Worst single matchup | round-robin, per unordered pairing with both sides pooled | 2,000 per pairing | ≥ 30% |
-| Starter triangle | each starter vs its counter, both sides, slice-level teams | 2,000 | 55–65% for the favoured side |
+| Starter triangle | each starter vs its counter, both sides, orchestrator only with role-based decks, no partner (Ruling 146) | 2,000 | 55–65% for the favoured side |
 | Temperature dial | always-T0 vs always-T4, same teams, both sides | 2,000 | within 5 points of 50% |
-| Graft vs spin-up | mirror teams differing only in that choice | 2,000 | 45–55% |
+| Graft worth taking | base + graft vs base | 2,000 | ≥ 55% (spin-up is intended to be stronger, Ruling 147; the graft-vs-spin-up rows stay as diagnostics) |
 | Fight length | round-robin | all | median 5–8 rounds |
 | First mover | perfect mirror, side A vs side B | 10,000 | 48–52% |
 

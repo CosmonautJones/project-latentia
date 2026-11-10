@@ -1,7 +1,7 @@
 {
   "name": "forkling-community-patch",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "393b04bc17a75055248fec67c710d310",
     "setup": {
       "a": {
@@ -129,8 +129,8 @@
           "temperature": 2,
           "action": {
             "kind": "move",
-            "moveId": "hard-fork",
-            "target": 4
+            "moveId": "leaderboard-flex",
+            "target": 3
           }
         },
         "b": {
@@ -147,8 +147,8 @@
           "temperature": 2,
           "action": {
             "kind": "move",
-            "moveId": "swarm-of-fine-tunes",
-            "target": 3
+            "moveId": "hard-fork",
+            "target": 4
           }
         },
         "b": {
@@ -156,7 +156,7 @@
           "action": {
             "kind": "move",
             "moveId": "infinite-loop",
-            "target": 2
+            "target": 0
           }
         }
       },
@@ -165,7 +165,7 @@
           "temperature": 2,
           "action": {
             "kind": "move",
-            "moveId": "leaderboard-flex",
+            "moveId": "hard-fork",
             "target": 3
           }
         },
@@ -201,7 +201,7 @@
           "temperature": 2,
           "action": {
             "kind": "move",
-            "moveId": "hard-fork",
+            "moveId": "leaderboard-flex",
             "target": 3
           }
         },
@@ -219,22 +219,36 @@
           "temperature": 2,
           "action": {
             "kind": "move",
-            "moveId": "swarm-of-fine-tunes",
-            "target": 3
+            "moveId": "hard-fork",
+            "target": 6
           }
         },
         "b": {
           "temperature": 1,
           "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
             "kind": "move",
-            "moveId": "infinite-loop",
-            "target": 0
+            "moveId": "swarm-of-fine-tunes",
+            "target": 6
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "none"
           }
         }
       }
     ]
   },
-  "expectedHash": "086830a62fff3a98",
-  "rounds": 7,
+  "expectedHash": "80937bf056f3cb04",
+  "rounds": 8,
   "winner": "b"
 }
