@@ -226,12 +226,18 @@ export class OverworldScene extends BaseScene {
     const cam = this.cameras.main;
     return new Promise((resolve) => {
       const done = dir === 'out' ? Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE : Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE;
-      cam.once(done, () => resolve());
-      // If the scene shuts down mid-fade the camera never completes it; the generation check drops the beat.
-      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => resolve());
+      // Whichever comes first (the fade completes, or the scene shuts down mid-fade and the camera never completes
+      // it) removes both listeners, so warping back and forth never piles them up; the generation check drops the beat.
+      const finish = () => {
+        cam.off(done, finish);
+        this.events.off(Phaser.Scenes.Events.SHUTDOWN, finish);
+        resolve();
+      };
+      cam.once(done, finish);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, finish);
       if (dir === 'out') cam.fadeOut(FADE_MS, 0x18, 0x14, 0x25);
       else cam.fadeIn(FADE_MS, 0x18, 0x14, 0x25);
-      if (!this.live(gen)) resolve();
+      if (!this.live(gen)) finish();
     });
   }
 
@@ -253,6 +259,7 @@ export class OverworldScene extends BaseScene {
       trainerLive: trainerLive(this.step),
       trainer: grad ? grad.tile : null,
       fps: Math.round(this.game.loop.actualFps),
+      shutdownListeners: this.events.listenerCount(Phaser.Scenes.Events.SHUTDOWN),
     };
   }
 }

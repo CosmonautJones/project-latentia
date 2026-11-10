@@ -67,6 +67,12 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
   // Out the door: the warp lands outside the lab, in Localhost.
   await walkTo(page, (p) => p.area === 'outside');
   expect(await ow(page)).toMatchObject({ area: 'outside', x: 5, y: 4, facing: 'down' });
+  // Back in and out again: each warp's fades remove their listeners, so none pile up.
+  const listeners = (await ow(page))?.shutdownListeners;
+  expect(listeners).toBeGreaterThan(0);
+  await walkTo(page, (p) => p.area === 'lab');
+  await walkTo(page, (p) => p.area === 'outside');
+  expect((await ow(page))?.shutdownListeners).toBe(listeners);
 
   // The farmer on the way has a line.
   const farmer = LOCALHOST.npcs.find((n) => n.id === 'farmer')!;

@@ -24,4 +24,6 @@ export interface OverworldProbe {
   readonly trainer: Pos | null;
   /** Phaser's measured frame rate. */
   readonly fps: number;
+  /** Listeners on the scene's SHUTDOWN event: steady across warps (each fade cleans up after itself). */
+  readonly shutdownListeners: number;
 }
