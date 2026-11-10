@@ -111,7 +111,7 @@ const DATA = {
   },
   deprecatter: {
     id: 'deprecatter', name: 'Deprecatter', types: ['memory'],
-    base: { hp: 50, compute: 45, robustness: 45, latency: 40 }, ctx: 10, // placeholder — tuned in sub-project 4
+    base: { hp: 50, compute: 45, robustness: 60, latency: 40 }, ctx: 10, // placeholder — tuned in sub-project 4
     moves: ['nostalgia-trip', 'long-term-recall', 'save-state', 'episodic-replay'], signature: 'nostalgia-trip',
     passives: [],
     graftShape: [[0, 0], [1, 0], [0, 1]],

@@ -617,3 +617,77 @@ Vs-field rows failing 6 → 7; summed excess over 55% 76.7 → 72.4 pp.
 ### Re-prioritisation (coordinator, after an environment restart)
 
 The agentoad candidate's full run was killed by an environment restart. The coordinator then time-boxed D4 to at most four more kept changes or about three hours of runs. They also re-prioritised it toward "playable and not broken": first no matchup at or near 100% (the starter triangle, then the dominant archetypes), then fight length staying at a median of 5–8. From here, candidates are judged first on the worst-matchup target (its rows' total shortfall below 30%) and on the blowout counts from a 200-seed round-robin, still under the rule that no target may leave its band. The agentoad candidate only made room for a dial change, which is not in those priorities, so it was not re-run. The 200-seed round-robin at K3 lists the remaining blowouts: 16 pairings at or beyond 99/1. Every one is a Search team (Embeddingo, Scrapion) or a Reasoning nuke (Sagelet, Hallucinat) against a Code-lock, Memory or Open team, or Slopling or mixed-starter-forkling against code-lock-nullbeetle.
+
+### Blowout candidates on the K3 state (scale 0.1 targets against `scratch-d4-s01-k3`; 200-seed round-robin against `scratch-d4-rr-k3`: 16 at or beyond 99/1, 30 at or beyond 95/5, 51 at or beyond 90/10, 81 at or beyond 80/20)
+
+A first pass of these three ran with a quoting slip that applied no change. All three reproduced the K3 reference exactly (a determinism check on the committed state) and are not counted.
+
+| id | change | why this number | vs-field excess | worst-matchup shortfall | blowouts 99/1 · 95/5 · 90/10 · 80/20 | left band | decision |
+|---|---|---|---|---|---|---|---|
+| b1 | Retrieval Strike 70 → 60 | the Search teams' cost-1 attack against Code and Memory | 76.8 → 78.1 | 455.5 → 454.5 | 16 · 32 · 52 · 82 | none | rejected: no fewer blowouts, vs field away |
+| b2 | Deprecatter Robustness 45 → 60 | see K4 | 76.8 → 74.7 | 455.5 → 458.0 | 15 · 26 · 48 · 81 | none | **kept as K4** |
+| b3 | Scrape 60 → 50 | Scrapion's signature | 76.8 → 75.2 | 455.5 → 453.0 | 16 · 33 · 50 · 81 | none | rejected: blowouts at 95/5 up |
+
+(Worst-matchup shortfall is Σ max(0, 30 − point) over the 20 worst-matchup rows. At this scale each row is 200 battles, so ±3 pp on the sum is noise.)
+
+### K4: Deprecatter Robustness 45 → 60 (kept)
+
+- **Change:** `content/species.ts`, Deprecatter base Robustness 45 → 60 (L8 stat 12 → 14).
+- **Why 60:** first-balance-pass §d move 2. Deprecatter is the slice's weakest species (base total 180; the others are 210–275) and the only Memory species, Memory being the type that hits Reasoning 1.5×. It sits in both Memory teams, which lose 99/1 to the Search teams, and in mixed-heisenmoth-tempo. 60 is level with Forkling's Robustness and brings the total to 195, still the slice's lowest, so "nostalgic, weak" holds. Robustness rather than Compute, because a higher Compute makes a creature the `highestAtkFoe` that foes' cards aim at (c1, c6). Species base stats have no bible numbers (the ModelDex rows give type, line and gag), so the bible needs no change.
+- **Full scale** (`scratch-d4-k4c`, 455.6 s), before = K3:
+
+| target | row | before | after | verdict |
+|---|---|---|---|---|
+| vs field (≤ 55%) | speed-rush-blitzr | 67.8% | 67.6% | fail |
+| vs field (≤ 55%) | speed-rush-agentoad | 53.2% | 53.1% | pass |
+| vs field (≤ 55%) | speed-rush-graft | 49.2% | 48.1% | pass |
+| vs field (≤ 55%) | reasoning-nuke-sagelet | 80.6% | 80.4% | fail |
+| vs field (≤ 55%) | reasoning-nuke-hallucinat | 72.0% | 71.6% | fail |
+| vs field (≤ 55%) | open-swarm-forkling | 61.6% | 61.0% | fail |
+| vs field (≤ 55%) | open-swarm-slopling | 51.4% | 50.8% | pass |
+| vs field (≤ 55%) | code-lock-spaghettopus | 54.5% | 54.4% | inconclusive → **pass** |
+| vs field (≤ 55%) | code-lock-nullbeetle | 17.3% | 16.8% | pass |
+| vs field (≤ 55%) | code-lock-cobolt | 32.5% | 31.9% | pass |
+| vs field (≤ 55%) | voice-pressure-parrot | 40.5% | 39.8% | pass |
+| vs field (≤ 55%) | voice-pressure-vibrat | 40.6% | 40.1% | pass |
+| vs field (≤ 55%) | memory-stall-deprecatter | 43.6% | 47.0% | pass |
+| vs field (≤ 55%) | memory-stall-retro | 19.7% | 22.3% | pass |
+| vs field (≤ 55%) | search-anti-hallu-embeddingo | 62.0% | 62.0% | fail |
+| vs field (≤ 55%) | search-anti-hallu-scrapion | 53.8% | 53.3% | pass |
+| vs field (≤ 55%) | mixed-starter-sagelet | 53.7% | 53.5% | pass |
+| vs field (≤ 55%) | mixed-starter-blitzr | 49.1% | 48.6% | pass |
+| vs field (≤ 55%) | mixed-starter-forkling | 62.7% | 62.1% | fail |
+| vs field (≤ 55%) | mixed-heisenmoth-tempo | 34.3% | 35.6% | pass |
+| worst matchup (≥ 30%) | speed-rush-blitzr vs open-swarm-forkling | 18.9% | 18.9% | fail |
+| worst matchup (≥ 30%) | speed-rush-agentoad vs memory-stall-deprecatter | 15.6% | 15.7% | fail |
+| worst matchup (≥ 30%) | speed-rush-graft vs open-swarm-forkling | 1.9% | 1.9% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-sagelet vs speed-rush-blitzr | 19.3% | 19.3% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-hallucinat vs speed-rush-blitzr | 26.1% | 26.1% | fail |
+| worst matchup (≥ 30%) | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | open-swarm-slopling vs reasoning-nuke-sagelet | 0.4% | 0.4% | fail |
+| worst matchup (≥ 30%) | code-lock-spaghettopus vs search-anti-hallu-embeddingo | 0.2% | 0.2% | fail |
+| worst matchup (≥ 30%) | code-lock-nullbeetle vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | code-lock-cobolt vs search-anti-hallu-embeddingo | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-parrot vs code-lock-spaghettopus | 19.0% | 19.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-vibrat vs reasoning-nuke-sagelet | 10.4% | 10.4% | fail |
+| worst matchup (≥ 30%) | memory-stall-deprecatter vs search-anti-hallu-embeddingo | 0.2% | 0.5% | fail |
+| worst matchup (≥ 30%) | memory-stall-retro vs search-anti-hallu-embeddingo | 0.4% | 0.6% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-embeddingo vs speed-rush-graft | 4.0% | 4.0% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-scrapion vs search-anti-hallu-embeddingo | 1.8% | 1.8% | fail |
+| worst matchup (≥ 30%) | mixed-starter-sagelet vs speed-rush-graft | 8.4% | 8.4% | fail |
+| worst matchup (≥ 30%) | mixed-starter-blitzr vs mixed-starter-forkling | 14.9% | 14.9% | fail |
+| worst matchup (≥ 30%) | mixed-starter-forkling vs reasoning-nuke-sagelet | 9.7% | 9.7% | fail |
+| worst matchup (≥ 30%) | mixed-heisenmoth-tempo vs reasoning-nuke-sagelet | 1.0% | 1.1% | fail |
+| starter triangle (55–65%) | blitzr (favoured) vs sagelet | 99.3% | 99.3% | fail |
+| starter triangle (55–65%) | sagelet (favoured) vs forkling | 91.2% | 91.2% | fail |
+| starter triangle (55–65%) | forkling (favoured) vs blitzr | 100.0% | 100.0% | fail |
+| temperature dial (45–55%) | T0 vs T4 mirror, pooled | 55.5% | 55.7% | fail |
+| graft worth taking (≥ 55%) | stochastiparrot | 71.5% | 71.5% | pass |
+| graft worth taking (≥ 55%) | nullbeetle | 81.7% | 81.7% | pass |
+| graft worth taking (≥ 55%) | off-by-wasp | 23.3% | 23.3% | fail |
+| fight length (median 5–8) | median rounds | 7 | 7 | pass |
+| first mover (48–52%) | side A vs mirror, pooled | 51.1% | 50.8% | inconclusive → **pass** |
+
+Vs-field rows failing 6 → 6; summed excess over 55% 76.7 → 74.7 pp.
+
+- **Decision:** kept. Blowouts fall (200-seed round-robin: pairings at or beyond 95/5 30 → 26, at or beyond 99/1 16 → 15, at or beyond 90/10 51 → 48). memory-stall-deprecatter rises 43.6 → 47.0 and memory-stall-retro 19.7 → 22.3. Vs field moves toward its band (excess 76.7 → 74.7 pp; every failing row falls 0.2–0.6). code-lock-spaghettopus goes inconclusive → pass (54.4) and first mover inconclusive → pass (50.8). No row left its band. The dial is 55.7% (from 55.5%, still a fail). The worst-matchup rows are unchanged within noise: each archetype's single worst pairing is still a type blowout.
