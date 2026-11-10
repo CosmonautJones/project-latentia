@@ -691,3 +691,21 @@ A first pass of these three ran with a quoting slip that applied no change. All 
 Vs-field rows failing 6 → 6; summed excess over 55% 76.7 → 74.7 pp.
 
 - **Decision:** kept. Blowouts fall (200-seed round-robin: pairings at or beyond 95/5 30 → 26, at or beyond 99/1 16 → 15, at or beyond 90/10 51 → 48). memory-stall-deprecatter rises 43.6 → 47.0 and memory-stall-retro 19.7 → 22.3. Vs field moves toward its band (excess 76.7 → 74.7 pp; every failing row falls 0.2–0.6). code-lock-spaghettopus goes inconclusive → pass (54.4) and first mover inconclusive → pass (50.8). No row left its band. The dial is 55.7% (from 55.5%, still a fail). The worst-matchup rows are unchanged within noise: each archetype's single worst pairing is still a type blowout.
+
+### Blowout candidates on the K4 state (scale 0.1 targets and 200-seed round-robin against the K4 state, which is screen b2: excess 74.7; blowouts 15 · 26 · 48 · 81)
+
+| id | change | why this number | vs-field excess | blowouts 99/1 · 95/5 · 90/10 · 80/20 | left band | decision |
+|---|---|---|---|---|---|---|
+| b4 | Embeddingo Robustness 55 → 45 | Embeddingo is in every Search and nuke team that wins the blowouts | 74.7 → 75.3 | 15 · 27 · 49 · 81 | none | rejected: no effect |
+| b5 | Nullbeetle Robustness 55 → 65 | code-lock-nullbeetle is the most blown-out team (7 pairings at or beyond 95/5) | 74.7 → 77.2 | 16 · 28 · 47 · 81 | code-lock-spaghettopus 54.4 → 56.9, search-anti-hallu-scrapion 53.8 → 57.1 | rejected: Nullbeetle is also a subagent in both gatekeeper teams |
+| b6 | Deprecatter HP 50 → 60 | a second step for the Memory teams | 74.7 → 74.9 | 15 · 27 · 47 · 81 | none | rejected: no effect |
+
+### Stop (blocked)
+
+D4 stops at four kept changes, inside both the eight-change cap and the coordinator's time-box (at most four more after the restart, about three hours of runs; about 75 minutes were used). Every target is not yet passing or inconclusive, so this stop is "blocked", not "done":
+
+- **Vs field and blowouts.** The six failing archetypes (reasoning-nuke-sagelet, reasoning-nuke-hallucinat, speed-rush-blitzr, open-swarm-forkling, search-anti-hallu-embeddingo, mixed-starter-forkling) mostly lose to one another. A nerf to one lifts the others and the four mid teams at 53–55% (spaghettopus, scrapion, mixed-sagelet, agentoad), so most single numbers that lower the excess tip a mid team over 55%. The remaining blowouts (15 pairings at or beyond 99/1) are Reasoning and Search hitting mono-Code and Memory teams at 1.5× and taking ⅔ back. No species or move number screened in D4 flips them. Moving them needs a softer chart (settled in D2), coverage moves (out of scope) or less Code-heavy archetypes (settled in D3).
+- **Starter triangle.** Blocked for single starter numbers (the cycle argument above).
+- **Temperature dial.** 55.7%, 0.7 pp out. Every T4 buff that reaches the band lifts the T4-native speed-rush-agentoad over 55%.
+- **Off-By-Wasp graft.** Blocked by its targeting, not its value.
+- **Worst matchup.** Each archetype's worst pairing is a type blowout and did not move.
