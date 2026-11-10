@@ -11,6 +11,18 @@ did not change. Three things did change:
 - graft vs spin-up's S variant spins its subagent up at L5 with no signature (Rulings 143, 145);
 - targets now carries the partnerless triangle and a per-archetype temperature sweep as diagnostic rows.
 
+**Superseded 2026-11-10 by Rulings 146–147 (Task D1).** This note's measurements stay as the record of the baseline;
+the rows it describes were replaced:
+
+- The official starter-triangle row is now the partnerless one (orchestrator only, the former "solo" diagnostic
+  rows, same `triangle-solo:` seed labels); the Tokenibble-partner triangle rows are gone (Ruling 146; this
+  supersedes Ruling 144's partner decision).
+- The official graft target is now "a graft is worth taking": base team + graft vs the same base team, ≥ 55% for the
+  graft side. The G-vs-S rows below are diagnostic rows, and S now has 1 active Example Card, so their numbers differ
+  from the ones quoted here (Ruling 147).
+- Wherever this note reads "official triangle row", "partner" or "graft vs spin-up 45–55%", read it against those
+  rulings. The tables and findings below are unchanged.
+
 The four search reports are unchanged: re-run as scratch after movePool switched to the engine's `orchestratorMoves`,
 all four histories, final decks and held-out scores were identical.
 

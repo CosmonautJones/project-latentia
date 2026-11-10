@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, hasStatus, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, hasStatus, HEALTHY, HURT, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 
 /**
  * Reasoning charge-nuke (spec §9). The slice has no true charge move: Deliberate and Deep Research are in the move
@@ -57,7 +57,7 @@ const SAGELET_NUKE = archetype('reasoning-nuke-sagelet', {
     card('chain', 'self', ALWAYS, 'chain-of-thought', 'lowestHpFoe'),
     card('charge', 'self', cooldown(3), 'step-back-prompt', 'self'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('compact-telegraphing', 'self', { category: 'telegraphing' }, 'compact', 'self'),
     card('punish', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
     card('weak', 'foe', WEAK_TO_MOVE, 'happy-to-help', 'foeWeakToMove'),
     card('nuke', 'foe', HURT, 'happy-to-help', 'lowestHpFoe'),
@@ -117,7 +117,7 @@ const HALLUCINAT_NUKE = archetype('reasoning-nuke-hallucinat', {
     card('nuke', 'foe', HURT, 'batch-job', 'lowestHpFoe'),
     card('punish', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'clear', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('compact-status-quantized', 'self', hasStatus('quantized'), 'compact', 'self'),
     card('weak', 'foe', WEAK_TO_MOVE, 'batch-job', 'foeWeakToMove'),
     card('opener', 'self', OPENER, 'confident-citation', 'highestAtkFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),

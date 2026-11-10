@@ -1,7 +1,7 @@
 {
   "name": "blitzr-move-fast",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "14cc4c5ddaac116ad7e96d46bb74cddb",
     "setup": {
       "a": {
@@ -191,7 +191,7 @@
           "action": {
             "kind": "move",
             "moveId": "long-term-recall",
-            "target": 2
+            "target": 0
           }
         }
       },
@@ -230,10 +230,46 @@
             "target": 1
           }
         }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "token-burst",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 0
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 3,
+          "action": {
+            "kind": "move",
+            "moveId": "low-latency",
+            "target": 4
+          }
+        },
+        "b": {
+          "temperature": 0,
+          "action": {
+            "kind": "move",
+            "moveId": "long-term-recall",
+            "target": 0
+          }
+        }
       }
     ]
   },
-  "expectedHash": "dbc7a67884eacdda",
-  "rounds": 7,
-  "winner": "a"
+  "expectedHash": "506e2fce6a5f6d0b",
+  "rounds": 9,
+  "winner": "b"
 }

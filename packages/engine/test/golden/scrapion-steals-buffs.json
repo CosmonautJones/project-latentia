@@ -1,7 +1,7 @@
 {
   "name": "scrapion-steals-buffs",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "6484b5f0be1e6d559a764a6048db7810",
     "setup": {
       "a": {
@@ -133,7 +133,7 @@
       }
     ]
   },
-  "expectedHash": "17bd25e1bb6bf9e9",
+  "expectedHash": "a9d55817c1940932",
   "rounds": 4,
   "winner": "a"
 }

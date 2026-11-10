@@ -28,7 +28,7 @@ const LAUNCH: Record<string, readonly (readonly [string, number | null, number, 
     ['Community Patch', null, 2, null, 0],
     ['Weights Dump', 100, 3, 90, 0],
     ['Permissive License', null, 1, null, 0],
-    ['Swarm of Fine-Tunes', 20, 2, 100, 0],
+    ['Swarm of Fine-Tunes', 15, 2, 100, 0],
     ['Leaderboard Flex', 65, 2, 100, 0],
   ],
   code: [

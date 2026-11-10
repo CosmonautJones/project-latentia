@@ -2,7 +2,7 @@ import { activeCardCount, type CreatureSetup } from '@latentia/engine';
 import { num, parseArgs, tag, type CommandSpec } from '../args.js';
 import { ARCHETYPES } from '../archetypes/index.js';
 import { fmtCount, fmtInterval, fmtPct, fmtSeconds, writeReport, type Report } from '../report.js';
-import { GRAFT_SPECIES, graftVariant, soloSide, spinUpVariant, starterSide, TRIANGLE } from '../target-setups.js';
+import { baseTeam, GRAFT_SPECIES, graftVariant, spinUpVariant, starterSide, TRIANGLE } from '../target-setups.js';
 import { measureTargets, TARGETS, targetById, targetVerdict, TEMPERATURE_SWEEP_PER_SIDE, type TargetRow, type TargetsRun } from '../targets.js';
 import type { CommandContext } from '../types.js';
 
@@ -25,12 +25,10 @@ export function setupNotes(): string[] {
   const triangle = TRIANGLE.map(([fav, beaten]) => {
     const f = starterSide(fav).side;
     const b = starterSide(beaten).side;
-    return `${fav} L${f.orchestrator.level} + ${team(f.active)} vs ${beaten} L${b.orchestrator.level} + ${team(b.active)}`;
+    return `${fav} L${f.orchestrator.level} alone vs ${beaten} L${b.orchestrator.level} alone`;
   });
-  const solo = TRIANGLE.map(([fav, beaten]) => {
-    const f = soloSide(fav).side;
-    return `${fav} L${f.orchestrator.level} alone vs ${beaten} L${soloSide(beaten).side.orchestrator.level} alone`;
-  });
+  const base = baseTeam().side;
+  const room = (g: { width: number; height: number; pieces: readonly { shape: readonly unknown[] }[] } | null): string => (g === null ? 'no grid' : `headroom ${g.width * g.height - g.pieces.reduce((n, p) => n + p.shape.length, 0)}`);
   const graft = GRAFT_SPECIES.map((sp) => {
     const g = graftVariant(sp).side;
     const s = spinUpVariant(sp).side;
@@ -38,12 +36,12 @@ export function setupNotes(): string[] {
     const piece = g.grid?.pieces.find((p) => p.kind === 'graft');
     const slot = s.grid?.pieces.find((p) => p.kind === 'subagentSlot' && p.subagentId === spun?.id);
     const active = s.grid === null || slot === undefined || spun === undefined ? 0 : activeCardCount(s.grid, slot.id, spun.version);
-    return `${sp}: G = ${g.orchestrator.species} L${g.orchestrator.level} + ${team(g.active)} with graft ${piece?.moveId} (${piece?.shape.length} cells); S = ${s.orchestrator.species} L${s.orchestrator.level} + ${team(s.active)}, ${sp} spun up with moves ${spun?.moves.join(', ')} (no signature) on ${active} active cards`;
+    return `${sp}: G = base team + graft ${piece?.moveId} (${piece?.shape.length} cells, ${room(g.grid)}); S = base team + ${sp} L${spun?.level} spun up with moves ${spun?.moves.join(', ')} (no signature) on ${active} active card${active === 1 ? '' : 's'}`;
   });
   return [
-    `- Starter triangle (favoured side's score): ${triangle.join('; ')}. Diagnostic rows (Rulings 136, 144): the same matchups partnerless, ${solo.join('; ')}, each on its standard grid with the slot left empty.`,
+    `- Starter triangle (favoured side's score, Ruling 146): ${triangle.join('; ')}; orchestrator only on the role-based Autopilot deck, each on its standard grid with the Subagent Slot left empty.`,
     `- Temperature dial (T0 side's score): each of the ${ARCHETYPES.length} archetypes at Autopilot T0 vs its own mirror at T4, both sides, pooled (Ruling 143). Diagnostic rows: the same pairing per archetype, ${fmtCount(TEMPERATURE_SWEEP_PER_SIDE)} battles per side assignment at scale 1, on its own seeds.`,
-    `- Graft vs spin-up (G's score; the spun-up subagent joins at the defeated wild model's level, Ruling 145): ${graft.join('; ')}.`,
+    `- Graft worth taking (the graft side's score, Ruling 147): the base team (${base.orchestrator.species} L${base.orchestrator.level} + ${team(base.active)}, ${room(base.grid)}) plus a graft against the same base team without it, for each of ${GRAFT_SPECIES.join(', ')}. Diagnostic rows: that graft team (G) against the same base team with the species spun up instead (S). Spin-up is intended to be the stronger choice, so those rows are expected to read low; a freshly spun-up subagent joins at the defeated wild model's level (Ruling 145) with 1 active Example Card (Ruling 147). ${graft.join('; ')}.`,
     `- First mover: ${ARCHETYPES.length} archetypes, each against its mirror, side A's score pooled.`,
     `- Vs field, worst matchup and fight length: one round-robin of the ${ARCHETYPES.length} archetypes; worst matchup lists each archetype's worst pairing (its score, both orderings pooled), then the overall worst as a summary row.`,
   ];

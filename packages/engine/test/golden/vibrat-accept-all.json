@@ -1,7 +1,7 @@
 {
   "name": "vibrat-accept-all",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "dc476ef2794ef56fd256f3045bbf9562",
     "setup": {
       "a": {
@@ -203,7 +203,7 @@
       }
     ]
   },
-  "expectedHash": "89bd4e9a11eed847",
+  "expectedHash": "6d9ba2cd40b5b862",
   "rounds": 6,
   "winner": "a"
 }

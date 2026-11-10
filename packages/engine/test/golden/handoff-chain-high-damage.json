@@ -1,7 +1,7 @@
 {
   "name": "handoff-chain-high-damage",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "b6b84ddcba7e36c73ad370b436aadeba",
     "setup": {
       "a": {
@@ -160,7 +160,7 @@
       }
     ]
   },
-  "expectedHash": "f4536201c5fb10bf",
+  "expectedHash": "8446f6a046d98640",
   "rounds": 2,
   "winner": "a"
 }

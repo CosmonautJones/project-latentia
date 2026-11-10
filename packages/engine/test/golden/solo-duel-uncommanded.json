@@ -1,7 +1,7 @@
 {
   "name": "solo-duel-uncommanded",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "4844fab0df9a7a92afae6fcebfeae783",
     "setup": {
       "a": {

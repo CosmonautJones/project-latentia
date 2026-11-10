@@ -1,7 +1,7 @@
 {
   "name": "deprecatter-save-state",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "a3235ce8b880a6ed6cbdefe0ee1faf28",
     "setup": {
       "a": {
@@ -171,9 +171,7 @@
         "a": {
           "temperature": 2,
           "action": {
-            "kind": "move",
-            "moveId": "long-term-recall",
-            "target": 5
+            "kind": "none"
           }
         },
         "b": {
@@ -189,9 +187,7 @@
         "a": {
           "temperature": 2,
           "action": {
-            "kind": "move",
-            "moveId": "save-state",
-            "target": 4
+            "kind": "none"
           }
         },
         "b": {
@@ -199,7 +195,7 @@
           "action": {
             "kind": "move",
             "moveId": "accept-all",
-            "target": 0
+            "target": 2
           }
         }
       },
@@ -237,7 +233,7 @@
       }
     ]
   },
-  "expectedHash": "859a5af8036683b3",
+  "expectedHash": "b6cb391e2b6c3025",
   "rounds": 8,
   "winner": "b"
 }

@@ -39,7 +39,7 @@ export const SCENARIOS: readonly GoldenScenario[] = [
       side('a', { orch: mon('a-forkling', 'forkling', 20), active: [mon('a-slopling', 'slopling', 12), mon('a-embeddingo', 'embeddingo', 12)] }),
       side('b', { orch: mon('b-spaghettopus', 'spaghettopus', 16), active: [mon('b-vibrat', 'vibrat', 12), mon('b-agentoad', 'agentoad', 12)], bench: [mon('b-deprecatter', 'deprecatter', 12)] }),
     ),
-    { a: cycle([{ move: 'community-patch', aim: 'ally' }, 'hard-fork', 'swarm-of-fine-tunes', { move: 'leaderboard-flex', aim: 'foeOrch' }]), b: cycle(['memory-leak', 'tangle', 'infinite-loop', 'merge-conflict'], [1], 'foeSub') },
+    { a: cycle([{ move: 'community-patch', aim: 'ally' }, { move: 'leaderboard-flex', aim: 'foeOrch' }, 'hard-fork', 'swarm-of-fine-tunes']), b: cycle(['memory-leak', 'tangle', 'infinite-loop', 'merge-conflict'], [1], 'foeSub') },
   ),
   scenario(
     'tokenibble-early-exit',

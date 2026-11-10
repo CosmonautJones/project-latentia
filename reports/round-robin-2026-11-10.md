@@ -1,18 +1,18 @@
 # round-robin — 2026-11-10
 
-- engine: `@latentia/engine` 0.3.0
+- engine: `@latentia/engine` 0.4.1
 - command: `pnpm sim round-robin --seeds 1000`
 - seed scale: 1000 (seeds per ordered pairing)
-- content fingerprint: 16228d6128370c89 (FNV-1a 64 of the canonical JSON of ARCHETYPES and the target setups)
-- git: 269f0a9aea0cc108b1c93c939767ecfb89277235 (clean)
+- content fingerprint: a7b116a0136a651b (FNV-1a 64 of the canonical JSON of ARCHETYPES and the target setups)
+- git: 0483c657c859a8a6340a6e0d31ddb1bb4cfb0777 (clean)
 - seeds: 1,000 seeds per ordered pairing
 - pairings: 20 archetypes → 190 unordered pairings → 380 ordered pairings
 - battles: 380,000
-- wall time: 420.0 s
+- wall time: 422.1 s
 
 ## Fight length
 
-Median 7 rounds; p25 6, p75 9, min 2, max 50; round-cap hits (BattleEnd reason cap) 135.
+Median 7 rounds; p25 6, p75 9, min 2, max 50; round-cap hits (BattleEnd reason cap) 210.
 
 ## Vs the field
 
@@ -20,23 +20,23 @@ Each archetype’s score over all of its battles (a draw counts 0.5), with its 9
 
 | archetype | battles | score | 95% interval | worst pairing | score there |
 |---|---|---|---|---|---|
-| reasoning-nuke-sagelet | 38000 | 84.1% | [83.7%, 84.4%] | speed-rush-blitzr | 14.8% |
-| reasoning-nuke-hallucinat | 38000 | 75.8% | [75.3%, 76.2%] | mixed-starter-sagelet | 14.1% |
-| speed-rush-blitzr | 38000 | 66.9% | [66.4%, 67.4%] | open-swarm-forkling | 12.2% |
-| mixed-starter-forkling | 38000 | 66.4% | [65.9%, 66.9%] | reasoning-nuke-sagelet | 7.3% |
-| mixed-starter-sagelet | 38000 | 62.5% | [62.0%, 63.0%] | speed-rush-graft | 5.3% |
-| search-anti-hallu-embeddingo | 38000 | 59.0% | [58.5%, 59.5%] | reasoning-nuke-sagelet | 1.8% |
-| open-swarm-slopling | 38000 | 58.7% | [58.2%, 59.2%] | reasoning-nuke-sagelet | 0.4% |
-| open-swarm-forkling | 38000 | 57.6% | [57.1%, 58.1%] | reasoning-nuke-sagelet | 0.0% |
-| search-anti-hallu-scrapion | 38000 | 55.0% | [54.5%, 55.5%] | reasoning-nuke-sagelet | 1.7% |
-| mixed-starter-blitzr | 38000 | 54.0% | [53.5%, 54.5%] | mixed-starter-forkling | 17.1% |
-| code-lock-spaghettopus | 38000 | 47.8% | [47.3%, 48.3%] | reasoning-nuke-sagelet | 0.0% |
-| speed-rush-agentoad | 38000 | 47.7% | [47.2%, 48.2%] | memory-stall-deprecatter | 6.5% |
-| speed-rush-graft | 38000 | 47.0% | [46.5%, 47.5%] | open-swarm-forkling | 0.9% |
-| memory-stall-deprecatter | 38000 | 46.9% | [46.4%, 47.4%] | search-anti-hallu-scrapion | 0.0% |
-| voice-pressure-vibrat | 38000 | 43.5% | [43.0%, 44.0%] | reasoning-nuke-sagelet | 10.2% |
-| code-lock-cobolt | 38000 | 38.1% | [37.6%, 38.5%] | reasoning-nuke-sagelet | 0.0% |
-| voice-pressure-parrot | 38000 | 29.9% | [29.5%, 30.4%] | reasoning-nuke-sagelet | 2.8% |
-| mixed-heisenmoth-tempo | 38000 | 27.4% | [27.0%, 27.9%] | code-lock-spaghettopus | 0.0% |
-| memory-stall-retro | 38000 | 21.1% | [20.7%, 21.5%] | reasoning-nuke-sagelet | 0.4% |
-| code-lock-nullbeetle | 38000 | 10.9% | [10.5%, 11.2%] | reasoning-nuke-hallucinat | 0.0% |
+| reasoning-nuke-sagelet | 38000 | 80.6% | [80.2%, 81.0%] | speed-rush-blitzr | 19.0% |
+| reasoning-nuke-hallucinat | 38000 | 71.9% | [71.4%, 72.3%] | speed-rush-blitzr | 24.8% |
+| speed-rush-blitzr | 38000 | 67.9% | [67.4%, 68.3%] | open-swarm-forkling | 17.0% |
+| search-anti-hallu-embeddingo | 38000 | 62.3% | [61.8%, 62.8%] | speed-rush-graft | 5.0% |
+| open-swarm-forkling | 38000 | 61.4% | [60.9%, 61.9%] | reasoning-nuke-sagelet | 0.0% |
+| mixed-starter-forkling | 38000 | 61.4% | [60.9%, 61.8%] | reasoning-nuke-sagelet | 9.2% |
+| code-lock-spaghettopus | 38000 | 54.3% | [53.8%, 54.8%] | search-anti-hallu-embeddingo | 0.1% |
+| search-anti-hallu-scrapion | 38000 | 54.0% | [53.5%, 54.6%] | search-anti-hallu-embeddingo | 2.2% |
+| mixed-starter-sagelet | 38000 | 53.2% | [52.7%, 53.7%] | speed-rush-graft | 9.0% |
+| speed-rush-agentoad | 38000 | 52.7% | [52.2%, 53.2%] | memory-stall-deprecatter | 16.5% |
+| open-swarm-slopling | 38000 | 50.9% | [50.4%, 51.4%] | reasoning-nuke-sagelet | 0.1% |
+| mixed-starter-blitzr | 38000 | 48.3% | [47.8%, 48.8%] | mixed-starter-forkling | 15.3% |
+| speed-rush-graft | 38000 | 47.9% | [47.4%, 48.5%] | open-swarm-forkling | 2.2% |
+| memory-stall-deprecatter | 38000 | 46.7% | [46.2%, 47.2%] | search-anti-hallu-embeddingo | 0.3% |
+| voice-pressure-vibrat | 38000 | 39.8% | [39.3%, 40.3%] | search-anti-hallu-embeddingo | 10.4% |
+| voice-pressure-parrot | 38000 | 39.3% | [38.8%, 39.8%] | code-lock-spaghettopus | 19.4% |
+| mixed-heisenmoth-tempo | 38000 | 35.9% | [35.5%, 36.4%] | reasoning-nuke-sagelet | 0.9% |
+| code-lock-cobolt | 38000 | 31.9% | [31.5%, 32.4%] | search-anti-hallu-embeddingo | 0.2% |
+| memory-stall-retro | 38000 | 22.8% | [22.3%, 23.2%] | search-anti-hallu-embeddingo | 0.4% |
+| code-lock-nullbeetle | 38000 | 16.8% | [16.4%, 17.2%] | reasoning-nuke-sagelet | 0.0% |

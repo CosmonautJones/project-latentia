@@ -1,8 +1,8 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, hasStatus, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, hasStatus, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 import { STARTER_SKILLS, type StarterId } from './starter-grids.js';
 
-// Mixed builds (spec §9): the three starters as a player brings them to the gym — the bundled intern Tokenibble and a
+// Mixed builds (spec §9): the three starters as a player brings them to the gym — Tokenibble (the first wild model) and a
 // forest catch active, a second catch on the bench — and a Heisenmoth tempo build.
 
 /**
@@ -23,7 +23,7 @@ const INTERN = deck(
   card('burst', 'self', OPENER, 'token-burst', 'randomFoe'),
 );
 
-/** The bundled Tokenibble at the starter's level (Stable, trained warm). */
+/** Tokenibble (the first wild model, spun up) at the starter's level (Stable, trained warm). */
 const intern = (level: number) => subagent('intern', 'tokenibble', level, { deck: INTERN, generalization: 55, trainedTemperature: 2 });
 
 const SAGELET_STARTER = archetype('mixed-starter-sagelet', {
@@ -59,7 +59,7 @@ const SAGELET_STARTER = archetype('mixed-starter-sagelet', {
     card('weak', 'foe', WEAK_TO_MOVE, 'happy-to-help', 'foeWeakToMove'),
     card('punish', 'foe', BUFFED, 'proof-by-contradiction', 'highestAtkFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('proof-by-contradiction-context-above-75', 'self', FULL, 'proof-by-contradiction', 'orchestratorTarget'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
     card('coin', 'self', COIN, 'happy-to-help', 'randomFoe'),
   ),
@@ -95,11 +95,11 @@ const BLITZR_STARTER = archetype('mixed-starter-blitzr', {
   autopilot: deck(
     card('ship', 'self', ALWAYS, 'ship-it', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'token-burst', 'lowestHpFoe'),
-    card('strike', 'foe', HURT, 'distilled-strike', 'lowestHpFoe'),
     card('speed', 'self', cooldown(3), 'low-latency', 'self'),
     card('weak', 'foe', WEAK_TO_MOVE, 'distilled-strike', 'foeWeakToMove'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
-    card('drift', 'self', DRIFT, 'compact', 'self'),
+    card('compact-status-glazed', 'foe', hasStatus('glazed'), 'compact', 'self'),
+    card('strike', 'foe', HURT, 'distilled-strike', 'lowestHpFoe'),
+    card('guardrail-status-drift', 'self', DRIFT, 'guardrail', 'self'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
     card('coin', 'self', COIN, 'distilled-strike', 'randomFoe'),
   ),
@@ -195,12 +195,12 @@ const HEISENMOTH_TEMPO = archetype('mixed-heisenmoth-tempo', {
     card('observe', 'self', ALWAYS, 'observer-effect', 'lowestHpFoe'),
     card('flash', 'foe', HURT, 'flash-inference', 'lowestHpFoe'),
     card('box', 'self', cooldown(3), 'bounding-box', 'self'),
-    card('drift', 'self', DRIFT, 'clear', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('token-nibble-status-glazed', 'foe', hasStatus('glazed'), 'token-nibble', 'randomFoe'),
+    card('flash-inference-status-overfit', 'self', hasStatus('overfit'), 'flash-inference', 'foeWeakToMove'),
+    card('flash-inference-buffed', 'foe', BUFFED, 'flash-inference', 'highestAtkFoe'),
+    card('flash-inference-context-above-75', 'self', FULL, 'flash-inference', 'lowestHpFoe'),
     card('nibble', 'foe', WEAK, 'token-nibble', 'lowestHpFoe'),
-    card('weak', 'foe', WEAK_TO_MOVE, 'flash-inference', 'foeWeakToMove'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('coin', 'self', COIN, 'token-nibble', 'randomFoe'),
   ),
   temperature: 3,
 });

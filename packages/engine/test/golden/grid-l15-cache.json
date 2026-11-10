@@ -1,7 +1,7 @@
 {
   "name": "grid-l15-cache",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "3e6c10aa64ee3c369399d8a5e1981fc7",
     "setup": {
       "a": {
@@ -506,7 +506,7 @@
       }
     ]
   },
-  "expectedHash": "f13bf6d2f0a62ebc",
+  "expectedHash": "cb284bc6d97e73ee",
   "rounds": 6,
   "winner": "b"
 }

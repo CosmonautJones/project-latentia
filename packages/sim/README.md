@@ -66,6 +66,8 @@ command line printed in its header.
 
 ## Reading the targets report
 
+*2026-11-10: the starter-triangle row (partnerless) and the graft row ("a graft is worth taking", ≥ 55%) are as set by Rulings 146–147; earlier descriptions of them are superseded by Rulings 146–147.*
+
 A rate is the side's score, with a draw counting 0.5, and its interval is the 95% Wilson interval. Each row gets one
 verdict against its target's band:
 
@@ -80,8 +82,9 @@ against the band, but never counted:
 
 - **summary**: restates a target row. Worst matchup's "overall" row repeats the worst of the 20 per-archetype rows.
 - **diagnostic**: helps read a target, but is not the target itself.
-  - The partnerless starter triangle (each starter alone, its slot empty) separates type strength from the
-    Tokenibble partner. The official row keeps the partner (Ruling 144).
+  - Graft vs spin-up's G-vs-S rows (Ruling 147). S is the spun-up subagent at L5 with 1 active Example Card and no
+    signature. Spin-up is intended to be the stronger choice, so these read low against the "graft worth taking"
+    band by design.
   - The per-archetype temperature sweep shows which teams the pooled dial row hides.
 
 The summary table gives each target's §9 seed count beside the **seeds run**, the counts actually played at the run's
@@ -91,25 +94,28 @@ seed scale.
 
 These print Markdown to stdout and write no report.
 
-- `pnpm --filter @latentia/sim triangle-solo`: the starter triangle with and without the Tokenibble partner, 2,000
-  battles per matchup. It uses the targets command's seed labels, so its rows reproduce the targets report's official
-  and diagnostic triangle rows exactly.
-- `pnpm --filter @latentia/sim diagnostics <graft | hallu | temp>` (`scripts/diagnostics.ts`):
-  - `graft`: G and S against the base team, and G against the official S and two older forms of S (at L8, with and
-    without its signature);
+- `pnpm --filter @latentia/sim triangle-solo`: the official starter triangle (orchestrator only, Ruling 146), 2,000
+  battles per matchup, with the median rounds. It uses the targets command's seed labels, so its points reproduce the
+  targets report's triangle rows exactly.
+- `pnpm --filter @latentia/sim diagnostics <graft | hallu | temp> [--seeds N]` (`scripts/diagnostics.ts`). An
+  unknown argument is a usage error (exit code 2), as in the sim commands. `--seeds N` replaces the battle count
+  (per side assignment for `graft` and `temp`, per ordered pairing for `hallu`; defaults 1,000, 250 and 50):
+  - `graft`: G and S against the base team, and G against the current S (L5, 1 card, no signature) and two older
+    forms of S (at L8, with and without its signature);
   - `hallu`: how often each side has a Hallucinating creature, and how often the anti-hallucination cards fire;
   - `temp`: T0 vs T4 for every archetype, 500 battles each.
 
-  Each subcommand uses its own `c5diag:` seed labels, so the numbers cited from it in
-  `docs/superpowers/notes/first-balance-pass.md` reproduce.
+  Each subcommand uses its own `c5diag:` seed labels. The `hallu` and `temp` numbers cited in
+  `docs/superpowers/notes/first-balance-pass.md` reproduce at the default counts; the `graft` ones predate Ruling 147
+  (S had 2 active cards then; the note says so, "superseded by Rulings 146–147").
 - `pnpm --filter @latentia/sim smoke --seeds N`: a quick round-robin sample with structural correlations.
 
 ## Layout
 
 - `src/archetypes/`: the 20 archetypes (L8, 1 orchestrator + 2 active + 1 bench, gridded, on Autopilot decks), deeply
   frozen.
-- `src/target-setups.ts`: each target's own setup (starter sides, solo sides, graft and spin-up variants, temperature
-  pairs).
+- `src/target-setups.ts`: each target's own setup (partnerless starter sides, the base team, graft and spin-up variants,
+  temperature pairs).
 - `src/targets.ts`: the §9 targets table and `measureTargets`.
 - `src/round-robin.ts`, `runner.ts`, `stats.ts`: battles, scores, Wilson intervals and verdicts.
 - `src/search.ts`, `mutations.ts`, `sfc32.ts`: the deck search.

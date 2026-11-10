@@ -88,10 +88,14 @@ describe('searchDeck', () => {
 
   it('keeps exactly 8 cards plus the base Default, passes validateSetup, and never mutates ARCHETYPES', () => {
     const before = structuredClone(ARCHETYPES);
-    const r = searchDeck(BASE, FIELD, 120, SEED, { k: 1 });
+    // A deliberately weak synthetic deck (every card, the Default included, only guards), so a short search always has
+    // somewhere to climb whatever the archetype data currently scores.
+    const weakDeck: Deck = { cards: deckOf(BASE).cards.map((c) => card(c.id, 'self', WEAK, 'guardrail', 'self')), default: card('default', 'self', OPENER, 'guardrail', 'self') };
+    const weak = withDeck(BASE, weakDeck);
+    const r = searchDeck(weak, FIELD, 960, SEED, { k: 8 });
     expect(ARCHETYPES).toEqual(before);
     expect(r.deck.cards).toHaveLength(8);
-    expect(r.deck.default).toEqual(deckOf(BASE).default);
+    expect(r.deck.default).toEqual(weakDeck.default);
     const side = withDeck(BASE, r.deck).side;
     for (const foe of FIELD) expect(validateSetup({ a: { ...side, opponentId: foe.id }, b: { ...foe.side, opponentId: BASE.id }, kind: 'trainer' }).errors).toEqual([]);
     // A search this long accepts at least one step from this base (a regression guard, not a balance claim).

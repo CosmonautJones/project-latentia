@@ -69,7 +69,7 @@ describe('holds: the twelve categories', () => {
     const codeFoe = view({ foes: [vc(7, { types: ['code'] })] });
     expect(holds(card({ category: 'foeType', is: 'code' }, { subject: 'foe' }), codeFoe)).toBe(true);
     expect(holds(card({ category: 'foeType', is: 'speed' }, { subject: 'foe' }), codeFoe)).toBe(false);
-    // reasoning → code is 20000; reasoning → speed is 5000; system moves are typeless
+    // reasoning → code is 15000; reasoning → speed is 6667; system moves are typeless
     expect(holds(card({ category: 'foeType', is: 'weakToMove' }, { subject: 'foe', move: 'chain-of-thought' }), codeFoe)).toBe(true);
     expect(holds(card({ category: 'foeType', is: 'weakToMove' }, { subject: 'foe', move: 'chain-of-thought' }), view({ foes: [vc(7, { types: ['speed'] })] }))).toBe(false);
     expect(holds(card({ category: 'foeType', is: 'weakToMove' }, { subject: 'foe', move: 'compact' }), codeFoe)).toBe(false);

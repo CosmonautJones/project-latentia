@@ -2,6 +2,7 @@ import { ENGINE_VERSION } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { UsageError } from '../src/args.js';
 import { targetsCommand } from '../src/commands/targets.js';
+import { GRAFT_SPECIES } from '../src/target-setups.js';
 import { measureTargets, scaled, TARGETS, targetVerdict } from '../src/targets.js';
 import { PROVENANCE_COLUMNS } from '../src/report.js';
 import { csvRows, readOut, TEST_PROVENANCE, testContext } from './helpers/context.js';
@@ -15,7 +16,7 @@ describe('TARGETS (spec §9)', () => {
       ['worst-matchup', '2,000 per pairing', [0.3, 1], false],
       ['starter-triangle', '2,000', [0.55, 0.65], false],
       ['temperature-dial', '2,000', [0.45, 0.55], false],
-      ['graft-vs-spin-up', '2,000', [0.45, 0.55], false],
+      ['graft-vs-spin-up', '2,000', [0.55, 1], false],
       ['fight-length', 'all', [5, 8], true],
       ['first-mover', '10,000', [0.48, 0.52], false],
     ]);
@@ -40,13 +41,14 @@ describe('scaled (--seeds-scale)', () => {
 });
 
 describe('measureTargets', () => {
-  it('reproduces the triangle-solo seeds and keeps the summary and diagnostic rows out of the verdicts', () => {
+  it('keeps the summary and diagnostic rows out of the verdicts', () => {
     const run = measureTargets({ scale: 0.002, now: () => 0, progress: () => undefined });
     const roles = (t: string) => run.rows.filter((r) => r.target === t).map((r) => r.role);
     expect(roles('worst-matchup').filter((r) => r === 'summary')).toHaveLength(1);
-    expect(roles('starter-triangle')).toEqual(['target', 'target', 'target', 'diagnostic', 'diagnostic', 'diagnostic']);
+    expect(roles('starter-triangle')).toEqual(['target', 'target', 'target']);
+    expect(roles('graft-vs-spin-up')).toEqual(['target', 'target', 'target', 'diagnostic', 'diagnostic', 'diagnostic']);
     expect(roles('temperature-dial')).toEqual(['target', ...Array(20).fill('diagnostic')]);
-    for (const t of ['vs-field', 'graft-vs-spin-up', 'fight-length', 'first-mover']) expect(roles(t).every((r) => r === 'target')).toBe(true);
+    for (const t of ['vs-field', 'starter-triangle', 'fight-length', 'first-mover']) expect(roles(t).every((r) => r === 'target')).toBe(true);
   }, 120_000);
 
   it('is deterministic: the same scale gives the same rows', () => {
@@ -69,17 +71,21 @@ describe('targets command', () => {
     expect(battles('worst-matchup')).toEqual(Array(20).fill(20));
     expect(battles('worst-matchup', 'summary')).toEqual([20]);
     expect(battles('starter-triangle')).toEqual([20, 20, 20]);
-    expect(battles('starter-triangle', 'diagnostic')).toEqual([20, 20, 20]);
     // Ruling 143 I2: 1 seed per side (50 × 0.01) for each of the 20 archetypes, pooled into one row; the sweep is 3 per side (250 × 0.01, rounded up).
     expect(battles('temperature-dial')).toEqual([40]);
     expect(battles('temperature-dial', 'diagnostic')).toEqual(Array(20).fill(6));
     expect(battles('graft-vs-spin-up')).toEqual([20, 20, 20]);
+    expect(battles('graft-vs-spin-up', 'diagnostic')).toEqual([20, 20, 20]);
     expect(battles('fight-length')).toEqual([3800]);
     expect(battles('first-mover')).toEqual([100]);
     expect(rows.every((r) => ['target', 'summary', 'diagnostic'].includes(r[1] as string))).toBe(true);
     for (const r of rows) expect(['pass', 'fail', 'inconclusive']).toContain(r[9]);
     for (const r of rows) expect(r.slice(10)).toEqual([ENGINE_VERSION, '0.01', TEST_PROVENANCE.fingerprint, TEST_PROVENANCE.git?.sha, 'false']);
     // Row keys (target, subject) do not depend on the scale, so runs at different scales line up.
+    // Ruling 146: the official triangle rows are the partnerless ones; Ruling 147: the official graft rows are "worth taking".
+    expect(rows.filter((r) => r[0] === 'starter-triangle').map((r) => r[2])).toEqual(['blitzr (favoured) vs sagelet', 'sagelet (favoured) vs forkling', 'forkling (favoured) vs blitzr']);
+    expect(rows.filter((r) => r[0] === 'graft-vs-spin-up' && r[1] === 'target').map((r) => r[2])).toEqual(GRAFT_SPECIES.map((sp) => `${sp}: base team + graft vs base team alone`));
+    expect(rows.filter((r) => r[0] === 'graft-vs-spin-up' && r[1] === 'diagnostic').map((r) => r[2])).toEqual(GRAFT_SPECIES.map((sp) => `diagnostic: ${sp}: graft (G) vs spin-up (S)`));
     expect(rows.find((r) => r[0] === 'first-mover')?.[2]).toBe('side A vs its mirror, every archetype pooled');
     expect(rows.find((r) => r[0] === 'temperature-dial')?.[2]).toBe('T0 side vs its T4 mirror, every archetype pooled');
     // The seeds-run column shows the scaled counts actually played.

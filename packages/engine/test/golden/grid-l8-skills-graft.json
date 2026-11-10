@@ -1,7 +1,7 @@
 {
   "name": "grid-l8-skills-graft",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.1",
     "seed": "7e97af09f621f30984f5941c6c624784",
     "setup": {
       "a": {
@@ -385,7 +385,7 @@
           "action": {
             "kind": "move",
             "moveId": "confident-citation",
-            "target": 6
+            "target": 7
           }
         },
         "b": {
@@ -403,7 +403,7 @@
           "action": {
             "kind": "move",
             "moveId": "proof-by-contradiction",
-            "target": 6
+            "target": 7
           }
         },
         "b": {
@@ -462,10 +462,26 @@
             "target": 3
           }
         }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "none"
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 3
+          }
+        }
       }
     ]
   },
-  "expectedHash": "d6d132f2fef200c9",
-  "rounds": 6,
+  "expectedHash": "f73f125ed6ef4f13",
+  "rounds": 7,
   "winner": "b"
 }

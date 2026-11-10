@@ -17,7 +17,7 @@ export const TEMPERATURE: readonly TemperatureRow[] = Object.freeze([
   t(95, 105, 5, 1, 0, false),
   t(85, 110, 0, 2, 0, false),
   t(75, 125, -5, 3, 5, true),
-  t(60, 150, -15, 4, 12, true),
+  t(60, 150, -10, 4, 12, true),
 ]);
 
 const STATUS_HALLUCINATION_PCT = [12, 25, 25, 50, 50] as const;
