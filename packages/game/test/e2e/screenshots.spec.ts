@@ -1,4 +1,5 @@
-// Screenshots for layout review, committed. Title-scene screenshots at a desktop landscape and a phone portrait size, committed for layout review.
+// Screenshots for layout review, committed: desktop 1366x768, a 390x844 phone in portrait, and the same phone turned
+// to touch landscape (844x390), where the menus sit in a band under the game and the controls beside it.
 // Run with `pnpm --filter @latentia/game screenshots`; the normal e2e run skips this file.
 
 import { expect, test } from '@playwright/test';
@@ -10,12 +11,15 @@ import { trainerBattle } from '../../src/content/battles.js';
 import type { FlowEvent } from '../../src/flow/flow.js';
 import type { FightReport } from '../../src/flow/telemetry.js';
 import { fightReport } from '../../src/journey/fight-report.js';
-import { keptSummary } from '../../src/journey/kept-summary.js';
+import { graftSummary, keptSummary } from '../../src/journey/kept-summary.js';
+import { GRAFT_MOVE } from '../../src/content/grids.js';
+import { GRAFT_HINTS } from '../../src/content/journey-text.js';
 import { at, face, LOCALHOST, ow, walkTo } from './walk.js';
 
 const SIZES = [
   { name: 'title-1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
   { name: 'title-390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  { name: 'title-844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
 ] as const;
 
 for (const s of SIZES) {
@@ -134,7 +138,16 @@ for (const s of OVERWORLD_SIZES) {
 const JOURNEY_SIZES = [
   { name: '1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
   { name: '390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  { name: '844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
 ] as const;
+
+/** Blitzr's lost graft fight on seed 0, as the battle scene reports it (the debrief shows the graft hint). */
+function graftReport(): FightReport {
+  const def = trainerBattle('blitzr', 'graft', null, 0);
+  const r = simulate(def.setup, def.seed, { kind: 'scripted', next: naiveCommand });
+  const kept = graftSummary({ events: r.events, playerIndex: 0, graftMove: GRAFT_MOVE, moveName: (m) => moveDef(m)?.name ?? m, hint: GRAFT_HINTS.blitzr });
+  return fightReport({ battle: 'trainer', outcome: r.winner === 'a' ? 'win' : 'lose', rounds: r.rounds, events: r.events, cardId: null, kept, mine: (i) => i === 0 });
+}
 
 function trainerReport(cardId: string, attempt: number): FightReport {
   const def = trainerBattle('blitzr', 'spinUp', cardId, attempt);
@@ -165,7 +178,10 @@ for (const s of JOURNEY_SIZES) {
         .toBe(true);
     await page.goto('/');
     await expect.poll(() => page.evaluate(() => window.__latentia?.scene() ?? null)).toBe('Title');
-    for (const e of [{ type: 'newGame' }, { type: 'starterPicked', starter: 'blitzr' }, { type: 'battleWon' }, { type: 'reachedTrailhead' }, { type: 'battleWon' }] satisfies FlowEvent[]) {
+    expect(await send({ type: 'newGame' })).toBe(true);
+    await untilMenu('starter');
+    await shot('lab-starter');
+    for (const e of [{ type: 'starterPicked', starter: 'blitzr' }, { type: 'battleWon' }, { type: 'reachedTrailhead' }, { type: 'battleWon' }] satisfies FlowEvent[]) {
       expect(await send(e)).toBe(true);
     }
     await expect.poll(menuId).toBe('distill');
@@ -187,6 +203,15 @@ for (const s of JOURNEY_SIZES) {
     expect(await send({ type: 'finish' })).toBe(true);
     await expect.poll(menuId).toBe('end');
     await shot('end');
+    // The graft path's loss: the debrief's hint about the grafted Token Nibble.
+    expect(await send({ type: 'backToTitle' })).toBe(true);
+    for (const e of [{ type: 'newGame' }, { type: 'starterPicked', starter: 'blitzr' }, { type: 'battleWon' }, { type: 'reachedTrailhead' }, { type: 'battleWon' }, { type: 'distillChosen', choice: 'graft' }, { type: 'trainerEngaged' }] satisfies FlowEvent[]) {
+      expect(await send(e)).toBe(true);
+    }
+    await expect.poll(() => page.evaluate(() => window.__latentia?.battle()?.id ?? null)).toBe('trainer');
+    expect(await send({ type: 'battleLost', fight: graftReport() })).toBe(true);
+    await expect.poll(menuId).toBe('debrief');
+    await shot('graft-loss');
     await context.close();
   });
 }

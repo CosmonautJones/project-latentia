@@ -5,7 +5,7 @@ import { computeLayout, type Layout, type Rect, type Viewport } from './compute.
 export interface LayoutElements {
   /** Phaser's parent; sized to exactly the integer-scaled game rect. */
   readonly frame: HTMLElement;
-  /** The DS-style bottom band (portrait). */
+  /** The DS-style bottom band (portrait, and under the game on a touch landscape screen). */
   readonly band: HTMLElement;
   /** The touch controls: moved into the band, or overlaid on landscape touch screens. */
   readonly controls: HTMLElement;
@@ -30,6 +30,7 @@ export function readViewport(win: Window): Viewport {
 export function applyLayout(layout: Layout, els: LayoutElements): void {
   place(els.frame, layout.game);
   els.band.hidden = layout.band === null;
+  els.band.dataset['mode'] = layout.mode;
   if (layout.band) place(els.band, layout.band);
   els.controls.dataset['placement'] = layout.controls;
   els.controls.hidden = layout.controls === 'none';

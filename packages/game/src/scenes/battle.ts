@@ -1,5 +1,5 @@
 // Battle: runs the flow step's BattleDef through a BattleSession. Each round: preview intents (foes hidden unless
-// revealed), take the player's command from the menu (canvas in landscape, the band in portrait), submit it, and
+// revealed), take the player's command from the menu (on the canvas, or in the band on phones), submit it, and
 // play the events back on the round plan: animation within the 1.5 s budget, each line on screen for its dwell.
 // One-time hints introduce each element. The result goes to the flow with the fight's report: a rival or wild loss
 // restarts the fight, a trainer result opens the debrief (scenes/debrief.ts).
@@ -169,7 +169,7 @@ export class BattleScene extends BaseScene {
       menu: this.menu,
       data,
       prompt: `What will ${this.session.shortName(this.session.playerIndex)} do?`,
-      buttons: this.app.screen.layout().mode === 'landscape',
+      buttons: this.app.screen.layout().menus === 'canvas',
       whyFresh: this.whyFresh,
     };
     this.box.render(model);

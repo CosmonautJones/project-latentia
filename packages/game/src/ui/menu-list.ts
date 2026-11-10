@@ -1,9 +1,12 @@
 // A vertical pixel-text menu with a ▶ cursor, driven by the action stream (keys, touch band, and taps on items).
+// When the layout puts menus in the band (portrait, touch landscape) the items are band buttons instead
+// (ui/band-choices.ts, 44 CSS px targets) and the canvas rows are hidden; a rotation switches between the two.
 
 import Phaser from 'phaser';
 import type { App } from '../app.js';
 import { CELL_HEIGHT } from '../text/font-sheet.js';
 import { addPixelText } from '../text/phaser-font.js';
+import { BandChoices } from './band-choices.js';
 import { createMenu, menuInput, type MenuState } from './menu.js';
 import { COLOR } from './palette.js';
 
@@ -14,7 +17,7 @@ export interface MenuListOptions {
   readonly y: number;
   /** Width of each item's tap target, in game px. */
   readonly width: number;
-  /** Row pitch in game px; also the tap target height (16 px = 48 CSS px on a 3x phone). */
+  /** Row pitch in game px; also the canvas tap target height. */
   readonly rowHeight?: number;
   readonly onConfirm: (index: number) => void;
   readonly onCancel?: () => void;
@@ -31,7 +34,9 @@ export class MenuList {
   private readonly zones: Phaser.GameObjects.Zone[];
   private readonly rowHeight: number;
   private active = true;
-  private readonly off: () => void;
+  private band: BandChoices | null = null;
+  private destroyed = false;
+  private readonly offs: (() => void)[] = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -55,15 +60,18 @@ export class MenuList {
       });
       return z;
     });
-    this.off = app.input.subscribe((a) => {
-      if (!this.active) return;
-      const r = menuInput(this.state, a);
-      this.state = r.menu;
-      this.render();
-      if (r.confirm !== undefined) opts.onConfirm(r.confirm);
-      else if (r.cancel) opts.onCancel?.();
-    });
-    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.off());
+    this.offs.push(
+      app.input.subscribe((a) => {
+        if (!this.active) return;
+        const r = menuInput(this.state, a);
+        this.state = r.menu;
+        this.render();
+        if (r.confirm !== undefined) opts.onConfirm(r.confirm);
+        else if (r.cancel) opts.onCancel?.();
+      }),
+      app.screen.onLayout(() => this.render()),
+    );
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
     this.render();
   }
 
@@ -75,19 +83,33 @@ export class MenuList {
   }
 
   destroy(): void {
-    this.off();
+    if (this.destroyed) return;
+    this.destroyed = true;
+    for (const off of this.offs) off();
+    this.band?.destroy();
+    this.band = null;
     if (this.app.probe.menu?.id === this.state.id) this.app.probe.menu = null;
     for (const o of [...this.labels, ...this.zones, this.cursor]) o.destroy();
   }
 
   private render(): void {
+    if (this.destroyed) return;
     const textDy = Math.floor((this.rowHeight - CELL_HEIGHT) / 2) + 1;
+    const inBand = this.app.screen.layout().menus === 'band';
+    const onCanvas = this.active && !inBand;
+    if (this.active && inBand) {
+      this.band ??= new BandChoices(this.app.screen.bandPanel, this.app, this.opts.id, this.opts.items.map((label) => ({ label })));
+      this.band.render(this.state.index);
+    } else {
+      this.band?.destroy();
+      this.band = null;
+    }
     this.labels.forEach((l, i) => {
-      l.setVisible(this.active);
+      l.setVisible(onCanvas);
       l.setTint(i === this.state.index ? COLOR.white : COLOR.mist);
     });
-    for (const z of this.zones) if (z.input) z.input.enabled = this.active;
-    this.cursor.setVisible(this.active);
+    for (const z of this.zones) if (z.input) z.input.enabled = onCanvas;
+    this.cursor.setVisible(onCanvas);
     this.cursor.setPosition(this.opts.x, this.opts.y + this.state.index * this.rowHeight + textDy);
     if (this.active) this.app.probe.menu = this.state;
     else if (this.app.probe.menu?.id === this.state.id) this.app.probe.menu = null;

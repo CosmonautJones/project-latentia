@@ -64,24 +64,6 @@ body {
   line-height: 0;
 }
 
-.band-menu:has(.band-header) {
-  padding-top: 0;
-}
-
-.band-header {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  min-height: 16px;
-  padding: 10px 0 6px;
-  background: #262b44;
-  line-height: 0;
-}
-
-.band-header svg {
-  margin-bottom: 4px;
-}
-
 .band-buttons {
   display: grid;
   gap: 6px;
@@ -89,6 +71,27 @@ body {
 
 .band-buttons.grid {
   grid-template-columns: 1fr 1fr;
+}
+
+/* The touch-landscape band (ui/band-sizing.ts columns = 2): lists in two columns, the root commands in one row. */
+.band-buttons.list.cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.band-buttons.grid.cols-2 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.band-buttons.grid.cols-2 .band-btn {
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Under the game on a touch landscape screen, between the side controls. */
+#band[data-mode='landscape'] {
+  border: 2px solid #3a4466;
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .band-buttons.row {
@@ -251,17 +254,25 @@ body {
   box-shadow: inset 4px 4px 0 #3e2731, inset -4px -4px 0 #e43b44;
 }
 
-/* Choice panels (P4: starter, distill, cards, debrief) mirrored as band buttons; a long label wraps onto two lines. */
+/* Choice panels (starter, distill, cards, debrief) as band buttons: the label, then its smaller detail line. */
 .band-choices .band-btn {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
   padding: 8px 10px;
 }
 
-.band-choices .label {
+.band-choices .label,
+.band-choices .detail,
+.band-btn .label {
   line-height: 0;
   text-align: left;
 }
 
-.band-choices .label svg {
+.band-choices .label svg,
+.band-choices .detail svg,
+.band-btn .label svg {
   margin: 2px 0;
 }
 

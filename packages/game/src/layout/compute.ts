@@ -8,6 +8,11 @@ export const GAME_HEIGHT = 180;
 export const MIN_BAND_CSS = 200;
 /** A touch landscape screen wants this much CSS width each side of the game for the D-pad and the A/B pair. */
 export const SIDE_CONTROLS_CSS = 150;
+/**
+ * Touch landscape puts the menus in a band under the game (DOM buttons, 44 CSS px targets, as in portrait) when at
+ * least this much CSS height is left there; the canvas rows would be only about 20 CSS px tall.
+ */
+export const LANDSCAPE_BAND_CSS = 140;
 
 export interface Viewport {
   /** CSS px. */
@@ -39,9 +44,14 @@ export interface Layout {
   readonly scale: number;
   /** The game screen, CSS px. */
   readonly game: Rect;
-  /** The DS-style bottom band (portrait only), CSS px. */
+  /** The DS-style bottom band (portrait, and touch landscape when it fits), CSS px. */
   readonly band: Rect | null;
   readonly controls: ControlsPlacement;
+  /**
+   * Where menus and choice panels take taps: `band` (DOM buttons in the band's `#band-panel`; the canvas keeps only the
+   * prompt or title) or `canvas` (rows drawn and tapped on the game screen: desktop, and touch screens too small for a band).
+   */
+  readonly menus: 'canvas' | 'band';
 }
 
 const fitScale = (widthDev: number, heightDev: number): number =>
@@ -65,7 +75,26 @@ export function computeLayout(v: Viewport): Layout {
       game: { x: gx / dpr, y: 0, width: gw / dpr, height: gh / dpr },
       band: { x: 0, y: bandTop, width: v.width, height: Math.max(0, v.height - bandTop) },
       controls: 'band',
+      menus: 'band',
     };
+  }
+
+  if (v.touch) {
+    // The largest scale (at least 1 CSS px per game px) that leaves the side margins for the controls and a band
+    // under the game for the menus. The game sits on top, centred; the band spans between the controls.
+    for (let s = fitScale(wDev, hDev); s >= Math.max(1, Math.ceil(dpr)); s--) {
+      const gh = GAME_HEIGHT * s;
+      if (wDev - GAME_WIDTH * s < 2 * SIDE_CONTROLS_CSS * dpr || hDev - gh < LANDSCAPE_BAND_CSS * dpr) continue;
+      const gx = Math.floor((wDev - GAME_WIDTH * s) / 2);
+      return {
+        mode: 'landscape',
+        scale: s,
+        game: { x: gx / dpr, y: 0, width: (GAME_WIDTH * s) / dpr, height: gh / dpr },
+        band: { x: SIDE_CONTROLS_CSS, y: gh / dpr, width: v.width - 2 * SIDE_CONTROLS_CSS, height: v.height - gh / dpr },
+        controls: 'sides',
+        menus: 'band',
+      };
+    }
   }
 
   let scale = fitScale(wDev, hDev);
@@ -90,5 +119,6 @@ export function computeLayout(v: Viewport): Layout {
     game: { x: gx / dpr, y: gy / dpr, width: gw / dpr, height: gh / dpr },
     band: null,
     controls,
+    menus: 'canvas',
   };
 }

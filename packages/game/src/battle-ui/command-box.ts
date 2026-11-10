@@ -27,7 +27,7 @@ export type BoxModel =
       readonly menu: BattleMenuState;
       readonly data: MenuData;
       readonly prompt: string;
-      /** Landscape: draw the buttons here. Portrait: the band has them. */
+      /** Canvas menus (desktop): draw the buttons here. Band menus (portrait, touch landscape): the band has them. */
       readonly buttons: boolean;
       /** A new deck-driven action has happened since "why?" was last opened. */
       readonly whyFresh: boolean;
@@ -93,13 +93,14 @@ export class CommandBox {
       }
       case 'temp': {
         const tip = TEMPERATURE_TIPS[menu.tempIndex as Temperature];
-        this.lines(tip, 8, BOX_Y + 5, model.buttons ? 26 : 50, 3, COLOR.cloud);
+        // With the notches in the band, the second-tap prompt is here (the canvas notches draw their own).
+        this.lines(model.buttons || !armed ? tip : `${tip} TAP AGAIN TO SET.`, 8, BOX_Y + 5, model.buttons ? 26 : 50, 3, COLOR.cloud);
         if (model.buttons) this.notches(view.index, armed);
         return;
       }
       case 'log':
         if (model.buttons) this.logPanel(view.items, view.index);
-        this.lines('ROUND LOG.  UP/DOWN: SCROLL   A/B: BACK', 8, BOX_Y + 6, 50, 3, COLOR.cloud);
+        this.lines(model.buttons ? 'ROUND LOG.  UP/DOWN: SCROLL   A/B: BACK' : 'ROUND LOG (BELOW).  UP/DOWN: SCROLL   A/B: BACK', 8, BOX_Y + 6, 50, 3, COLOR.cloud);
         return;
     }
   }

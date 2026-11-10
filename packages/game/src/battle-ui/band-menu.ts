@@ -1,21 +1,18 @@
-// The portrait battle menus, as DOM buttons in the bottom band's `#band-panel` (bible: the DS-style second screen
-// holds the menus so touch targets stay large: every row is at least 44 CSS px). It renders the same menu state as
-// the canvas, in the game font as SVG; a tap picks the item through the action stream, so keys, the D-pad and taps
-// all drive one menu. The panel scrolls when a short phone cannot fit the whole list, keeps the hint header pinned,
-// and scrolls the cursor row into view.
+// The battle menus as DOM buttons in the band's `#band-panel`, whenever the layout puts menus in the band (portrait,
+// and touch landscape under the game). Bible: the DS-style second screen holds the menus so touch targets stay large,
+// every row at least 44 CSS px. It renders the same menu state as the canvas, in the game font as SVG, sized for the
+// band (ui/band-sizing.ts); a tap picks the item through the action stream, so keys, the D-pad and taps all drive one
+// menu. The prompt and the highlighted item's hint stay in the canvas box above, so they are not repeated here. The
+// panel scrolls when a short screen cannot fit the whole list, and scrolls the cursor row into view.
 
-import type { Temperature } from '@latentia/engine';
-import { armedHere, menuView, moveHint, TEMPERATURE_TIPS } from '../battle/battle-menu.js';
+import { armedHere, menuView } from '../battle/battle-menu.js';
 import { TYPE_COLORS } from '../battle/labels.js';
 import type { App } from '../app.js';
 import { textSvg } from '../text/glyph-svg.js';
 import { wrapText } from '../text/wrap.js';
+import { bandText, MOVE_RESERVE } from '../ui/band-sizing.js';
 import { COLOR, css } from '../ui/palette.js';
 import type { BoxModel } from './command-box.js';
-
-const SCALE = 2;
-const HEADER_CHARS = 28;
-const LOG_CHARS = 28;
 
 export class BandMenu {
   private readonly root: HTMLElement;
@@ -40,18 +37,12 @@ export class BandMenu {
     const { menu, data } = model;
     const view = menuView(menu, data);
     const armed = armedHere(menu);
-    const header = (text: string, color: number = COLOR.cloud) => {
-      const h = doc.createElement('div');
-      h.className = 'band-header';
-      h.innerHTML = wrapText(text, HEADER_CHARS)
-        .slice(0, 4)
-        .map((l) => textSvg(l, SCALE, css(color)))
-        .join('<br>');
-      this.root.append(h);
-    };
+    const layout = this.app.screen.layout();
+    const size = bandText(layout, menu.screen === 'moves' ? MOVE_RESERVE : 0);
+    const SCALE = size.label.scale;
     const buttons = (cls: string) => {
       const box = doc.createElement('div');
-      box.className = `band-buttons ${cls}`;
+      box.className = `band-buttons ${cls} cols-${size.columns}`;
       this.root.append(box);
       return box;
     };
@@ -63,7 +54,8 @@ export class BandMenu {
       b.dataset['index'] = String(index);
       const tick = opts.tick === undefined ? '' : `<span class="tick" style="background:${css(opts.tick)}"></span>`;
       const right = opts.right === undefined ? '' : `<span class="right">${textSvg(opts.right, SCALE, css(opts.warn ? COLOR.red : COLOR.cyan))}</span>`;
-      b.innerHTML = `${tick}<span class="label">${textSvg(label, SCALE, css(opts.warn ? COLOR.steel : COLOR.white))}</span>${right}`;
+      const lines = wrapText(label, size.label.chars).map((l) => textSvg(l, SCALE, css(opts.warn ? COLOR.steel : COLOR.white)));
+      b.innerHTML = `${tick}<span class="label">${lines.join('<br>')}</span>${right}`;
       b.addEventListener('click', (e) => {
         e.preventDefault();
         this.app.input.pick(view.id, index);
@@ -79,8 +71,6 @@ export class BandMenu {
         break;
       }
       case 'moves': {
-        const m = data.moves[menu.moveIndex];
-        header(`${m === undefined ? '' : moveHint(m)}${armed ? '  TAP AGAIN TO USE.' : ''}`, m?.affordable === false ? COLOR.amber : COLOR.cloud);
         const list = buttons('list');
         data.moves.forEach((opt, i) =>
           button(list, i, opt.name.toUpperCase(), {
@@ -92,25 +82,22 @@ export class BandMenu {
         break;
       }
       case 'targets': {
-        header(armed ? 'TAP AGAIN TO USE IT ON THIS ONE.' : 'PICK A TARGET.  B: BACK');
         const list = buttons('list');
         view.items.forEach((item, i) => button(list, i, item));
         break;
       }
       case 'temp': {
-        header(`${TEMPERATURE_TIPS[menu.tempIndex as Temperature]}${armed ? '  TAP AGAIN TO SET.' : ''}`);
         const row = buttons('row');
         view.items.forEach((item, i) => button(row, i, item));
         break;
       }
       case 'log': {
-        header('ROUND LOG.  B: BACK');
         const log = doc.createElement('div');
         log.className = 'band-log';
         view.items.forEach((line, i) => {
           const row = doc.createElement('div');
           row.className = `band-log-line${i === view.index ? ' cursor' : ''}`;
-          row.innerHTML = wrapText(line, LOG_CHARS)
+          row.innerHTML = wrapText(line, size.label.chars)
             .map((l) => textSvg(l, SCALE, css(i === view.index ? COLOR.white : COLOR.mist)))
             .join('<br>');
           log.append(row);
