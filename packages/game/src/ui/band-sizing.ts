@@ -21,7 +21,7 @@ export interface TextSize {
 }
 
 export interface BandText {
-  readonly columns: 1 | 2;
+  readonly columns: number;
   readonly label: TextSize;
   /** The smaller line under a choice's label. */
   readonly detail: TextSize;
@@ -31,12 +31,16 @@ export const crispScale = (cssScale: number, dpr: number): number => Math.max(1,
 
 const charsFor = (width: number, scale: number): number => Math.max(8, Math.floor((width / scale + 1) / CELL_WIDTH));
 
-/** Text sizes for a band button; `reserve` is extra width a button uses besides its text (e.g. MOVE_RESERVE). */
-export function bandText(layout: Layout, reserve = 0): BandText {
+/**
+ * Text sizes for band buttons. `reserve` is extra width a button uses besides its text (e.g. MOVE_RESERVE); `columns`
+ * is how many columns a wide (touch landscape) band uses, so a short choice list fits without scrolling.
+ */
+export function bandText(layout: Layout, opts: { readonly reserve?: number; readonly columns?: number } = {}): BandText {
+  const reserve = opts.reserve ?? 0;
   const width = layout.band?.width ?? 0;
   const dpr = (layout.scale * 320) / Math.max(1, layout.game.width);
   const landscape = layout.mode === 'landscape';
-  const columns = landscape && width >= 480 ? 2 : 1;
+  const columns = landscape && width >= 480 ? Math.max(1, opts.columns ?? 2) : 1;
   const inner = (width - 2 * PANEL_PAD - (columns - 1) * GAP) / columns - BUTTON_INSET - reserve;
   const label = landscape ? crispScale(4 / 3, dpr) : 2;
   const detail = landscape ? label : crispScale(1.5, dpr);

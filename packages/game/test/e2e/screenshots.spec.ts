@@ -141,12 +141,17 @@ const JOURNEY_SIZES = [
   { name: '844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
 ] as const;
 
-/** Blitzr's lost graft fight on seed 0, as the battle scene reports it (the debrief shows the graft hint). */
+/** Blitzr's first lost graft fight (naive play), as the battle scene reports it (the debrief shows the graft hint). */
 function graftReport(): FightReport {
-  const def = trainerBattle('blitzr', 'graft', null, 0);
-  const r = simulate(def.setup, def.seed, { kind: 'scripted', next: naiveCommand });
+  const lost = (attempt: number) => {
+    const d = trainerBattle('blitzr', 'graft', null, attempt);
+    return { def: d, r: simulate(d.setup, d.seed, { kind: 'scripted', next: naiveCommand }) };
+  };
+  let attempt = 0;
+  while (lost(attempt).r.winner === 'a') attempt++;
+  const { r } = lost(attempt);
   const kept = graftSummary({ events: r.events, playerIndex: 0, graftMove: GRAFT_MOVE, moveName: (m) => moveDef(m)?.name ?? m, hint: GRAFT_HINTS.blitzr });
-  return fightReport({ battle: 'trainer', outcome: r.winner === 'a' ? 'win' : 'lose', rounds: r.rounds, events: r.events, cardId: null, kept, mine: (i) => i === 0 });
+  return fightReport({ battle: 'trainer', outcome: 'lose', rounds: r.rounds, events: r.events, cardId: null, kept, mine: (i) => i === 0 });
 }
 
 function trainerReport(cardId: string, attempt: number): FightReport {

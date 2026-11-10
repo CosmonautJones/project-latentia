@@ -27,7 +27,8 @@ export class BandChoices {
 
   render(cursor: number): void {
     const doc = this.root.ownerDocument;
-    const size = bandText(this.app.screen.layout());
+    // A wide band shows up to three choices side by side, so the starter pick and the debrief never scroll.
+    const size = bandText(this.app.screen.layout(), { columns: Math.min(3, this.items.length) });
     const list = doc.createElement('div');
     list.className = `band-buttons list cols-${size.columns}`;
     this.items.forEach((item, i) => {

@@ -38,7 +38,7 @@ export class BandMenu {
     const view = menuView(menu, data);
     const armed = armedHere(menu);
     const layout = this.app.screen.layout();
-    const size = bandText(layout, menu.screen === 'moves' ? MOVE_RESERVE : 0);
+    const size = bandText(layout, { reserve: menu.screen === 'moves' ? MOVE_RESERVE : 0 });
     const SCALE = size.label.scale;
     const buttons = (cls: string) => {
       const box = doc.createElement('div');

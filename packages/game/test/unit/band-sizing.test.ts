@@ -24,7 +24,12 @@ describe('bandText: the band buttons size their text for the band they are in', 
   it('touch landscape 844x390: two columns, and the longest move name fits one line', () => {
     const t = bandText(computeLayout({ width: 844, height: 390, dpr: 3, touch: true }));
     expect(t.columns).toBe(2);
-    expect(bandText(computeLayout({ width: 844, height: 390, dpr: 3, touch: true }), MOVE_RESERVE).label.chars).toBeGreaterThanOrEqual('PROOF BY CONTRADICTION'.length);
+    expect(bandText(computeLayout({ width: 844, height: 390, dpr: 3, touch: true }), { reserve: MOVE_RESERVE }).label.chars).toBeGreaterThanOrEqual('PROOF BY CONTRADICTION'.length);
     expect(t.detail.scale).toBeLessThanOrEqual(t.label.scale);
+  });
+
+  it('a wide band can show three choices side by side; portrait stays one column', () => {
+    expect(bandText(computeLayout({ width: 844, height: 390, dpr: 3, touch: true }), { columns: 3 }).columns).toBe(3);
+    expect(bandText(computeLayout({ width: 390, height: 844, dpr: 3, touch: true }), { columns: 3 }).columns).toBe(1);
   });
 });

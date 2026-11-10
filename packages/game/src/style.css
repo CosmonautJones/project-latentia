@@ -78,6 +78,14 @@ body {
   grid-template-columns: 1fr 1fr;
 }
 
+.band-buttons.list.cols-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+#band[data-mode='landscape'] .band-menu {
+  padding-top: 6px;
+}
+
 .band-buttons.grid.cols-2 {
   grid-template-columns: repeat(5, 1fr);
 }
