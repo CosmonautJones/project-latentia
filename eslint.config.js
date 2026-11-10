@@ -36,7 +36,7 @@ const engineGlobals = ['Date', 'performance', 'Intl'].map((name) => ({
 }));
 
 export default tseslint.config(
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '.superpowers/**', 'packages/engine/test/fixtures/**'] },
+  { ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '.superpowers/**', 'packages/engine/test/fixtures/**', 'packages/game/dist-test/**', 'packages/game/test-results/**', 'packages/game/playwright-report/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

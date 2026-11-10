@@ -1,0 +1,252 @@
+/* Page chrome around the 320x180 screen. Positions come from layout/apply.ts; this file only styles. */
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #181425;
+  /* No scrolling, zooming, text selection or tap highlight on the play surface. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#frame {
+  position: absolute;
+  overflow: hidden;
+}
+
+#frame canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#band {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: #262b44;
+  border-top: 2px solid #3a4466;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+#band[hidden],
+#controls[hidden] {
+  display: none;
+}
+
+/* Battle menus (P2) and, later, the grid editor. */
+#band-panel {
+  flex: 1;
+  min-height: 0;
+  /* A short phone scrolls the move list rather than clipping it; the panel is its own scroll container. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 0 12px 8px;
+  box-sizing: border-box;
+}
+
+.band-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+.band-caption {
+  gap: 8px;
+  line-height: 0;
+}
+
+.band-menu:has(.band-header) {
+  padding-top: 0;
+}
+
+.band-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 16px;
+  padding: 10px 0 6px;
+  background: #262b44;
+  line-height: 0;
+}
+
+.band-header svg {
+  margin-bottom: 4px;
+}
+
+.band-buttons {
+  display: grid;
+  gap: 6px;
+}
+
+.band-buttons.grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.band-buttons.row {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.band-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  background: #181425;
+  box-shadow: inset 2px 2px 0 #3a4466, inset -2px -2px 0 #3a4466;
+  touch-action: pan-y;
+  cursor: pointer;
+}
+
+.band-buttons.row .band-btn {
+  justify-content: center;
+  padding: 0;
+}
+
+.band-btn.cursor {
+  box-shadow: inset 2px 2px 0 #feae34, inset -2px -2px 0 #feae34;
+}
+
+/* Selected by a first tap: the next tap commits. */
+.band-btn.armed {
+  background: #3a4466;
+}
+
+.band-log {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 0;
+}
+
+.band-log-line svg {
+  margin-bottom: 2px;
+}
+
+.band-btn .tick {
+  width: 4px;
+  height: 14px;
+}
+
+.band-btn .right {
+  margin-left: auto;
+}
+
+#controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 16px 20px 24px;
+}
+
+#controls[data-placement='overlay'] {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+/* Touch landscape with room beside the game: the D-pad in the left margin, A/B in the right, vertically centred. */
+#controls[data-placement='sides'] {
+  position: fixed;
+  inset: 0;
+  padding: 0 calc(8px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+#controls[data-placement='sides'] .touch-btn {
+  pointer-events: auto;
+}
+
+#controls[data-placement='sides'] .dpad {
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(3, 44px);
+}
+
+#controls[data-placement='sides'] .dpad .touch-btn {
+  width: 44px;
+  height: 44px;
+}
+
+#controls[data-placement='sides'] .ab {
+  flex-direction: column-reverse;
+  gap: 12px;
+}
+
+#controls[data-placement='sides'] .ab .btn-b,
+#controls[data-placement='sides'] .ab .btn-a {
+  margin: 0;
+}
+
+#controls[data-placement='overlay'] .touch-btn {
+  pointer-events: auto;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+}
+
+.dpad-up { grid-area: 1 / 2; }
+.dpad-left { grid-area: 2 / 1; }
+.dpad-right { grid-area: 2 / 3; }
+.dpad-down { grid-area: 3 / 2; }
+
+.ab {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  /* B low-left, A high-right, like a handheld. */
+}
+
+.ab .btn-b { margin-top: 40px; }
+.ab .btn-a { margin-bottom: 40px; }
+
+.touch-btn {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #3a4466;
+  /* Pixel-art bevel: a light top-left and dark bottom-right edge, square corners. */
+  box-shadow: inset 4px 4px 0 #5a6988, inset -4px -4px 0 #181425;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.dpad .touch-btn {
+  width: 56px;
+  height: 56px;
+}
+
+.ab .touch-btn {
+  width: 64px;
+  height: 64px;
+  background: #a22633;
+  box-shadow: inset 4px 4px 0 #e43b44, inset -4px -4px 0 #3e2731;
+}
+
+.touch-btn.held {
+  box-shadow: inset 4px 4px 0 #181425, inset -4px -4px 0 #5a6988;
+}
+
+.ab .touch-btn.held {
+  box-shadow: inset 4px 4px 0 #3e2731, inset -4px -4px 0 #e43b44;
+}
