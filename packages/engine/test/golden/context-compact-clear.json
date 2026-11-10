@@ -1,7 +1,7 @@
 {
   "name": "context-compact-clear",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "95331a3d2b51554dd24189d7b9a31a08",
     "setup": {
       "a": {
@@ -137,7 +137,7 @@
           "action": {
             "kind": "move",
             "moveId": "batch-job",
-            "target": 5
+            "target": 3
           }
         },
         "b": {
@@ -166,28 +166,10 @@
             "target": 1
           }
         }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "batch-job",
-            "target": 3
-          }
-        },
-        "b": {
-          "temperature": 1,
-          "action": {
-            "kind": "move",
-            "moveId": "hard-fork",
-            "target": 2
-          }
-        }
       }
     ]
   },
-  "expectedHash": "0c85c78e047efe40",
-  "rounds": 5,
+  "expectedHash": "90dcce43979510c6",
+  "rounds": 4,
   "winner": "a"
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TYPE_MULT_MAX_BP, TYPE_MULT_MIN_BP } from '../../src/content/types.js';
 import { computeDamage, effectivePower, type DamageMods } from '../../src/math/damage.js';
 
 const base = { power: 60, atk: 11, def: 11, level: 5 };
@@ -14,21 +15,21 @@ describe('computeDamage', () => {
     expect(computeDamage({ ...base, mods: { native: 12500 } })).toBe(7);
   });
   it('type and crit combine', () => {
-    expect(computeDamage({ ...base, mods: { type: 20000, crit: 15000 } })).toBe(15);
+    expect(computeDamage({ ...base, mods: { type: 15000, crit: 15000 } })).toBe(11);
   });
   it('floors after each modifier in spec order', () => {
-    // d = 48000; type 3333 -> 15998 (floor); refusal 5000 -> 7999; damage 0 + 1.
-    expect(computeDamage({ ...base, mods: { type: 3333, refusalOrApology: 5000 } })).toBe(1);
+    // power 30: d = 24000; type 4444 -> 10665 (floor of 10665.6); refusal 5000 -> 5332 (floor of 5332.5); damage 0 + 1.
+    expect(computeDamage({ ...base, power: 30, mods: { type: 4444, refusalOrApology: 5000 } })).toBe(1);
   });
-  it('clamps the type multiplier to 2500..30000', () => {
+  it('clamps the type multiplier to the chart bounds (4444..22500)', () => {
     const hi = computeDamage({ ...base, mods: { type: 90000 } });
-    expect(hi).toBe(computeDamage({ ...base, mods: { type: 30000 } }));
+    expect(hi).toBe(computeDamage({ ...base, mods: { type: TYPE_MULT_MAX_BP } }));
     const lo = computeDamage({ ...base, mods: { type: 1 } });
-    expect(lo).toBe(computeDamage({ ...base, mods: { type: 2500 } }));
+    expect(lo).toBe(computeDamage({ ...base, mods: { type: TYPE_MULT_MIN_BP } }));
   });
   it('does not throw with every modifier at its max', () => {
     const mods: DamageMods = {
-      type: 30000,
+      type: 22500,
       t4se: 12500,
       native: 12500,
       crit: 15000,
@@ -43,7 +44,7 @@ describe('computeDamage', () => {
     };
     expect(() => computeDamage({ power: 300, atk: 533, def: 2, level: 100, mods })).not.toThrow();
     // d = floor(300 × 533 × 42 × 10000 / 100) = 671580000, then each modifier floored in spec order.
-    expect(computeDamage({ power: 300, atk: 533, def: 2, level: 100, mods })).toBe(223763);
+    expect(computeDamage({ power: 300, atk: 533, def: 2, level: 100, mods })).toBe(167823);
   });
 });
 
@@ -63,7 +64,7 @@ describe('computeDamage modifier order (spec §5 step 4, pinned pair by pair)', 
   // t4se and native are both 12500, so swapping them can never change a result: that pair is pinned
   // through its neighbours only.
   const CASES: readonly [Key, number, Key, number, number, number, number, number, number, number][] = [
-    ['type', 30000, 't4se', 12500, 21, 109, 103, 10, 11, 10],
+    ['type', 22500, 't4se', 12500, 21, 103, 146, 10, 6, 5],
     ['native', 12500, 'crit', 15000, 21, 109, 103, 10, 5, 6],
     ['crit', 15000, 'roll', 11300, 21, 223, 127, 5, 6, 5],
     ['roll', 11300, 'handoff', 13000, 59, 15, 26, 5, 4, 5],

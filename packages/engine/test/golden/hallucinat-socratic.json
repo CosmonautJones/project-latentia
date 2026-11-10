@@ -1,7 +1,7 @@
 {
   "name": "hallucinat-socratic",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "dc244662bd775df4a1e70abfec01cb05",
     "setup": {
       "a": {
@@ -386,26 +386,10 @@
             "kind": "none"
           }
         }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "adversarial-patch",
-            "target": 5
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
       }
     ]
   },
-  "expectedHash": "f02e8b4d40e87edb",
-  "rounds": 19,
-  "winner": "a"
+  "expectedHash": "ba3cebe76d76d53d",
+  "rounds": 18,
+  "winner": "b"
 }

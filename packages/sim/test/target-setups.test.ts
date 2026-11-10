@@ -47,7 +47,7 @@ describe('starter triangle setup', () => {
   it('pits each starter against the starter it beats on the type chart', () => {
     expect(TRIANGLE.map(([f, v]) => `${f}>${v}`).sort()).toEqual(['blitzr>sagelet', 'forkling>blitzr', 'sagelet>forkling']);
     for (const [fav, beaten] of TRIANGLE) {
-      expect(typeMultiplierBp(SPECIES[fav].types[0] as TypeId, SPECIES[beaten].types)).toBe(20000);
+      expect(typeMultiplierBp(SPECIES[fav].types[0] as TypeId, SPECIES[beaten].types)).toBe(15000);
       expect(valid(starterSide(fav), starterSide(beaten))).toEqual([]);
     }
   });

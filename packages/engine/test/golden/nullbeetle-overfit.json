@@ -1,7 +1,7 @@
 {
   "name": "nullbeetle-overfit",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "c82e3bd70ccfdc14ec881b6d15fcbba5",
     "setup": {
       "a": {
@@ -272,58 +272,10 @@
             "kind": "none"
           }
         }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "null-chomp",
-            "target": 4
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "infinite-loop",
-            "target": 4
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "segfault",
-            "target": 4
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        }
       }
     ]
   },
-  "expectedHash": "16b0e20217462db5",
-  "rounds": 14,
-  "winner": "a"
+  "expectedHash": "8c24c584f9e5cf15",
+  "rounds": 11,
+  "winner": "b"
 }

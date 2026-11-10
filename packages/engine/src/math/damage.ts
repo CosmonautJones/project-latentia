@@ -1,3 +1,4 @@
+import { TYPE_MULT_MAX_BP, TYPE_MULT_MIN_BP } from '../content/types.js';
 import { assertSafe, idiv, mulBp } from './bp.js';
 import { levelFactor } from './stats.js';
 
@@ -67,7 +68,7 @@ export function computeDamage(i: DamageInput): number {
   for (const key of MOD_ORDER) {
     let m = i.mods[key];
     if (m === undefined) continue;
-    if (key === 'type') m = Math.max(2500, Math.min(30000, m));
+    if (key === 'type') m = Math.max(TYPE_MULT_MIN_BP, Math.min(TYPE_MULT_MAX_BP, m));
     d = mulBp(d, m);
   }
   return idiv(d, 10000) + 1;

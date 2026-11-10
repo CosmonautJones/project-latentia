@@ -1,7 +1,7 @@
 {
   "name": "drift-wild-t4",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "3b5c5aaeac73d527c17c8bcbfe77fe9a",
     "setup": {
       "a": {
@@ -201,7 +201,7 @@
       }
     ]
   },
-  "expectedHash": "71c9a7b3d39ff663",
+  "expectedHash": "65f0ae6b24c4729d",
   "rounds": 5,
   "winner": "a"
 }

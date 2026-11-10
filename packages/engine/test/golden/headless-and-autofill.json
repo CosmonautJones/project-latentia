@@ -1,7 +1,7 @@
 {
   "name": "headless-and-autofill",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "037e428d63a56f2a40af934b8506119b",
     "setup": {
       "a": {
@@ -225,29 +225,13 @@
           "action": {
             "kind": "move",
             "moveId": "segfault",
-            "target": 3
-          }
-        }
-      },
-      {
-        "a": {
-          "temperature": 2,
-          "action": {
-            "kind": "none"
-          }
-        },
-        "b": {
-          "temperature": 2,
-          "action": {
-            "kind": "move",
-            "moveId": "accept-all",
             "target": 4
           }
         }
       }
     ]
   },
-  "expectedHash": "496ff6661ec3973f",
-  "rounds": 7,
+  "expectedHash": "04a3706b42282ab3",
+  "rounds": 6,
   "winner": "a"
 }

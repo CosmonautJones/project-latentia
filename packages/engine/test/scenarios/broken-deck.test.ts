@@ -14,9 +14,9 @@ import { ATTACK, BROKEN_DECK, brokenDeckBattle, FORKLING_G, HEAL, SWAPPED_DECK }
 // that always fires — wins at most 20 of 200 seeds, and the same deck with those two cards swapped wins at least 180.
 // Both sides run on their Autopilot decks ({ kind: 'autopilot' }), so the arms differ only in the subagent's deck.
 //
-// Known re-tune point: the fixture is a low-level fight decided by a few HP (the starter Sagelet is Lv4, 16 HP) and runs
-// 4–5 rounds, under the bible's 5–8. It holds across seed lists (7 / 400 broken, 393 / 400 swapped on seedFor(`check:${i}`))
-// but moves with single levels — Sagelet at Lv5 gives 154 broken wins — so a change to placeholder stats will likely
+// Known re-tune point: the fixture is a low-level fight decided by a few HP (the starter Sagelet is Lv5) and runs
+// 4–5 rounds, under the bible's 5–8. It holds across seed lists (33 / 400 broken, 369 / 400 swapped on seedFor(`check:${i}`), looser than the 7 / 393 before Ruling 148)
+// but moves with single levels — Sagelet at Lv6 gives 122 broken wins — so a change to placeholder stats will likely
 // need fixtures.ts re-tuned (its comments list the counts at each neighbouring value).
 
 const SEEDS = Array.from({ length: 200 }, (_, i) => seedFor(`broken-deck:${i}`));

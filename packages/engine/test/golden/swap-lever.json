@@ -1,7 +1,7 @@
 {
   "name": "swap-lever",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "dd3fce9d12549b1428243f122b9c52a5",
     "setup": {
       "a": {
@@ -303,7 +303,7 @@
       }
     ]
   },
-  "expectedHash": "65756fe490bf939f",
+  "expectedHash": "faf1816651a62b6a",
   "rounds": 9,
   "winner": "a"
 }

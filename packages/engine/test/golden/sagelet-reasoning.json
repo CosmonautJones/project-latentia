@@ -1,7 +1,7 @@
 {
   "name": "sagelet-reasoning",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "03bd336a88a467f27d89f8827a04d4e3",
     "setup": {
       "a": {
@@ -165,7 +165,7 @@
       }
     ]
   },
-  "expectedHash": "2cd3aebb0d0bfcaf",
+  "expectedHash": "b1976d8a044f966c",
   "rounds": 5,
   "winner": "a"
 }

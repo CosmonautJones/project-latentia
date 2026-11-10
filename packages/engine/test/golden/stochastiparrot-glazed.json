@@ -1,7 +1,7 @@
 {
   "name": "stochastiparrot-glazed",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "a5b0b8ebd3ca1eb493139e2561ace9c5",
     "setup": {
       "a": {
@@ -164,10 +164,28 @@
             "target": 0
           }
         }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "flattery",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "retrieval-strike",
+            "target": 0
+          }
+        }
       }
     ]
   },
-  "expectedHash": "aaba0221d73e07e6",
-  "rounds": 4,
+  "expectedHash": "56812f8ed07c0d63",
+  "rounds": 5,
   "winner": "b"
 }

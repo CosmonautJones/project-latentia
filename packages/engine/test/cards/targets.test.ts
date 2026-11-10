@@ -37,7 +37,7 @@ describe('resolveTarget', () => {
   });
 
   it('foeWeakToMove picks the highest type multiplier, then the lowest canonical index', () => {
-    // chain-of-thought is reasoning: vs speed 5000, vs code 20000, vs open 20000, vs open+code 30000 (clamped)
+    // chain-of-thought is reasoning: vs speed 6667, vs code 15000, vs open 15000, vs open+code 22500 (15000 x 15000, the upper bound)
     const foes = [vc(6, { types: ['speed'] }), vc(7, { types: ['code'] }), vc(8, { types: ['open'] })];
     expect(resolveTarget('foeWeakToMove', view({ foes }), 'chain-of-thought')).toBe(7);
     const dual = [vc(6, { types: ['code'] }), vc(7, { types: ['speed'] }), vc(8, { types: ['open', 'code'] })];

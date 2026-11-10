@@ -119,20 +119,20 @@ The battle design follows from those lessons. Context is the only move-cost reso
 
 ### The type chart is regular, so it can be learned in an hour
 
-Every type has exactly two 2× targets and two ½ resistances, so no type is strictly safe. The decided starter triangle, **Speed > Reasoning > Open > Speed**, is embedded in the chart. Each starter's second strength gives it early coverage: Speed hits Search, Reasoning hits Code, and Open hits Voice.
+Every type has exactly two 1.5× targets and two ⅔ resistances, so no type is strictly safe. (Ruling 148 softened the chart from 2× and ½ to 1.5× and ⅔, stored as 15000 and 6667 basis points.) The decided starter triangle, **Speed > Reasoning > Open > Speed**, is embedded in the chart. Each starter's second strength gives it early coverage: Speed hits Search, Reasoning hits Code, and Open hits Voice.
 
 | ATK \ DEF | Rea | Spd | Opn | Cod | Vis | Voi | Sea | Mem |
 |---|---|---|---|---|---|---|---|---|
-| **Reasoning** | 1 | ½ | **2** | **2** | 1 | 1 | 1 | ½ |
-| **Speed** | **2** | 1 | ½ | 1 | ½ | 1 | **2** | 1 |
-| **Open** | ½ | **2** | 1 | 1 | ½ | **2** | 1 | 1 |
-| **Code** | ½ | 1 | 1 | 1 | **2** | 1 | ½ | **2** |
-| **Vision** | 1 | **2** | **2** | ½ | 1 | ½ | 1 | 1 |
-| **Voice** | 1 | 1 | ½ | 1 | **2** | 1 | **2** | ½ |
-| **Search** | 1 | ½ | 1 | **2** | 1 | ½ | 1 | **2** |
-| **Memory** | **2** | 1 | 1 | ½ | 1 | **2** | ½ | 1 |
+| **Reasoning** | 1 | ⅔ | **1.5** | **1.5** | 1 | 1 | 1 | ⅔ |
+| **Speed** | **1.5** | 1 | ⅔ | 1 | ⅔ | 1 | **1.5** | 1 |
+| **Open** | ⅔ | **1.5** | 1 | 1 | ⅔ | **1.5** | 1 | 1 |
+| **Code** | ⅔ | 1 | 1 | 1 | **1.5** | 1 | ⅔ | **1.5** |
+| **Vision** | 1 | **1.5** | **1.5** | ⅔ | 1 | ⅔ | 1 | 1 |
+| **Voice** | 1 | 1 | ⅔ | 1 | **1.5** | 1 | **1.5** | ⅔ |
+| **Search** | 1 | ⅔ | 1 | **1.5** | 1 | ⅔ | 1 | **1.5** |
+| **Memory** | **1.5** | 1 | 1 | ⅔ | 1 | **1.5** | ⅔ | 1 |
 
-Each edge has an in-world reason. Reasoning finds the edge case in your code. Speed answers before the chain of thought finishes. Open forks your fast tier for free. Memory beats Reasoning through benchmark contamination ("it memorized the answers"). Search beats Code because the answer was on a forum all along. Dual types multiply, clamped to 0.25–3.0. A same-type move gets ×1.25, deliberately lower than the mainline games so off-type coverage stays viable. The UI shows labels, never raw multipliers. The final boss Monocultra is the one exception: it takes 1× from everything, then resists whichever type you repeat.
+Each edge has an in-world reason. Reasoning finds the edge case in your code. Speed answers before the chain of thought finishes. Open forks your fast tier for free. Memory beats Reasoning through benchmark contamination ("it memorized the answers"). Search beats Code because the answer was on a forum all along. Dual types multiply (floored in basis points), so the range is 0.4444–2.25: two resistances give 6667 × 6667 → 4444, and two weaknesses give 15000 × 15000 → 22500 (Ruling 148). A same-type move gets ×1.25, deliberately lower than the mainline games so off-type coverage stays viable. The UI shows labels, never raw multipliers. The final boss Monocultra is the one exception: it takes 1× from everything, then resists whichever type you repeat.
 
 ### Core numbers: integer math, five stats, and temperature that reshapes variance
 
@@ -383,7 +383,7 @@ Each creature is a behaviour gag with a battle mechanic attached, so the joke is
 | 40 | Imminent | ??? | Never ships | Dex: "Arrival expected next quarter" | |
 | 41 | Monocultra | Average of all | Formed by merging | Takes 1× from all types, then resists the type you repeat, and decays as it trains on itself | |
 
-The slice's type logic has a deliberate shape. Sagelet gets an easy first gym, because Reasoning hits Code 2×. Blitzr and Forkling players are steered toward Embeddingo (Search hits Code 2×) or Hallucinat in the forest. Forkling's Open hits Agentoad's Speed half. This mirrors the classic "first gym favours one starter" curve while guaranteeing every starter a route answer. Kip always takes your counter-type.
+The slice's type logic has a deliberate shape. Sagelet gets an easy first gym, because Reasoning hits Code 1.5×. Blitzr and Forkling players are steered toward Embeddingo (Search hits Code 1.5×) or Hallucinat in the forest. Forkling's Open hits Agentoad's Speed for only ⅔. This mirrors the classic "first gym favours one starter" curve while guaranteeing every starter a route answer. Kip always takes your counter-type.
 
 ## The satire pass: Make No Mistakes, Slop and Vibes
 

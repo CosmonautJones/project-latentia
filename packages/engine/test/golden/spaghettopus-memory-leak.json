@@ -1,7 +1,7 @@
 {
   "name": "spaghettopus-memory-leak",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "b1c97d4fb2edf555ce31554893b04010",
     "setup": {
       "a": {
@@ -147,13 +147,15 @@
         "a": {
           "temperature": 2,
           "action": {
-            "kind": "none"
+            "kind": "move",
+            "moveId": "tangle",
+            "target": 4
           }
         }
       }
     ]
   },
-  "expectedHash": "fea588b923301dbf",
+  "expectedHash": "97e2502422cd543d",
   "rounds": 6,
   "winner": "a"
 }

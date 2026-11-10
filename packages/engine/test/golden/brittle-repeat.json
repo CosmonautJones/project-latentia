@@ -1,7 +1,7 @@
 {
   "name": "brittle-repeat",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "859269810b567abaefa62d6574c0f88b",
     "setup": {
       "a": {
@@ -304,7 +304,7 @@
       }
     ]
   },
-  "expectedHash": "34f2fd39450fc4c0",
+  "expectedHash": "b18c5bebcc9e4b0a",
   "rounds": 4,
   "winner": "b"
 }

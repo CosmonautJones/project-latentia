@@ -1,7 +1,7 @@
 {
   "name": "trained-subagents",
   "log": {
-    "engineVersion": "0.3.0",
+    "engineVersion": "0.4.0",
     "seed": "35f972a691deec58529467c3e15b45a9",
     "setup": {
       "a": {
@@ -138,6 +138,40 @@
           "action": {
             "kind": "move",
             "moveId": "chain-of-thought",
+            "target": 3
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "move",
+            "moveId": "batch-job",
+            "target": 2
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "happy-to-help",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
             "target": 5
           }
         },
@@ -154,6 +188,22 @@
           "action": {
             "kind": "move",
             "moveId": "happy-to-help",
+            "target": 5
+          }
+        },
+        "b": {
+          "temperature": 1,
+          "action": {
+            "kind": "none"
+          }
+        }
+      },
+      {
+        "a": {
+          "temperature": 2,
+          "action": {
+            "kind": "move",
+            "moveId": "chain-of-thought",
             "target": 4
           }
         },
@@ -166,7 +216,7 @@
       }
     ]
   },
-  "expectedHash": "514b7947bee111d5",
-  "rounds": 4,
+  "expectedHash": "57a72f28549fa97a",
+  "rounds": 7,
   "winner": "a"
 }
