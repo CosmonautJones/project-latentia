@@ -62,10 +62,6 @@ export class DialogueBox {
     });
   }
 
-  get isOpen(): boolean {
-    return this.state !== null;
-  }
-
   /** Type `text` out; resolves once the player has read the last page and pressed A (or B, with `closeOnB`). */
   say(text: string, opts: { readonly closeOnB?: boolean } = {}): Promise<void> {
     this.closeOnB = opts.closeOnB === true;

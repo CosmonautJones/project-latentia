@@ -43,7 +43,7 @@ test('spin-up: lab → rival → wild → distill → card tutorial → Bootcamp
   // Teach the bad card: stretch while healthy.
   await pick(page, 'tutorial-card', 2);
   await expect.poll(() => flow(page).then((f) => f?.step)).toBe('forest');
-  expect(await save(page)).toMatchObject({ progress: { step: 'forest', distill: 'spinUp', tutorialCardId: 'tutorial.c' }, hintsSeen: expect.arrayContaining(['tutorial.cards']) });
+  expect(await save(page)).toMatchObject({ progress: { step: 'forest', distill: 'spinUp', tutorialCardId: 'tutorial.c' } });
 
   // Bootcamp Grad, seed 0: the bad card loses.
   expect(await send(page, { type: 'trainerEngaged' })).toBe(true);

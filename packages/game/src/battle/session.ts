@@ -255,12 +255,6 @@ export class BattleSession {
     return { name: (i) => this.name(i), moveName, deckOf: (i) => this.deckOf(i) };
   }
 
-  /** The last deck-driven action in plain words, or null before any. */
-  explainLastTrace(): string | null {
-    const t = this.lastTrace();
-    return t === null ? null : explainTrace(t, this.traceContext());
-  }
-
   /** The latest trace of each deck-driven creature, in plain words (the "why?" popup). */
   explainLatestTraces(): string[] {
     const latest = new Map<number, CardTrace>();

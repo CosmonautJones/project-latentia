@@ -113,7 +113,7 @@ describe('BattleSession', () => {
     expect(s.traces().length).toBe(1);
     expect(s.deckOf(1)).toEqual(kipDeck('blitzr'));
     expect(s.deckOf(0)).toBeNull();
-    expect(s.explainLastTrace()).toMatch(/^Kip's Blitzr (fired|fell back)/);
+    expect(s.explainLatestTraces()).toEqual([expect.stringMatching(/^Kip's Blitzr (fired|fell back)/)]);
     // Only the player's teammates count as fired cards; Kip's Autopilot traces do not.
     expect(s.report('lose', null)).toMatchObject({ battle: 'rival', cardsFired: 0, kept: [] });
   });

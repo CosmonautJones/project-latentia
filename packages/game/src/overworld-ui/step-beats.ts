@@ -11,8 +11,6 @@ import { cardChoices } from '../journey/debrief.js';
 import { ChoicePanel, type ChoiceItem } from '../ui/choice-panel.js';
 import type { DialogueBox } from '../ui/dialogue-box.js';
 
-export const CARD_TUTORIAL_HINT_ID = 'tutorial.cards';
-
 interface Beat {
   readonly scene: Phaser.Scene;
   readonly app: App;
@@ -61,6 +59,5 @@ export async function labIntro(b: Beat): Promise<StarterId | null> {
 export async function cardTutorial(b: Beat): Promise<string | null> {
   const cards = cardChoices(TOKENIBBLE_PRESETS, null);
   const i = await sayThenChoose(b, [CARD_TUTORIAL_HINT], { id: 'tutorial-card', title: CARD_TUTORIAL_TITLE, items: cards.map((c) => ({ label: c.label, detail: c.detail })) }, true);
-  if (i !== null) b.app.flow.markHintSeen(CARD_TUTORIAL_HINT_ID);
   return i === null ? null : (cards[i]?.id ?? null);
 }
