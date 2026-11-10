@@ -1,7 +1,7 @@
 import { createBattle, simulate, SPECIES, typeMultiplierBp, validateSetup, type SideSetup } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
 import { battleForStep, counterStarter, rivalBattle, seedFor, trainerBattle, wildBattle, type BattleDef } from '../../src/content/battles.js';
-import { TOKENIBBLE_PRESETS } from '../../src/content/trainers.js';
+import { BOOTCAMP_GRAD, TOKENIBBLE_PRESETS } from '../../src/content/trainers.js';
 import { initialFlow, STARTERS, type FlowState } from '../../src/flow/flow.js';
 
 const allDefs = (): BattleDef[] =>
@@ -62,14 +62,22 @@ describe('battle content', () => {
     expect(setup.b.autopilot).toBeDefined();
   });
 
-  it('the Bootcamp Grad is an L5-6 Autopilot trainer; on spin-up the player brings Tokenibble with a 1-card deck', () => {
+  it('the Bootcamp Grad is an Autopilot trainer at L7 against Sagelet and Blitzr and L6 against Forkling', () => {
+    expect(BOOTCAMP_GRAD.level).toEqual({ sagelet: 7, blitzr: 7, forkling: 6 });
+    for (const starter of STARTERS) {
+      for (const distill of ['spinUp', 'graft'] as const) {
+        const { setup, opponent } = trainerBattle(starter, distill, 'tutorial.a', 0);
+        expect(opponent).toBe('Bootcamp Grad');
+        expect(setup.b.orchestrator.level, `${starter} ${distill}`).toBe(BOOTCAMP_GRAD.level[starter]);
+        expect(setup.b.autopilot).toBeDefined();
+      }
+    }
+  });
+
+  it('on spin-up against the Bootcamp Grad the player brings Tokenibble with a 1-card deck', () => {
     const preset = TOKENIBBLE_PRESETS[1];
     if (!preset) throw new Error('no preset');
-    const { setup, opponent } = trainerBattle('forkling', 'spinUp', preset.id, 0);
-    expect(opponent).toBe('Bootcamp Grad');
-    expect(setup.b.orchestrator.level).toBeGreaterThanOrEqual(5);
-    expect(setup.b.orchestrator.level).toBeLessThanOrEqual(6);
-    expect(setup.b.autopilot).toBeDefined();
+    const { setup } = trainerBattle('forkling', 'spinUp', preset.id, 0);
     expect(setup.a.orchestrator).toMatchObject({ species: 'forkling', level: 5 });
     const [tok] = setup.a.active;
     expect(tok).toMatchObject({ species: 'tokenibble', level: 3 });
