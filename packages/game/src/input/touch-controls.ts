@@ -1,6 +1,7 @@
 // The touch D-pad and A/B buttons (DOM, so the hit areas stay large and exact at any game scale). They sit in
 // the portrait band, or overlay a touch landscape screen; labels are drawn from the game font as SVG.
 
+import './touch-controls.css';
 import { glyphSvg } from '../text/glyph-svg.js';
 import { css, COLOR } from '../ui/palette.js';
 import { touchControlButton, type TouchControlId } from './actions.js';
