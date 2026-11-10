@@ -269,3 +269,22 @@ body {
 #band-panel:has(.band-choices) .band-caption {
   display: none;
 }
+
+/* The one-off "saves unavailable" notice (ui/notice.ts): small, top centre, fades after a few seconds. */
+#notice {
+  position: fixed;
+  top: calc(4px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 6px 8px;
+  background: #181425;
+  box-shadow: inset 2px 2px 0 #feae34, inset -2px -2px 0 #feae34;
+  line-height: 0;
+  pointer-events: none;
+  transition: opacity 0.6s;
+}
+
+#notice.gone {
+  opacity: 0;
+}

@@ -19,6 +19,7 @@ import { DistillScene } from './scenes/distill.js';
 import { EndScene } from './scenes/end.js';
 import { OverworldScene } from './scenes/overworld.js';
 import { TitleScene } from './scenes/title.js';
+import { showNotice } from './ui/notice.js';
 import { css, COLOR } from './ui/palette.js';
 
 const byId = (id: string): HTMLElement => {
@@ -47,7 +48,8 @@ const switchScene = (key: SceneKey) => {
 };
 
 const probe: Probe = { scene: null, menu: null, battle: null, overworld: null, panel: null };
-const storage = browserStorage(window);
+// A blocked or full localStorage never stops the game: it plays on in memory and says so once.
+const storage = browserStorage(window, () => showNotice(document, 'SAVES UNAVAILABLE'));
 
 let layout: Layout = computeLayout(readViewport(window));
 let layoutListeners: ((l: Layout) => void)[] = [];

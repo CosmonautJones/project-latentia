@@ -134,3 +134,23 @@ test('every stub scene renders without errors through to the end card and back t
   expect(await menu(page)).toMatchObject({ id: 'title', items: ['CONTINUE', 'NEW GAME'] });
   expect(errors).toEqual([]);
 });
+
+test('with localStorage blocked the game still runs, shows one "saves unavailable" notice, and plays into the lab', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      get() {
+        throw new DOMException('The operation is insecure.', 'SecurityError');
+      },
+    });
+  });
+  await page.goto('/');
+  await expect.poll(() => scene(page)).toBe('Title');
+  await expect(page.locator('#notice')).toHaveCount(1);
+  await expect(page.locator('#notice')).toHaveAttribute('aria-label', 'SAVES UNAVAILABLE');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => scene(page)).toBe('Overworld');
+  expect(await step(page)).toBe('lab');
+  await expect(page.locator('#notice')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
