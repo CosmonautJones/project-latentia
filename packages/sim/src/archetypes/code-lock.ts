@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALLY_HURT, ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, hasStatus, HEALTHY, HURT, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 
 // Code lock (spec §9): deny the foe its plan. Infinite Loop pins a buffer into Overfit, Segfault makes the next move
 // fail, Memory Leak clogs a window with Junk, Unit Test guards on a cooldown (Gary Rebase's "don't overfit" gym).
@@ -52,14 +52,14 @@ const SPAGHETTOPUS_LOCK = archetype('code-lock-spaghettopus', {
   ),
   autopilot: deck(
     card('tangle', 'self', ALWAYS, 'tangle', 'highestAtkFoe'),
-    card('loop', 'foe', BUFFED, 'infinite-loop', 'highestAtkFoe'),
+    card('search-10', 'self', { category: 'allyHp', op: 'below', pct: 75 }, 'infinite-loop', 'highestAtkFoe'),
     card('leak', 'self', cooldown(3), 'memory-leak', 'lowestHpFoe'),
-    card('drift', 'self', DRIFT, 'clear', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('tidy', 'foe', hasStatus('hallucinating'), 'compact', 'self'),
     card('merge', 'foe', HURT, 'merge-conflict', 'lowestHpFoe'),
+    card('loop', 'foe', BUFFED, 'infinite-loop', 'highestAtkFoe'),
     card('finish', 'foe', WEAK, 'tangle', 'lowestHpFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('coin', 'self', COIN, 'merge-conflict', 'randomFoe'),
+    card('search-28', 'foe', hasStatus('promptInjected'), 'guardrail', 'lowestHpAlly'),
   ),
   temperature: 1,
 });
@@ -111,14 +111,14 @@ const NULLBEETLE_LOCK = archetype('code-lock-nullbeetle', {
   ),
   autopilot: deck(
     card('chomp', 'self', ALWAYS, 'null-chomp', 'lowestHpFoe'),
-    card('test', 'self', cooldown(3), 'unit-test', 'self'),
     card('loop', 'foe', BUFFED, 'infinite-loop', 'highestAtkFoe'),
     card('crash', 'foe', HEALTHY, 'segfault', 'highestAtkFoe'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('tidy', 'self', { category: 'allyHp', op: 'below', pct: 75 }, 'compact', 'self'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
     card('speed', 'foe', lastMove('low-latency'), 'infinite-loop', 'highestAtkFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
     card('finish', 'foe', WEAK, 'null-chomp', 'lowestHpFoe'),
+    card('test', 'self', cooldown(3), 'unit-test', 'self'),
   ),
   temperature: 0,
 });

@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, fromRound, FULL, HEALTHY, HURT, inField, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 
 /**
  * Voice pressure — the spec §9 "Voice injection" family, renamed (Ruling 120). Its namesake is Deepfake Call
@@ -56,14 +56,14 @@ const PARROT_PRESSURE = archetype('voice-pressure-parrot', {
   ),
   autopilot: deck(
     card('hot', 'self', ALWAYS, 'hot-take', 'lowestHpFoe'),
-    card('hype', 'self', cooldown(3), 'hype-train', 'self'),
-    card('flatter', 'self', cooldown(3), 'flattery', 'highestAtkFoe'),
-    card('drift', 'self', DRIFT, 'clear', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('search-17', 'orchestrator', inField('forceTemperature'), 'hype-train', 'lowestHpAlly'),
+    card('flatter', 'self', fromRound(7), 'flattery', 'highestAtkFoe'),
+    card('search-14', 'foe', lastMove('hype-train'), 'hot-take', 'orchestratorTarget'),
+    card('tidy', 'foe', BUFFED, 'hot-take', 'highestAtkFoe'),
     card('weak', 'foe', WEAK_TO_MOVE, 'hot-take', 'foeWeakToMove'),
-    card('glaze', 'foe', BUFFED, 'flattery', 'highestAtkFoe'),
+    card('hype', 'self', cooldown(3), 'hype-train', 'self'),
     card('low', 'self', WEAK, 'guardrail', 'self'),
-    card('repeat', 'self', COIN, 'stochastic-repeat', 'randomFoe'),
+    card('repeat', 'self', COIN, 'hot-take', 'randomFoe'),
   ),
   temperature: 3,
 });

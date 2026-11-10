@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE, ALWAYS } from './build.js';
+import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, lastMove, layout, OPENER, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 
 // Speed rush (spec §9): act first, cheap hits, finish the weak before they move. Low-cost Speed moves keep the
 // orchestrator's headroom free; priority moves (Token Burst +1, Early Exit +3) snipe the low-HP foe.
@@ -53,7 +53,7 @@ const BLITZR_RUSH = archetype('speed-rush-blitzr', {
     card('ship', 'self', ALWAYS, 'ship-it', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'token-burst', 'lowestHpFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('tidy', 'orchestrator', lastMove('socratic-method'), 'compact', 'self'),
     card('opener', 'self', OPENER, 'distilled-strike', 'highestAtkFoe'),
     card('weak', 'foe', WEAK_TO_MOVE, 'distilled-strike', 'foeWeakToMove'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
@@ -111,7 +111,7 @@ const AGENTOAD_RUSH = archetype('speed-rush-agentoad', {
   autopilot: deck(
     card('off', 'self', ALWAYS, 'off-by-one', 'lowestHpFoe'),
     card('finish', 'foe', WEAK, 'off-by-one', 'lowestHpFoe'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('tidy', 'self', FULL, 'tool-call', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'clear', 'self'),
     card('tools', 'foe', HEALTHY, 'tool-call', 'highestAtkFoe'),
     card('trace', 'foe', BUFFED, 'stack-trace', 'highestAtkFoe'),
@@ -173,10 +173,10 @@ const GRAFT_RUSH = archetype('speed-rush-graft', {
     card('weak', 'foe', WEAK_TO_MOVE, 'null-chomp', 'foeWeakToMove'),
     card('opener', 'self', OPENER, 'distilled-strike', 'highestAtkFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('search-16', 'orchestrator', BUFFED, 'distilled-strike', 'randomFoe'),
     card('hurt', 'foe', HURT, 'ship-it', 'lowestHpFoe'),
-    card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('coin', 'self', COIN, 'null-chomp', 'randomFoe'),
+    card('search-8', 'self', BUFFED, 'guardrail', 'self'),
+    card('coin', 'self', COIN, 'distilled-strike', 'randomFoe'),
   ),
   temperature: 2,
 });

@@ -199,17 +199,20 @@ describe('temperature dial setup (Ruling 143 I2: every archetype)', () => {
     const s = createBattle(setupOf(t0, t4), seedFor('live:temperature', 0));
     expect([s.sides.a.temperature, s.sides.b.temperature]).toEqual([0, 4]);
     // An Autopilot always obeys, so a MoveUsed that differs from the move of the card it fired is a substitution
-    // (a T3+ self-hallucination, spec §5 D2): never at T0, and seen at T4 over 80 battles.
+    // (a T3+ self-hallucination, spec §5 D2): never at T0, and seen at T4 over 80 battles. Drift (5% random move per
+    // stack, spec §5 D1) also substitutes a move, so only rounds where the orchestrator holds no Drift count.
     const substitutions = (x: Archetype) => {
       let n = 0;
       for (const r of both(t0, t4, 'live:temperature', 40)) {
         const orch = indicesOf(r, x)[0];
         const cards = autopilotCards(x.side);
         let planned: string | undefined;
+        let drift = 0;
         for (const e of r.events) {
+          if (e.type === 'DriftChanged' && e.target === orch) drift = e.drift;
           if (e.type === 'CardTrace' && e.actor === orch) planned = cards.find((c) => c.id === e.firedCardId)?.move;
           if (e.type === 'MoveUsed' && e.actor === orch && planned !== undefined) {
-            if (e.moveId !== planned) n++;
+            if (e.moveId !== planned && drift === 0) n++;
             planned = undefined;
           }
         }

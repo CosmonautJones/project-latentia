@@ -88,12 +88,15 @@ describe('searchDeck', () => {
 
   it('keeps exactly 8 cards plus the base Default, passes validateSetup, and never mutates ARCHETYPES', () => {
     const before = structuredClone(ARCHETYPES);
-    const r = searchDeck(BASE, FIELD, 120, SEED, { k: 1 });
+    // Cobolt's deck is as authored (D3's search found no held-out gain for it), so it still has room to climb on this tiny field;
+    // blitzr's was already tuned against the full field.
+    const climber = byId('code-lock-cobolt');
+    const r = searchDeck(climber, FIELD, 120, SEED, { k: 1 });
     expect(ARCHETYPES).toEqual(before);
     expect(r.deck.cards).toHaveLength(8);
-    expect(r.deck.default).toEqual(deckOf(BASE).default);
-    const side = withDeck(BASE, r.deck).side;
-    for (const foe of FIELD) expect(validateSetup({ a: { ...side, opponentId: foe.id }, b: { ...foe.side, opponentId: BASE.id }, kind: 'trainer' }).errors).toEqual([]);
+    expect(r.deck.default).toEqual(deckOf(climber).default);
+    const side = withDeck(climber, r.deck).side;
+    for (const foe of FIELD) expect(validateSetup({ a: { ...side, opponentId: foe.id }, b: { ...foe.side, opponentId: climber.id }, kind: 'trainer' }).errors).toEqual([]);
     // A search this long accepts at least one step from this base (a regression guard, not a balance claim).
     expect(r.history.length).toBeGreaterThan(1);
   });

@@ -1,5 +1,5 @@
 import type { Archetype } from '../types.js';
-import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, FULL, HEALTHY, HURT, hasStatus, isType, layout, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
+import { ALWAYS, archetype, BUFFED, card, COIN, cooldown, deck, DRIFT, hasStatus, HEALTHY, HURT, inField, isType, layout, orchestrator, subagent, WEAK, WEAK_TO_MOVE } from './build.js';
 
 // Search anti-hallucination (spec §9): ground the team and punish the hallucinators. Ground Truth cures team
 // Hallucinating, Citation Needed hits a Hallucinating foe twice as hard (then cures it), Fact Check strips buffs,
@@ -60,10 +60,10 @@ const EMBEDDINGO_GROUND = archetype('search-anti-hallu-embeddingo', {
     card('ground', 'self', hasStatus('hallucinating'), 'ground-truth', 'self'),
     card('cite', 'foe', hasStatus('hallucinating'), 'citation-needed', 'lowestHpFoe'),
     card('sniff', 'foe', WEAK_TO_MOVE, 'cosine-sniff', 'foeWeakToMove'),
-    card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('drift', 'self', isType('speed'), 'compact', 'self'),
+    card('tidy', 'foe', inField('revealTopDeckCard'), 'compact', 'self'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
-    card('reasoner', 'foe', isType('reasoning'), 'citation-needed', 'highestAtkFoe'),
+    card('reasoner', 'self', cooldown(2), 'citation-needed', 'highestAtkFoe'),
     card('coin', 'self', COIN, 'cosine-sniff', 'randomFoe'),
   ),
   temperature: 2,
@@ -118,10 +118,10 @@ const SCRAPION_GROUND = archetype('search-anti-hallu-scrapion', {
   autopilot: deck(
     card('scrape', 'self', ALWAYS, 'scrape', 'highestAtkFoe'),
     card('steal', 'foe', BUFFED, 'scrape', 'highestAtkFoe'),
-    card('check', 'self', cooldown(3), 'fact-check', 'highestAtkFoe'),
+    card('search-15', 'orchestrator', WEAK_TO_MOVE, 'compact', 'orchestrator'),
     card('finish', 'foe', WEAK, 'retrieval-strike', 'lowestHpFoe'),
     card('drift', 'self', DRIFT, 'compact', 'self'),
-    card('tidy', 'self', FULL, 'compact', 'self'),
+    card('check', 'self', cooldown(3), 'fact-check', 'highestAtkFoe'),
     card('hurt', 'foe', HURT, 'retrieval-strike', 'lowestHpFoe'),
     card('guard', 'self', WEAK, 'guardrail', 'self'),
     card('coin', 'self', COIN, 'retrieval-strike', 'randomFoe'),
