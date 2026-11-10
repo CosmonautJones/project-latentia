@@ -9,7 +9,11 @@ export interface SpeciesDef {
   readonly base: { readonly hp: number; readonly compute: number; readonly robustness: number; readonly latency: number };
   /** Own context window (10–16, default 12). */
   readonly ctx: number;
-  /** Four moves: the signature plus three launch moves (a spun-up subagent keeps the three). */
+  /**
+   * Four moves: the signature plus three launch moves. The bible's spin-up rule (a spun-up subagent keeps only the
+   * three, its signature becoming a passive echo) belongs to distillation (bible milestone 8). The engine does not
+   * enforce it: a subagent setup may list any of its species' four moves.
+   */
   readonly moves: readonly MoveId[];
   readonly signature: MoveId;
   /** Species passives, in firing order for a shared trigger; empty when none. */

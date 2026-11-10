@@ -1,0 +1,33 @@
+evaluation,mutation,score,accepted,best,battles_used
+0,base deck,0.2779605263157895,yes,0.2779605263157895,608
+1,replace #1 (flash) with search-1: IF self has an ally at hp ≥ 50% THEN bounding-box → self,0.17763157894736842,no,0.2779605263157895,1216
+2,replace #3 (drift) with search-2: IF orchestrator hp ≥ 75% THEN guardrail → orchestrator,0.21052631578947367,no,0.2779605263157895,1824
+3,reorder #5 → #3 (nibble),0.2845394736842105,no,0.2779605263157895,2432
+4,reorder #6 → #7 (weak),0.2779605263157895,no,0.2779605263157895,3040
+5,reorder #1 → #5 (flash),0.27631578947368424,no,0.2779605263157895,3648
+6,reorder #8 → #2 (coin),0.2911184210526316,yes,0.2911184210526316,4256
+7,condition of #6 (nibble): foe hp < 25% → foe holds field junkPerRound,0.29276315789473684,no,0.2911184210526316,4864
+8,condition of #3 (box): self has not used the move for 3 rounds → orchestrator context < 50% full,0.30098684210526316,no,0.2911184210526316,5472
+9,replace #3 (box) with search-9: IF orchestrator is buffed THEN clear → self,0.33881578947368424,yes,0.33881578947368424,6080
+10,reorder #3 → #8 (search-9),0.3519736842105263,yes,0.3519736842105263,6688
+11,condition of #4 (tidy): self context ≥ 75% full → foe holds field junkPerRound,0.36348684210526316,yes,0.36348684210526316,7296
+12,move of #5 (nibble): token-nibble → compact (target lowestHpFoe → self),0.3470394736842105,no,0.36348684210526316,7904
+13,move of #7 (guard): guardrail → bounding-box,0.36019736842105265,no,0.36348684210526316,8512
+14,replace #4 (tidy) with search-14: IF orchestrator is buffed THEN token-nibble → orchestratorTarget,0.3848684210526316,yes,0.3848684210526316,9120
+15,move of #7 (guard): guardrail → observer-effect (target self → lowestHpFoe),0.3832236842105263,no,0.3848684210526316,9728
+16,move of #2 (coin): token-nibble → guardrail (target randomFoe → orchestrator),0.31085526315789475,no,0.3848684210526316,10336
+17,move of #6 (weak): flash-inference → bounding-box (target foeWeakToMove → orchestrator),0.34539473684210525,no,0.3848684210526316,10944
+18,reorder #3 → #7 (drift),0.3848684210526316,no,0.3848684210526316,11552
+19,replace #8 (search-9) with search-19: IF self holds field revealIntents THEN observer-effect → highestAtkFoe,0.38651315789473684,no,0.3848684210526316,12160
+20,replace #5 (nibble) with search-20: IF foe is open type THEN flash-inference → foeWeakToMove,0.3832236842105263,no,0.3848684210526316,12768
+21,reorder #3 → #8 (drift),0.3848684210526316,no,0.3848684210526316,13376
+22,reorder #6 → #4 (weak),0.3848684210526316,no,0.3848684210526316,13984
+23,reorder #8 → #4 (search-9),0.36348684210526316,no,0.3848684210526316,14592
+24,reorder #1 → #2 (flash),0.3832236842105263,no,0.3848684210526316,15200
+25,condition of #6 (weak): foe is weak to the move → orchestrator holds field revealTopDeckCard,0.3717105263157895,no,0.3848684210526316,15808
+26,move of #6 (weak): flash-inference → bounding-box (target foeWeakToMove → lowestHpAlly),0.34539473684210525,no,0.3848684210526316,16416
+27,reorder #6 → #8 (weak),0.3848684210526316,no,0.3848684210526316,17024
+28,reorder #1 → #2 (flash),0.3832236842105263,no,0.3848684210526316,17632
+29,condition of #2 (coin): self coin flip → foe has quantized,0.39144736842105265,no,0.3848684210526316,18240
+30,move of #8 (search-9): clear → token-nibble (target self → orchestratorTarget),0.38651315789473684,no,0.3848684210526316,18848
+31,condition of #8 (search-9): orchestrator is buffed → self is code type,0.3026315789473684,no,0.3848684210526316,19456

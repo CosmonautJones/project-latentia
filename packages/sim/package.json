@@ -1,0 +1,22 @@
+{
+  "name": "@latentia/sim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "sim": "tsx src/bin.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "triangle-solo": "tsx scripts/triangle-solo.ts",
+    "diagnostics": "tsx scripts/diagnostics.ts"
+  },
+  "dependencies": {
+    "@latentia/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4.0.0",
+    "vitest": "^3.0.0"
+  }
+}

@@ -61,5 +61,6 @@ describe('getIntents over random legal battles with decks', () => {
     expect(seen.disobeyed).toBeGreaterThan(0);
     expect(seen.autopilotIntents).toBeGreaterThan(100);
     expect(seen.autopilotFirst).toBeGreaterThan(10);
-  });
+    // 120 full battles: same explicit budget as the invariants property test (CI runners measured 5.3 s).
+  }, 20_000);
 });

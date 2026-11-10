@@ -1,12 +1,15 @@
 // The only public surface of @latentia/engine: spec §4 so far (B2 added getIntents; B5 adds
 // computeGeneralization), plus the thrown error classes as values for instanceof (Ruling 67), and, read-only
-// (frozen), the content catalogs and the deck-editor constants a client needs (Ruling 119 m3).
+// (frozen), the content catalogs and the deck-editor constants a client needs (Ruling 119 m3), and the grid-size
+// table (C2 fix round 1, for the sim's starter grid), and the orchestrator's stored moveset (C4 m1, for the sim's deck
+// search, so it never copies the rule).
 // Everything else in src/ is internal.
 
 export { ENGINE_VERSION } from './battle/log.js';
 export type { BattleLog, OrchestratorAction, RoundCommand, SideCommand } from './battle/log.js';
 
 export { createBattle, SetupError, validateSetup } from './battle/setup.js';
+export { orchestratorMoves } from './battle/validate-setup.js';
 export type { BattleSetup, CreatureSetup, SideSetup, ValidationError, ValidationErrorCode, ValidationResult } from './battle/setup.js';
 export { MAX_AUTOPILOT_CARDS, MAX_DECK_CARDS } from './battle/validate-deck.js';
 
@@ -48,6 +51,7 @@ export type { EvalScenario, EvalSuite, GeneralizationReport, WastefulRule } from
 export { validateGrid } from './grid/validate.js';
 export type { GridError } from './grid/validate.js';
 export { activeCardCount } from './grid/adjacency.js';
+export { GRID_SIZE_BY_LEVEL, gridSizeFor } from './grid/model.js';
 export type { Cell, GridLayout, PieceKind, PlacedPiece, Rotation } from './grid/model.js';
 
 export { eventStreamHash } from './events/canonical.js';

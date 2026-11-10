@@ -248,6 +248,7 @@ Precedents support rewarding performance at capture and charging power in space.
 | | **Graft** (move into the orchestrator) | **Spin up** (new subagent) |
 |---|---|---|
 | You get | The species' signature move as a Skill at 100% power | The creature with 3 moves and a passive; the signature becomes a weaker passive echo |
+| Level | — | Joins at the level of the wild model you beat, not the orchestrator's |
 | Control | You aim it every turn | Acts on its own from its deck |
 | Space | Irregular 3–4 cell shape | 2×2 slot plus adjacent cards |
 | Growth | Static; can be fine-tuned +1 tier with currency | Levels, evolves, gains card slots |
@@ -390,7 +391,7 @@ The jokes follow the same rule as everything else here: each one is a mechanic. 
 
 ### Moves (candidates)
 
-The 57-move launch list stays the slice baseline. Each candidate below is built from existing engine effect primitives unless marked **new**. Phase C's simulator decides which ones swap in, for balance, before slice content is locked (milestone 9). The three marked ★ are the recommended slice swap-ins.
+The 57-move launch list stays the slice baseline. Each candidate below is built from existing engine effect primitives unless marked **new**. Which ones swap in is evaluated with the simulator in a follow-up after Phase C's first balance pass, because the candidates need new content and some need new primitives (Ruling 122). That evaluation happens before slice content is locked (milestone 9). The three marked ★ are the recommended slice swap-ins.
 
 | Move | Type · stats | Effect | Gag |
 |---|---|---|---|

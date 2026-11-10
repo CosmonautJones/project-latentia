@@ -10,7 +10,7 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm --filter @latentia/engine test",
+    "test": "pnpm -r --if-present test",
     "test:browser": "pnpm --filter @latentia/engine test:browser",
     "bench": "pnpm --filter @latentia/engine bench",
     "golden:record": "pnpm --filter @latentia/engine golden:record",

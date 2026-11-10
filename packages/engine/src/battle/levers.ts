@@ -2,7 +2,8 @@ import type { Card, Deck } from '../cards/model.js';
 import { moveDef } from '../content/moves.js';
 import { pay } from '../context/store.js';
 import type { BattleEvent } from '../events/types.js';
-import { activeCardCount, VERSION_SLOTS } from '../grid/adjacency.js';
+import { VERSION_SLOTS } from '../grid/adjacency.js';
+import { gridActiveCards } from '../grid/derived.js';
 import { EngineInvariantError } from '../math/bp.js';
 import { moveDisabledByStatus } from '../status/apply.js';
 import type { ActionEntry } from './order.js';
@@ -115,7 +116,7 @@ export function cardOf(state: BattleState, c: CreatureState, id: string): Card |
 export function activeCards(state: BattleState, c: CreatureState): number {
   const grid = state.sides[c.side].grid;
   const pieceId = c.activeSlot === null ? null : (state.sides[c.side].slots[c.activeSlot]?.pieceId ?? null);
-  return grid !== null && pieceId !== null ? activeCardCount(grid, pieceId, c.version) : VERSION_SLOTS[c.version];
+  return grid !== null && pieceId !== null ? gridActiveCards(grid, pieceId, c.version) : VERSION_SLOTS[c.version];
 }
 
 /**

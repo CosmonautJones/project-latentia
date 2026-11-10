@@ -3,7 +3,7 @@
 - **Project:** Latentia (working codename; the region name, not a final title)
 - **Sub-project:** 1 of 5 — the headless battle engine and balance simulator
 - **Date:** 2026-11-07
-- **Status:** Revision 3.2 — plus normative rulings in docs/superpowers/notes/phase-a-rulings.md (1–80) and docs/superpowers/notes/phase-b-rulings.md (81–119)
+- **Status:** Revision 3.3 — plus normative rulings in docs/superpowers/notes/phase-a-rulings.md (1–80) and docs/superpowers/notes/phase-b-rulings.md (81–119) and docs/superpowers/notes/phase-c-rulings.md (120–145)
 - **Source of truth for game rules:** `docs/design-bible.md` (sections "One Context Grid…", "Battles run on eight types…", "Training is example cards…", "Determinism makes ghosts…"). This spec turns those rules into a buildable engine. Where this spec and the bible differ, this spec wins and the bible gets updated.
 - **Normative rulings:** `docs/superpowers/notes/phase-a-rulings.md` and `docs/superpowers/notes/phase-b-rulings.md` hold the rulings made while Phases A and B were built; they amend this spec, and where a ruling and this spec differ, the ruling wins.
 

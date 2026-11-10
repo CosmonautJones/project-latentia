@@ -77,4 +77,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-      - run: FUZZ_N=10000 pnpm test fuzz
+      - run: FUZZ_N=10000 pnpm --filter @latentia/engine test fuzz
