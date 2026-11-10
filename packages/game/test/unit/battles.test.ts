@@ -1,6 +1,6 @@
 import { createBattle, simulate, SPECIES, typeMultiplierBp, validateSetup, type SideSetup } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
-import { battleForStep, counterStarter, rivalBattle, trainerBattle, wildBattle, type BattleDef } from '../../src/content/battles.js';
+import { battleForStep, counterStarter, rivalBattle, seedFor, trainerBattle, wildBattle, type BattleDef } from '../../src/content/battles.js';
 import { TOKENIBBLE_PRESETS } from '../../src/content/trainers.js';
 import { initialFlow, STARTERS, type FlowState } from '../../src/flow/flow.js';
 
@@ -76,6 +76,18 @@ describe('battle content', () => {
     expect(tok?.deck?.cards).toEqual([preset.card]);
     // Spun up, it keeps its three non-signature moves; Token Nibble does not come along (ruling V3).
     expect(tok?.moves).toEqual(['token-burst', 'early-exit', 'low-latency']);
+  });
+
+  it('on the graft path the starter fights alone on its preset grid, with Token Nibble grafted on, and the setup is legal', () => {
+    for (const s of STARTERS) {
+      const { setup } = trainerBattle(s, 'graft', null, 0);
+      expect(validateSetup(setup)).toEqual({ ok: true, errors: [] });
+      expect(setup.a.active).toEqual([]);
+      expect(setup.a.orchestrator.moves).toEqual([]);
+      expect(setup.a.grid?.pieces.find((p) => p.kind === 'graft')?.moveId).toBe('token-nibble');
+      // A gridded orchestrator's moves are its signature, then its Skill and Graft pieces: Token Nibble is usable.
+      expect(createBattle(setup, seedFor('trainer', 0)).creatures[0]?.moves).toContain('token-nibble');
+    }
   });
 
   it('the three tutorial presets are a real choice: one good, one situational, one bad, none using Token Nibble', () => {
