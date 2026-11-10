@@ -20,6 +20,7 @@ const world: World = parseWorld({
   ],
   encounter: { area: 'yard', lurk: { x: 3, y: 2 } },
   spawns: {
+    lab: { area: 'room', x: 2, y: 1, facing: 'down' },
     walk: { area: 'room', x: 2, y: 1, facing: 'down' },
     cardTutorial: { area: 'yard', x: 3, y: 2, facing: 'right' },
     forest: { area: 'yard', x: 3, y: 2, facing: 'right' },

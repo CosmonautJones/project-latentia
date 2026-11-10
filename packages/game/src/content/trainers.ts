@@ -57,22 +57,24 @@ export interface TrainerTuning {
  * Token Burst with Accept All too ("week 3 covered that one"). Otherwise he Merge Conflicts. So a Tokenibble taught to
  * stretch (Low Latency) or to open with Token Burst draws his biggest hit, and one taught Early Exit does not.
  *
- * Measured by `pnpm --filter @latentia/game measure-loop` (scripts/measure-loop.ts): a naive player (its strongest
- * affordable damaging move, T2) over trainer seeds 0-199 for each starter, so 600 fights a row. Win % pooled
- * (sagelet / blitzr / forkling):
+ * Measured on engine 0.4.1 by `pnpm --filter @latentia/game measure-loop` (scripts/measure-loop.ts): a naive player
+ * (its strongest affordable damaging move, T2) over trainer seeds 0-199 for each starter, so 600 fights a row. Win %
+ * pooled (sagelet / blitzr / forkling):
  *
- *   chosen (L7/L7/L6, T0)   bad 33.7% (100/0/1)   situational 82.5% (100/48/100)   good 99.3% (100/98/100)   graft 72.7% (100/30/88)
- *     so the bad card loses 66.3%, the good card wins 99.3%, situational sits between, and graft wins 72.7%.
+ *   chosen (L7/L7/L6, T0)   bad 12.8% (38/0/1)   situational 82.5% (100/48/100)   good 99.3% (100/98/100)   graft 69.8% (92/30/88)
+ *     so the bad card loses 87.2%, the good card wins 99.3%, situational sits between, and graft wins 69.8%.
  *   Counterfactuals (one knob changed; the script prints them all):
- *   - T1: bad 39.0, good 92.0, graft 67.5 (passes, thin on bad); T2: bad 44.8, so the bad card loses only 55%.
- *   - Forkling at L7 like the others: graft 45.7 (Forkling 7%); a gridded Forkling's 7-cell window can't keep up.
- *   - Blitzr at L6 (or everyone at L6): situational 99.5 = good 100.0, so the card choice barely matters.
+ *   - T1: bad 21.2, situational 85.2, good 92.0, graft 63.3. T2: bad 27.8, situational 86.0, good 92.3 (only 6 points
+ *     above situational), graft 68.2. T0 keeps the clearest gap between the three cards.
+ *   - Forkling at L7 like the others: graft 42.8 (Forkling 7%); a gridded Forkling's 7-cell window can't keep up.
+ *   - Blitzr at L6: situational 99.5 = good 100.0, so the card choice barely matters. All at L6: the same, and
+ *     Sagelet's bad card wins 99%.
  *   - Without the Token Burst answer: situational 99.5 = good 99.3. Without the buff answer: bad 79.7, no loss.
  *   - Aiming at the lowest-HP foe (Tokenibble) instead: everything wins 100%; Tokenibble just soaks the hits.
  *   - P2's Grad (L6, T2, hype then Accept All / Segfault at the lowest-HP foe): bad 97.0, good 99.7.
  *
- * The level depends on the starter, the way Kip's pick does. Sagelet hits Code 2× and resists it, so no Vibrat in the
- * L5-7 band beats a Sagelet with any card; the loop is real for Blitzr and Forkling only (see the P4 report).
+ * The level depends on the starter, the way Kip's pick does. The weak spot is Blitzr on the graft path (30%): its
+ * best hit, Distilled Strike, is neutral on Code and Blitzr is frail.
  */
 export const BOOTCAMP_GRAD: TrainerTuning = {
   level: { sagelet: 7, blitzr: 7, forkling: 6 },

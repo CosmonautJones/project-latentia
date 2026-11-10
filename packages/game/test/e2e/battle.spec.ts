@@ -27,7 +27,7 @@ async function startRival(page: Page, starterIndex: number): Promise<void> {
   await page.goto('/');
   await expect.poll(() => page.evaluate(() => window.__latentia?.scene() ?? null)).toBe('Title');
   await page.evaluate(() => window.__latentia?.send({ type: 'newGame' }));
-  await expect.poll(() => page.evaluate(() => window.__latentia?.scene() ?? null)).toBe('Lab');
+  await expect.poll(() => page.evaluate(() => window.__latentia?.scene() ?? null)).toBe('Overworld');
   await expect
     .poll(async () => {
       if ((await menu(page))?.id === 'starter') return true;

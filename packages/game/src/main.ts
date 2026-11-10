@@ -14,8 +14,9 @@ import { computeLayout, GAME_HEIGHT, GAME_WIDTH, type Layout } from './layout/co
 import { browserStorage } from './save/browser-storage.js';
 import { BattleScene } from './scenes/battle.js';
 import { BootScene } from './scenes/boot.js';
+import { DebriefScene } from './scenes/debrief.js';
+import { DistillScene } from './scenes/distill.js';
 import { EndScene } from './scenes/end.js';
-import { LabScene } from './scenes/lab.js';
 import { OverworldScene } from './scenes/overworld.js';
 import { TitleScene } from './scenes/title.js';
 import { css, COLOR } from './ui/palette.js';
@@ -86,7 +87,7 @@ game = new Phaser.Game({
     autoCenter: Phaser.Scale.NO_CENTER,
     expandParent: false,
   },
-  scene: [new BootScene(app), new TitleScene(app), new LabScene(app), new OverworldScene(app), new BattleScene(app), new EndScene(app)],
+  scene: [new BootScene(app), new TitleScene(app), new OverworldScene(app), new BattleScene(app), new DistillScene(app), new DebriefScene(app), new EndScene(app)],
 });
 
 // The static form of shouldExposeHook (dev/hook.ts), so production folds it away and drops the hook entirely.

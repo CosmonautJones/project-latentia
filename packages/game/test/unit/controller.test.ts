@@ -34,7 +34,7 @@ describe('FlowController', () => {
     const { storage, scenes, flow } = setup();
     flow.start();
     expect(flow.send({ type: 'newGame' })).toBe(true);
-    expect(scenes.at(-1)).toBe('Lab');
+    expect(scenes.at(-1)).toBe('Overworld');
     expect(loadSave(storage)).toMatchObject({ status: 'ok', save: { progress: { step: 'lab' } } });
     flow.send({ type: 'starterPicked', starter: 'sagelet' });
     expect(scenes.at(-1)).toBe('Battle');

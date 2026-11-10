@@ -1,7 +1,8 @@
 // A framed panel of choices drawn over a scene: an optional title and body text, then rows that each have a label and
 // an optional one-line (wrapped) detail under it. Up/down move the ▶ cursor, A or a tap picks, B cancels when the
 // panel allows it. Used for the starter pick, the distill choice, the card tutorial, the debrief and its card swap.
-// The menu state goes to the dev hook's `menu()` like MenuList's, and the text to `panel()`.
+// In portrait the rows are mirrored as large buttons in the band (ui/band-choices.ts). The menu state goes to the dev
+// hook's `menu()` like MenuList's, and the text to `panel()`.
 
 import Phaser from 'phaser';
 import type { App } from '../app.js';
@@ -9,6 +10,7 @@ import { GAME_WIDTH } from '../layout/compute.js';
 import { CELL_HEIGHT, CELL_WIDTH } from '../text/font-sheet.js';
 import { addPixelText } from '../text/phaser-font.js';
 import { wrapText } from '../text/wrap.js';
+import { BandChoices } from './band-choices.js';
 import { createMenu, menuInput, type MenuState } from './menu.js';
 import { COLOR } from './palette.js';
 
@@ -52,6 +54,7 @@ export class ChoicePanel {
   private readonly rowTops: number[] = [];
   private readonly cursor: Phaser.GameObjects.BitmapText;
   private readonly off: () => void;
+  private readonly band: BandChoices;
   private closed = false;
 
   constructor(
@@ -103,6 +106,7 @@ export class ChoicePanel {
     frame.fillStyle(COLOR.ink).fillRect(MARGIN + 1, top + 1, width - 2, height - 2);
     this.objects.push(frame);
     this.cursor = text(left, 0, '▶', COLOR.amber);
+    this.band = new BandChoices(app.screen.bandPanel, app, opts.id, opts.items.map((i) => i.label));
 
     this.off = app.input.subscribe((a) => {
       if (this.closed) return;
@@ -116,7 +120,7 @@ export class ChoicePanel {
     this.render();
   }
 
-  /** The panel's height on screen, for stacking. */
+  /** The row the cursor is on. */
   get index(): number {
     return this.state.index;
   }
@@ -125,6 +129,7 @@ export class ChoicePanel {
     if (this.closed) return;
     this.closed = true;
     this.off();
+    this.band.destroy();
     if (this.app.probe.menu?.id === this.state.id) this.app.probe.menu = null;
     if (this.app.probe.panel?.id === this.opts.id) this.app.probe.panel = null;
     for (const o of this.objects) o.destroy();
@@ -134,6 +139,7 @@ export class ChoicePanel {
     if (this.closed) return;
     this.labels.forEach((l, i) => l.setTint(i === this.state.index ? COLOR.white : COLOR.mist));
     this.cursor.setPosition(MARGIN + PAD, this.rowTops[this.state.index] ?? 0);
+    this.band.render(this.state.index);
     this.app.probe.menu = this.state;
     this.app.probe.panel = { id: this.opts.id, title: this.opts.title ?? null, body: this.opts.body ?? [], items: this.opts.items };
   }

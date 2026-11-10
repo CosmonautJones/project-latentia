@@ -8,7 +8,7 @@
 import type { Card, Condition, Deck, Temperature } from '@latentia/engine';
 import { BOOTCAMP_GRAD, type TrainerTuning } from '../src/content/trainers.js';
 import { STARTERS } from '../src/flow/flow.js';
-import { measureLoop, pooledWinRate, type LoopRow } from './loop-balance.js';
+import { measureLoop, measureRival, pooledWinRate, type LoopRow } from './loop-balance.js';
 
 const seeds = Number(process.argv[2] ?? 200);
 if (!Number.isSafeInteger(seeds) || seeds < 1) throw new Error(`seeds must be a positive integer, got ${process.argv[2]}`);
@@ -65,6 +65,9 @@ const P2_GRAD: TrainerTuning = {
   },
 };
 
+const kip = measureRival(seeds);
+const kipAll = STARTERS.reduce((n, s) => n + kip[s], 0) / (seeds * STARTERS.length);
+console.log(`Kip (rival, for reference): naive wins ${pct(kipAll)} (${STARTERS.map((s) => Math.round((100 * kip[s]) / seeds)).join('/')})\n`);
 console.log(`Bootcamp Grad core loop: naive player, ${seeds} seeds per starter (${seeds * STARTERS.length} fights a row). Win %: pooled (sagelet/blitzr/forkling).\n`);
 report('CHOSEN', BOOTCAMP_GRAD);
 report('counterfactual: T1', atTemp(1));

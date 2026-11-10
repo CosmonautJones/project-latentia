@@ -1,9 +1,10 @@
-// What a finished battle tells the flow, and what it says. A loss (or a round-cap draw) is battleLost, which restarts
-// the same fight; losing to the trainer also says what the player's deck-driven teammates kept doing, from their
-// CardTraces (P4 builds the teach → rematch loop on this).
+// What a finished battle tells the flow, and what it says. A win is battleWon and a loss (or a round-cap draw)
+// battleLost, each carrying the fight's report (telemetry, and the debrief after Bootcamp Grad). A lost rival or wild
+// battle restarts; a trainer result goes to the debrief (lose → teach → rematch).
 
-import type { FlowEvent } from '../flow/flow.js';
 import type { BattleDef } from '../content/battles.js';
+import type { FlowEvent } from '../flow/flow.js';
+import type { FightReport } from '../flow/telemetry.js';
 import type { Outcome } from './session.js';
 
 export interface BattleResult {
@@ -11,10 +12,9 @@ export interface BattleResult {
   readonly text: string;
 }
 
-/** `teamSummary`: summarizeTraces lines for the player's side only. */
-export function battleResult(def: BattleDef, outcome: Outcome, teamSummary: readonly string[]): BattleResult {
-  if (outcome === 'win') return { event: { type: 'battleWon' }, text: def.win };
-  if (outcome === 'draw') return { event: { type: 'battleLost' }, text: 'Round cap reached: a draw. Nobody ships. Run it back.' };
-  const summary = def.id === 'trainer' && teamSummary.length > 0 ? ` What your team kept doing: ${teamSummary.join(' ')}` : '';
-  return { event: { type: 'battleLost' }, text: `${def.lose}${summary}` };
+const DRAW = 'Round cap reached: a draw. Nobody ships. Run it back.';
+
+export function battleResult(def: BattleDef, outcome: Outcome, fight: FightReport): BattleResult {
+  if (outcome === 'win') return { event: { type: 'battleWon', fight }, text: def.win };
+  return { event: { type: 'battleLost', fight }, text: outcome === 'draw' ? DRAW : def.lose };
 }

@@ -8,6 +8,7 @@ import type { FlowController } from '../flow/controller.js';
 import type { FlowEvent, FlowState } from '../flow/flow.js';
 import type { Layout } from '../layout/compute.js';
 import type { OverworldProbe } from '../overworld/probe.js';
+import type { PanelProbe } from '../ui/choice-panel.js';
 import type { MenuState } from '../ui/menu.js';
 
 export interface LatentiaHook {
@@ -21,6 +22,8 @@ export interface LatentiaHook {
   battle(): BattleProbe | null;
   /** The overworld while the Overworld scene runs: the player's tile, facing and what the scene is doing. */
   overworld(): OverworldProbe | null;
+  /** The choice panel on screen (starter, distill, card tutorial, debrief, card swap), if any. */
+  panel(): PanelProbe | null;
   layout(): Layout;
   /** Inject a button tap (press and release) into the action stream. */
   press(button: Button): void;
@@ -38,6 +41,7 @@ export interface HookDeps {
     readonly menu: MenuState | null;
     readonly battle: BattleProbe | null;
     readonly overworld: OverworldProbe | null;
+    readonly panel: PanelProbe | null;
   };
   readonly layout: () => Layout;
 }
@@ -59,6 +63,7 @@ export function installHook(target: Window, deps: HookDeps): void {
     menu: () => deps.probe.menu,
     battle: () => deps.probe.battle,
     overworld: () => deps.probe.overworld,
+    panel: () => deps.probe.panel,
     layout: deps.layout,
     press: (button) => deps.input.tap(button),
     pick: (menuId, index) => deps.input.pick(menuId, index),

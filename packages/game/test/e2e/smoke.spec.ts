@@ -37,19 +37,19 @@ test('boots to the title, starts a new game by keyboard and reaches the Lab', as
   await expectCanvasMatchesLayout(page);
 
   await page.keyboard.press('Enter');
-  await expect.poll(() => scene(page)).toBe('Lab');
+  await expect.poll(() => scene(page)).toBe('Overworld');
   expect(await step(page)).toBe('lab');
 
   // Entering the Lab saved the journey step.
   const saved = await page.evaluate(() => window.localStorage.getItem('latentia.save.v0'));
-  expect(JSON.parse(saved ?? 'null')).toMatchObject({ schemaVersion: 2, progress: { step: 'lab' }, hintsSeen: [] });
+  expect(JSON.parse(saved ?? 'null')).toMatchObject({ schemaVersion: 3, progress: { step: 'lab' }, hintsSeen: [] });
 
   // After a reload the title offers Continue, and Continue resumes at the Lab.
   await page.reload();
   await expect.poll(() => scene(page)).toBe('Title');
   expect(await menu(page)).toMatchObject({ items: ['CONTINUE', 'NEW GAME'], index: 0 });
   await page.keyboard.press('KeyZ');
-  await expect.poll(() => scene(page)).toBe('Lab');
+  await expect.poll(() => scene(page)).toBe('Overworld');
 
   expect(errors).toEqual([]);
 });
@@ -65,13 +65,19 @@ test('the touch band and the hook drive the same flow: lab dialogue, starter pic
 
   // Tap A in the band.
   await page.locator('[data-control="btn-a"]').click();
-  await expect.poll(() => scene(page)).toBe('Lab');
+  await expect.poll(() => scene(page)).toBe('Overworld');
 
-  // Hold A to speed the professor's line up, then A to close it; the starter menu takes the cursor.
+  // In the lab, Prof. Epoch talks first: hold A to speed his lines up, then A through them; the starter panel opens.
   await page.keyboard.down('KeyZ');
   await page.waitForTimeout(1500);
   await page.keyboard.up('KeyZ');
-  await page.evaluate(() => window.__latentia?.press('a'));
+  await expect
+    .poll(async () => {
+      if ((await menu(page))?.id === 'starter') return true;
+      await page.evaluate(() => window.__latentia?.press('a'));
+      return false;
+    })
+    .toBe(true);
   await expect.poll(() => menu(page)).toMatchObject({ id: 'starter', index: 0 });
 
   // D-pad down to Blitzr, then a pointer pick through the hook confirms it.
@@ -105,15 +111,18 @@ test('every stub scene renders without errors through to the end card and back t
   await page.goto('/');
   await expect.poll(() => scene(page)).toBe('Title');
   const walk: Array<[FlowEvent, string]> = [
-    [{ type: 'newGame' }, 'Lab'],
+    [{ type: 'newGame' }, 'Overworld'],
     [{ type: 'starterPicked', starter: 'forkling' }, 'Battle'],
     [{ type: 'battleWon' }, 'Overworld'],
     [{ type: 'reachedTrailhead' }, 'Battle'],
-    [{ type: 'battleWon' }, 'Battle'],
+    [{ type: 'battleWon' }, 'Distill'],
     [{ type: 'distillChosen', choice: 'spinUp' }, 'Overworld'],
     [{ type: 'cardChosen', cardId: 'tutorial.a' }, 'Overworld'],
     [{ type: 'trainerEngaged' }, 'Battle'],
-    [{ type: 'battleWon' }, 'End'],
+    [{ type: 'battleLost' }, 'Debrief'],
+    [{ type: 'rematch', cardId: 'tutorial.b' }, 'Battle'],
+    [{ type: 'battleWon' }, 'Debrief'],
+    [{ type: 'finish' }, 'End'],
     [{ type: 'backToTitle' }, 'Title'],
   ];
   for (const [event, expected] of walk) {

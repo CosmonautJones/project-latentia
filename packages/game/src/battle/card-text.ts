@@ -124,27 +124,3 @@ export function explainTrace(trace: CardTrace, c: TraceContext): string {
   const skips = trace.skipped.map((s) => skipText(deck, s.cardId, s.reason, c.moveName));
   return skips.length === 0 ? `${head}.` : `${head}; skipped ${skips.join(', ')}.`;
 }
-
-/**
- * What each deck-driven creature kept doing over a battle, one line per creature in first-seen order, cards by how
- * often they fired: the loss screen's "what Tokenibble kept doing" (plan step 8).
- */
-export function summarizeTraces(traces: readonly CardTrace[], c: TraceContext): string[] {
-  const byActor = new Map<number, Map<string, number>>();
-  for (const t of traces) {
-    const counts = byActor.get(t.actor) ?? new Map<string, number>();
-    counts.set(t.firedCardId, (counts.get(t.firedCardId) ?? 0) + 1);
-    byActor.set(t.actor, counts);
-  }
-  return [...byActor].map(([actor, counts]) => {
-    const deck = c.deckOf(actor);
-    const parts = [...counts]
-      .sort((x, y) => y[1] - x[1])
-      .map(([id, n]) => {
-        const card = deck === null ? undefined : allCards(deck).find((k) => k.id === id);
-        const label = card === undefined ? `'${id}'` : deck !== null && card === deck.default ? `Default ${c.moveName(card.move)}` : `'${cardText(card, c.moveName)}'`;
-        return `${label} x${n}`;
-      });
-    return `${c.name(actor)}: ${parts.join(', ')}.`;
-  });
-}

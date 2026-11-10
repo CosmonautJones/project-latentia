@@ -7,7 +7,7 @@
 
 import { moveDef, simulate, type BattleState, type RoundCommand, type Temperature } from '@latentia/engine';
 import { effectiveCost } from '../src/battle/session.js';
-import { trainerBattle } from '../src/content/battles.js';
+import { rivalBattle, trainerBattle } from '../src/content/battles.js';
 import { BOOTCAMP_GRAD, TOKENIBBLE_PRESETS, type CardPreset, type TrainerTuning } from '../src/content/trainers.js';
 import { STARTERS, type StarterId } from '../src/flow/flow.js';
 
@@ -61,4 +61,16 @@ export function measureLoop(seeds: number, grad: TrainerTuning = BOOTCAMP_GRAD):
     ...presets.map((p): LoopRow => ({ path: p.verdict, presetId: p.id, wins: winsFor(seeds, grad, p.id), seeds })),
     { path: 'graft', presetId: null, wins: winsFor(seeds, grad, null), seeds },
   ];
+}
+
+/** The rival fight (Kip, Ruling 146) for the same naive player: wins per starter over `seeds` rival seeds. */
+export function measureRival(seeds: number): Record<StarterId, number> {
+  const wins: Record<StarterId, number> = { sagelet: 0, blitzr: 0, forkling: 0 };
+  for (const starter of STARTERS) {
+    for (let attempt = 0; attempt < seeds; attempt++) {
+      const def = rivalBattle(starter, attempt);
+      if (simulate(def.setup, def.seed, { kind: 'scripted', next: naiveCommand }).winner === 'a') wins[starter]++;
+    }
+  }
+  return wins;
 }

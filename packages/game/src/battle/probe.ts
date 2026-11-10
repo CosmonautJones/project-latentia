@@ -1,8 +1,9 @@
 // What the dev hook (`window.__latentia.battle()`) can see of the running battle: enough for Playwright to drive the
-// menus and to check that a result arrives, and for P4 to pick up the loss summary. Plain data only.
+// menus and to check that a result arrives, and to read the fight's report. Plain data only.
 
 import type { Temperature } from '@latentia/engine';
 import type { BattleId } from '../content/battles.js';
+import type { FightReport } from '../flow/telemetry.js';
 import type { Outcome } from './session.js';
 import type { Speed } from './timeline.js';
 
@@ -18,8 +19,8 @@ export interface RoundTiming {
 export interface BattleResultProbe {
   readonly outcome: Outcome;
   readonly rounds: number;
-  /** What each deck-driven creature kept doing (card-text summarizeTraces). */
-  readonly traceSummary: readonly string[];
+  /** The fight as reported to the flow (with the debrief's "kept" lines). */
+  readonly report: FightReport;
 }
 
 export interface BattleProbe {
@@ -28,7 +29,7 @@ export interface BattleProbe {
   readonly round: number;
   readonly temperature: Temperature;
   readonly speed: Speed;
-  readonly moves: readonly { readonly moveId: string; readonly cost: number; readonly affordable: boolean; readonly damaging: boolean }[];
+  readonly moves: readonly { readonly moveId: string; readonly cost: number; readonly affordable: boolean; readonly damaging: boolean; readonly power: number | null }[];
   /** The intent preview lines as on screen ("Kip's Blitzr: ?" while hidden). */
   readonly intents: readonly string[];
   /** The "why?" popup's text for the latest traces, or null before any deck-driven action. */

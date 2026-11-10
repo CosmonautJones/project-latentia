@@ -73,6 +73,8 @@ export const LOCALHOST_SOURCE: WorldSource = {
   ],
   encounter: { area: 'outside', lurk: { x: 32, y: 3 } },
   spawns: {
+    // The start of the journey: facing Prof. Epoch, for his intro and the starter pick.
+    lab: { area: 'lab', x: 5, y: 3, facing: 'up' },
     // After the rival fight: in the lab, a step from the professor, turned for the door.
     walk: { area: 'lab', x: 5, y: 4, facing: 'down' },
     // After the distill: where Tokenibble was, at the patch's east edge, facing the clearing.

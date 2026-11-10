@@ -114,8 +114,8 @@ describe('BattleSession', () => {
     expect(s.deckOf(1)).toEqual(kipDeck('blitzr'));
     expect(s.deckOf(0)).toBeNull();
     expect(s.explainLastTrace()).toMatch(/^Kip's Blitzr (fired|fell back)/);
-    expect(s.traceSummary(1)).toHaveLength(1);
-    expect(s.traceSummary(0)).toEqual([]);
+    // Only the player's teammates count as fired cards; Kip's Autopilot traces do not.
+    expect(s.report('lose', null)).toMatchObject({ battle: 'rival', cardsFired: 0, kept: [] });
   });
 
   it('WHY? only ever explains actions already taken: no trace before the first round, none from a future round', () => {
@@ -147,7 +147,11 @@ describe('BattleSession', () => {
       setup: {
         ...base.setup,
         a: { ...base.setup.a, orchestrator: { ...base.setup.a.orchestrator, level: 1 }, active: [{ ...tok, level: 20 }] },
-        b: { ...base.setup.b, orchestrator: { ...base.setup.b.orchestrator, level: 20 } },
+        b: {
+          ...base.setup.b,
+          orchestrator: { ...base.setup.b.orchestrator, level: 20 },
+          autopilot: { temperature: 2, deck: { cards: [], default: { id: 'default', subject: 'self', condition: { category: 'turn', op: 'atLeast', round: 1 }, move: 'merge-conflict', target: 'lowestHpFoe' } } },
+        },
       },
     };
     const s = BattleSession.start(def);

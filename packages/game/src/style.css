@@ -250,3 +250,22 @@ body {
 .ab .touch-btn.held {
   box-shadow: inset 4px 4px 0 #3e2731, inset -4px -4px 0 #e43b44;
 }
+
+/* Choice panels (P4: starter, distill, cards, debrief) mirrored as band buttons; a long label wraps onto two lines. */
+.band-choices .band-btn {
+  padding: 8px 10px;
+}
+
+.band-choices .label {
+  line-height: 0;
+  text-align: left;
+}
+
+.band-choices .label svg {
+  margin: 2px 0;
+}
+
+/* While a choice panel is open over the map, its buttons replace the walking caption. */
+#band-panel:has(.band-choices) .band-caption {
+  display: none;
+}

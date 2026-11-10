@@ -24,7 +24,7 @@ async function toOverworld(page: Page): Promise<void> {
   await page.goto('/');
   await expect.poll(() => scene(page)).toBe('Title');
   await send(page, { type: 'newGame' });
-  await expect.poll(() => scene(page)).toBe('Lab');
+  await expect.poll(() => scene(page)).toBe('Overworld');
   await expect
     .poll(async () => {
       if ((await page.evaluate(() => window.__latentia?.menu()?.id)) === 'starter') return true;
@@ -102,8 +102,15 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
   await page.evaluate(() => window.__latentia?.pick('distill', 0));
   await expect.poll(() => scene(page)).toBe('Overworld');
   expect(await ow(page)).toMatchObject({ step: 'cardTutorial', mode: 'menu', ...LOCALHOST.spawns.cardTutorial });
-  // P4's card tutorial is still the stub menu over the trailhead.
-  await expect.poll(() => page.evaluate(() => window.__latentia?.menu()?.id ?? null)).toBe('tutorial-card');
+  // The card tutorial: its first-time hint, then the three example cards over the trailhead.
+  await expect.poll(() => ow(page).then((o) => o?.dialogue ?? null)).toMatch(/^CARDS: /);
+  await expect
+    .poll(async () => {
+      if ((await page.evaluate(() => window.__latentia?.menu()?.id)) === 'tutorial-card') return true;
+      await page.evaluate(() => window.__latentia?.press('a'));
+      return false;
+    })
+    .toBe(true);
   await page.evaluate(() => window.__latentia?.pick('tutorial-card', 1));
   await expect.poll(() => ow(page).then((o) => o?.step)).toBe('forest');
   expect(await ow(page)).toMatchObject({ mode: 'walk', encounterLive: false, trainerLive: true, ...LOCALHOST.spawns.forest });

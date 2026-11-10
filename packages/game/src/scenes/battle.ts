@@ -1,14 +1,15 @@
 // Battle: runs the flow step's BattleDef through a BattleSession. Each round: preview intents (foes hidden unless
 // revealed), take the player's command from the menu (canvas in landscape, the band in portrait), submit it, and
 // play the events back on the round plan: animation within the 1.5 s budget, each line on screen for its dwell.
-// One-time hints introduce each element. The result goes to the flow: a win moves on, a loss restarts the fight.
-// The distill choice after the wild win is still the P1 stub (P4 builds it).
+// One-time hints introduce each element. The result goes to the flow with the fight's report: a rival or wild loss
+// restarts the fight, a trainer result opens the debrief (scenes/debrief.ts).
 
 import type { Temperature } from '@latentia/engine';
 import type { App } from '../app.js';
 import { initialMenu, menuStep, menuView, type BattleMenuState, type MenuData } from '../battle/battle-menu.js';
 import { mapEvents, type UiStep } from '../battle/event-steps.js';
-import { HINTS, type HintId } from '../battle/hints.js';
+import { dueRoundHint, HINTS, type HintId } from '../battle/hints.js';
+import { COMMAND_ERRORS, WHY_EMPTY } from '../battle/labels.js';
 import type { BattlePhase, BattleResultProbe, RoundTiming } from '../battle/probe.js';
 import { battleResult } from '../battle/result.js';
 import { BattleSession, type PlayerChoice, type RoundResult } from '../battle/session.js';
@@ -18,10 +19,7 @@ import { CommandBox, type BoxModel } from '../battle-ui/command-box.js';
 import { BattleStage } from '../battle-ui/stage.js';
 import { battleForStep, type BattleDef } from '../content/battles.js';
 import type { InputAction } from '../input/hub.js';
-import { addPixelText } from '../text/phaser-font.js';
 import { DialogueBox } from '../ui/dialogue-box.js';
-import { MenuList } from '../ui/menu-list.js';
-import { COLOR } from '../ui/palette.js';
 import { BaseScene } from './base-scene.js';
 
 /**
@@ -30,14 +28,6 @@ import { BaseScene } from './base-scene.js';
  */
 const PROBE = import.meta.env.DEV || import.meta.env.MODE === 'test';
 const LOG_LINES = 40;
-
-const COMMAND_ERRORS: Readonly<Record<string, string>> = {
-  moveDisabled: "A status won't allow that move right now.",
-  illegalTarget: "That target isn't valid right now.",
-  actorSkipped: 'Busy releasing a charged move this round.',
-};
-
-const WHY_EMPTY = 'Nothing has run from a deck yet. Once a deck-driven model acts, WHY? shows which card it fired, and why the others did not.';
 
 export class BattleScene extends BaseScene {
   private def!: BattleDef;
@@ -63,11 +53,6 @@ export class BattleScene extends BaseScene {
   create(): void {
     const gen = ++this.generation;
     const state = this.app.flow.state;
-    if (state.step === 'distill') {
-      this.distillStub();
-      this.ready();
-      return;
-    }
     const def = battleForStep(state);
     if (def === null) throw new Error(`no battle for step ${state.step}`);
     this.def = def;
@@ -126,9 +111,7 @@ export class BattleScene extends BaseScene {
     this.menu = { ...this.menu, screen: 'root', rootIndex: 0, armed: null };
     // At most one first-time hint per round, before the menu comes up.
     const ownIntent = this.session.intents().some((i) => this.session.sideOf(i.actor) === 0);
-    const due: HintId | undefined = (['battle.prompt', 'battle.why', 'battle.intents'] as const).find(
-      (id) => !this.app.flow.hasSeenHint(id) && (id === 'battle.prompt' || (id === 'battle.why' && this.whyFresh) || (id === 'battle.intents' && ownIntent)),
-    );
+    const due = dueRoundHint((id) => this.app.flow.hasSeenHint(id), { whyFresh: this.whyFresh, ownIntent });
     if (due !== undefined) await this.hint(gen, due);
     if (!this.live(gen)) return;
     this.setPhase('command');
@@ -269,9 +252,12 @@ export class BattleScene extends BaseScene {
   private async finish(gen: number): Promise<void> {
     this.setPhase('result');
     const outcome = this.session.outcome ?? 'draw';
-    this.result = { outcome, rounds: this.session.round, traceSummary: this.session.traceSummary() };
+    // The card taught for this fight: only Tokenibble on the spin-up path has one.
+    const cardId = this.def.setup.a.active.length > 0 ? this.app.flow.state.tutorialCardId : null;
+    const report = this.session.report(outcome, cardId);
+    this.result = { outcome, rounds: this.session.round, report };
     this.publish();
-    const r = battleResult(this.def, outcome, this.session.traceSummary(0));
+    const r = battleResult(this.def, outcome, report);
     this.box.render({ kind: 'message', text: '' });
     await this.dialogue.say(r.text);
     if (this.live(gen)) this.send(r.event);
@@ -290,27 +276,12 @@ export class BattleScene extends BaseScene {
       round: this.session.round,
       temperature: this.menu.temperature,
       speed: this.menu.speed,
-      moves: this.session.moveOptions().map((m) => ({ moveId: m.moveId, cost: m.cost, affordable: m.affordable, damaging: m.power !== null })),
+      moves: this.session.moveOptions().map((m) => ({ moveId: m.moveId, cost: m.cost, affordable: m.affordable, damaging: m.power !== null, power: m.power })),
       intents: this.stage.intentLines().map((i) => `${this.session.name(i.actor)}: ${i.line}`),
       why: this.session.explainLatestTraces().join(' ') || null,
       log: [...this.log],
       roundMs: [...this.roundMs],
       result: this.result,
     };
-  }
-
-  /** P1's distill stub, until P4's distill screen. */
-  private distillStub(): void {
-    this.stubFrame('DISTILL TOKENIBBLE');
-    addPixelText(this, 20, 30, 'You won. What becomes of Tokenibble?', { color: COLOR.cloud });
-    new MenuList(this, this.app, {
-      id: 'distill',
-      items: ['SPIN UP  (recommended)', 'GRAFT'],
-      x: 40,
-      y: 60,
-      width: 200,
-      rowHeight: 16,
-      onConfirm: (i) => this.send({ type: 'distillChosen', choice: i === 0 ? 'spinUp' : 'graft' }),
-    });
   }
 }

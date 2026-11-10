@@ -76,3 +76,12 @@ export const TYPE_NAMES: Readonly<Record<TypeId, string>> = {
   search: 'Search',
   memory: 'Memory',
 };
+
+/** What the battle says when the engine rejects a command, by error code. */
+export const COMMAND_ERRORS: Readonly<Record<string, string>> = {
+  moveDisabled: "A status won't allow that move right now.",
+  illegalTarget: "That target isn't valid right now.",
+  actorSkipped: 'Busy releasing a charged move this round.',
+};
+
+export const WHY_EMPTY = 'Nothing has run from a deck yet. Once a deck-driven model acts, WHY? shows which card it fired, and why the others did not.';

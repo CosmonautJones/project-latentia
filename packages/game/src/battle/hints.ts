@@ -12,3 +12,10 @@ export const HINTS: Readonly<Record<HintId, string>> = {
   'battle.why': "WHY? explains which card a deck fired, after it acts. Never before. Nobody reads the plan in advance, not even the model.",
   'battle.intents': "The line over your subagent is its plan for next round, straight from its deck. Foes keep theirs to themselves: ?",
 };
+
+/** The round-start hint due now, if any (at most one a round): PROMPT first, then WHY? after a deck action, then the intents. */
+export function dueRoundHint(seen: (id: HintId) => boolean, now: { readonly whyFresh: boolean; readonly ownIntent: boolean }): HintId | undefined {
+  return (['battle.prompt', 'battle.why', 'battle.intents'] as const).find(
+    (id) => !seen(id) && (id === 'battle.prompt' || (id === 'battle.why' && now.whyFresh) || (id === 'battle.intents' && now.ownIntent)),
+  );
+}

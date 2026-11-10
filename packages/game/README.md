@@ -1,10 +1,9 @@
 # @latentia/game
 
 The Latentia game client: Phaser 4, TypeScript (strict) and Vite. It uses only `@latentia/engine`'s public API.
-It covers **P1 (Shell)** and **P2 (Battle scene v0)** of the playable-v0 plan
-(`docs/superpowers/plans/2026-11-10-playable-v0.md`). The scaling, input, text, flow, saves, test harness and the
-**battles** are real. Lab, Overworld, End and the distill choice are still **stubs** (plain menus) so the whole
-journey can be walked before P3–P4 build them.
+It covers **P1–P4** of the playable-v0 plan (`docs/superpowers/plans/2026-11-10-playable-v0.md`): the shell, the
+battle scene, the overworld, and the whole journey from the lab to the end card, with the distill choice, the card
+tutorial, Bootcamp Grad's lose → teach → rematch loop and the virtual water receipt.
 
 ## Run it
 
@@ -18,7 +17,8 @@ pnpm --filter @latentia/game preview      # serve the production build
 pnpm --filter @latentia/game test         # Vitest unit tests (pure modules only)
 pnpm --filter @latentia/game typecheck
 pnpm --filter @latentia/game e2e          # test build + Playwright smoke tests (Chromium)
-pnpm --filter @latentia/game screenshots  # re-shoot test/screenshots/*.png
+pnpm --filter @latentia/game screenshots  # re-shoot test/screenshots/*.png (add `-- --grep journey` for P4's only)
+pnpm --filter @latentia/game measure-loop # the core-loop balance measurement (200 seeds; numbers in content/trainers.ts)
 ```
 
 The root `pnpm lint`, `pnpm typecheck` and `pnpm test` include this package.
@@ -139,21 +139,38 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 - **Triggers:** the patch starts the wild battle on the first walk only (`reachedTrailhead`); after the distill the
   flow's `forest` step makes the patch calm and Bootcamp Grad's sight (4 tiles) live: "!", it walks over, says its
   line, then `trainerEngaged` starts the battle. Before the distill the Grad only blocks the way with a line.
-- **Steps on the map:** `walk` (spawns in the lab), `cardTutorial` (P1's stub card menu over the trailhead, for P4)
+- **Steps on the map:** `lab` (facing Prof. Epoch: his intro, then the starter panel; B replays him), `walk` (spawns
+  in the lab), `cardTutorial` (the cards hint, then the three example cards over the trailhead; B replays the hint)
   and `forest` (spawns in the calm patch). Continue and a won battle land at the step's spawn.
 
 ## Flow and saves
 
-- **Flow.** `src/flow/flow.ts` is the v0 journey as a pure state machine: title → lab → rival → walk → wild →
-  distill → card tutorial (spin-up only) → forest → trainer → end. Losing a battle restarts that battle. `FlowController`
-  applies events, saves, and switches scenes.
-- **Saves.** These go in localStorage under `latentia.save.v0`, as `{ schemaVersion: 2, engineVersion, progress,
-  hintsSeen }`, at every journey step (and when a first-time hint is shown). Continue resumes at the start of the
-  saved step. v1 saves upgrade to v2 with no hints seen.
+- **Flow.** `src/flow/flow.ts` is the v0 journey as a pure state machine: title → lab (Prof. Epoch and the starter
+  pick, on the map) → rival → walk → wild → distill → card tutorial (spin-up only) → forest → trainer → debrief → end.
+  Losing the rival or wild battle restarts it. `FlowController` applies events, saves, and switches scenes.
+- **The core loop (lose → teach → rematch).** Every Bootcamp Grad result opens the debrief (`scenes/debrief.ts`,
+  `journey/debrief.ts`). After a loss on the spin-up path it shows what Tokenibble kept doing, from its CardTraces in
+  plain words (`journey/kept-summary.ts`), and offers a card swap then a rematch, or a rematch as is. After a win it
+  offers the end card, or an optional "try a different card?" replay. On the graft path it gives a hint about the
+  grafted move and a rematch. Each rematch plays the next trainer seed. The end card opens once the Grad has been
+  beaten, so a lost replay can still finish.
+- **Telemetry** (`flow/telemetry.ts`) stays local, in the save: trainer losses, card swaps, rematches, and per fight
+  its rounds, moves and fired cards (the last 40 fights; the totals keep counting). The end card shows them with the
+  virtual water receipt (`journey/receipt.ts`: integer functions of rounds and moves, obviously fake).
+- **The end card persists.** BACK TO TITLE keeps the save at the end card, so Continue shows it again (receipt
+  included) and NEW GAME starts a fresh run.
+- **Saves.** These go in localStorage under `latentia.save.v0`, as `{ schemaVersion: 3, engineVersion, progress,
+  hintsSeen }`, at every journey step (and when a first-time hint is shown). `progress` holds the step, starter,
+  distill choice, Tokenibble's card, whether the Grad is beaten, the last trainer fight (for the debrief) and the
+  telemetry. Continue resumes at the start of the saved step; a trainer fight resumes on the seed it had reached.
   - Corrupt saves and saves from a newer schema are ignored, and the game starts fresh.
-  - Older schemas upgrade through `MIGRATIONS` in `src/save/save.ts`, one version at a time (v1 → v2 adds
-    `hintsSeen`).
+  - Older schemas upgrade through `MIGRATIONS` in `src/save/save.ts`, one version at a time: v1 → v2 adds
+    `hintsSeen`; v2 → v3 adds the trainer result (a v2 save at the end card counts as beaten) and empty telemetry.
   - If storage is unavailable (for example in a sandboxed frame), the game plays on with an in-memory store.
+- **Bootcamp Grad's tuning** lives in `src/content/trainers.ts`, with the measured win rates and the counterfactuals.
+  `scripts/measure-loop.ts` re-measures them: a naive player (its strongest affordable damaging move, T2) through the
+  engine's `simulate`, over seeds 0-199 per starter. `test/unit/loop-balance.test.ts` runs the same with fewer seeds
+  and looser bars.
 
 ## Dev and test hook
 
@@ -161,7 +178,8 @@ In dev and in the test build only, `window.__latentia` exposes:
 
 - `flow()`, `scene()`, `menu()`, `layout()`, `battle()` (phase, round, moves, intents as shown, the why text,
   the log, per-round timings and the result) and `overworld()` (the player's tile and facing, the scene's mode, the
-  dialogue on screen, the trainer's tile, fps) for reading state;
+  dialogue on screen, the trainer's tile, fps) and `panel()` (the choice panel on screen: its title, text and rows)
+  for reading state;
 - `press(button)`, `pick(menuId, index)` and `send(flowEvent)` for injecting actions.
 
 Production builds don't contain it.

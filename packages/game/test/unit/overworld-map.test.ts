@@ -31,6 +31,7 @@ const fixture = (): WorldSource => ({
   ],
   encounter: { area: 'yard', lurk: { x: 3, y: 2 } },
   spawns: {
+    lab: { area: 'room', x: 2, y: 1, facing: 'down' },
     walk: { area: 'room', x: 2, y: 1, facing: 'down' },
     cardTutorial: { area: 'yard', x: 3, y: 2, facing: 'right' },
     forest: { area: 'yard', x: 3, y: 2, facing: 'right' },
@@ -158,6 +159,9 @@ describe('the Localhost → Deprecated Forest trailhead map', () => {
     expect(Object.keys(w.spawns).sort()).toEqual([...OVERWORLD_STEPS].sort());
     expect(w.spawns.walk.area).toBe('lab');
     expect(w.npcs.find((n) => n.id === 'professor')?.at.area).toBe('lab');
+    // The lab step starts facing the professor, one tile in front of them, for the intro and the starter pick.
+    const prof = w.npcs.find((n) => n.id === 'professor')?.at;
+    expect(w.spawns.lab).toEqual({ area: 'lab', x: prof?.x, y: (prof?.y ?? 0) + 1, facing: 'up' });
     // The forest walk resumes in the calm patch, where Tokenibble was.
     expect(isPatch(w, w.spawns.forest)).toBe(true);
     expect(isPatch(w, w.spawns.cardTutorial)).toBe(true);
