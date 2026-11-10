@@ -12,7 +12,7 @@
 
 **Review cadence (standing rule from Travis):** an outside agent always evaluates progress. Every task is implemented by a fresh agent and checked by a separate fresh reviewer against the spec before the next task starts; every phase ends with an independent whole-phase review and a scorecard to Travis.
 
-> **Erratum (Checkpoint B):** where this plan's task text and the normative rulings differ, the rulings win: `docs/superpowers/notes/phase-a-rulings.md` (1–80) and `docs/superpowers/notes/phase-b-rulings.md` (81–119) and `docs/superpowers/notes/phase-c-rulings.md` (120–145). Known stale lines: Directive and Policy Update are applied at entry time, not plan time (Rulings 74 and 91). The `autopilot` command source has worked since B4, and `autopilotUnavailable` is removed (Ruling 95). The Handoff values follow Ruling 97. `activeCards` lives in battle/levers.ts, not plan.ts (moved at Checkpoint B to avoid an import cycle).
+> **Erratum (Checkpoint B):** where this plan's task text and the normative rulings differ, the rulings win: `docs/superpowers/notes/phase-a-rulings.md` (1–80) and `docs/superpowers/notes/phase-b-rulings.md` (81–119) and `docs/superpowers/notes/phase-c-rulings.md` (120–145) and `docs/superpowers/notes/phase-d-rulings.md` (146–154). Known stale lines: Directive and Policy Update are applied at entry time, not plan time (Rulings 74 and 91). The `autopilot` command source has worked since B4, and `autopilotUnavailable` is removed (Ruling 95). The Handoff values follow Ruling 97. `activeCards` lives in battle/levers.ts, not plan.ts (moved at Checkpoint B to avoid an import cycle).
 
 ## Global Constraints
 
