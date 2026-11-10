@@ -539,3 +539,81 @@ Vs-field rows failing 6 → 6; summed excess over 55% 82.6 → 76.7 pp.
 - **Decision:** kept. open-swarm-forkling 69.1 → 61.6 (still a fail) and the vs-field excess 82.6 → 76.7 pp, the largest single step of D4. No row left its band. code-lock-spaghettopus goes pass → inconclusive (53.5 → 54.5, allowed) and becomes the next gatekeeper with scrapion (53.8). Dial 55.5% (unchanged), first mover 51.1%, fight length median 7.
 - **Blowouts after K1–K3** (`scratch-d4-rr-k3`, against `scratch-d4-rr-base`): pairings at or beyond 99/1 19 → 16, at or beyond 95/5 34 → 30, at or beyond 90/10 57 → 51, at or beyond 80/20 91 → 81; within 40–60 39 → 43; median fight length 7 → 7.
 - Bible move list (Swarm of Fine-Tunes 20× → 15×) and the integrity test's pinned row updated in the same commit.
+
+### Candidates on the K3 state (scale 0.1; reference `scratch-d4-s01-k3`, excess 76.8, 6 failing)
+
+| id | change | why this number | excess | vs-field rows failing | left band | decision |
+|---|---|---|---|---|---|---|
+| c24 | Retrieval Strike 70 → 60 | Embeddingo's carry in the sagelet nuke (19.5 a battle) | 76.8 → 78.1 | 6 → 6 | none | rejected: excess up (open-swarm-forkling +1.5) |
+| c25 | Segfault 110 → 95 | the hallucinat nuke's top damage (23.9 a battle) | 76.8 → 78.9 | 6 → 7 | speed-rush-agentoad 53.9 → 55.4 | rejected (spaghettopus 54.5 → 50.1 and the dial −3 would have helped) |
+| c26 | Token Nibble 55 → 45 | Tokenibble's cost-1 signature with a rider | 76.8 → 78.1 | 6 → 8 | spaghettopus 54.5 → 55.6, scrapion 54.4 → 56.3 | rejected; side finding: the wasp graft row 22.5 → 63.5 (see target 4) |
+| c27 | Leaderboard Flex base 65 → 55 | 85 when ahead on HP%, 55 when behind | 76.8 → 72.3 | 6 → 7 | scrapion 54.4 → 55.3 at this scale | confirmed at full scale as the K4 attempt: rejected (below) |
+| c28 | Agentoad HP 65 → 55 | Agentoad's 260 base total is the slice's second highest, after Cobolt the tank | 76.8 → 76.5 | 6 → 6 | none | candidate (speed-rush-blitzr −1.3, agentoad −2.2, making room for a T4 dial change); its full run was lost to an environment restart and it was not re-run (see below) |
+| c29 | Tangle 65 → 55 | Spaghettopus's signature, to make room under the gatekeeper | 76.8 → 78.6 | 6 → 6 | none | rejected: an enabler only; vs field moves away |
+| c30 | T4 self-hallucination 12% → 9% | full-seed dial 54.7% [52.5, 56.9] (10% gives 55.1%, a fail) | 76.8 → 78.1 | 6 → 7 | speed-rush-agentoad 53.9 → 57.1 | rejected: the T4-native agentoad crosses 55% |
+
+Full-seed dial probes on the K3 state (official labels, 2,000 battles): K3 55.55% [53.4, 57.7] (sweep mean 55.7%); T4 self-hallucination 10% 55.10%, 9% 54.70%; T4 accuracy −8 54.35%. Every T4 buff lifts speed-rush-agentoad, which plays at T4, so the dial is blocked by agentoad at 53.2% unless agentoad comes down first.
+
+### K4 attempt: Leaderboard Flex base 65 → 55 (rejected at full scale)
+
+`scratch-d4-k4` (454.1 s), before = K3:
+
+| target | row | before | after | verdict |
+|---|---|---|---|---|
+| vs field (≤ 55%) | speed-rush-blitzr | 67.8% | 68.3% | fail |
+| vs field (≤ 55%) | speed-rush-agentoad | 53.2% | 53.6% | pass |
+| vs field (≤ 55%) | speed-rush-graft | 49.2% | 49.7% | pass |
+| vs field (≤ 55%) | reasoning-nuke-sagelet | 80.6% | 80.7% | fail |
+| vs field (≤ 55%) | reasoning-nuke-hallucinat | 72.0% | 72.5% | fail |
+| vs field (≤ 55%) | open-swarm-forkling | 61.6% | 57.7% | fail |
+| vs field (≤ 55%) | open-swarm-slopling | 51.4% | 52.1% | pass |
+| vs field (≤ 55%) | code-lock-spaghettopus | 54.5% | 55.1% | inconclusive → **fail** |
+| vs field (≤ 55%) | code-lock-nullbeetle | 17.3% | 17.6% | pass |
+| vs field (≤ 55%) | code-lock-cobolt | 32.5% | 33.3% | pass |
+| vs field (≤ 55%) | voice-pressure-parrot | 40.5% | 41.0% | pass |
+| vs field (≤ 55%) | voice-pressure-vibrat | 40.6% | 40.8% | pass |
+| vs field (≤ 55%) | memory-stall-deprecatter | 43.6% | 41.5% | pass |
+| vs field (≤ 55%) | memory-stall-retro | 19.7% | 20.2% | pass |
+| vs field (≤ 55%) | search-anti-hallu-embeddingo | 62.0% | 62.6% | fail |
+| vs field (≤ 55%) | search-anti-hallu-scrapion | 53.8% | 54.7% | pass → **inconclusive** |
+| vs field (≤ 55%) | mixed-starter-sagelet | 53.7% | 54.7% | pass → **inconclusive** |
+| vs field (≤ 55%) | mixed-starter-blitzr | 49.1% | 50.2% | pass |
+| vs field (≤ 55%) | mixed-starter-forkling | 62.7% | 60.5% | fail |
+| vs field (≤ 55%) | mixed-heisenmoth-tempo | 34.3% | 33.0% | pass |
+| worst matchup (≥ 30%) | speed-rush-blitzr vs open-swarm-forkling | 18.9% | 22.2% | fail |
+| worst matchup (≥ 30%) | speed-rush-agentoad vs memory-stall-deprecatter | 15.6% | 18.9% | fail |
+| worst matchup (≥ 30%) | speed-rush-graft vs open-swarm-forkling | 1.9% | 3.4% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-sagelet vs speed-rush-blitzr | 19.3% | 19.3% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-hallucinat vs speed-rush-blitzr | 26.1% | 26.1% | fail |
+| worst matchup (≥ 30%) | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | open-swarm-slopling vs reasoning-nuke-sagelet | 0.4% | 0.4% | fail |
+| worst matchup (≥ 30%) | code-lock-spaghettopus vs search-anti-hallu-embeddingo | 0.2% | 0.2% | fail |
+| worst matchup (≥ 30%) | code-lock-nullbeetle vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | code-lock-cobolt vs search-anti-hallu-embeddingo | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-parrot vs code-lock-spaghettopus | 19.0% | 19.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-vibrat vs reasoning-nuke-sagelet | 10.4% | 10.4% | fail |
+| worst matchup (≥ 30%) | memory-stall-deprecatter vs search-anti-hallu-embeddingo | 0.2% | 0.0% | fail |
+| worst matchup (≥ 30%) | memory-stall-retro vs search-anti-hallu-embeddingo | 0.4% | 0.4% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-embeddingo vs speed-rush-graft | 4.0% | 4.0% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-scrapion vs search-anti-hallu-embeddingo | 1.8% | 1.8% | fail |
+| worst matchup (≥ 30%) | mixed-starter-sagelet vs speed-rush-graft | 8.4% | 8.4% | fail |
+| worst matchup (≥ 30%) | mixed-starter-blitzr vs speed-rush-blitzr | 14.9% | 15.9% | fail |
+| worst matchup (≥ 30%) | mixed-starter-forkling vs reasoning-nuke-sagelet | 9.7% | 8.8% | fail |
+| worst matchup (≥ 30%) | mixed-heisenmoth-tempo vs reasoning-nuke-sagelet | 1.0% | 0.7% | fail |
+| starter triangle (55–65%) | blitzr (favoured) vs sagelet | 99.3% | 99.3% | fail |
+| starter triangle (55–65%) | sagelet (favoured) vs forkling | 91.2% | 91.2% | fail |
+| starter triangle (55–65%) | forkling (favoured) vs blitzr | 100.0% | 100.0% | fail |
+| temperature dial (45–55%) | T0 vs T4 mirror, pooled | 55.5% | 55.7% | fail |
+| graft worth taking (≥ 55%) | stochastiparrot | 71.5% | 71.5% | pass |
+| graft worth taking (≥ 55%) | nullbeetle | 81.7% | 81.7% | pass |
+| graft worth taking (≥ 55%) | off-by-wasp | 23.3% | 23.3% | fail |
+| fight length (median 5–8) | median rounds | 7 | 7 | pass |
+| first mover (48–52%) | side A vs mirror, pooled | 51.1% | 51.1% | inconclusive |
+
+Vs-field rows failing 6 → 7; summed excess over 55% 76.7 → 72.4 pp.
+
+- **Decision:** rejected and reverted. open-swarm-forkling falls 61.6 → 57.7 and the excess 76.7 → 72.4, but code-lock-spaghettopus goes inconclusive → fail (54.5 → 55.1). Scrapion (53.8 → 54.7) and mixed-starter-sagelet (53.7 → 54.7) become inconclusive. Each nerf to a top team lifts the mid teams that the top team beat. Four mid teams (spaghettopus, scrapion, mixed-sagelet, agentoad) sit at 53–54.5%, so a top-team nerf that lowers the excess usually tips one of them over.
+
+### Re-prioritisation (coordinator, after an environment restart)
+
+The agentoad candidate's full run was killed by an environment restart. The coordinator then time-boxed D4 to at most four more kept changes or about three hours of runs. They also re-prioritised it toward "playable and not broken": first no matchup at or near 100% (the starter triangle, then the dominant archetypes), then fight length staying at a median of 5–8. From here, candidates are judged first on the worst-matchup target (its rows' total shortfall below 30%) and on the blowout counts from a 200-seed round-robin, still under the rule that no target may leave its band. The agentoad candidate only made room for a dial change, which is not in those priorities, so it was not re-run. The 200-seed round-robin at K3 lists the remaining blowouts: 16 pairings at or beyond 99/1. Every one is a Search team (Embeddingo, Scrapion) or a Reasoning nuke (Sagelet, Hallucinat) against a Code-lock, Memory or Open team, or Slopling or mixed-starter-forkling against code-lock-nullbeetle.
