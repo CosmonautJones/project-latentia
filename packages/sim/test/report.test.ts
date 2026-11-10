@@ -6,7 +6,7 @@ import { fmtInterval, fmtPct, PROVENANCE_COLUMNS, renderCsv, renderMarkdown, wit
 import { targetsReport } from '../src/commands/targets.js';
 import { activeCardCount } from '@latentia/engine';
 import { ARCHETYPES } from '../src/archetypes/index.js';
-import { GRAFT_SPECIES, graftVariant, SPIN_UP_LEVEL, spinUpVariant, starterSide, TRIANGLE } from '../src/target-setups.js';
+import { baseTeam, GRAFT_SPECIES, graftVariant, SPIN_UP_LEVEL, spinUpVariant, starterSide, TRIANGLE } from '../src/target-setups.js';
 import { TARGETS, type TargetId, type TargetsRun } from '../src/targets.js';
 import { readOut, TEST_PROVENANCE, testContext } from './helpers/context.js';
 
@@ -135,9 +135,11 @@ describe('targetsReport', () => {
   it('describes each setup from the setup objects themselves', () => {
     for (const [fav, beaten] of TRIANGLE) {
       const s = starterSide(fav).side;
-      expect(md).toContain(`${fav} L${s.orchestrator.level} + ${s.active.map((c) => `${c.species} L${c.level}`).join(' + ')} vs ${beaten}`);
+      expect(s.active).toEqual([]);
+      expect(md).toContain(`${fav} L${s.orchestrator.level} alone vs ${beaten} L8 alone`);
     }
-    for (const [fav, beaten] of TRIANGLE) expect(md).toContain(`${fav} L8 alone vs ${beaten} L8 alone`);
+    const base = baseTeam().side;
+    expect(md).toContain(`the base team (${base.orchestrator.species} L8 + tokenibble L8) plus a graft against the same base team without it`);
     expect(md).toContain(`each of the ${ARCHETYPES.length} archetypes at Autopilot T0 vs its own mirror at T4, both sides, pooled`);
     for (const sp of GRAFT_SPECIES) {
       const g = graftVariant(sp).side;
@@ -145,8 +147,8 @@ describe('targetsReport', () => {
       const graft = g.grid?.pieces.find((p) => p.kind === 'graft');
       const spun = s.active[1];
       const active = s.grid === null ? 0 : activeCardCount(s.grid, 'slot-B', 'v1');
-      const team = (cs: typeof g.active) => cs.map((c) => `${c.species} L${c.level}`).join(' + ');
-      expect(md).toContain(`${sp}: G = ${g.orchestrator.species} L8 + ${team(g.active)} with graft ${graft?.moveId} (${graft?.shape.length} cells); S = ${s.orchestrator.species} L8 + ${team(s.active)}, ${sp} spun up with moves ${spun?.moves.join(', ')} (no signature) on ${active} active cards`);
+      expect(md).toContain(`${sp}: G = base team + graft ${graft?.moveId} (${graft?.shape.length} cells); S = base team + ${sp} L${spun?.level} spun up with moves ${spun?.moves.join(', ')} (no signature) on ${active} active card`);
+      expect(active).toBe(1);
       expect(md).toContain(`${sp} L${SPIN_UP_LEVEL}`);
     }
     expect(md).toContain(`First mover: ${ARCHETYPES.length} archetypes`);

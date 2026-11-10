@@ -1,14 +1,17 @@
-import { activeCardCount, moveDef, SPECIES, SPECIES_IDS, validateSetup, type Card, type Condition, type Deck, type GridLayout, type PlacedPiece, type SpeciesId, type Subject, type TargetSelector, type Temperature } from '@latentia/engine';
+import { activeCardCount, moveDef, SPECIES, SPECIES_IDS, type Card, type Condition, type Deck, type GridLayout, type PlacedPiece, type SpeciesId, type Subject, type TargetSelector, type Temperature } from '@latentia/engine';
 import { ALWAYS, archetype, card, cooldown, deck, FULL, OPENER, orchestrator, subagent, versionFor, WEAK_TO_MOVE } from './archetypes/build.js';
 import { ARCHETYPES, mirrorOf, starterGrid, type StarterId } from './archetypes/index.js';
 import type { Archetype } from './types.js';
 
 // The balance targets' own setups (spec §9 table, Rulings 133–134). Ruling 130's 1 + 2 + 1 team rule is for ARCHETYPES
 // and does not apply here; every setup still passes validateSetup, and each has a "setup is live" test
-// (target-setups.test.ts). Every creature is L8 (v2) except graft vs spin-up's spun-up subagent, which joins at L5
-// (Ruling 145). Decks are built by role from move data, never by move index.
+// (target-setups.test.ts). Every creature is L8 (v2) except the diagnostic spun-up subagent (graft vs spin-up's S),
+// which joins at L5 (Ruling 145) with 1 active Example Card (Ruling 147). Decks are built by role from move data,
+// never by move index.
 
 const LEVEL = 8;
+/** A freshly spun-up subagent's active Example Card slots (Ruling 147): more come through level, a Clean distill and grid expansion. */
+export const SPIN_UP_CARDS = 1;
 /**
  * The spun-up subagent's level in graft vs spin-up (Ruling 145): a spun-up subagent joins at the level of the wild
  * model it was distilled from, not the orchestrator's; L5 is a mid-Deprecated-Forest wild level.
@@ -99,7 +102,7 @@ export function spunUpTemplate(species: SpeciesId, activeCards: number): Deck {
   return deck(aimed('default', 'self', ALWAYS, r.affordable, 'lowestHpFoe'), ...cards.slice(0, activeCards));
 }
 
-/** Tokenibble L8, the starter's bundled intern, on the subagent template for the starter grid's slot (3 active cards at v2). */
+/** Tokenibble L8, the base team's subagent (the first wild model, spun up), on the subagent template for the starter grid's slot (3 active cards at v2). */
 const intern = () => subagent('tokenibble', 'tokenibble', LEVEL, { deck: subagentTemplate('tokenibble', 3), ...SUBAGENT_TRAINING });
 
 // --- starter triangle -------------------------------------------------------------------------------------------
@@ -111,40 +114,25 @@ export const TRIANGLE: readonly (readonly [StarterId, StarterId])[] = Object.fre
   Object.freeze(['forkling', 'blitzr'] as const),
 ]);
 
-/** A starter at L8 on its standard grid with Tokenibble L8 in its slot, both on the role templates. */
+/**
+ * The official starter-triangle side (Ruling 146): the starter alone, orchestrator only, at L8 on its standard grid
+ * with the Subagent Slot left empty (headroom unchanged), on the role-based Autopilot template every starter shares.
+ */
 export function starterSide(s: StarterId): Archetype {
+  const standard = starterGrid(s, LEVEL, 'none');
+  const unbind = (p: PlacedPiece): PlacedPiece => Object.fromEntries(Object.entries(p).filter(([k]) => k !== 'subagentId')) as PlacedPiece;
   return archetype(`starter-${s}`, {
     orchestrator: orchestrator(s, s, LEVEL),
-    active: [intern()],
-    grid: starterGrid(s, LEVEL, 'tokenibble'),
+    active: [],
+    grid: { ...standard, pieces: standard.pieces.map(unbind) },
     autopilot: autopilotTemplate(rolesOf(s)),
     temperature: TEMPLATE_TEMPERATURE,
   });
 }
 
-/**
- * The partnerless triangle diagnostic's side (Rulings 136, 143 I1): the official starter side with its partner
- * removed — no active subagent, and the grid's slot left unbound (empty), so headroom is unchanged.
- */
-export function soloSide(s: StarterId): Archetype {
-  const { id, side } = starterSide(s);
-  if (side.grid === null) throw new Error(`${id} has no grid`);
-  const unbind = (p: PlacedPiece): PlacedPiece => Object.fromEntries(Object.entries(p).filter(([k]) => k !== 'subagentId')) as PlacedPiece;
-  const pieces = side.grid.pieces.map((p) => (p.subagentId === undefined ? p : unbind(p)));
-  return { id: `${id}-solo`, side: { ...side, active: [], bench: [], grid: { ...side.grid, pieces } } };
-}
+// --- graft worth taking, and graft vs spin-up (Rulings 134, 147) -------------------------------------------------
 
-/** A solo pairing, checked with the engine's own validation first (an invalid diagnostic must not run). */
-export function soloPair(fav: StarterId, beaten: StarterId): [Archetype, Archetype] {
-  const [x, y] = [soloSide(fav), soloSide(beaten)];
-  const v = validateSetup({ a: { ...x.side, opponentId: y.id }, b: { ...y.side, opponentId: x.id }, kind: 'trainer' });
-  if (!v.ok) throw new Error(`${x.id} vs ${y.id} is invalid: ${JSON.stringify(v.errors)}`);
-  return [x, y];
-}
-
-// --- graft vs spin-up (Ruling 134: Ruling 133 literally) --------------------------------------------------------
-
-/** The starter both graft-vs-spin-up variants are built on. */
+/** The starter every graft variant and the base team are built on. */
 export const GRAFT_STARTER: StarterId = 'sagelet';
 
 type XY = readonly [number, number];
@@ -206,36 +194,24 @@ function graftGrid(species: SpeciesId): GridLayout | null {
 const orth = ([x, y]: XY): XY[] => [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
 
 /**
- * S's grid: the base grid plus a second 2×2 Subagent Slot for `species`, with 3 adjacent Example Cards when the grid
- * can hold them. The 5×5 L8 grid cannot (base 17 cells + a slot leaves exactly the headroom floor of 4), so the slot
- * goes where it touches the most existing Example Cards (reading order on ties) and Example Cards are added beside it
- * only while the floor allows: on the starter grid, slot B at (3,1) shares the two Example Cards at (2,1) and (2,2)
- * with slot A, giving 2 active cards and no new cell (the largest legal layout).
+ * S's grid: the base grid plus a second 2×2 Subagent Slot for `species`, placed on free cells where exactly
+ * SPIN_UP_CARDS Example Cards touch it (Ruling 147: 1 active card slot), at the first such place in reading order,
+ * and no piece added. On the starter grid that is (3,0): the 2×2 touches only the Example Card at (2,1), which slot A
+ * touches too; headroom stays at the floor of 4. (Slot B at (3,1) would touch two cards.)
  */
 export function spinUpGrid(species: string): GridLayout {
   const base = baseGrid();
   const taken = occupied(base);
   const cards = base.pieces.filter((p) => p.kind === 'exampleCard').map((p) => key(p.anchor));
-  let best: { anchor: XY; touching: number } | null = null;
   for (let y = 0; y + 1 < base.height; y++) {
     for (let x = 0; x + 1 < base.width; x++) {
       const cells: XY[] = [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]];
       if (cells.some((c) => taken.has(key(c)))) continue;
-      const touching = new Set(cells.flatMap(orth).map(key).filter((k) => cards.includes(k))).size;
-      if (best === null || touching > best.touching) best = { anchor: [x, y], touching };
+      if (new Set(cells.flatMap(orth).map(key).filter((k) => cards.includes(k))).size !== SPIN_UP_CARDS) continue;
+      return withPiece(base, { id: 'slot-B', kind: 'subagentSlot', subagentId: species, shape: [[0, 0], [1, 0], [0, 1], [1, 1]], anchor: [x, y], rotation: 0 });
     }
   }
-  if (best === null) throw new Error('no room for a second Subagent Slot');
-  let grid = withPiece(base, { id: 'slot-B', kind: 'subagentSlot', subagentId: species, shape: [[0, 0], [1, 0], [0, 1], [1, 1]], anchor: best.anchor, rotation: 0 });
-  const [ax, ay] = best.anchor;
-  const slotCells: XY[] = [[ax, ay], [ax + 1, ay], [ax, ay + 1], [ax + 1, ay + 1]];
-  for (let touching = best.touching, n = 1; touching < 3 && spare(grid) >= 1; touching++, n++) {
-    const now = occupied(grid);
-    const free = slotCells.flatMap(orth).find(([x, y]) => x >= 0 && y >= 0 && x < grid.width && y < grid.height && !now.has(key([x, y])));
-    if (free === undefined) break;
-    grid = { ...grid, pieces: [...grid.pieces, { id: `exampleCard-b${n}`, kind: 'exampleCard', shape: [[0, 0]], anchor: free, rotation: 0 }] };
-  }
-  return grid;
+  throw new Error(`no room for a second Subagent Slot touching exactly ${SPIN_UP_CARDS} Example Card(s)`);
 }
 
 /** The first three slice species, in SPECIES_IDS order, that are neither a starter nor the base team's Tokenibble and whose graft fits the base grid. */
@@ -245,6 +221,17 @@ export const GRAFT_SPECIES: readonly SpeciesId[] = Object.freeze(
 
 /** The Sagelet orchestrator both variants share. */
 const graftOrchestrator = () => orchestrator(GRAFT_STARTER, GRAFT_STARTER, LEVEL);
+
+/** The base team (Ruling 147): Sagelet L8 + Tokenibble L8 on the starter grid, no graft and no second subagent. A graft is worth taking when G beats it. */
+export function baseTeam(): Archetype {
+  return archetype('base-team', {
+    orchestrator: graftOrchestrator(),
+    active: [intern()],
+    grid: baseGrid(),
+    autopilot: autopilotTemplate(rolesOf(GRAFT_STARTER)),
+    temperature: TEMPLATE_TEMPERATURE,
+  });
+}
 
 /** Variant G (graft): the base team (Sagelet + Tokenibble), its grid plus the graft; the Autopilot adds a graft card. */
 export function graftVariant(species: SpeciesId): Archetype {
@@ -260,9 +247,9 @@ export function graftVariant(species: SpeciesId): Archetype {
 }
 
 /**
- * Variant S (spin up): the base team plus `species` as a second subagent in slot B, spun up as the bible has it: at
- * SPIN_UP_LEVEL, the defeated wild model's level (Ruling 145), with its 3 moves and no signature (bible:250, Ruling
- * 143), on the spun-up template cut to its active cards.
+ * Variant S (spin up, diagnostic): the base team plus `species` as a second subagent in slot B, spun up as the bible
+ * has it: at SPIN_UP_LEVEL, the defeated wild model's level (Ruling 145), with 1 active Example Card (Ruling 147), its
+ * 3 moves and no signature (bible:250, Ruling 143), on the spun-up template cut to its one card.
  */
 export function spinUpVariant(species: SpeciesId): Archetype {
   const grid = spinUpGrid(species);
@@ -298,7 +285,7 @@ export function targetSetups(): Record<string, unknown> {
   return {
     triangle: TRIANGLE,
     starters: STARTERS.map(starterSide),
-    solo: STARTERS.map(soloSide),
+    base: baseTeam(),
     graft: GRAFT_SPECIES.map((sp) => [graftVariant(sp), spinUpVariant(sp)]),
     temperature: ARCHETYPES.map(temperaturePair),
   };

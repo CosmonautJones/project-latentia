@@ -6,13 +6,19 @@
 //   pnpm --filter @latentia/sim diagnostics hallu   # how often Hallucinating happens, and the anti-hallucination cards fire (finding 6)
 //   pnpm --filter @latentia/sim diagnostics temp    # T0 vs T4 on every archetype (finding 7)
 //
-// `temp` is also in `pnpm sim targets` as diagnostic rows (on other seeds); `graft` and `hallu` are here only.
+// `--seeds N` replaces the subcommand's battle count (per side assignment for graft and temp, per ordered pairing for
+// hallu; defaults 1000, 250 and 50) so a quick look costs little; the default numbers are the ones the notes cite. Like
+// the sim commands, an unknown or misspelt argument is a usage error (exit code 2).
+//
+// `temp` is also in `pnpm sim targets` as diagnostic rows (on other seeds), and so is G vs S (graft); `hallu` and the
+// breakdown in `graft` are here only.
 
+import { parseArgs, UsageError, num, type CommandSpec } from '../src/args.js';
 import { activeCardCount, simulate, SPECIES, type BattleSetup, type CreatureSetup } from '@latentia/engine';
 import { ARCHETYPES } from '../src/archetypes/index.js';
 import { runPooled, seedFor } from '../src/runner.js';
 import { rate, wilson95 } from '../src/stats.js';
-import { GRAFT_SPECIES, graftVariant, spinUpVariant, starterSide, subagentTemplate, temperaturePair } from '../src/target-setups.js';
+import { baseTeam, GRAFT_SPECIES, graftVariant, spinUpVariant, subagentTemplate, temperaturePair } from '../src/target-setups.js';
 import type { Archetype, Score } from '../src/types.js';
 
 const pct = (x: number): string => `${(x * 100).toFixed(1)}%`;
@@ -22,11 +28,14 @@ function show(label: string, s: Score): void {
 }
 const header = (first: string): void => console.log(`| ${first} | battles | score | 95% interval |\n|---|---|---|---|`);
 
-/** Battles per side assignment in the graft and temperature diagnostics. */
+/** Default battles per side assignment in the graft and temperature diagnostics. */
 const GRAFT_PER_SIDE = 1000;
 const TEMP_PER_SIDE = 250;
-/** Battles per ordered pairing in the Hallucinating count (each archetype on each side against the other 19). */
+/** Default battles per ordered pairing in the Hallucinating count (each archetype on each side against the other 19). */
 const HALLU_PER_PAIRING = 50;
+/** The `--seeds N` override, set once by the entry point below. */
+let seedsOverride: number | undefined;
+const seeds = (fallback: number): number => seedsOverride ?? fallback;
 
 /** S's spun-up subagent replaced by `c` (built from it): the same slot, id and training. */
 function withSpun(s: Archetype, make: (spun: CreatureSetup) => CreatureSetup): Archetype {
@@ -37,11 +46,12 @@ function withSpun(s: Archetype, make: (spun: CreatureSetup) => CreatureSetup): A
 
 /**
  * G and S against the base team (Sagelet + Tokenibble, no graft, no second subagent), and G against three forms of
- * S: the official one (L5, no signature: Rulings 143, 145), the same at L8, and the C5 one (L8 with its signature).
+ * S: the current one (L5, 1 active card, no signature: Rulings 143, 145, 147), the same at L8, and the C5 one (L8 with
+ * its signature; since Ruling 147 on the 1-card grid, so no longer the C5 setup's 2 cards).
  */
 function graft(): void {
   header('matchup (first side’s score)');
-  const base: Archetype = { ...starterSide('sagelet'), id: 'base' };
+  const base = baseTeam();
   for (const sp of GRAFT_SPECIES) {
     const g = graftVariant(sp);
     const s = spinUpVariant(sp);
@@ -49,11 +59,11 @@ function graft(): void {
     if (grid === null) throw new Error(`${s.id} has no grid`);
     const atL8 = withSpun(s, (c) => ({ ...c, level: 8, version: 'v2' }));
     const c5 = withSpun(s, (c) => ({ ...c, level: 8, version: 'v2', moves: [...SPECIES[sp].moves], deck: subagentTemplate(sp, activeCardCount(grid, 'slot-B', 'v2')) }));
-    show(`${sp}: G vs base`, runPooled(g, base, GRAFT_PER_SIDE, `c5diag:graft:g-base:${sp}`).score);
-    show(`${sp}: S (L5, no signature) vs base`, runPooled(s, base, GRAFT_PER_SIDE, `c5diag:graft:s-base:${sp}`).score);
-    show(`${sp}: G vs S (L5, no signature; the official setup)`, runPooled(g, s, GRAFT_PER_SIDE, `c5diag:graft:g-s:${sp}`).score);
-    show(`${sp}: G vs S at L8, no signature`, runPooled(g, atL8, GRAFT_PER_SIDE, `c5diag:graft:g-s8:${sp}`).score);
-    show(`${sp}: G vs S at L8 with signature (the C5 setup)`, runPooled(g, c5, GRAFT_PER_SIDE, `c5diag:graft:g-c5:${sp}`).score);
+    show(`${sp}: G vs base`, runPooled(g, base, seeds(GRAFT_PER_SIDE), `c5diag:graft:g-base:${sp}`).score);
+    show(`${sp}: S (L5, no signature) vs base`, runPooled(s, base, seeds(GRAFT_PER_SIDE), `c5diag:graft:s-base:${sp}`).score);
+    show(`${sp}: G vs S (L5, 1 card, no signature; the diagnostic setup)`, runPooled(g, s, seeds(GRAFT_PER_SIDE), `c5diag:graft:g-s:${sp}`).score);
+    show(`${sp}: G vs S at L8, no signature`, runPooled(g, atL8, seeds(GRAFT_PER_SIDE), `c5diag:graft:g-s8:${sp}`).score);
+    show(`${sp}: G vs S at L8 with signature (C5's S, on the 1-card grid)`, runPooled(g, c5, seeds(GRAFT_PER_SIDE), `c5diag:graft:g-c5:${sp}`).score);
   }
 }
 
@@ -77,7 +87,7 @@ function hallu(): void {
         const ids = [...members(setup.a), ...members(setup.b)].map((c) => c.id);
         const nA = members(setup.a).length;
         const mine = (i: number): boolean => (xIsA ? i < nA : i >= nA);
-        for (let i = 0; i < HALLU_PER_PAIRING; i++) {
+        for (let i = 0; i < seeds(HALLU_PER_PAIRING); i++) {
           const r = simulate(setup, seedFor(`c5diag:hallu:${a.id}:${b.id}`, i), { kind: 'autopilot' });
           battles++;
           let ownHit = false;
@@ -104,13 +114,21 @@ function hallu(): void {
 /** The temperature dial on every archetype: x at T0 vs its own mirror at T4, both sides pooled (the T0 side's score). */
 function temp(): void {
   header('archetype (its own temperature): T0 side vs T4 mirror');
-  for (const x of ARCHETYPES) show(`${x.id} (own T${x.side.autopilot?.temperature})`, runPooled(...temperaturePair(x), TEMP_PER_SIDE, `c5diag:temp:${x.id}`).score);
+  for (const x of ARCHETYPES) show(`${x.id} (own T${x.side.autopilot?.temperature})`, runPooled(...temperaturePair(x), seeds(TEMP_PER_SIDE), `c5diag:temp:${x.id}`).score);
 }
 
 const SUBCOMMANDS: Record<string, () => void> = { graft, hallu, temp };
-const which = process.argv[2];
-const run = which === undefined ? undefined : SUBCOMMANDS[which];
-if (run === undefined) {
-  console.error(`usage: pnpm --filter @latentia/sim diagnostics <${Object.keys(SUBCOMMANDS).join(' | ')}>`);
+const SPEC: CommandSpec = { name: 'diagnostics', positionals: ['subcommand'], flags: { seeds: 'int' } };
+
+try {
+  const p = parseArgs(process.argv.slice(2), SPEC);
+  const which = p.positionals[0] as string;
+  const run = Object.prototype.hasOwnProperty.call(SUBCOMMANDS, which) ? SUBCOMMANDS[which] : undefined;
+  if (run === undefined) throw new UsageError(`unknown subcommand ${which} (one of ${Object.keys(SUBCOMMANDS).join(', ')})`);
+  seedsOverride = p.flags.has('seeds') ? num(p, 'seeds', 0) : undefined;
+  run();
+} catch (e) {
+  if (!(e instanceof UsageError)) throw e;
+  console.error(e.message);
   process.exitCode = 2;
-} else run();
+}

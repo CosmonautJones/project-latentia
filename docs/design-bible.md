@@ -17,9 +17,9 @@ The beat sheet below merges the retention research's minute targets with the lev
 | Time | Beat | Space | What it teaches |
 |---|---|---|---|
 | 0:00–0:45 | Skippable cold open: Prof. Ilse Epoch says *"Here. A frontier model. Well, it WAS frontier. About six weeks ago."* You pick Sagelet, Blitzr or Forkling | Lab interior (16×12) | Starter choice and the tone |
-| ~1:30 | Rival Kip Velocity picks the counter-type and battles you. Your starter commands. The lab's bundled "intern" subagent, Tokenibble, acts from one example card | Lab | Split control, the intent icon, one command |
-| ~3:00–4:00 | First wild model at the Deprecated Forest trailhead. Win, then **distill** it | Trailhead brush | Visible encounters, distillation |
-| ~4:00–5:00 | The new piece won't fit the 4×4 grid. Drop something or choose graft over spin-up | Grid editor | The packing "aha" |
+| ~1:30 | Rival Kip Velocity picks the counter-type and battles you, starter vs starter, one on one. Your starter commands every move | Lab | Commanding, the type chart, one command at a time |
+| ~3:00–4:00 | **Tokenibble** is the first wild model, at the Deprecated Forest trailhead. Win, then **distill** it: it is your first distill, and the natural first **spin-up**, into your first subagent | Trailhead brush | Visible encounters, distillation, subagents (split control, the intent icon) |
+| ~4:00–5:00 | The example-card tutorial: teach Tokenibble its first card. The 4×4 grid is tight, so drop something, or choose graft over spin-up for the next distill | Grid editor | Example cards, the packing "aha" |
 | ~8:00–10:00 | Optional pre-seeded ghost at the trailhead kiosk ("fight a cached run from a beta tester") | Trailhead | Async PvP exists |
 | 12–25 min | Trainers, Team Scrape camp, the Sunset Server checkpoint, side paths | Deprecated Forest | Type matchups, deck tuning |
 | 25–50 min | Patchwater plaza, then the Compile Hall's three puzzle rooms and leader Gary Rebase | Gym | Puzzle verbs, "don't be predictable" |
@@ -248,14 +248,14 @@ Precedents support rewarding performance at capture and charging power in space.
 | | **Graft** (move into the orchestrator) | **Spin up** (new subagent) |
 |---|---|---|
 | You get | The species' signature move as a Skill at 100% power | The creature with 3 moves and a passive; the signature becomes a weaker passive echo |
-| Level | — | Joins at the level of the wild model you beat, not the orchestrator's |
+| Level | — | Joins at the level of the wild model you beat, not the orchestrator's, with **1** active Example Card slot |
 | Control | You aim it every turn | Acts on its own from its deck |
 | Space | Irregular 3–4 cell shape | 2×2 slot plus adjacent cards |
-| Growth | Static; can be fine-tuned +1 tier with currency | Levels, evolves, gains card slots |
+| Growth | Static; can be fine-tuned +1 tier with currency | Levels, evolves, gains card slots (through level, a Clean distill and grid expansion) |
 | Action economy | None | +1 action per round, the big draw |
 | Best when | The grid has odd gaps, or you need a counter | You have a 2×2 hole and want breadth |
 
-Winning with at least 50% HP in at most 6 turns gives a **Clean** distill: the graft shape shrinks by 1 cell, or the subagent starts with +1 card slot. A spun-up subagent can later be distilled *down* into its graft, losing its levels. This one-way path keeps outclassed creatures useful. Wild species respawn, so only rare checkpoint variants are one-shot. For tuning, assume a subagent action is worth about 0.6 of a human-commanded action and a graft about 1.3× a basic Skill. Tune until each option wins 45–55% of mirror sims.
+Winning with at least 50% HP in at most 6 turns gives a **Clean** distill: the graft shape shrinks by 1 cell, or the subagent starts with +1 card slot. A spun-up subagent can later be distilled *down* into its graft, losing its levels. This one-way path keeps outclassed creatures useful. Wild species respawn, so only rare checkpoint variants are one-shot. For tuning, assume a subagent action is worth about 0.6 of a human-commanded action and a graft about 1.3× a basic Skill. Spin-up is intended to be the stronger choice, because its extra action per round is the draw, and its light cost is one active Example Card slot at the start. Tune until a graft is worth taking: the base team plus the graft beats the same base team without it at least 55% of the time, for the same three species.
 
 ### Design: a gentle level curve, visible stats and version-name evolution
 
@@ -348,7 +348,7 @@ Each creature is a behaviour gag with a battle mechanic attached, so the joke is
 | 1 | **Sagelet** S | Reasoning | v1 → v2 → v3.5 Turbo → v4 Max Preview | Opens every move with "I'd be happy to help." Ability **Disclaimer** blocks the first status each fight | Starter |
 | 2 | **Blitzr** S | Speed | Same ladder | Ability **Move Fast**: +1 priority on its first move each battle, with a 15% seeded chance it "ships with a known issue" (10% recoil) | Starter |
 | 3 | **Forkling** S | Open | v1 → v2 → v3.5 Community → v4 Max Preview (Unofficial) | Once per battle, forks a decoy that absorbs one hit; its final form is four forks arguing | Starter |
-| 4 | **Tokenibble** S | Speed | Tokenibble → Tokenibbler → Tokenomnom | Eats tokens: adds cost to a foe's next move | Bundled "intern" subagent |
+| 4 | **Tokenibble** S | Speed | Tokenibble → Tokenibbler → Tokenomnom | Eats tokens: adds cost to a foe's next move | First wild model (trailhead) |
 | 5 | **Stochastiparrot** S | Voice | → v2 | Repeats the foe's last move with a temperature roll; overworld `mimic` | West brush common |
 | 6 | **Nullbeetle** S | Code | — (bug family) | Null-pointer chomps | Trailhead common, grunt team |
 | 7 | **Off-By-Wasp** S | Code | — (bug family) | Always hits one tile left: ±1 retarget | West brush common |
@@ -597,9 +597,9 @@ The balance pipeline borrows Mega Crit's approach. Slay the Spire's team tracked
 |---|---|
 | Any archetype against the field | ≤ 55% win rate |
 | Worst single matchup | No worse than 30/70 |
-| Starter triangle | ~60/40, so skill can flip it |
+| Starter triangle | ~60/40, so skill can flip it (orchestrator only, no subagent) |
 | Always-T0 vs always-T4 | Within ~5 points, or the dial is solved |
-| Graft vs spin-up mirrors | 45–55% |
+| Graft worth taking | ≥ 55% for the graft side vs the same team without it (spin-up is intended to be stronger) |
 | Median fight length | 5–8 rounds |
 | First-mover mirror | 50 ± 2% |
 
