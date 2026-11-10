@@ -95,6 +95,27 @@ describe('BattleSession', () => {
     expect(s.fingerprint()).not.toBe(before);
   });
 
+  it.each(['spinUp', 'graft'] as const)('%s: the debrief reads (report, its kept summary, deckOf) never change the engine state', (distill) => {
+    // A finished Bootcamp Grad fight with traces and events, as the debrief sees it.
+    const s = BattleSession.start(trainerBattle('sagelet', distill, 'tutorial.c', 0));
+    autoPlay(s);
+    expect(s.ended).toBe(true);
+    expect(s.traces().length).toBeGreaterThan(0);
+    const before = s.fingerprint();
+    const traces = JSON.stringify(s.traces());
+    const decks = s.creatures().map((_, i) => JSON.stringify(s.deckOf(i)));
+    const first = s.report('lose', 'tutorial.c');
+    expect(first.kept.length).toBeGreaterThan(0);
+    const again = [s.report('win', 'tutorial.c'), s.report('lose', null), s.report('lose', 'tutorial.c')];
+    s.explainLatestTraces();
+    s.creatures().forEach((_, i) => s.deckOf(i));
+    expect(s.fingerprint()).toBe(before);
+    expect(JSON.stringify(s.traces())).toBe(traces);
+    expect(s.creatures().map((_, i) => JSON.stringify(s.deckOf(i)))).toEqual(decks);
+    // Reading the report is repeatable: the kept summary is rebuilt from untouched events and decks.
+    expect(again[2]).toEqual(first);
+  });
+
   it('a rejected command changes nothing and says why', () => {
     const s = BattleSession.start(rivalBattle('blitzr', 0));
     const before = s.fingerprint();
