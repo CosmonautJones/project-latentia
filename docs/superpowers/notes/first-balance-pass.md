@@ -2,22 +2,35 @@
 
 Date 2026-11-08 · engine `@latentia/engine` 0.3.0 · branch `phase-c-simulator` at fe061c2 · nothing retuned.
 
+**Updated 2026-11-10 (Checkpoint C fix wave, Rulings 143–145).** The round-robin and targets reports were re-run at
+269f0a9 (clean), content fingerprint `16228d6128370c89`. The round-robin, vs-field, worst-matchup, fight-length,
+first-mover and official triangle numbers reproduce the 2026-11-08 runs exactly: the archetypes and those seed labels
+did not change. Three things did change:
+
+- the temperature dial now pools all 20 archetypes (Ruling 143 I2);
+- graft vs spin-up's S variant spins its subagent up at L5 with no signature (Rulings 143, 145);
+- targets now carries the partnerless triangle and a per-archetype temperature sweep as diagnostic rows.
+
+The four search reports are unchanged: re-run as scratch after movePool switched to the engine's `orchestratorMoves`,
+all four histories, final decks and held-out scores were identical.
+
 This note reads the first full-scale runs of `@latentia/sim` against the bible's balance targets. It ranks what the
 data says and names the first tunables to move. It changes no content, archetype or target setup.
 
-Sources (all committed under `reports/` unless marked scratch):
+Sources (all committed under `reports/`, or reproducible with a committed script):
 
-- `round-robin-2026-11-08.{md,csv}`: `pnpm sim round-robin --seeds 1000`, 380,000 battles.
-- `targets-2026-11-08.{md,csv}`: `pnpm sim targets` at scale 1, 404,000 battles. Its round-robin uses its own seed
+- `round-robin-2026-11-10.{md,csv}`: `pnpm sim round-robin --seeds 1000`, 380,000 battles.
+- `targets-2026-11-10.{md,csv}`: `pnpm sim targets` at scale 1, 420,000 battles. Its round-robin uses its own seed
   label, so it is an independent replication of the one above. The two agree on every archetype's vs-field score
   within 0.7 pp (mean 0.3 pp), which is sampling noise at n = 38,000.
 - `search-2026-11-08-<archetype>.{md,csv}`: four `pnpm sim search --budget 20000` runs.
 - `pnpm --filter @latentia/sim triangle-solo` (`packages/sim/scripts/triangle-solo.ts`): the partnerless triangle
-  diagnostic (Ruling 136).
+  diagnostic (Ruling 136). Its rows are now also the targets report's diagnostic triangle rows (same seed labels).
 - `pnpm --filter @latentia/sim smoke --seeds 50`: 20,000 battles, for structural correlations.
-- **Scratch** (not committed, in-memory variants, no repo edits): Hallucinating frequency and anti-hallucination card
-  fires (38,000 battles), T0-vs-T4 on every archetype (10,000), and a graft/spin-up breakdown (18,000). Quoted
-  below as "scratch".
+- `pnpm --filter @latentia/sim diagnostics <graft | hallu | temp>` (`packages/sim/scripts/diagnostics.ts`,
+  in-memory variants, no repo edits): the graft/spin-up breakdown (30,000 battles), Hallucinating frequency and
+  anti-hallucination card fires (38,000), and T0-vs-T4 on every archetype (10,000). Each uses its own `c5diag:` seed
+  labels, so the numbers quoted from it below reproduce. These were scratch runs in C5; Ruling 143 I4 committed them.
 
 A draw counts 0.5 throughout. Intervals are 95% Wilson. There were 0 draws in all 380,000 round-robin battles;
 135 hit the round cap and went to the HP-ratio tiebreak.
@@ -29,14 +42,20 @@ A draw counts 0.5 throughout. Intervals are 95% Wilson. There were 0 draws in al
 | target | band | deciding row | point | 95% interval | rows pass / inc / fail | verdict |
 |---|---|---|---|---|---|---|
 | Any archetype vs the field | ≤ 55% | reasoning-nuke-sagelet | 83.9% | [83.5%, 84.3%] | 10 / 2 / 8 | **fail** |
-| Worst single matchup | ≥ 30% | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | [0.0%, 0.2%] | 0 / 0 / 21 | **fail** |
+| Worst single matchup | ≥ 30% | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | [0.0%, 0.2%] | 0 / 0 / 20 | **fail** |
 | Starter triangle | 55–65% favoured | sagelet vs forkling | 0.1% | [0.0%, 0.3%] | 0 / 0 / 3 | **fail** |
-| Temperature dial | 45–55% | mixed-starter-sagelet T0 vs T4 | 49.8% | [47.6%, 51.9%] | 1 / 0 / 0 | **pass** |
-| Graft vs spin-up | 45–55% | stochastiparrot / off-by-wasp | 0.1% | [0.1%, 0.4%] | 0 / 0 / 3 | **fail** |
+| Temperature dial | 45–55% | T0 vs T4 mirror, 20 archetypes pooled | 54.8% | [52.6%, 56.9%] | 0 / 1 / 0 | **inconclusive** |
+| Graft vs spin-up | 45–55% | off-by-wasp (S at L5, no signature) | 1.1% | [0.7%, 1.7%] | 0 / 0 / 3 | **fail** |
 | Fight length | median 5–8 rounds | all round-robin battles | 7 | point only | 1 / 0 / 0 | **pass** |
 | First mover | 48–52% | side A vs mirror, 20 archetypes pooled | 50.6% | [49.6%, 51.6%] | 1 / 0 / 0 | **pass** |
 
-**3 pass, 4 fail, 0 inconclusive** at target level. All 50 rows have a verdict.
+**2 pass, 4 fail, 1 inconclusive** at target level (C5: 3 / 4 / 0; the temperature dial moved from pass to
+inconclusive when it began pooling every archetype). All 49 counted rows have a verdict. The report also has 24 rows
+that are not counted (Ruling 143):
+
+- 1 summary row: worst matchup's overall worst, which before was counted a second time;
+- 3 partnerless-triangle diagnostic rows;
+- 20 temperature-sweep diagnostic rows.
 
 ### Rows outside the round-robin
 
@@ -45,14 +64,18 @@ A draw counts 0.5 throughout. Intervals are 95% Wilson. There were 0 draws in al
 | Starter triangle | blitzr (favoured) vs sagelet | 2000 | 99.9% | [99.6%, 99.9%] | fail |
 | Starter triangle | sagelet (favoured) vs forkling | 2000 | 0.1% | [0.0%, 0.3%] | fail |
 | Starter triangle | forkling (favoured) vs blitzr | 2000 | 100.0% | [99.8%, 100.0%] | fail |
-| Temperature dial | mixed-starter-sagelet: T0 side vs T4 mirror | 2000 | 49.8% | [47.6%, 51.9%] | pass |
-| Graft vs spin-up | stochastiparrot: G vs S | 2000 | 0.1% | [0.1%, 0.4%] | fail |
-| Graft vs spin-up | nullbeetle: G vs S | 2000 | 0.4% | [0.2%, 0.8%] | fail |
-| Graft vs spin-up | off-by-wasp: G vs S | 2000 | 0.1% | [0.1%, 0.4%] | fail |
+| Temperature dial | T0 side vs its T4 mirror, every archetype pooled | 2000 | 54.8% | [52.6%, 56.9%] | inconclusive |
+| Graft vs spin-up | stochastiparrot: G vs S (S at L5, no signature) | 2000 | 2.1% | [1.5%, 2.8%] | fail |
+| Graft vs spin-up | nullbeetle: G vs S | 2000 | 2.1% | [1.6%, 2.8%] | fail |
+| Graft vs spin-up | off-by-wasp: G vs S | 2000 | 1.1% | [0.7%, 1.7%] | fail |
 | Fight length | median rounds (p25 6, p75 9) | 380000 | 7 | point only | pass |
 | First mover | side A vs its mirror, every archetype pooled | 10000 | 50.6% | [49.6%, 51.6%] | pass |
 
-### Partnerless triangle diagnostic (not a target row)
+### Partnerless triangle diagnostic (diagnostic rows in targets, not counted)
+
+Ruling 144 keeps Tokenibble as every starter's partner in the official row ("Tokenibble is perfect"), so this stays a
+diagnostic. Since the fix wave, `pnpm sim targets` carries the solo rows itself, labelled diagnostic, on
+triangle-solo's seed labels: they match the table below exactly.
 
 Each starter fights alone: the same role-based Autopilot deck, the same L8 standard grid with its Subagent Slot left
 unbound (so headroom is unchanged), 1,000 battles per side assignment, pooled. The official rows are re-run on the
@@ -91,23 +114,25 @@ targets command's own seed labels and reproduce the targets report exactly.
 | mixed-heisenmoth-tempo | 26.7% | [26.3, 27.2] | pass | reasoning-nuke-sagelet | 0.1% | [0.1, 0.4] | fail |
 | memory-stall-retro | 20.7% | [20.3, 21.1] | pass | reasoning-nuke-sagelet | 0.3% | [0.1, 0.6] | fail |
 | code-lock-nullbeetle | 10.9% | [10.6, 11.2] | pass | reasoning-nuke-sagelet | 0.0% | [0.0, 0.2] | fail |
-| **overall** | | | | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | [0.0, 0.2] | fail |
+| **overall** (summary row, not counted) | | | | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | [0.0, 0.2] | fail |
 
 The vs-field band is one-sided, as §9 defines it. code-lock-nullbeetle at 10.9% "passes" it, so the 10 passes include
 four archetypes under 30%. The worst-matchup target is the one that catches the weak end.
 
 ## (b) Criteria 6 and 7
 
-- **Criterion 7 (performance): PASS.** The official `time pnpm sim round-robin --seeds 1000` took **7m20.1s real**
-  (7m23.8s user). The report's own wall time is 438.9 s. That is 380,000 battles in one process at 1.16 ms per
-  battle, with 26.6% headroom under the 10-minute bar. It matches the reviewer's C3.5 measurement (7m27.7s).
-- **Criterion 6 (balance harness): PASS.** The full-scale `time pnpm sim targets` took **7m50.7s real** (report wall
-  time 469.8 s, 404,000 battles). It measures every §9 target with its own setup and writes a pass, fail or
-  inconclusive verdict on all 50 rows and all 7 targets. Per measurement: round-robin 446.9 s, first mover 14.4 s,
-  graft 3.1 s, triangle 2.8 s, temperature 2.5 s. Criterion 6 asks for the tool and the first report, not for
-  passing targets; hitting the targets is the tuning work below.
-- The four searches took 23.9 s, 27.1 s, 29.2 s and 30.2 s real (19,456 budgeted battles plus 1,216 held-out
-  each).
+- **Criterion 7 (performance): PASS.** The official `time pnpm sim round-robin --seeds 1000` (fix wave, 269f0a9)
+  took **7m1.2s real** (7m5.6s user). The report's own wall time is 420.0 s. That is 380,000 battles in one process
+  at 1.11 ms per battle, with 29.8% headroom under the 10-minute bar. C5's run on fe061c2 took 7m20.1s and the
+  reviewer's C3.5 measurement 7m27.7s.
+- **Criterion 6 (balance harness): PASS.** The full-scale `time pnpm sim targets` (fix wave) took **7m15.7s real**
+  (report wall time 434.7 s, 420,000 battles). It measures every §9 target with its own setup and writes a pass,
+  fail or inconclusive verdict on all 49 counted rows and all 7 targets. Per measurement: round-robin 399.5 s,
+  temperature 15.3 s (now 20 archetypes plus the sweep), first mover 12.5 s, triangle 4.4 s (with the solo rows),
+  graft 3.1 s. Criterion 6 asks for the tool and the first report, not for passing targets; hitting the targets is
+  the tuning work below.
+- The four C5 searches took 23.9 s, 27.1 s, 29.2 s and 30.2 s real (19,456 budgeted battles plus 1,216 held-out
+  each). Their fix-wave scratch re-runs took 22.6–29.1 s.
 
 ## (c) Findings, ranked by impact
 
@@ -160,23 +185,29 @@ four archetypes under 30%. The worst-matchup target is the one that catches the 
 
   On the other two edges the partner changes nothing, because the favoured side already wins.
 
-### 4. Spin-up strictly beats graft at L8 (confirmed, with the cause isolated)
+### 4. Spin-up strictly beats graft, at L8 and at L5 (confirmed; Ruling 145 applied)
 
-- G scores 0.1%, 0.4% and 0.1% against S. The scratch breakdown (2,000 battles each, both sides pooled):
+- **C5 (S spun up at L8 with its signature):** G scored 0.1%, 0.4% and 0.1% against S. An equal-level extra body won
+  about 99% of the time. **That result is why Travis decided Ruling 145:** a spun-up subagent joins at the defeated
+  wild model's level, not the orchestrator's.
+- **Fix wave (the official S is now L5, no signature: Rulings 143, 145):** G scores **2.1%, 2.1% and 1.1%**, still a
+  fail. `diagnostics graft` breaks it down, 2,000 battles each, both sides pooled:
 
-  | species | G vs base team | S vs base team | G vs S **with the signature stripped from S** |
-  |---|---|---|---|
-  | stochastiparrot | 61.5% | 99.7% | 0.3% |
-  | nullbeetle | 68.8% | 95.8% | 0.5% |
-  | off-by-wasp | **29.5%** | 99.9% | 0.0% |
+  | species | G vs base | S (L5, no sig) vs base | G vs S (L5, no sig; official) | G vs S at L8, no sig | G vs S at L8 with sig (C5) |
+  |---|---|---|---|---|---|
+  | stochastiparrot | 61.5% | 97.0% | 2.5% | 0.2% | 0.4% |
+  | nullbeetle | 68.8% | 94.0% | 1.6% | 0.5% | 0.3% |
+  | off-by-wasp | **29.5%** | 93.5% | 0.9% | 0.0% | 0.1% |
 
-- **The extra body is the whole effect.** A second L8 subagent is worth +46 to +50 pp over the base team. A graft is
-  worth −20 to +19 pp.
-- **The spun-up subagent keeps its signature at full power.** That is unlike the bible's spin-up column ("3 moves
-  and a passive; the signature becomes a weaker passive echo"). Validation accepts a subagent listing its own
-  signature, and the sim's `subagent()` builder gives every subagent all 4 species moves. Stripping it changes
-  nothing measurable (0.0–0.5%), so it is not the cause here. It is still a rules mismatch worth fixing (finding 4b
-  in (d)).
+  (The official targets rows, on their own seeds, are 2.1%, 2.1% and 1.1%. The C5 scratch "S vs base" figures were
+  99.7%, 95.8% and 99.9% for the L8 S.)
+- **The extra body is still nearly the whole effect.** An L5 subagent with three moves is worth +43 to +47 pp over
+  the base team. A graft is worth −20 to +19 pp. Dropping 3 levels moves G vs S by only 0.9–2.3 pp, and dropping the
+  signature changes nothing measurable (0.0–0.5% either way).
+- **The bible's spin-up rule now holds in this target's setup.** The spun-up subagent keeps its 3 other moves, and
+  its deck has no signature card (bible:250). The engine still does not enforce the rule: validation accepts a
+  subagent that lists its signature, and the archetypes' `subagent()` builder still gives all 4 moves. Enforcement
+  belongs to distillation (bible milestone 8).
 - **The Off-By-Wasp graft is net negative.** G scores 29.5% against the base team without it.
   - The template's graft card (cooldown 1, placed above `power`) replaces Happy to Help with Off-By-One every other
     round.
@@ -186,7 +217,7 @@ four archetypes under 30%. The worst-matchup target is the one that catches the 
     off-by-one targeting is the likelier cause.
 - The bible's tuning assumption, that a subagent action is worth about 0.6 of a commanded action, never applies in
   these sims. Both sides are Autopilot, and no engine rule discounts a subagent's action, so the extra body acts at
-  full value.
+  full value. That, not the level, is what the L5 result points at (move 5 in (d)).
 
 ### 5. The weakest archetypes are partly weak decks (new)
 
@@ -220,7 +251,7 @@ four archetypes under 30%. The worst-matchup target is the one that catches the 
   - Slopling, with Adversarial Patch.
 
   T3/T4 self-hallucination substitutes the move but never applies the status. Any Search hit cures it.
-- Scratch, each search archetype against the other 19 with 50 seeds per ordered pairing (1,900 battles each):
+- `diagnostics hallu`: each search archetype against the other 19, 50 seeds per ordered pairing (1,900 battles each):
 
   | archetype | battles with own side Hallucinating | with a foe Hallucinating | Ground Truth fires | Citation Needed on a Hallucinating foe fires |
   |---|---|---|---|---|
@@ -232,14 +263,21 @@ four archetypes under 30%. The worst-matchup target is the one that catches the 
   Reasoning-type foes. The "anti-hallucination" identity is not what they play. This is content, not tuning
   (question 2 in (e)).
 
-### 7. The temperature dial passes officially, but cold is favoured across the field (corrected)
+### 7. Cold is favoured across the field; the pooled dial is inconclusive (updated, Ruling 143 I2)
 
-- **Correction to the C3 scaled run (58%, n = 100):** at full scale the official row is 49.8% [47.6, 51.9], a pass.
-- The official setup, mixed-starter-sagelet, is one of the most temperature-neutral teams. Scratch, T0 vs T4 on all
-  20 archetypes (500 battles each, both sides pooled): **T0 scores 54.5% [53.6, 55.5] on average**, at the band edge.
-  - Three archetypes sit clearly outside the band: search-anti-hallu-embeddingo 67.9%, speed-rush-blitzr 64.6% and
-    open-swarm-slopling 64.4%.
-  - Only memory-stall-deprecatter leans hot (45.8%, interval to 50.2%). T4 is never clearly better.
+- **C5:** the official row measured one archetype, mixed-starter-sagelet: 49.8% [47.6, 51.9], a pass. That corrected
+  the C3 scaled 58% (n = 100). But mixed-starter-sagelet is one of the most temperature-neutral teams.
+- **Fix wave: the official row now pools all 20 archetypes**, each at T0 against its own T4 mirror, 50 seeds per
+  side assignment (2,000 battles), as first mover does. It scores **54.8% [52.6, 56.9]: inconclusive**. The point is
+  just inside the band, but the interval reaches past 55%.
+- **The per-archetype sweep** (targets' diagnostic rows, 500 battles each, its own seeds) averages **56.0%**. 9 of
+  20 archetypes have a point above 55%, and 5 of them have their whole interval above it:
+  - open-swarm-slopling 67.8%, speed-rush-blitzr 66.4% and search-anti-hallu-embeddingo 64.8% are the outliers
+    (C5's scratch sweep: 64.4%, 64.6% and 67.9%);
+  - speed-rush-graft 61.6% and reasoning-nuke-sagelet 60.4% follow.
+
+  Only memory-stall-deprecatter leans hot (46.8% [42.5, 51.2]); T4 is never clearly better. The C5 scratch sweep
+  (`diagnostics temp`, other seeds) averaged 54.5% [53.6, 55.5].
 - The likely cause is T4's −15 accuracy and 12% self-hallucination against "nearly flat" expected damage. The super-
   effective ×1.25 rider does not make up for them.
 
@@ -299,23 +337,32 @@ the command that verifies it.
 
 4. **Temperature table, T4 row: accuracy −15 → −10** (the alternative is self-hallucination 12% → 8%).
    - Cost: one number.
-   - Leverage: the field-wide cold edge (T0 54.5% average; 64–68% for three archetypes). The official row already
-     passes.
-   - Expected: the field average moves toward 50–52%, and the three outliers come back toward the band.
-   - Verify: the targets temperature-dial row, plus a per-archetype T0-vs-T4 sweep. The sweep is the ~15-line scratch
-     loop behind finding 7; it is worth promoting into `targets` as extra rows.
+   - Leverage: the field-wide cold edge. The pooled official row is 54.8% (inconclusive), the sweep averages 56.0%,
+     and three archetypes sit at 65–68%.
+   - Expected: the pooled row (54.8%) and the sweep average (56.0%) move toward 50–52%, and the three outliers come
+     back toward the band.
+   - Verify: the targets temperature-dial row (now pooled over all 20 archetypes) and its 20 sweep diagnostic rows,
+     which `targets` now reports (Ruling 143 I2).
 
-5. **The graft rule and the spin-up rule** (graft vs spin-up, 0.1–0.4%).
-   - 5a. Graft move power 100% → 130%. This is the bible's own "graft ≈ 1.3× a basic Skill"; today a graft is
-     exactly its signature. Cost: one rule. Expected: small; it lifts G against the base team, but it cannot close
-     a 46–50 pp body-count gap.
-   - 5b. Make spin-up match the bible: no signature at full power, three moves plus a passive echo. That is a
-     validation rule plus the sim's `subagent()` builder. Expected: about 0 on this target (scratch: 0.0–0.5%), but
-     it removes a content mismatch before tuning.
-   - 5c. The lever that can actually move the target is the spun-up subagent's entry level, for example distilled
-     subagents enter below the orchestrator's level. That is a progression rule, and so a product call (question 6
-     in (e)).
-   - Verify all three with the targets graft-vs-spin-up rows.
+5. **The graft and spin-up values** (graft vs spin-up: C5 0.1–0.4%; with Ruling 145's L5 spin-up 1.1–2.1%).
+   - 5a. **Raise the content value of the grafted signatures, not a graft multiplier.** Bible:250 says a graft is the
+     species' signature "as a Skill at 100% power". The "graft about 1.3× a basic Skill" line is a target for what
+     a signature should be worth against a basic Skill, not a damage multiplier. So the tunable is each grafted
+     signature's own numbers (power, cost, accuracy, rider), measured against the orchestrator's basic Skills.
+     Off-By-One's targeting comes first: it makes that graft net negative (finding 4). Cost: per-move content edits.
+     Expected: small. It lifts G against the base team, but it cannot close a 43–47 pp body-count gap.
+   - 5b. **Done in the target setup (Ruling 143):** S's spun-up subagent drops its signature and keeps its 3 other
+     moves (bible:250). Measured effect: none (0.0–0.5%). Enforcing the rule in validation and in the archetypes'
+     `subagent()` builder belongs to distillation (bible milestone 8). It would change archetype legality, so it is
+     not done here.
+   - 5c. **Decided, Ruling 145:** a spun-up subagent joins at the defeated wild model's level. The target's S is L5,
+     a mid-Deprecated-Forest wild level. Measured effect: small (G vs S 1.1–2.1%, against 0.0–0.5% for S at L8). The
+     level gap is not the lever.
+   - 5d. **What can still move the target** is the value of the extra body's action. One option is the bible's own
+     "subagent action ≈ 0.6 of a commanded action" assumption made real, for example a subagent damage or accuracy
+     discount on Autopilot. Another is a larger spin-up grid cost. Both are rules changes, and so for Travis
+     (question 6 in (e)).
+   - Verify all of them with the targets graft-vs-spin-up rows and `pnpm --filter @latentia/sim diagnostics graft`.
 
 6. **Distilled Strike (Blitzr's Skill): cost 1 → 2, or power 75 → 65.**
    - Cost: one number.
@@ -333,10 +380,12 @@ the command that verifies it.
      floor** (4) is not a lever at L8: grid headroom does not correlate with winning (r = −0.13). The bible's L1
      headroom question needs an L1 field, which this pass does not have.
 
-**Not a tunable, for the controller: the official triangle row's partner.** The plan-mandated Tokenibble partner
-measures "starter + Speed intern" rather than the starter triangle. Option A is to keep it, accepting that the
-intern's type is part of the starter experience. Option B is to give the official row a type-neutral partner, or
-none. Either way, the solo row should stay next to it.
+**Decided, not a tunable: the official triangle row's partner (Ruling 144).** The plan-mandated Tokenibble partner
+measures "starter + Speed intern" rather than the bare starter triangle. Travis chose option A: keep Tokenibble as
+every starter's partner ("Tokenibble is perfect"), so the intern's type is part of the starter experience. The solo
+row stays next to it as a diagnostic row in `targets` (Ruling 143 I1). Tuning the starter triangle therefore means
+tuning starter + Tokenibble. Move 1 (chart magnitude) is still the main lever, and the solo rows show how much of
+the gap is type alone.
 
 ## (e) Product questions for Travis
 
@@ -367,9 +416,12 @@ These are content decisions, not tuning.
    deck never earns the +15%. Should ghosts be able to?
 5. **The subagent deck cap of 12.** It is flat for Phase C (Ruling 123). Archetype Autopilot decks follow the
    per-version sizes 6/8/10/12 (Ruling 121). Should subagent decks scale per version too?
-6. **What "graft vs spin-up 45–55%" should compare.** At equal level the extra body wins about 99% of the time. Is a
-   freshly spun-up subagent meant to enter at the orchestrator's level? Or should the target compare graft against
-   a lower-level spin-up, or at equal grid cost? This decides whether 5a–5c above can ever pass the target.
+6. **What "graft vs spin-up 45–55%" should compare: partly decided (Ruling 145).** At equal level the extra body
+   won about 99% of the time (C5), so Travis decided that a spun-up subagent joins at the defeated wild model's level,
+   not the orchestrator's. The target's S is now L5. It still wins 98–99% (finding 4): level is not the lever. The
+   open part of the question is whether the target should hold an extra body's action to the bible's 0.6 value
+   (move 5d), compare at equal grid cost, or accept that spin-up is the stronger choice and tune the graft's value
+   (move 5a) for the cases the bible names ("odd gaps", "a counter").
 7. **The field's type mix.** Eight of 17 slice species carry Code, because the first gym is Code (Ruling 131). Should
    one or two mono-Code species be re-typed, or should a second Memory or Search species join the slice? Or is the
    Code-heavy early field intended, with the chart magnitude (move 1) carrying the fix?

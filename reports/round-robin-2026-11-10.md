@@ -1,11 +1,14 @@
-# round-robin — 2026-11-08
+# round-robin — 2026-11-10
 
 - engine: `@latentia/engine` 0.3.0
 - command: `pnpm sim round-robin --seeds 1000`
+- seed scale: 1000 (seeds per ordered pairing)
+- content fingerprint: 16228d6128370c89 (FNV-1a 64 of the canonical JSON of ARCHETYPES and the target setups)
+- git: 269f0a9aea0cc108b1c93c939767ecfb89277235 (clean)
 - seeds: 1,000 seeds per ordered pairing
 - pairings: 20 archetypes → 190 unordered pairings → 380 ordered pairings
 - battles: 380,000
-- wall time: 438.9 s
+- wall time: 420.0 s
 
 ## Fight length
 

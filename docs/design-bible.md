@@ -248,6 +248,7 @@ Precedents support rewarding performance at capture and charging power in space.
 | | **Graft** (move into the orchestrator) | **Spin up** (new subagent) |
 |---|---|---|
 | You get | The species' signature move as a Skill at 100% power | The creature with 3 moves and a passive; the signature becomes a weaker passive echo |
+| Level | — | Joins at the level of the wild model you beat, not the orchestrator's |
 | Control | You aim it every turn | Acts on its own from its deck |
 | Space | Irregular 3–4 cell shape | 2×2 slot plus adjacent cards |
 | Growth | Static; can be fine-tuned +1 tier with currency | Levels, evolves, gains card slots |
