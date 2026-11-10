@@ -261,7 +261,7 @@ Fix round 2 renamed card ids only, so the content fingerprint is now a7b116a0136
 
 - One engine-content number per candidate. Each candidate is screened with `pnpm sim targets --seeds-scale 0.1 --tag scratch-d4-<id>`, compared row by row against a 0.1-scale run of the current kept state (the same seeds, so the comparison is paired). Full-scale `pnpm sim targets` confirms a candidate before it is kept, and before the next candidate is screened. Heavy jobs ran one at a time, in the background, with logs.
 - **Keep rule.** A change is kept only if its own target moves toward its band and no other target leaves its band (a pass or inconclusive becoming a fail). For the 20-row vs-field target, "toward" means the summed excess over 55% (Σ max(0, point − 55) over the 20 rows) falls, or a failing row comes into band, with no row becoming a fail.
-- **Screen-scale noise.** At scale 0.1 the first-mover row is 1,000 mirror battles; it reads 48.1% there against 51.1% at full scale, so its 0.1 "fail" flags are noise. First mover is judged at full scale only, where every kept change left it at 51.1–51.2%.
+- **Screen-scale noise.** At scale 0.1 the first-mover row is 1,000 mirror battles; it reads 48.1% there against 51.1% at full scale, so its 0.1 "fail" flags are noise. First mover is judged at full scale only, where it stayed in band after every kept change (51.1–51.2% for K1–K3, 50.8% after K4).
 - **Full-seed dial.** A scratch script (outside the repo) re-runs the official temperature-dial row with its exact `targets:temperature-dial:<id>` labels and 50 battles per side (2,000 battles, the full-scale row), plus the mean of the 20 sweep rows on their own labels. It reproduces the targets row exactly (56.0% at K1 in both).
 - **Blowouts.** The coordinator's priority for this pass is "no matchup at or near 100%" and fight length. `pnpm sim round-robin --seeds 200 --tag scratch-d4-rr-<state>` (200 battles per ordered pairing, 400 per unordered pairing) counts the unordered pairings at or beyond 99/1, 95/5, 90/10 and 80/20.
 - The content fingerprint in the reports (FNV-1a of ARCHETYPES and the target setups) does not cover engine content, so every D4 scratch report carries a7b116a0136a651b. The engine version stays 0.4.0 in them.
@@ -709,3 +709,110 @@ D4 stops at four kept changes, inside both the eight-change cap and the coordina
 - **Temperature dial.** 55.7%, 0.7 pp out. Every T4 buff that reaches the band lifts the T4-native speed-rush-agentoad over 55%.
 - **Off-By-Wasp graft.** Blocked by its targeting, not its value.
 - **Worst matchup.** Each archetype's worst pairing is a type blowout and did not move.
+
+### D4 summary: verdicts before and after (engine 0.4.0 at 9af6141 → 0.4.1 at 0483c65)
+
+Kept changes (each confirmed at full scale and committed with its log entry): K1 T4 accuracy −15 → −10 (3a4d316); K2 Cosine Sniff 70 → 55 (43fdffa); K3 Swarm of Fine-Tunes 20 → 15 per hit (6d833d4); K4 Deprecatter Robustness 45 → 60 (7e23211). Version bump and goldens: 0483c65.
+
+Final report: `pnpm sim targets` at full scale on 0483c65 (clean), engine 0.4.1, fingerprint a7b116a0136a651b, 478.6 s (`reports/targets-2026-11-10.md`, overwriting the D3 report of the same date). It reproduces the K4 confirmation run row for row. Before is the baseline run on 9af6141.
+
+| target | band | before (0.4.0) | after (0.4.1) | verdict |
+|---|---|---|---|---|
+| Any archetype vs the field | ≤ 55% | 12 pass, 8 fail; excess 87.9 pp | 14 pass, 6 fail; excess 74.7 pp | fail → fail |
+| Worst single matchup | ≥ 30% | 0 pass, 20 fail | 0 pass, 20 fail | fail → fail |
+| Starter triangle | 55–65% | 99.3 / 91.2 / 100.0 | 99.3 / 91.2 / 100.0 | fail → fail (blocked) |
+| Temperature dial | 45–55% | 57.8% | 55.7% | fail → fail |
+| Graft worth taking | ≥ 55% | 71.5 / 81.7 / 23.3 | 71.5 / 81.7 / 23.3 | fail → fail (wasp blocked) |
+| Fight length | median 5–8 | 7 | 7 | pass → pass |
+| First mover | 48–52% | 51.1% inconclusive | 50.8% pass | inconclusive → pass |
+
+Every row:
+
+| target | row | before | after | verdict |
+|---|---|---|---|---|
+| vs field (≤ 55%) | speed-rush-blitzr | 66.3% | 67.6% | fail |
+| vs field (≤ 55%) | speed-rush-agentoad | 47.6% | 53.1% | pass |
+| vs field (≤ 55%) | speed-rush-graft | 49.4% | 48.1% | pass |
+| vs field (≤ 55%) | reasoning-nuke-sagelet | 83.5% | 80.4% | fail |
+| vs field (≤ 55%) | reasoning-nuke-hallucinat | 71.3% | 71.6% | fail |
+| vs field (≤ 55%) | open-swarm-forkling | 70.2% | 61.0% | fail |
+| vs field (≤ 55%) | open-swarm-slopling | 57.1% | 50.8% | fail → **pass** |
+| vs field (≤ 55%) | code-lock-spaghettopus | 53.4% | 54.4% | pass |
+| vs field (≤ 55%) | code-lock-nullbeetle | 17.5% | 16.8% | pass |
+| vs field (≤ 55%) | code-lock-cobolt | 31.1% | 31.9% | pass |
+| vs field (≤ 55%) | voice-pressure-parrot | 36.6% | 39.8% | pass |
+| vs field (≤ 55%) | voice-pressure-vibrat | 36.4% | 40.1% | pass |
+| vs field (≤ 55%) | memory-stall-deprecatter | 42.9% | 47.0% | pass |
+| vs field (≤ 55%) | memory-stall-retro | 19.7% | 22.3% | pass |
+| vs field (≤ 55%) | search-anti-hallu-embeddingo | 61.2% | 62.0% | fail |
+| vs field (≤ 55%) | search-anti-hallu-scrapion | 54.5% | 53.3% | pass |
+| vs field (≤ 55%) | mixed-starter-sagelet | 55.6% | 53.5% | fail → **pass** |
+| vs field (≤ 55%) | mixed-starter-blitzr | 48.7% | 48.6% | pass |
+| vs field (≤ 55%) | mixed-starter-forkling | 62.9% | 62.1% | fail |
+| vs field (≤ 55%) | mixed-heisenmoth-tempo | 34.4% | 35.6% | pass |
+| worst matchup (≥ 30%) | speed-rush-blitzr vs open-swarm-forkling | 13.7% | 18.9% | fail |
+| worst matchup (≥ 30%) | speed-rush-agentoad vs memory-stall-deprecatter | 13.4% | 15.7% | fail |
+| worst matchup (≥ 30%) | speed-rush-graft vs open-swarm-forkling | 1.1% | 1.9% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-sagelet vs speed-rush-blitzr | 21.3% | 19.3% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-hallucinat vs speed-rush-blitzr | 27.3% | 26.1% | fail |
+| worst matchup (≥ 30%) | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | open-swarm-slopling vs reasoning-nuke-sagelet | 0.9% | 0.4% | fail |
+| worst matchup (≥ 30%) | code-lock-spaghettopus vs search-anti-hallu-embeddingo | 0.1% | 0.2% | fail |
+| worst matchup (≥ 30%) | code-lock-nullbeetle vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | code-lock-cobolt vs search-anti-hallu-embeddingo | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-parrot vs code-lock-spaghettopus | 16.9% | 19.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-vibrat vs reasoning-nuke-sagelet | 5.9% | 10.4% | fail |
+| worst matchup (≥ 30%) | memory-stall-deprecatter vs search-anti-hallu-embeddingo | 0.1% | 0.5% | fail |
+| worst matchup (≥ 30%) | memory-stall-retro vs search-anti-hallu-embeddingo | 0.3% | 0.6% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-embeddingo vs speed-rush-graft | 4.2% | 4.0% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-scrapion vs search-anti-hallu-embeddingo | 7.7% | 1.8% | fail |
+| worst matchup (≥ 30%) | mixed-starter-sagelet vs speed-rush-graft | 10.4% | 8.4% | fail |
+| worst matchup (≥ 30%) | mixed-starter-blitzr vs mixed-starter-forkling | 14.7% | 14.9% | fail |
+| worst matchup (≥ 30%) | mixed-starter-forkling vs reasoning-nuke-sagelet | 7.8% | 9.7% | fail |
+| worst matchup (≥ 30%) | mixed-heisenmoth-tempo vs reasoning-nuke-sagelet | 0.4% | 1.1% | fail |
+| starter triangle (55–65%) | blitzr (favoured) vs sagelet | 99.3% | 99.3% | fail |
+| starter triangle (55–65%) | sagelet (favoured) vs forkling | 91.2% | 91.2% | fail |
+| starter triangle (55–65%) | forkling (favoured) vs blitzr | 100.0% | 100.0% | fail |
+| temperature dial (45–55%) | T0 vs T4 mirror, pooled | 57.8% | 55.7% | fail |
+| graft worth taking (≥ 55%) | stochastiparrot | 71.5% | 71.5% | pass |
+| graft worth taking (≥ 55%) | nullbeetle | 81.7% | 81.7% | pass |
+| graft worth taking (≥ 55%) | off-by-wasp | 23.3% | 23.3% | fail |
+| fight length (median 5–8) | median rounds | 7 | 7 | pass |
+| first mover (48–52%) | side A vs mirror, pooled | 51.1% | 50.8% | inconclusive → **pass** |
+
+Vs-field rows failing 8 → 6; summed excess over 55% 87.9 → 74.7 pp.
+
+### Blowouts and fight length
+
+| measurement | before | after |
+|---|---|---|
+| 200-seed round-robin, unordered pairings at or beyond 99/1 · 95/5 · 90/10 · 80/20 | 19 · 34 · 57 · 91 (`scratch-d4-rr-base`) | 15 · 26 · 48 · 81 (K4 state, screen b2) |
+| pairings within 40–60 (same runs) | 39 | 45 |
+| `pnpm sim round-robin --seeds 1000` at 0.4.1 (`reports/round-robin-2026-11-10.md`) | n/a: the committed report was D2's, before the D3 decks; its counts were 23 · 41 · 63 · 93 | 14 · 30 · 48 · 79; 43 within 40–60 |
+| median fight length (round-robin) | 7 (p25 6, p75 9) | 7 (p25 6, p75 9, min 2, max 50) |
+| round-cap hits, 380,000 battles | 129 at D2 (pre-D3 decks; not like-for-like) | 210 (0.06%) |
+
+Still at or beyond 99/1 at 0.4.1: the Search teams and the Reasoning nukes against the mono-Code and Memory teams (for example reasoning-nuke-sagelet against open-swarm-forkling and code-lock-nullbeetle, and search-anti-hallu-embeddingo against memory-stall-retro and code-lock-cobolt).
+
+### Timing (criterion 7) and gates
+
+| measurement | D3 | D4 final |
+|---|---|---|
+| `time pnpm sim round-robin --seeds 1000` | 461.2 s (D2 report) | 422.1 s (report), 7 min 3 s by `time` |
+| round-robin inside `pnpm sim targets` | 572.9 s | 442.7 s |
+| `pnpm sim targets` wall time | 622.7 s | 478.6 s |
+| bench deck-driven / player-commanded (gate 1.2 ms) | 0.883 / 0.552 ms (D2) | 0.797–1.001 / 0.465–0.515 ms over three runs |
+
+Criterion 7 holds: 422 s against the 600 s limit. This machine's run-to-run variance is large; the bench ranged 0.80–1.00 ms in three consecutive runs. Gates on 0483c65: lint, typecheck and `pnpm test` (engine 1,282 and sim 206 tests) pass, and the `FUZZ_N=10000` fuzz test passes. The criterion-5 broken-deck scenario passed unchanged, so it needed no re-tune, and the headline fire-rate floors all hold.
+
+### Goldens
+
+Re-recorded once, at the 0.4.1 bump. With the four old values put back and the engine at 0.4.0, all 49 golden tests passed against the 0.4.0 goldens, so the four content values are the only cause. 17 of 37 expectedHash values changed (listed in 0483c65's message). The other 20 changed only their `engineVersion` field, because the hash excludes the version.
+
+### Still open (for D5 and Travis)
+
+- **Starter triangle (99.3 / 91.2 / 100.0).** Needs coverage moves or a ruling: single starter numbers redistribute the cycle without lowering it.
+- **Vs field.** Six failing rows: reasoning-nuke-sagelet 80.4%, reasoning-nuke-hallucinat 71.6%, speed-rush-blitzr 67.6%, search-anti-hallu-embeddingo 62.0%, mixed-starter-forkling 62.1%, open-swarm-forkling 61.0%. The six mostly beat each other's victims, and the mid teams sit at 53–54.4%. The remaining gap is the Code-heavy field meeting the chart.
+- **Temperature dial (55.7%).** Each T4 buff that would reach the band lifts the T4-native speed-rush-agentoad over 55%. A dial fix probably needs agentoad's own numbers first (Agentoad HP 65 → 55 screened well, c28, but was not confirmed).
+- **Off-By-Wasp graft (23.3%).** Its targeting meets the template's `lowestHpFoe` aim; this is a template or ruling question, not a content value.
+- **Embeddingo card.** Its `compact-speed-type` card (D3 note) was left alone: it is an archetype deck card, and D3 settled the decks.
