@@ -3,6 +3,7 @@
 // right and are darkened, standing in for back sprites in v0.
 
 import Phaser from 'phaser';
+import { assetUrl } from '../asset-url.js';
 import { FABLE_SHEETS, hasSheet, placeholderArt, PLACEHOLDER_FRAME_MS, PLACEHOLDER_FRAMES } from '../battle/creature-art.js';
 
 const sheetKey = (species: string) => `creature.${species}`;
@@ -13,7 +14,7 @@ const BACK_TINT = 0xa8b0c8;
 /** Boot's preload: the three Fable idle sheets. */
 export function preloadCreatureSheets(scene: Phaser.Scene): void {
   for (const [species, s] of Object.entries(FABLE_SHEETS)) {
-    scene.load.spritesheet(sheetKey(species), s.file, { frameWidth: s.frameSize, frameHeight: s.frameSize });
+    scene.load.spritesheet(sheetKey(species), assetUrl(s.file), { frameWidth: s.frameSize, frameHeight: s.frameSize });
   }
 }
 

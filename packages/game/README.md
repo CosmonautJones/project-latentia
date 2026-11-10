@@ -9,7 +9,8 @@ P1–P5 of the playable-v0 plan (`docs/superpowers/plans/2026-11-10-playable-v0.
 
 ## The v0 journey (10–15 minutes)
 
-1. **Title**: New Game, or Continue when a save exists.
+1. **Title**: New Game, or Continue when a save exists. With a save, New Game asks "START OVER?" first (the cursor
+   opens on CANCEL; B backs out), so one tap never erases a run.
 2. **Lab**: Prof. Epoch's intro, then pick Sagelet (Reasoning), Blitzr (Speed) or Forkling (Open).
 3. **Rival**: Kip brings the counter-type starter, one on one at L5. Losing restarts the fight.
 4. **Walk** out of the lab, through Localhost, to the Deprecated Forest trailhead (a sign, an NPC).
@@ -45,7 +46,8 @@ The root `pnpm lint`, `pnpm typecheck` and `pnpm test` include this package.
 download is blocked here (the engine's browser tests do the same). In CI (`CI` set) they use Playwright's own
 Chromium, which needs `pnpm --filter @latentia/game exec playwright install chromium` first. `e2e` builds with
 `vite build --mode test` into `dist-test/` and serves it with `vite preview`; it also runs the production build into
-`dist/`, which `test/e2e/dist.spec.ts` checks and serves from a nested path. The tests fail on any console error or
+`dist/`, which `test/e2e/dist.spec.ts` checks and serves from a nested path, and the single-file build into
+`dist-single/`, which `test/e2e/dist-single.spec.ts` plays in a sandboxed iframe. The tests fail on any console error or
 uncaught exception.
 
 ## Production build and publishing
@@ -62,6 +64,29 @@ any path, such as a Claude artifact:
 `test/e2e/dist.spec.ts` guards all of this: it greps the bundle, then serves `dist/` from `/some/sub/dir/` and plays
 from the title into the lab and the first battle with no console errors, no failed requests and nothing fetched from
 outside that path.
+
+### The single-file build (for a Claude artifact)
+
+`pnpm --filter @latentia/game build:single` writes **one self-contained `packages/game/dist-single/index.html`**
+(about 1.6 MB, 470 kB gzipped). Publish that file. The normal `build` is unchanged.
+
+Why: an artifact host may show the page in `<iframe sandbox="allow-scripts">` without `allow-same-origin`, which
+gives it an opaque origin. There, Vite's `<script type="module" crossorigin>` and stylesheet links, and Phaser's XHR
+loads of the sprite PNGs, are CORS requests; a host that sends no `Access-Control-Allow-Origin` header gives a blank
+page. The single file needs no second request at all:
+
+- `vite build --mode single` adds `vite-plugin-singlefile`: the JS is one inline module script (no chunk imports) and
+  the CSS one inline `<style>`.
+- Every file in `public/assets/` is passed to the code as a data: URI (`__LATENTIA_INLINE_ASSETS__`, read by
+  `src/asset-url.ts`), so Phaser's loader decodes the sheets from memory through an image element and never uses XHR.
+  The favicon is a data: URI too, and nothing from `public/` is copied.
+- In that sandbox `localStorage` throws, so the game plays with saves kept in memory and shows the one
+  "SAVES UNAVAILABLE" notice.
+
+`test/e2e/dist-single.spec.ts` guards it: the output is one file under 16 MiB with no `src`/`href` but data: URIs;
+it plays from the title into the lab and the first battle from a plain nested path and inside
+`<iframe sandbox="allow-scripts">` on a phone, from a server that sends no CORS headers, with no console errors, no
+failed requests and no request but the HTML itself.
 
 ## Controls
 
@@ -202,7 +227,7 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
   its rounds, moves and fired cards (the last 40 fights; the totals keep counting). The end card shows them with the
   virtual water receipt (`journey/receipt.ts`: integer functions of rounds and moves, obviously fake).
 - **The end card persists.** BACK TO TITLE keeps the save at the end card, so Continue shows it again (receipt
-  included) and NEW GAME starts a fresh run.
+  included) and NEW GAME, after its START OVER? confirm, starts a fresh run.
 - **Saves.** These go in localStorage under `latentia.save.v0`, as `{ schemaVersion: 3, engineVersion, progress,
   hintsSeen }`, at every journey step (and when a first-time hint is shown). Versions: **v1** (P1) progress only;
   **v2** (P2) adds `hintsSeen`; **v3** (P4) adds `trainerBeaten`, `lastFight` and `telemetry` to the progress. `progress` holds the step, starter,
