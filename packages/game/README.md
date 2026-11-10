@@ -1,9 +1,23 @@
 # @latentia/game
 
-The Latentia game client: Phaser 4, TypeScript (strict) and Vite. It uses only `@latentia/engine`'s public API.
-It covers **P1–P4** of the playable-v0 plan (`docs/superpowers/plans/2026-11-10-playable-v0.md`): the shell, the
-battle scene, the overworld, and the whole journey from the lab to the end card, with the distill choice, the card
-tutorial, Bootcamp Grad's lose → teach → rematch loop and the virtual water receipt.
+**Latentia v0**, the first playable version of Latentia: a satirical creature collector where the creatures are AI
+agents. You command an orchestrator model in turn-based battles, distill a wild model into a subagent, teach it an
+`IF … THEN …` example card, and find out what it does with it. 8-bit art, 320×180, desktop and phone.
+
+The client is Phaser 4, TypeScript (strict) and Vite, and it uses only `@latentia/engine`'s public API. It covers
+P1–P5 of the playable-v0 plan (`docs/superpowers/plans/2026-11-10-playable-v0.md`).
+
+## The v0 journey (10–15 minutes)
+
+1. **Title**: New Game, or Continue when a save exists.
+2. **Lab**: Prof. Epoch's intro, then pick Sagelet (Reasoning), Blitzr (Speed) or Forkling (Open).
+3. **Rival**: Kip brings the counter-type starter, one on one at L5. Losing restarts the fight.
+4. **Walk** out of the lab, through Localhost, to the Deprecated Forest trailhead (a sign, an NPC).
+5. **Wild Tokenibble** (L3) jumps out of the unindexed-data patch.
+6. **Distill** it: **Spin up** (a subagent with one card slot) or **Graft** (its Token Nibble on your grid).
+7. **Card tutorial** (spin-up only): teach Tokenibble one of three example cards.
+8. **Bootcamp Grad**: lose, read what Tokenibble kept doing (or the graft hint), swap the card, rematch.
+9. **End card**: turns, cards fired, losses → swaps → rematches, and the virtual water receipt (satire).
 
 ## Run it
 
@@ -16,18 +30,38 @@ pnpm --filter @latentia/game build        # production build into packages/game/
 pnpm --filter @latentia/game preview      # serve the production build
 pnpm --filter @latentia/game test         # Vitest unit tests (pure modules only)
 pnpm --filter @latentia/game typecheck
-pnpm --filter @latentia/game e2e          # test build + Playwright smoke tests (Chromium)
-pnpm --filter @latentia/game screenshots  # re-shoot test/screenshots/*.png (add `-- --grep journey` for P4's only)
+pnpm --filter @latentia/game e2e          # test build + production build + Playwright tests (Chromium)
+pnpm --filter @latentia/game screenshots  # re-shoot test/screenshots/*.png (add `-- --grep journey` for the journey only)
 pnpm --filter @latentia/game measure-loop # the core-loop balance measurement (200 seeds; numbers in content/trainers.ts)
 ```
+
+`CPU_THROTTLE=4 pnpm --filter @latentia/game exec playwright test mobile -g "frame rate"` prints the phone frame rate
+with the CPU slowed 4× (the normal run asserts at least 55 fps unthrottled; measured 59.7 on the overworld and 60.3 in
+battle at 390×844, DPR 3, and 58.8 / 59.7 at 4×).
 
 The root `pnpm lint`, `pnpm typecheck` and `pnpm test` include this package.
 
 **Playwright.** Locally, the tests run on Google Chrome through the `chrome` channel, because the Playwright browser
 download is blocked here (the engine's browser tests do the same). In CI (`CI` set) they use Playwright's own
 Chromium, which needs `pnpm --filter @latentia/game exec playwright install chromium` first. `e2e` builds with
-`vite build --mode test` into `dist-test/` and serves it with `vite preview`. The tests fail on any console error
-or uncaught exception.
+`vite build --mode test` into `dist-test/` and serves it with `vite preview`; it also runs the production build into
+`dist/`, which `test/e2e/dist.spec.ts` checks and serves from a nested path. The tests fail on any console error or
+uncaught exception.
+
+## Production build and publishing
+
+`pnpm --filter @latentia/game build` writes a static site to `packages/game/dist` (8 files, about 1.64 MB: Phaser is
+1.39 MB of it, 372 kB gzipped; the game 222 kB, 72 kB gzipped). It is made to be published as one static page from
+any path, such as a Claude artifact:
+
+- `base: './'` in `vite.config.ts`: every asset URL is relative, so it runs from a sub-directory.
+- No network requests beyond its own files: no CDNs, no web fonts (the font is drawn in code), no analytics.
+- The dev hook and the test-only probes are compiled out (`import.meta.env.DEV || MODE === 'test'` folds to false).
+- A phone viewport (no pinch or double-tap zoom) and the title `Latentia v0`.
+
+`test/e2e/dist.spec.ts` guards all of this: it greps the bundle, then serves `dist/` from `/some/sub/dir/` and plays
+from the title into the lab and the first battle with no console errors, no failed requests and nothing fetched from
+outside that path.
 
 ## Controls
 
@@ -41,7 +75,10 @@ All input goes through one action stream (`src/input/hub.ts`) of six buttons: up
 
 - Keys are matched by physical position (`KeyboardEvent.code`), so WASD/ZX sit in the same place on any layout.
   Chords with Ctrl, Cmd or Alt are left to the browser.
-- Tapping or clicking a menu item moves the cursor there and confirms it.
+- Tapping or clicking a menu item moves the cursor there and confirms it. On a phone every menu (title, choices,
+  battle commands, the end card) is a row of DOM buttons in the band, at least 44×44 CSS px, in both orientations.
+- In battle, a move, a temperature notch or a target takes two taps on touch: the first selects it and shows its
+  hint, the second commits. Keys and the D-pad act at once.
 - In dialogue, A while a page is typing finishes it at once; A on a finished page turns it. Holding A or B types
   4× faster. The battle's "why?" popup also closes on B.
 - Held buttons are released when the window loses focus or the page is hidden.
@@ -54,11 +91,16 @@ game pixel is an exact square of device pixels.
 
 - **Landscape** (the viewport is wider than it is tall): the largest integer scale that fits, centred and
   letterboxed. For example, 1920×1080 gets 6× with no bars, and 1366×768 gets 4× (1280×720 at 43, 24). On touch
-  devices the scale steps down until 150 CSS px are free on each side, and the D-pad and A/B sit there (844×390 at
-  DPR 3 gets 5×); only when no scale leaves that room do they overlay the corners at partial opacity.
+  devices (touch landscape) the D-pad and A/B sit in 150 CSS px side margins, and the game sits on top at the largest
+  scale that also leaves a **menu band** of at least 140 CSS px under it, between the controls (844×390 at DPR 3 gets
+  4×, 427×240, with a 150 px band). Menus there are band buttons in two or three columns. If no scale leaves room for
+  a band, the menus stay on the canvas; if none leaves the side margins either, the controls overlay the corners.
 - **Portrait**: the screen sits at the top, scaled to the width while leaving at least 200 CSS px below it. Below
-  it is a DS-style **bottom band** holding the touch controls, plus an empty `#band-panel` reserved for battle menus
-  and the grid editor.
+  it is a DS-style **bottom band** holding the touch controls and `#band-panel`, where every menu goes as DOM
+  buttons. A choice panel then keeps only its title and text on the canvas; each band button carries the label and
+  a smaller detail line, so nothing shows twice. `layout.menus` (`canvas` or `band`) says which.
+- **Rotation** keeps the state: a menu keeps its cursor and an armed two-tap move, a dialogue stays up, and keys keep
+  working; choice panels rebuild for the new layout (`test/e2e/mobile.spec.ts`).
 - The layout is recomputed on resize, orientation change and DPR change, at most once per frame
   (`src/layout/apply.ts`). Phaser runs in `FIT` mode inside a parent that is sized to the exact integer rect.
 - The touch controls are DOM buttons (56–64 CSS px). Their labels are drawn from the game font as inline SVG.
@@ -93,9 +135,9 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
   acted), **LOG** (the last 40 battle lines) and a 1×/2× speed toggle. B backs out of every submenu.
 - **Input**: keys and the D-pad act at once; on touch and pointer a move, notch or target takes two taps (the first
   selects it and shows its hint, the second commits). A click or tap on the screen advances dialogue.
-- **Layout**: in landscape the menus are on the canvas; in portrait they are DOM buttons (44 CSS px rows, scrolling
-  on short phones) in the bottom band (`src/battle-ui/band-menu.ts`), drawn in the game font. Touch landscape steps
-  the game scale down so the D-pad and A/B sit beside the game, not over it.
+- **Layout**: on desktop the menus are on the canvas; on phones (portrait, and touch landscape when the band fits)
+  they are DOM buttons in the band (`src/battle-ui/band-menu.ts`, 44 CSS px rows, scrolling on short screens), drawn
+  in the game font, while the canvas box keeps the prompt and the highlighted move's hint.
 - **First-time hints** explain PROMPT, context (CX, COST, Drift and the DR chip), the dial, WHY? and the intent
   preview (taught at the first battle with your own subagent), once each; the save remembers them (schema v2).
 - **Playback**: `src/battle/event-steps.ts` maps every engine event type to UI steps (a text fallback at least;
@@ -151,8 +193,10 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 - **The core loop (lose → teach → rematch).** Every Bootcamp Grad result opens the debrief (`scenes/debrief.ts`,
   `journey/debrief.ts`). After a loss on the spin-up path it shows what Tokenibble kept doing, from its CardTraces in
   plain words (`journey/kept-summary.ts`), and offers a card swap then a rematch, or a rematch as is. After a win it
-  offers the end card, or an optional "try a different card?" replay. On the graft path it gives a hint about the
-  grafted move and a rematch. Each rematch plays the next trainer seed. The end card opens once the Grad has been
+  offers the end card, or an optional "try a different card?" replay. On the graft path it gives a per-starter hint
+  that names the grafted Token Nibble (`GRAFT_HINTS` in `content/journey-text.ts`: use it once 4 or fewer cells are
+  free; for Blitzr, whose hits all cost 1 anyway, turn the dial to T0), and a rematch. The hint is measured: following
+  it takes the graft path from 91.5/30.0/88.0% to 99.0/51.5/93.0% (`measure-loop`). Each rematch plays the next trainer seed. The end card opens once the Grad has been
   beaten, so a lost replay can still finish.
 - **Telemetry** (`flow/telemetry.ts`) stays local, in the save: trainer losses, card swaps, rematches, and per fight
   its rounds, moves and fired cards (the last 40 fights; the totals keep counting). The end card shows them with the
@@ -160,13 +204,16 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 - **The end card persists.** BACK TO TITLE keeps the save at the end card, so Continue shows it again (receipt
   included) and NEW GAME starts a fresh run.
 - **Saves.** These go in localStorage under `latentia.save.v0`, as `{ schemaVersion: 3, engineVersion, progress,
-  hintsSeen }`, at every journey step (and when a first-time hint is shown). `progress` holds the step, starter,
+  hintsSeen }`, at every journey step (and when a first-time hint is shown). Versions: **v1** (P1) progress only;
+  **v2** (P2) adds `hintsSeen`; **v3** (P4) adds `trainerBeaten`, `lastFight` and `telemetry` to the progress. `progress` holds the step, starter,
   distill choice, Tokenibble's card, whether the Grad is beaten, the last trainer fight (for the debrief) and the
   telemetry. Continue resumes at the start of the saved step; a trainer fight resumes on the seed it had reached.
   - Corrupt saves and saves from a newer schema are ignored, and the game starts fresh.
   - Older schemas upgrade through `MIGRATIONS` in `src/save/save.ts`, one version at a time: v1 → v2 adds
     `hintsSeen`; v2 → v3 adds the trainer result (a v2 save at the end card counts as beaten) and empty telemetry.
-  - If storage is unavailable (for example in a sandboxed frame), the game plays on with an in-memory store.
+  - Every storage call is guarded (`src/save/browser-storage.ts`). If localStorage is blocked, missing, full or
+    starts throwing (a sandboxed frame, Safari private mode), the game plays on with an in-memory store and shows a
+    small "SAVES UNAVAILABLE" notice once; Continue then works only within the tab.
 - **Bootcamp Grad's tuning** lives in `src/content/trainers.ts`, with the measured win rates and the counterfactuals.
   `scripts/measure-loop.ts` re-measures them: a naive player (its strongest affordable damaging move, T2) through the
   engine's `simulate`, over seeds 0-199 per starter. `test/unit/loop-balance.test.ts` runs the same with fewer seeds
@@ -182,7 +229,8 @@ In dev and in the test build only, `window.__latentia` exposes:
   for reading state;
 - `press(button)`, `pick(menuId, index)` and `send(flowEvent)` for injecting actions.
 
-Production builds don't contain it.
+Production builds don't contain it: `main.ts` installs it behind the static `import.meta.env.DEV || MODE === 'test'`
+check, which the production build folds away; `test/e2e/dist.spec.ts` greps the bundle to prove it.
 
 ## Credits
 
