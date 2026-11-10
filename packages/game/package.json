@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "e2e": "vite build --mode test --outDir dist-test && playwright test",
-    "screenshots": "vite build --mode test --outDir dist-test && SCREENSHOTS=1 playwright test screenshots"
+    "screenshots": "vite build --mode test --outDir dist-test && SCREENSHOTS=1 playwright test screenshots",
+    "measure-loop": "tsx scripts/measure-loop.ts"
   },
   "dependencies": {
     "@latentia/engine": "workspace:*",
@@ -20,6 +21,7 @@
     "@playwright/test": "1.65.0",
     "@types/node": "^22",
     "vite": "^7.3.7",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "tsx": "^4.0.0"
   }
 }

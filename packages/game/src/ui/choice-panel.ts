@@ -1,0 +1,140 @@
+// A framed panel of choices drawn over a scene: an optional title and body text, then rows that each have a label and
+// an optional one-line (wrapped) detail under it. Up/down move the ▶ cursor, A or a tap picks, B cancels when the
+// panel allows it. Used for the starter pick, the distill choice, the card tutorial, the debrief and its card swap.
+// The menu state goes to the dev hook's `menu()` like MenuList's, and the text to `panel()`.
+
+import Phaser from 'phaser';
+import type { App } from '../app.js';
+import { GAME_WIDTH } from '../layout/compute.js';
+import { CELL_HEIGHT, CELL_WIDTH } from '../text/font-sheet.js';
+import { addPixelText } from '../text/phaser-font.js';
+import { wrapText } from '../text/wrap.js';
+import { createMenu, menuInput, type MenuState } from './menu.js';
+import { COLOR } from './palette.js';
+
+export interface ChoiceItem {
+  readonly label: string;
+  readonly detail?: string;
+}
+
+export interface ChoicePanelOptions {
+  readonly id: string;
+  readonly title?: string;
+  /** Text above the choices (each entry starts a new paragraph). */
+  readonly body?: readonly string[];
+  readonly items: readonly ChoiceItem[];
+  /** Top edge in game px (the panel is full width less a margin, and as tall as its content). */
+  readonly y?: number;
+  readonly onConfirm: (index: number) => void;
+  /** B: omit for a choice that must be made (B then does nothing). */
+  readonly onCancel?: () => void;
+  readonly depth?: number;
+}
+
+/** What the dev hook sees of the open panel. */
+export interface PanelProbe {
+  readonly id: string;
+  readonly title: string | null;
+  readonly body: readonly string[];
+  readonly items: readonly ChoiceItem[];
+}
+
+const MARGIN = 8;
+const PAD = 6;
+const CURSOR = 10;
+const LINE = CELL_HEIGHT;
+const ROW_GAP = 3;
+
+export class ChoicePanel {
+  private state: MenuState;
+  private readonly objects: Phaser.GameObjects.GameObject[] = [];
+  private readonly labels: Phaser.GameObjects.BitmapText[] = [];
+  private readonly rowTops: number[] = [];
+  private readonly cursor: Phaser.GameObjects.BitmapText;
+  private readonly off: () => void;
+  private closed = false;
+
+  constructor(
+    scene: Phaser.Scene,
+    private readonly app: App,
+    private readonly opts: ChoicePanelOptions,
+  ) {
+    this.state = createMenu(opts.id, opts.items.map((i) => i.label));
+    const depth = opts.depth ?? 90;
+    const width = GAME_WIDTH - 2 * MARGIN;
+    const chars = Math.floor((width - 2 * PAD - CURSOR) / CELL_WIDTH);
+    const text = (x: number, y: number, s: string, color: number) => {
+      const t = addPixelText(scene, x, y, s, { color }).setScrollFactor(0).setDepth(depth + 1);
+      this.objects.push(t);
+      return t;
+    };
+    const top = opts.y ?? MARGIN;
+    let y = top + PAD;
+    const left = MARGIN + PAD;
+    if (opts.title) {
+      text(left, y, opts.title, COLOR.amber);
+      y += LINE + 2;
+    }
+    for (const para of opts.body ?? []) {
+      for (const line of wrapText(para, chars + 1)) {
+        text(left, y, line, COLOR.cloud);
+        y += LINE;
+      }
+    }
+    if ((opts.body ?? []).length > 0) y += 4;
+    opts.items.forEach((item, i) => {
+      this.rowTops.push(y);
+      this.labels.push(text(left + CURSOR, y, item.label, COLOR.mist));
+      let rowEnd = y + LINE;
+      for (const line of item.detail ? wrapText(item.detail, chars) : []) {
+        text(left + CURSOR + 6, rowEnd, line, COLOR.steel);
+        rowEnd += LINE;
+      }
+      const zone = scene.add.zone(MARGIN, y - 1, width, rowEnd - y + 2).setOrigin(0).setScrollFactor(0).setDepth(depth + 2).setInteractive({ useHandCursor: true });
+      zone.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
+        if (!this.closed) app.input.pick(opts.id, i);
+      });
+      this.objects.push(zone);
+      y = rowEnd + ROW_GAP;
+    });
+    const frame = scene.add.graphics().setScrollFactor(0).setDepth(depth);
+    const height = y - top + PAD - ROW_GAP;
+    frame.fillStyle(COLOR.cloud).fillRect(MARGIN, top, width, height);
+    frame.fillStyle(COLOR.ink).fillRect(MARGIN + 1, top + 1, width - 2, height - 2);
+    this.objects.push(frame);
+    this.cursor = text(left, 0, '▶', COLOR.amber);
+
+    this.off = app.input.subscribe((a) => {
+      if (this.closed) return;
+      const r = menuInput(this.state, a);
+      this.state = r.menu;
+      this.render();
+      if (r.confirm !== undefined) opts.onConfirm(r.confirm);
+      else if (r.cancel) opts.onCancel?.();
+    });
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
+    this.render();
+  }
+
+  /** The panel's height on screen, for stacking. */
+  get index(): number {
+    return this.state.index;
+  }
+
+  destroy(): void {
+    if (this.closed) return;
+    this.closed = true;
+    this.off();
+    if (this.app.probe.menu?.id === this.state.id) this.app.probe.menu = null;
+    if (this.app.probe.panel?.id === this.opts.id) this.app.probe.panel = null;
+    for (const o of this.objects) o.destroy();
+  }
+
+  private render(): void {
+    if (this.closed) return;
+    this.labels.forEach((l, i) => l.setTint(i === this.state.index ? COLOR.white : COLOR.mist));
+    this.cursor.setPosition(MARGIN + PAD, this.rowTops[this.state.index] ?? 0);
+    this.app.probe.menu = this.state;
+    this.app.probe.panel = { id: this.opts.id, title: this.opts.title ?? null, body: this.opts.body ?? [], items: this.opts.items };
+  }
+}

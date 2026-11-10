@@ -76,7 +76,7 @@ const speciesName = (id: string): string => SPECIES[id as keyof typeof SPECIES]?
 const moveName = (id: string): string => moveDef(id)?.name ?? id;
 
 /** The cells a move costs `c` now: the engine's pending-cost rule (costSet wins, then each costAdd), then Quantized −1. */
-function effectiveCost(c: CreatureState, base: number): number {
+export function effectiveCost(c: CreatureState, base: number): number {
   let cells = base;
   for (const m of c.nextActionMods) if (m.kind === 'costSet') cells = m.cells;
   for (const m of c.nextActionMods) if (m.kind === 'costAdd') cells += m.cells;

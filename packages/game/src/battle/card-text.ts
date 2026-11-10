@@ -85,6 +85,9 @@ function negation(subject: Subject, c: Condition, moveName: MoveNamer): string {
   }
 }
 
+/** Why a card did not fire because its condition was false: "no foe below 50% HP". */
+export const conditionFalseText = (card: Card, moveName: MoveNamer): string => negation(card.subject, card.condition, moveName);
+
 const SKIP_REASONS: Readonly<Record<Exclude<CardSkipReason, 'conditionFalse'>, string>> = {
   insufficientContext: 'not enough free context',
   moveDisabled: 'a status blocks that move',
