@@ -466,3 +466,76 @@ Cosine Sniff 60 on this state gives a full-seed dial of 55.25%, against 55.45% f
 Vs-field rows failing 7 → 6; summed excess over 55% 83.6 → 82.6 pp.
 
 - **Decision:** kept. Vs field: 7 → 6 rows failing (open-swarm-slopling 56.0 → 53.0 now passes; mixed-starter-sagelet inconclusive → pass), excess 83.6 → 82.6 pp; reasoning-nuke-sagelet 82.9 → 80.6. The dial also moves toward its band (56.0 → 55.5). No row left its band. Scrapion, the gatekeeper, falls 53.8 → 52.4, which leaves room for K3. reasoning-nuke-hallucinat rises 70.5 → 71.8 (still a fail; it loses fewer pairings to the Embeddingo teams).
+
+### Candidates on the K2 state (scale 0.1; reference `scratch-d4-s01-k2`, excess 83.1, 6 failing)
+
+| id | change | why this number | excess | vs-field rows failing | left band | decision |
+|---|---|---|---|---|---|---|
+| c21 | Swarm of Fine-Tunes 20 → 15 per hit | see K3 | 83.1 → 76.8 | 6 → 6 | none (scrapion 52.8 → 54.4 and spaghettopus 53.2 → 54.5 become inconclusive) | **kept as K3** |
+| c22 | Hard Fork 70 → 60 | Forkling's 100-accuracy signature | 83.1 → 83.7 | 6 → 6 | none | rejected: open-swarm-slopling −6.3 but forkling only −1.6 and the rest rise |
+| c23 | Leaderboard Flex base 65 → 55 | open-swarm-forkling's top damage (34.4 a battle) | 83.1 → 79.5 | 6 → 6 | none | not taken: c21 is larger; re-screened after K3 (c27, K4 attempt) |
+
+### K3: Swarm of Fine-Tunes 20 → 15 per hit (kept)
+
+- **Change:** `content/moves/open.ts`, Swarm of Fine-Tunes power 20 → 15 per hit. The hit count, 1 + Open allies, is unchanged.
+- **Why 15:** Swarm's identity is that it scales with Open allies. In open-swarm-forkling's three-Open line-up it was 3 × 20 = 60 power at cost 2 and 100 accuracy, a multi-hit that breaks shields and guards one hit at a time, and its 18 + 11 damage a battle sat beside Leaderboard Flex and Hard Fork. At 15 a hit the three-Open swarm is 45 (60 with a fourth Open creature). That keeps the scaling and keeps it below Hard Fork's 70 single hit. It is used only by the three Open-swarm teams (forkling swarm, slopling swarm, mixed-starter-forkling) and the Forkling starter grid's Skill piece. The triangle's role deck never plays it: Hard Fork is the stronger move.
+- Rejected on the baseline state (c4) because scrapion crossed 55%. After K2 lowered scrapion to 52.4%, it no longer does.
+- **Full scale** (`scratch-d4-k3`, 433.5 s), before = K2:
+
+| target | row | before | after | verdict |
+|---|---|---|---|---|
+| vs field (≤ 55%) | speed-rush-blitzr | 67.5% | 67.8% | fail |
+| vs field (≤ 55%) | speed-rush-agentoad | 53.0% | 53.2% | pass |
+| vs field (≤ 55%) | speed-rush-graft | 49.0% | 49.2% | pass |
+| vs field (≤ 55%) | reasoning-nuke-sagelet | 80.6% | 80.6% | fail |
+| vs field (≤ 55%) | reasoning-nuke-hallucinat | 71.8% | 72.0% | fail |
+| vs field (≤ 55%) | open-swarm-forkling | 69.1% | 61.6% | fail |
+| vs field (≤ 55%) | open-swarm-slopling | 53.0% | 51.4% | pass |
+| vs field (≤ 55%) | code-lock-spaghettopus | 53.5% | 54.5% | pass → **inconclusive** |
+| vs field (≤ 55%) | code-lock-nullbeetle | 17.1% | 17.3% | pass |
+| vs field (≤ 55%) | code-lock-cobolt | 32.0% | 32.5% | pass |
+| vs field (≤ 55%) | voice-pressure-parrot | 39.7% | 40.5% | pass |
+| vs field (≤ 55%) | voice-pressure-vibrat | 40.1% | 40.6% | pass |
+| vs field (≤ 55%) | memory-stall-deprecatter | 43.1% | 43.6% | pass |
+| vs field (≤ 55%) | memory-stall-retro | 19.4% | 19.7% | pass |
+| vs field (≤ 55%) | search-anti-hallu-embeddingo | 61.1% | 62.0% | fail |
+| vs field (≤ 55%) | search-anti-hallu-scrapion | 52.4% | 53.8% | pass |
+| vs field (≤ 55%) | mixed-starter-sagelet | 53.0% | 53.7% | pass |
+| vs field (≤ 55%) | mixed-starter-blitzr | 47.9% | 49.1% | pass |
+| vs field (≤ 55%) | mixed-starter-forkling | 62.5% | 62.7% | fail |
+| vs field (≤ 55%) | mixed-heisenmoth-tempo | 34.0% | 34.3% | pass |
+| worst matchup (≥ 30%) | speed-rush-blitzr vs open-swarm-forkling | 14.8% | 18.9% | fail |
+| worst matchup (≥ 30%) | speed-rush-agentoad vs memory-stall-deprecatter | 15.6% | 15.6% | fail |
+| worst matchup (≥ 30%) | speed-rush-graft vs open-swarm-forkling | 1.1% | 1.9% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-sagelet vs speed-rush-blitzr | 19.3% | 19.3% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-hallucinat vs speed-rush-blitzr | 26.1% | 26.1% | fail |
+| worst matchup (≥ 30%) | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | open-swarm-slopling vs reasoning-nuke-sagelet | 0.5% | 0.4% | fail |
+| worst matchup (≥ 30%) | code-lock-spaghettopus vs search-anti-hallu-embeddingo | 0.2% | 0.2% | fail |
+| worst matchup (≥ 30%) | code-lock-nullbeetle vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | code-lock-cobolt vs search-anti-hallu-embeddingo | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-parrot vs code-lock-spaghettopus | 19.0% | 19.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-vibrat vs reasoning-nuke-sagelet | 10.4% | 10.4% | fail |
+| worst matchup (≥ 30%) | memory-stall-deprecatter vs search-anti-hallu-embeddingo | 0.2% | 0.2% | fail |
+| worst matchup (≥ 30%) | memory-stall-retro vs search-anti-hallu-embeddingo | 0.4% | 0.4% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-embeddingo vs speed-rush-graft | 4.0% | 4.0% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-scrapion vs search-anti-hallu-embeddingo | 1.8% | 1.8% | fail |
+| worst matchup (≥ 30%) | mixed-starter-sagelet vs speed-rush-graft | 8.4% | 8.4% | fail |
+| worst matchup (≥ 30%) | mixed-starter-blitzr vs mixed-starter-forkling | 14.7% | 14.9% | fail |
+| worst matchup (≥ 30%) | mixed-starter-forkling vs reasoning-nuke-sagelet | 9.7% | 9.7% | fail |
+| worst matchup (≥ 30%) | mixed-heisenmoth-tempo vs reasoning-nuke-sagelet | 1.0% | 1.0% | fail |
+| starter triangle (55–65%) | blitzr (favoured) vs sagelet | 99.3% | 99.3% | fail |
+| starter triangle (55–65%) | sagelet (favoured) vs forkling | 91.2% | 91.2% | fail |
+| starter triangle (55–65%) | forkling (favoured) vs blitzr | 100.0% | 100.0% | fail |
+| temperature dial (45–55%) | T0 vs T4 mirror, pooled | 55.5% | 55.5% | fail |
+| graft worth taking (≥ 55%) | stochastiparrot | 71.5% | 71.5% | pass |
+| graft worth taking (≥ 55%) | nullbeetle | 81.7% | 81.7% | pass |
+| graft worth taking (≥ 55%) | off-by-wasp | 23.3% | 23.3% | fail |
+| fight length (median 5–8) | median rounds | 7 | 7 | pass |
+| first mover (48–52%) | side A vs mirror, pooled | 51.2% | 51.1% | inconclusive |
+
+Vs-field rows failing 6 → 6; summed excess over 55% 82.6 → 76.7 pp.
+
+- **Decision:** kept. open-swarm-forkling 69.1 → 61.6 (still a fail) and the vs-field excess 82.6 → 76.7 pp, the largest single step of D4. No row left its band. code-lock-spaghettopus goes pass → inconclusive (53.5 → 54.5, allowed) and becomes the next gatekeeper with scrapion (53.8). Dial 55.5% (unchanged), first mover 51.1%, fight length median 7.
+- **Blowouts after K1–K3** (`scratch-d4-rr-k3`, against `scratch-d4-rr-base`): pairings at or beyond 99/1 19 → 16, at or beyond 95/5 34 → 30, at or beyond 90/10 57 → 51, at or beyond 80/20 91 → 81; within 40–60 39 → 43; median fight length 7 → 7.
+- Bible move list (Swarm of Fine-Tunes 20× → 15×) and the integrity test's pinned row updated in the same commit.
