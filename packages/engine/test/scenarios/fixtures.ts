@@ -47,10 +47,16 @@ export const BOOTCAMP_AUTOPILOT: Deck = {
 //   - Nullbeetle 6 → 83 / 176; Nullbeetle 8 → 0 / 22 (the heal is outpaced).
 //   - Bootcamp Grad's Autopilot at T0 ("by the book"): flat rolls and few crits, so a lucky trainer crit seldom decides
 //     the swapped arm. T1 → 15 / 154, T2 → 29 / 130.
-//   - The player's Autopilot stays at T2 (the default), and the heal fires when an ally is below 50%.
+//   - The player's Autopilot stays at T2 (the default): T0 → 13 / 199, T1 → 12 / 194, T3 → 12 / 171, T4 → 27 / 160.
+//   - The heal fires when an ally is below 50%: below 75% → 13 / 189, below 25% → 13 / 191 (neither separates the arms
+//     better or worse than 50%, so the 50% of the bible's example stays); healing itself instead (Forkling below 50% →
+//     Community Patch on self) → 13 / 13, and an ally-below-50% card aimed at self → 13 / 10: either heals the wrong
+//     creature, since the trainer is wearing down the starter, and the swapped arm loses its edge.
 //   - The Forkling's generalization is FORKLING_G = 85, the deck's honest G: computeGeneralization(SWAPPED_DECK,
 //     DEPRECATED_FOREST_SUITE, 3 active slots), pinned in broken-deck.test.ts. Both arms use it (the broken deck's own G
-//     would be 88), so they differ only in card order. Any Robust value (>= 70) behaves the same, since Robust always obeys.
+//     would be 88), so they differ only in card order. Any Robust value (>= 70) behaves the same, since Robust always obeys:
+//     G = 100 or 70 → 13 / 188, identical to the tuned value. Stable 65 or 50 → 25 / 177 (disobedience costs the swapped
+//     arm its gate), 30 → 42 / 165.
 // In this battle the trainer is above the bible's switchbacks band (wilds Lv2-6) at Lv8 / Lv7; the fixture is a criterion-5 measuring
 // rig, not slice content.
 

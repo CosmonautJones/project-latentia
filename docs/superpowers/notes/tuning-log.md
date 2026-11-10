@@ -60,7 +60,7 @@ The median fight length is unchanged at 7. Fights are not longer in the median; 
 
 - Temperature dial: inconclusive → fail (T0 side scores 56.9% against its T4 mirror; the interval [54.7, 59.1] no longer reaches 55%). Before it was 54.8% and 54.5% in the two baselines. A softer chart favours the cold side a little more.
 - Any archetype vs the field, search-anti-hallu-scrapion: inconclusive (54.9%) → fail (57.5% [57.0, 58.0]).
-- Nothing else moved from pass to fail. Rows that improved: mixed-starter-blitzr inconclusive (54.5%) → pass (49.9%); mixed-starter-sagelet 63.0% → 57.4% (still fail); the worst-matchup points for speed-rush-blitzr vs open-swarm-forkling (14.9% → 18.0%), speed-rush-agentoad vs deprecatter (6.3% → 10.8%) and reasoning-nuke-sagelet vs speed-rush-blitzr (14.5% → 21.2%) rose, none near 30%.
+- Nothing else moved from pass to fail. Rows that improved: mixed-starter-blitzr inconclusive (54.5%) → pass (49.9%); mixed-starter-sagelet 63.0% → 57.4% (still fail); the worst-matchup points for speed-rush-blitzr vs open-swarm-forkling (14.9% → 18.0%), speed-rush-agentoad vs deprecatter (6.3% → 10.8%) and reasoning-nuke-sagelet vs speed-rush-blitzr (14.5% → 21.2%) rose; the best of them, reasoning-nuke-hallucinat vs speed-rush-blitzr (15.7% against mixed-starter-sagelet before, 27.7% after), is close to the 30% band edge but still fails, and every other worst-matchup point is 21.2% or lower.
 - Rows that got worse but were already failing: open-swarm-forkling 57.3% → 69.0%, open-swarm-slopling 59.2% → 61.7%, reasoning-nuke-sagelet 83.9% → 85.1%.
 
 ### Reading
