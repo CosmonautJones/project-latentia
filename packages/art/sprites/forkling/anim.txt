@@ -1,0 +1,41 @@
+# Forkling idle: a wave travels up the stack. The low block pushes (stretch on
+# 1-2, squash on 4-5), the mid block peaks a frame later and the top block a
+# frame after that, so the three bob out of phase. The fork tail's prongs flex.
+# Row 8 (low) and row 6 (mid, top) are plain rows, safe to duplicate or drop.
+delay 100
+
+frame
+tail 38 39
+cube_low 17 43
+cube_mid 20 32 dr=6
+cube_top 22 18
+
+frame
+tail 38 38 ir=5
+cube_low 17 42 ir=8
+cube_mid 20 30
+cube_top 22 18
+
+frame
+tail 38 37 ir=5
+cube_low 17 42 ir=8
+cube_mid 20 28 ir=6
+cube_top 22 16 ir=6
+
+frame
+tail 38 38
+cube_low 17 43
+cube_mid 20 29
+cube_top 23 16
+
+frame
+tail 38 39
+cube_low 17 44 dr=8
+cube_mid 20 30
+cube_top 23 16
+
+frame
+tail 38 40 dr=5
+cube_low 17 44 dr=8
+cube_mid 20 31
+cube_top 22 17

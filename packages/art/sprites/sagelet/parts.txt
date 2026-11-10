@@ -1,0 +1,82 @@
+# Sagelet: round owlet-monk. Reasoning type.
+# 2 cream  3 tan  v tan shadow | i h g o  robe ramp (cyan, blue, deep blue, navy)
+# j k white/grey lens and bubble | a 9 beak and feet | o p outline (lit / shaded)
+
+@part body
+.....oo...................op......
+.....oiho................ohgp.....
+......oihoooooooooooooooohggp.....
+......oiihhiiiiihhhhhhhhhggp......
+......oihiiiihhhhhhhhhhhhggp......
+......oiiihhhhhhhhhhhhhhhggp......
+.....oiihhhhhhhhhhhhhhhhhhggp.....
+....oihhhhhhhhhhhhhhhhhhhhgggp....
+...ohhhhhgggggggggggghhhhhggggp...
+...ohhhgg333gggg33333gghhhggggp...
+..ohhhg333333gg33222222ghhgggggp..
+..ohhgoo3332222222222oo2ghgggggp..
+.ohhho22jjjj2222jjjjj22o2hggggggp.
+.ohhho2jjjjjj22jjjjjjj2o2hggggggp.
+.ohhho2jjppjjoojjppjjj2o2hggggggp.
+.ohoo22jpppjj22jpppjjj22ooggggggp.
+.ohhho2jpppjj22jpppjjj2o2hgggggop.
+.ohhho2jpppjjbajpppjjj2o2hggggoop.
+.ohhho22kkkkaaa9kkkkk22o2hggggoop.
+.ohhhgoott222a92222ttoo3gggggooop.
+.oggghg2222222222222333gggoooooop.
+.ohhhgggg222222222333gooooggggoop.
+.ohhhhhhggggggggggggggggggggggoop.
+..ohhhhhhhhhhhhhhhhhhhgggggggoop..
+..o333333hhhhhhhhhhhhgvvvvvvvvvp..
+..phhhhhh333223333vvvvggggggooop..
+...phhhhhhhh3vhhhhgggggggggooop...
+...phhhhhhhh3vhhggggggggggoooop...
+....phhhhhhhhgggggggggggooooop....
+....p222222222222233333333vvvp....
+.....p2222222222333333333vvvp.....
+......pppppppppppppppppppppp......
+
+@part feet
+.paaa9p.....paaa9p.
+..pppp.......pppp..
+
+@part cloud
+....ooo..ooo...
+...ojjjoojjjo..
+.oojjjjjjjjjjo.
+ojjjjjjjjjjjjko
+ojjjjjjjjjjkkko
+.okkjjjjkkkkko.
+..ooooooooooo..
+
+@part mid
+.ooo.
+ojjko
+ojjko
+okkko
+.ooo.
+
+@part puff
+.oo.
+ojko
+okko
+.oo.
+
+@part dot_near
+.ooo.
+ojjko
+ojkko
+okklo
+.ooo.
+
+@part dot_mid
+.oo.
+ojko
+okko
+.oo.
+
+@part dot_far
+.oo.
+ollo
+olmo
+.oo.

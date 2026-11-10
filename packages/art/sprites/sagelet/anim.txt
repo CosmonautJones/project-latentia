@@ -1,0 +1,64 @@
+# Sagelet idle: slow breath (stretch on 1-2, squash on 4-5), the thought-bubble
+# crest follows a frame late, and three dots orbit: far dots pass behind the body.
+# Stretch = duplicate belly row 23. Squash = drop row 28 and duplicate column 14.
+delay 100
+
+frame
+dot_far 12 40
+dot_mid 52 45
+body 15 26
+feet 23 57
+puff 30 24
+mid 33 19
+cloud 37 12
+dot_near 26 49
+
+frame
+dot_far 18 40
+dot_mid 53 47
+body 15 25 ir=23
+feet 23 57
+puff 30 23
+mid 33 18
+cloud 37 12
+dot_near 18 48
+
+frame
+dot_far 26 40
+body 15 25 ir=23
+feet 23 57
+puff 30 23
+mid 33 18
+cloud 37 11
+dot_near 12 46
+dot_mid 52 48
+
+frame
+dot_far 34 40
+body 15 26
+feet 23 57
+puff 30 24
+mid 33 19
+cloud 37 11
+dot_mid 8 45
+dot_near 47 49
+
+frame
+dot_far 42 42
+body 15 27 dr=28 ic=14
+feet 23 57
+puff 30 25
+mid 33 20
+cloud 37 12
+dot_mid 7 43
+dot_near 41 50
+
+frame
+dot_mid 8 42
+dot_far 48 43
+body 15 27 dr=28 ic=14
+feet 23 57
+puff 30 25
+mid 33 20
+cloud 37 13
+dot_near 33 50

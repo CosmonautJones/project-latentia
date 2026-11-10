@@ -21,6 +21,15 @@ importers:
         specifier: ^8.0.0
         version: 8.72.1(eslint@9.39.5)(typescript@5.9.3)
 
+  packages/art:
+    devDependencies:
+      gifenc:
+        specifier: ^1.0.3
+        version: 1.0.3
+      pngjs:
+        specifier: ^7.0.0
+        version: 7.0.0
+
   packages/engine:
     devDependencies:
       '@types/node':
@@ -767,6 +776,9 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
+  gifenc@1.0.3:
+    resolution: {integrity: sha512-xdr6AdrfGBcfzncONUOlXMBuc5wJDtOueE3c5rdG0oNgtINLD+f2iFZltrBRZYzACRbKr+mSVU/x98zv2u3jmw==}
+
   glob-parent@6.0.2:
     resolution: {integrity: sha512-XxwI8EOhVQgWp6iDL+3b0r86f4d6AX6zSU55HfB4ydCEuXLXc5FcYeOu+nnGftS4TEju/11rt4KJPTMgbfmv4A==}
     engines: {node: '>=10.13.0'}
@@ -918,6 +930,10 @@ packages:
     resolution: {integrity: sha512-F3AMWcR44qMBt4kq+6Kb6mX7bjGXshktKFOPULd7reED6ZJWevjbNRqysP7q+AATE9kdPEZBibex1BYsvpVoeA==}
     engines: {node: '>=20'}
     hasBin: true
+
+  pngjs@7.0.0:
+    resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
+    engines: {node: '>=14.19.0'}
 
   postcss@8.5.32:
     resolution: {integrity: sha512-LJlKCCAUFKOuZxipUdYw1NzIITEsPcgyOG9LkvRJvuKj/bRzbuRY0ARXvL0pWGpsZvn8jku+LMep2eU0seHp8g==}
@@ -1798,6 +1814,8 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
+  gifenc@1.0.3: {}
+
   glob-parent@6.0.2:
     dependencies:
       is-glob: 4.0.3
@@ -1916,6 +1934,8 @@ snapshots:
   playwright@1.65.0:
     dependencies:
       playwright-core: 1.65.0
+
+  pngjs@7.0.0: {}
 
   postcss@8.5.32:
     dependencies:
