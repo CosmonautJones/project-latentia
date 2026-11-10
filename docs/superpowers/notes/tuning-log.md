@@ -393,3 +393,76 @@ Vs-field rows failing 8 → 7; summed excess over 55% 87.9 → 83.6 pp.
 (Worst-matchup rows are each archetype's worst pairing in that run; the row names the after run's pairing.)
 
 - **Decision:** kept. The dial moves toward its band (57.8 → 56.0, still a fail) and vs field improves (excess 87.9 → 83.6, mixed-starter-sagelet fail → inconclusive). No row left its band. speed-rush-agentoad (own T4) rises 47.6 → 52.2 and the two voice builds (T4/T3) rise 2–3 pp, all still in band. Bible temperature table updated in the same commit.
+
+### Candidates on the K1 state (scale 0.1; reference `scratch-d4-s01-k1`, excess 84.6, 7 failing, dial 57.0% at this scale)
+
+| id | change | why this number | excess | vs-field rows failing | dial | left band | decision |
+|---|---|---|---|---|---|---|---|
+| c18 | T4 self-hallucination 12% → 8% | §d move 4's alternative; 8% stays above T3's 5% | 84.6 → 84.4 | 7 → 8 | full-seed dial 54.975% [52.8, 57.1], inconclusive | speed-rush-agentoad (own T4) 52.8 → 56.5 | rejected: any T4 buff lifts the T4-native agentoad over 55% |
+| c19 | Tool Call 15 → 12 per hit | agentoad's signature; 17.3 damage a battle in speed-rush-blitzr | 84.6 → 88.4 | 7 → 7 | 57.0 → 59.5 | none | rejected: blitzr −1.4 but the Open and mixed teams gain more |
+| c20 | Cosine Sniff 70 → 55 | see K2 | 84.6 → 83.1 | 7 → 6 | full-seed dial 55.45% (screen 53.0) | none | **kept as K2** |
+
+Cosine Sniff 60 on this state gives a full-seed dial of 55.25%, against 55.45% for 55; 55 was taken for its larger vs-field effect (c9 against c10 on the baseline: excess −2.5 against −3.0, failing rows −1 against −2).
+
+### K2: Cosine Sniff 70 → 55 (kept)
+
+- **Change:** `content/moves/signatures.ts`, Cosine Sniff (Embeddingo's signature) power 70 → 55. Cost 2, accuracy 90 and the `foeMostDamage` aim are unchanged.
+- **Why 55:** Cosine Sniff picks the foe it hurts most, so in practice it lands super effective whenever any foe is weak to Search, which against this Code-heavy field is almost always. At 55 its usual hit is 55 × 1.5 ≈ 82, above a neutral 70-power signature, so it is still the best move into a weakness, as the gag says, without being the slice's top single damage source (26.6 damage a battle in reasoning-nuke-sagelet before). It is a placeholder signature with no bible number. The bible's Embeddingo row gives only the gag, so the bible needs no change.
+- **Screen (c20):** excess 84.6 → 83.1, open-swarm-slopling 56.0 → 52.9, mixed-starter-sagelet into band, scrapion 54.1 → 52.8.
+- **Full scale** (`scratch-d4-k2`, 441.7 s), before = K1:
+
+| target | row | before | after | verdict |
+|---|---|---|---|---|
+| vs field (≤ 55%) | speed-rush-blitzr | 67.1% | 67.5% | fail |
+| vs field (≤ 55%) | speed-rush-agentoad | 52.2% | 53.0% | pass |
+| vs field (≤ 55%) | speed-rush-graft | 48.6% | 49.0% | pass |
+| vs field (≤ 55%) | reasoning-nuke-sagelet | 82.9% | 80.6% | fail |
+| vs field (≤ 55%) | reasoning-nuke-hallucinat | 70.5% | 71.8% | fail |
+| vs field (≤ 55%) | open-swarm-forkling | 69.5% | 69.1% | fail |
+| vs field (≤ 55%) | open-swarm-slopling | 56.0% | 53.0% | fail → **pass** |
+| vs field (≤ 55%) | code-lock-spaghettopus | 52.6% | 53.5% | pass |
+| vs field (≤ 55%) | code-lock-nullbeetle | 16.9% | 17.1% | pass |
+| vs field (≤ 55%) | code-lock-cobolt | 31.4% | 32.0% | pass |
+| vs field (≤ 55%) | voice-pressure-parrot | 39.1% | 39.7% | pass |
+| vs field (≤ 55%) | voice-pressure-vibrat | 39.8% | 40.1% | pass |
+| vs field (≤ 55%) | memory-stall-deprecatter | 42.2% | 43.1% | pass |
+| vs field (≤ 55%) | memory-stall-retro | 18.9% | 19.4% | pass |
+| vs field (≤ 55%) | search-anti-hallu-embeddingo | 60.6% | 61.1% | fail |
+| vs field (≤ 55%) | search-anti-hallu-scrapion | 53.8% | 52.4% | pass |
+| vs field (≤ 55%) | mixed-starter-sagelet | 54.7% | 53.0% | inconclusive → **pass** |
+| vs field (≤ 55%) | mixed-starter-blitzr | 47.7% | 47.9% | pass |
+| vs field (≤ 55%) | mixed-starter-forkling | 61.9% | 62.5% | fail |
+| vs field (≤ 55%) | mixed-heisenmoth-tempo | 33.4% | 34.0% | pass |
+| worst matchup (≥ 30%) | speed-rush-blitzr vs open-swarm-forkling | 14.8% | 14.8% | fail |
+| worst matchup (≥ 30%) | speed-rush-agentoad vs memory-stall-deprecatter | 15.6% | 15.6% | fail |
+| worst matchup (≥ 30%) | speed-rush-graft vs open-swarm-forkling | 1.1% | 1.1% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-sagelet vs speed-rush-blitzr | 19.8% | 19.3% | fail |
+| worst matchup (≥ 30%) | reasoning-nuke-hallucinat vs speed-rush-blitzr | 26.1% | 26.1% | fail |
+| worst matchup (≥ 30%) | open-swarm-forkling vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | open-swarm-slopling vs reasoning-nuke-sagelet | 0.9% | 0.5% | fail |
+| worst matchup (≥ 30%) | code-lock-spaghettopus vs search-anti-hallu-embeddingo | 0.1% | 0.2% | fail |
+| worst matchup (≥ 30%) | code-lock-nullbeetle vs reasoning-nuke-sagelet | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | code-lock-cobolt vs search-anti-hallu-embeddingo | 0.0% | 0.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-parrot vs code-lock-spaghettopus | 19.0% | 19.0% | fail |
+| worst matchup (≥ 30%) | voice-pressure-vibrat vs reasoning-nuke-sagelet | 7.4% | 10.4% | fail |
+| worst matchup (≥ 30%) | memory-stall-deprecatter vs search-anti-hallu-embeddingo | 0.1% | 0.2% | fail |
+| worst matchup (≥ 30%) | memory-stall-retro vs search-anti-hallu-embeddingo | 0.3% | 0.4% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-embeddingo vs speed-rush-graft | 4.2% | 4.0% | fail |
+| worst matchup (≥ 30%) | search-anti-hallu-scrapion vs search-anti-hallu-embeddingo | 7.7% | 1.8% | fail |
+| worst matchup (≥ 30%) | mixed-starter-sagelet vs speed-rush-graft | 10.4% | 8.4% | fail |
+| worst matchup (≥ 30%) | mixed-starter-blitzr vs mixed-starter-forkling | 14.7% | 14.7% | fail |
+| worst matchup (≥ 30%) | mixed-starter-forkling vs reasoning-nuke-sagelet | 7.8% | 9.7% | fail |
+| worst matchup (≥ 30%) | mixed-heisenmoth-tempo vs reasoning-nuke-sagelet | 0.4% | 1.0% | fail |
+| starter triangle (55–65%) | blitzr (favoured) vs sagelet | 99.3% | 99.3% | fail |
+| starter triangle (55–65%) | sagelet (favoured) vs forkling | 91.2% | 91.2% | fail |
+| starter triangle (55–65%) | forkling (favoured) vs blitzr | 100.0% | 100.0% | fail |
+| temperature dial (45–55%) | T0 vs T4 mirror, pooled | 56.0% | 55.5% | fail |
+| graft worth taking (≥ 55%) | stochastiparrot | 71.5% | 71.5% | pass |
+| graft worth taking (≥ 55%) | nullbeetle | 81.7% | 81.7% | pass |
+| graft worth taking (≥ 55%) | off-by-wasp | 23.3% | 23.3% | fail |
+| fight length (median 5–8) | median rounds | 7 | 7 | pass |
+| first mover (48–52%) | side A vs mirror, pooled | 51.1% | 51.2% | inconclusive |
+
+Vs-field rows failing 7 → 6; summed excess over 55% 83.6 → 82.6 pp.
+
+- **Decision:** kept. Vs field: 7 → 6 rows failing (open-swarm-slopling 56.0 → 53.0 now passes; mixed-starter-sagelet inconclusive → pass), excess 83.6 → 82.6 pp; reasoning-nuke-sagelet 82.9 → 80.6. The dial also moves toward its band (56.0 → 55.5). No row left its band. Scrapion, the gatekeeper, falls 53.8 → 52.4, which leaves room for K3. reasoning-nuke-hallucinat rises 70.5 → 71.8 (still a fail; it loses fewer pairings to the Embeddingo teams).

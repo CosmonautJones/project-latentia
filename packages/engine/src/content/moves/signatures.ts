@@ -61,7 +61,7 @@ export const SIGNATURE_MOVES = {
   // placeholder signature — Embeddingo: Cosine Sniff "finds the 'nearest' weakness"
   'cosine-sniff': {
     id: 'cosine-sniff', name: 'Cosine Sniff', type: 'search', target: 'foeMostDamage',
-    power: 70, cost: 2, accuracy: 90, priority: 0,
+    power: 55, cost: 2, accuracy: 90, priority: 0,
     effects: [
       { kind: 'damage', who: 'target' },
       { kind: 'cure', who: 'target', statuses: ['hallucinating'] }, // any Search hit cures Hallucinating
