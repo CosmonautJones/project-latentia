@@ -9,7 +9,11 @@ import { createBattle } from '@latentia/engine';
 // same measurement on fewer seeds, with looser bars, so it guards the tuning without being flaky.
 describe('the core loop: lose with a bad card, teach a better one, win the rematch', () => {
   const rows = measureLoop(40);
-  const rate = (path: string) => pooledWinRate(rows.find((r) => r.path === path) ?? rows[0]!);
+  const rate = (path: string) => {
+    const row = rows.find((r) => r.path === path);
+    if (!row) throw new Error(`no loop-balance row for path "${path}" (have: ${rows.map((r) => r.path).join(', ')})`);
+    return pooledWinRate(row);
+  };
 
   it('the bad preset mostly loses and the good preset mostly wins', () => {
     expect(1 - rate('bad')).toBeGreaterThanOrEqual(0.55);
