@@ -122,3 +122,17 @@ describe('previewDamage (engine 0.4.2)', () => {
     expect(p?.max).toBeGreaterThan(0);
   });
 });
+
+describe('previewDamage and the Handoff chain', () => {
+  it("a chain the user's side holds lifts only the high end: an enemy acting first this round breaks it", () => {
+    const s = createBattle(duel(mon('b-orch', 'vibrat'), always('merge-conflict'), 0), seed(5));
+    const intent = getIntents(s)[0];
+    if (intent === undefined) throw new Error('no intent');
+    const plain = previewDamage(s, intent);
+    const chained = structuredClone(s);
+    chained.handoff = [{ target: 0, side: 'b', actors: [1] }];
+    const p = previewDamage(chained, intent);
+    expect(p?.min).toBe(plain?.min);
+    expect(p?.max).toBeGreaterThan(plain?.max ?? 0);
+  });
+});

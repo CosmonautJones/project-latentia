@@ -6,6 +6,7 @@ import {
   createBattle,
   getIntents,
   moveDef,
+  previewDamage,
   SPECIES,
   submitRound,
   validateSetup,
@@ -14,6 +15,7 @@ import {
   type CardTrace,
   type CommandError,
   type CreatureState,
+  type DamagePreview,
   type Deck,
   type Intent,
   type Temperature,
@@ -181,6 +183,11 @@ export class BattleSession {
   /** Every planned intent for the next round (both sides; the scene decides what to show). Empty once ended. */
   intents(): Intent[] {
     return getIntents(this.current);
+  }
+
+  /** The damage `intent` would deal before this round (engine previewDamage), or null for a move that deals none. */
+  damagePreview(intent: Intent): DamagePreview | null {
+    return previewDamage(this.current, intent);
   }
 
   /** The player orchestrator's moves, universals last, with what each costs against the free cells now. */

@@ -50,7 +50,8 @@ function hitters(effects: readonly NonPassiveEffect[], allies: number): Hitter[]
  * The damage `intent`'s move would deal to its target if it hits and does not crit, from `state` as it stands before
  * the round: its lowest and highest damage roll at the actor's temperature (and, for a multi-hit move, its fewest and
  * most hits), with every modifier the state already holds (types, stages, statuses, Observation, a pending Earnest
- * Apology or Refusal penalty, grid Tool steps). What the round itself may change first (a guard raised this round,
+ * Apology or Refusal penalty, grid Tool steps); a Handoff chain the user's side holds counts toward the high end only,
+ * since an enemy acting first breaks it. What the round itself may change first (a guard raised this round,
  * stages or statuses from an earlier action, a shield, a re-planned card) is not foreseen. Null when the move deals no
  * damage to its target this round: a status move, a move aimed at its user, a charge round, or a missing creature.
  * Pure: `state` is not modified and no rng draw is taken.
@@ -68,6 +69,9 @@ export function previewDamage(state: BattleState, intent: Intent): DamagePreview
   const release = user0.charging !== null && user0.charging.moveId === move.id;
   if (!release && chargesFirst(listed)) return null;
   const clone = structuredClone(state);
+  // The action resolves in the coming round: round-relative rules (consecutive-round bonuses, guards, last round's
+  // moves) read it as round + 1, as getIntents plans it.
+  clone.round = state.round + 1;
   const user = clone.creatures[intent.actor];
   const target = clone.creatures[intent.target];
   if (user === undefined || target === undefined) return null;
@@ -78,7 +82,12 @@ export function previewDamage(state: BattleState, intent: Intent): DamagePreview
   const incoming = takeIncomingBp(target);
   const row = TEMPERATURE[temperature];
   const width = row === undefined ? 1 : row.rollMaxPct - row.rollMinPct + 1;
+  // The user's side's Handoff chains carry over until an enemy acts (handoff.ts): whether one acts first this round is
+  // the round's business, so the low end assumes a break and the high end that the chain holds.
+  const kept = clone.handoff;
+  const broken = kept.filter((h) => h.side !== user.side);
   const at = (high: boolean): number => {
+    clone.handoff = high ? kept : broken;
     let total = 0;
     for (const h of list) {
       if (!high && h.mayMiss) continue;

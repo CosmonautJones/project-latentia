@@ -95,6 +95,12 @@ const SKIP_REASONS: Readonly<Record<Exclude<CardSkipReason, 'conditionFalse'>, s
   disobeyed: 'it ignored the card',
 };
 
+/** The card's trigger alone, as the teammate telegraph shows it: "IF foe HP < 50%", or "ALWAYS". */
+export function cardTrigger(card: Card, moveName: MoveNamer): string {
+  const cond = conditionText(card.subject, card.condition, moveName);
+  return cond === null ? 'ALWAYS' : `IF ${cond}`;
+}
+
 /** `IF <condition> THEN <Move>`, or `ALWAYS <Move>`. */
 export function cardText(card: Card, moveName: MoveNamer): string {
   const cond = conditionText(card.subject, card.condition, moveName);
