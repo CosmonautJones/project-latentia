@@ -1,5 +1,6 @@
-// The pure battle command menu: the root (PROMPT, TEMP, WHY?, LOG, SPEED in two columns), the move list, a target list
-// when a move has a choice of targets, the temperature dial and the round log. B backs out of every submenu. Taps on a
+// The pure battle command menu: the root (PROMPT, WHY?, LOG, NUMBERS, SPEED, three to a row; TEMP after PROMPT once the
+// save unlocks temperature, ruling V12), the move list, a target list when a move has a choice of targets, the
+// temperature dial and the round log. NUMBERS toggles the move details between plain words and the numbers (V14). B backs out of every submenu. Taps on a
 // menu that is not showing are ignored. On touch and pointer a commit takes two taps (ruling V5.2): the first tap on a
 // move, notch or target selects it and shows its hint (and any overflow → Drift warning), a second tap on the same
 // item commits. Keys and the D-pad are unchanged. The in-image command box renders this one state.
@@ -20,13 +21,18 @@ export const MENU_IDS: Readonly<Record<MenuScreen, string>> = {
   log: 'battle-log',
 };
 
-const ROOT_COUNT = 5;
+export type RootItem = 'prompt' | 'temp' | 'why' | 'log' | 'numbers' | 'speed';
+/** The root is laid out three to a row (command-box.ts); the arrows move on that grid. */
+export const ROOT_COLUMNS = 3;
+
+/** The root's items in order: TEMP only once temperature is unlocked. */
+export const rootItems = (d: Pick<MenuData, 'tempUnlocked'>): RootItem[] => (d.tempUnlocked === true ? ['prompt', 'temp', 'why', 'log', 'numbers', 'speed'] : ['prompt', 'why', 'log', 'numbers', 'speed']);
 
 const TEMPS: readonly Temperature[] = [0, 1, 2, 3, 4];
 
 export interface BattleMenuState {
   readonly screen: MenuScreen;
-  /** 0 PROMPT, 1 TEMP, 2 WHY?, 3 LOG, 4 SPEED, laid out two to a row. */
+  /** The cursor's place in rootItems, laid out three to a row. */
   readonly rootIndex: number;
   readonly moveIndex: number;
   readonly targetIndex: number;
@@ -34,6 +40,8 @@ export interface BattleMenuState {
   readonly tempIndex: number;
   readonly temperature: Temperature;
   readonly speed: Speed;
+  /** NUMBERS: the move details show the numbers (power, accuracy, the damage range) instead of plain words. */
+  readonly numbers: boolean;
   /** The move waiting for a target. */
   readonly pendingMove: string | null;
   /** The log line the cursor is on. */
@@ -48,12 +56,15 @@ export interface MenuData {
   targetName(index: number): string;
   /** The round log, oldest line first. */
   readonly log: readonly string[];
+  /** The save has unlocked the temperature dial (V12); absent means locked. */
+  readonly tempUnlocked?: boolean;
 }
 
 export type MenuEffect =
   | { readonly kind: 'submit'; readonly choice: PlayerChoice }
   | { readonly kind: 'why' }
   | { readonly kind: 'speed'; readonly speed: Speed }
+  | { readonly kind: 'numbers'; readonly numbers: boolean }
   | { readonly kind: 'temperature'; readonly temperature: Temperature };
 
 export interface MenuResult {
@@ -61,8 +72,8 @@ export interface MenuResult {
   readonly effect?: MenuEffect;
 }
 
-export function initialMenu(temperature: Temperature = 2, speed: Speed = 1): BattleMenuState {
-  return { screen: 'root', rootIndex: 0, moveIndex: 0, targetIndex: 0, tempIndex: temperature, temperature, speed, pendingMove: null, logIndex: 0, armed: null };
+export function initialMenu(temperature: Temperature = 2, speed: Speed = 1, numbers = false): BattleMenuState {
+  return { screen: 'root', rootIndex: 0, moveIndex: 0, targetIndex: 0, tempIndex: temperature, temperature, speed, numbers, pendingMove: null, logIndex: 0, armed: null };
 }
 
 /** Whether the highlighted item was selected by a tap, so the next tap on it commits. */
@@ -77,14 +88,16 @@ function tap(s: BattleMenuState, index: number, select: (s: BattleMenuState) => 
   return { state: { ...select(s), armed: { screen: s.screen, index } } };
 }
 
-function rootMove(index: number, button: 'up' | 'down' | 'left' | 'right'): number {
-  if (button === 'left' || button === 'right') return (index ^ 1) < ROOT_COUNT ? index ^ 1 : index;
-  if (button === 'down') return index + 2 < ROOT_COUNT ? index + 2 : index % 2;
-  if (index - 2 >= 0) return index - 2;
-  // Up from the top row wraps to the bottom of the same column.
-  let last = index % 2;
-  while (last + 2 < ROOT_COUNT) last += 2;
-  return last;
+/** The arrows on the root grid: left/right along the row (wrapping in it), up/down along the column (wrapping). */
+function rootMove(index: number, button: 'up' | 'down' | 'left' | 'right', count: number): number {
+  const C = ROOT_COLUMNS;
+  const rowStart = index - (index % C);
+  const rowLen = Math.min(C, count - rowStart);
+  if (button === 'left' || button === 'right') return rowStart + ((index - rowStart + (button === 'right' ? 1 : rowLen - 1)) % rowLen);
+  const col = index % C;
+  const inCol = Array.from({ length: Math.ceil(count / C) }, (_, r) => r * C + col).filter((i) => i < count);
+  const at = inCol.indexOf(index);
+  return inCol[(at + (button === 'down' ? 1 : inCol.length - 1)) % inCol.length] ?? index;
 }
 
 const wrap = (i: number, n: number): number => (n === 0 ? 0 : (i + n) % n);
@@ -112,19 +125,23 @@ function chooseMove(s: BattleMenuState, index: number, d: MenuData): MenuResult 
 
 function chooseRoot(s: BattleMenuState, index: number, d: MenuData): MenuResult {
   const at = { ...s, rootIndex: index, armed: null };
-  switch (index) {
-    case 0:
+  switch (rootItems(d)[index]) {
+    case 'prompt':
       return { state: { ...at, screen: 'moves' } };
-    case 1:
+    case 'temp':
       return { state: { ...at, screen: 'temp', tempIndex: s.temperature } };
-    case 2:
+    case 'why':
       return { state: at, effect: { kind: 'why' } };
-    case 3:
+    case 'log':
       return { state: { ...at, screen: 'log', logIndex: Math.max(0, d.log.length - 1) } };
-    default: {
+    case 'numbers':
+      return { state: { ...at, numbers: !s.numbers }, effect: { kind: 'numbers', numbers: !s.numbers } };
+    case 'speed': {
       const speed: Speed = s.speed === 1 ? 2 : 1;
       return { state: { ...at, speed }, effect: { kind: 'speed', speed } };
     }
+    default:
+      return { state: s };
   }
 }
 
@@ -137,9 +154,10 @@ export function menuStep(s0: BattleMenuState, action: InputAction, d: MenuData):
   const s = button !== null && s0.armed !== null ? { ...s0, armed: null } : s0;
   switch (s.screen) {
     case 'root': {
-      if (picked !== null) return picked >= 0 && picked < ROOT_COUNT ? chooseRoot(s, picked, d) : { state: s };
+      const count = rootItems(d).length;
+      if (picked !== null) return picked >= 0 && picked < count ? chooseRoot(s, picked, d) : { state: s };
       if (button === 'a') return chooseRoot(s, s.rootIndex, d);
-      if (button === 'left' || button === 'right' || button === 'up' || button === 'down') return { state: { ...s, rootIndex: rootMove(s.rootIndex, button) } };
+      if (button === 'left' || button === 'right' || button === 'up' || button === 'down') return { state: { ...s, rootIndex: rootMove(s.rootIndex, button, count) } };
       return { state: s };
     }
     case 'moves': {
@@ -162,6 +180,7 @@ export function menuStep(s0: BattleMenuState, action: InputAction, d: MenuData):
       return { state: s };
     }
     case 'temp': {
+      if (d.tempUnlocked !== true) return { state: { ...s, screen: 'root' } };
       const confirm = (x: BattleMenuState, i: number): MenuResult => {
         const temperature = clampTemp(i);
         return { state: { ...x, screen: 'root', temperature, tempIndex: temperature }, effect: { kind: 'temperature', temperature } };
@@ -186,8 +205,10 @@ export function menuStep(s0: BattleMenuState, action: InputAction, d: MenuData):
 /** The showing menu as plain items (what the renderers draw and the dev hook reports). */
 export function menuView(s: BattleMenuState, d: MenuData): MenuState {
   switch (s.screen) {
-    case 'root':
-      return { id: MENU_IDS.root, items: ['PROMPT', `TEMP T${s.temperature}`, 'WHY?', 'LOG', `SPEED ${s.speed}×`], index: s.rootIndex };
+    case 'root': {
+      const label: Record<RootItem, string> = { prompt: 'PROMPT', temp: `TEMP T${s.temperature}`, why: 'WHY?', log: 'LOG', numbers: s.numbers ? 'NUMBERS ON' : 'NUMBERS OFF', speed: `SPEED ${s.speed}×` };
+      return { id: MENU_IDS.root, items: rootItems(d).map((r) => label[r]), index: s.rootIndex };
+    }
     case 'moves':
       return { id: MENU_IDS.moves, items: d.moves.map((m) => m.name.toUpperCase()), index: s.moveIndex };
     case 'targets':

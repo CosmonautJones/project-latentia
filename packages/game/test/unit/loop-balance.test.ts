@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { measureGraftHint, measureLoop, naiveCommand, pooledWinRate } from '../../scripts/loop-balance.js';
+import { measureGraftHint, measureLoop, measureRival, naiveCommand, pooledWinRate, telegraphCommand } from '../../scripts/loop-balance.js';
 import { GRAFT_HINTS } from '../../src/content/journey-text.js';
 import { STARTERS } from '../../src/flow/flow.js';
 import { trainerBattle } from '../../src/content/battles.js';
-import { createBattle } from '@latentia/engine';
+import { createBattle, getIntents, previewDamage, submitRound } from '@latentia/engine';
+import { rivalBattle } from '../../src/content/battles.js';
 
 // The committed measurement is `pnpm measure-loop` (200 seeds per starter; numbers in content/trainers.ts). This is the
 // same measurement on fewer seeds, with looser bars, so it guards the tuning without being flaky.
@@ -53,5 +54,49 @@ describe('the graft hint: following it wins more than naive play, for every star
 
   it("Blitzr's graft path, the weak spot (naive about 30%), gains at least 10 points (4 more wins in 40)", () => {
     expect(rows.blitzr.hinted - rows.blitzr.naive).toBeGreaterThanOrEqual(4);
+  });
+});
+
+// Plan v0.1 Q2: the engine only gained a read-only helper (0.4.2), so the naive player's fights must not move. These are
+// the 40-seed wins measured on engine 0.4.1 before Q2b, pinned exactly.
+describe('the naive numbers are unchanged by Q2b (engine 0.4.2 adds only previewDamage)', () => {
+  it('Bootcamp Grad, 40 seeds per starter: the same wins per preset and starter as on engine 0.4.1', () => {
+    expect(measureLoop(40).map((r) => [r.path, r.wins])).toEqual([
+      ['bad', { sagelet: 17, blitzr: 0, forkling: 0 }],
+      ['situational', { sagelet: 40, blitzr: 18, forkling: 40 }],
+      ['good', { sagelet: 40, blitzr: 38, forkling: 40 }],
+      ['graft', { sagelet: 34, blitzr: 9, forkling: 35 }],
+    ]);
+  });
+  it('Kip, 40 seeds per starter: the same wins as on engine 0.4.1', () => {
+    expect(measureRival(40)).toEqual({ sagelet: 38, blitzr: 40, forkling: 33 });
+  });
+});
+
+describe('the player who reads the telegraph', () => {
+  it('raises Guardrail when a telegraphed attack on it is at least 25% of its HP bar, and plays naive otherwise', () => {
+    let s = createBattle(rivalBattle('sagelet', 0).setup, rivalBattle('sagelet', 0).seed);
+    let guarded = 0;
+    let naive = 0;
+    for (let round = 0; round < 12 && !s.ended; round++) {
+      const me = s.creatures[0];
+      const cmd = telegraphCommand(s);
+      const threat = getIntents(s).some((i) => {
+        const p = i.target === 0 ? previewDamage(s, i) : null;
+        return p !== null && Math.round((p.min + p.max) / 2) >= 0.25 * (me?.maxHp ?? 0);
+      });
+      const action = cmd.a?.action;
+      if (action?.kind === 'move' && action.moveId === 'guardrail') {
+        expect(threat).toBe(true);
+        guarded++;
+      } else {
+        expect(cmd).toEqual(naiveCommand(s));
+        naive++;
+      }
+      const r = submitRound(s, cmd);
+      if ('error' in r) throw new Error(r.error.message);
+      s = r.state;
+    }
+    expect(guarded + naive).toBeGreaterThan(0);
   });
 });

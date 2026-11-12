@@ -8,7 +8,7 @@
 import type { Card, Condition, Deck, Temperature } from '@latentia/engine';
 import { BOOTCAMP_GRAD, type TrainerTuning } from '../src/content/trainers.js';
 import { STARTERS } from '../src/flow/flow.js';
-import { measureGraftHint, measureLoop, measureRival, pooledWinRate, type LoopRow } from './loop-balance.js';
+import { measureGraftHint, naiveCommand, measureLoop, measureRival, measureWild, pooledWinRate, readsTelegraph, telegraphCommand, type LoopRow, type Player, type ReadOptions } from './loop-balance.js';
 
 const seeds = Number(process.argv[2] ?? 200);
 if (!Number.isSafeInteger(seeds) || seeds < 1) throw new Error(`seeds must be a positive integer, got ${process.argv[2]}`);
@@ -82,3 +82,21 @@ report("counterfactual: P2's Grad", P2_GRAD);
 
 const hint = measureGraftHint(seeds);
 console.log(`\nGraft path, naive vs following the loss hint (GRAFT_HINTS): ${STARTERS.map((s) => `${s} ${pct(hint[s].naive / seeds)} -> ${pct(hint[s].hinted / seeds)}`).join(', ')}`);
+
+// Plan v0.1 Q2: the player who reads the telegraph (scripts/loop-balance.ts telegraphCommand) against the naive one.
+const perStarter = (w: Readonly<Record<string, number>>): string => STARTERS.map((st) => Math.round((100 * (w[st] ?? 0)) / seeds)).join('/');
+const pooled = (w: Readonly<Record<string, number>>): string => pct(STARTERS.reduce((n, st) => n + (w[st] ?? 0), 0) / (seeds * STARTERS.length));
+function compare(name: string, player: Player): void {
+  const rival = measureRival(seeds, player);
+  const wild = measureWild(seeds, player);
+  const rows = measureLoop(seeds, BOOTCAMP_GRAD, player);
+  const cells = rows.map((r) => `${r.path} ${pct(pooledWinRate(r))} (${STARTERS.map((st) => Math.round((100 * r.wins[st]) / r.seeds)).join('/')})`);
+  console.log(`${name}\n  Kip ${pooled(rival)} (${perStarter(rival)}) | wild ${pooled(wild)} (${perStarter(wild)})\n  Grad: ${cells.join(' | ')}`);
+}
+console.log('\nReads the telegraph (Guardrail when a telegraphed Attack ~N >= 25% of its HP), same seeds:');
+compare("naive (for comparison)", naiveCommand);
+compare('READS THE TELEGRAPH (of its full HP bar, never guards twice running)', telegraphCommand);
+const variant = (o: ReadOptions): Player => (s) => readsTelegraph(s, o);
+compare('  variant: of its HP now, never twice running', variant({ of: 'hp', twiceRunning: false }));
+compare('  variant: of its full bar, guards again and again', variant({ of: 'maxHp', twiceRunning: true }));
+compare('  variant: of its HP now, guards again and again (the most literal reading)', variant({ of: 'hp', twiceRunning: true }));

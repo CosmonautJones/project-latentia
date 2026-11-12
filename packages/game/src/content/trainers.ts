@@ -57,7 +57,7 @@ export interface TrainerTuning {
  * Token Burst with Accept All too ("week 3 covered that one"). Otherwise he Merge Conflicts. So a Tokenibble taught to
  * stretch (Low Latency) or to open with Token Burst draws his biggest hit, and one taught Early Exit does not.
  *
- * Measured on engine 0.4.1 by `pnpm --filter @latentia/game measure-loop` (scripts/measure-loop.ts): a naive player
+ * Measured on engine 0.4.1 (unchanged on 0.4.2, which only adds a read-only helper) by `pnpm --filter @latentia/game measure-loop` (scripts/measure-loop.ts): a naive player
  * (its strongest affordable damaging move, T2) over trainer seeds 0-199 for each starter, so 600 fights a row. Win %
  * pooled (sagelet / blitzr / forkling):
  *

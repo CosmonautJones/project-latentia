@@ -36,23 +36,39 @@ function run(s: BattleMenuState, d: MenuData, ...actions: InputAction[]) {
 }
 
 const D = data([mv('ship-it', 1), mv('token-burst', 1), mv('compact', 0, 12, null)], { compact: [0] }, ['R1 Kip used Token Burst!', 'R1 Sagelet used Happy to Help!', 'R2 Kip used Compact!']);
-const ROOT = { prompt: 0, temp: 1, why: 2, log: 3, speed: 4 } as const;
+const ROOT = { prompt: 0, why: 1, log: 2, numbers: 3, speed: 4 } as const;
+/** The same data once the save has unlocked temperature (V12): TEMP comes back after PROMPT. */
+const DT: MenuData = { ...D, tempUnlocked: true };
 
 describe('battle menu', () => {
-  it('opens on the root: PROMPT, TEMP, WHY?, LOG, SPEED', () => {
-    expect(menuView(initialMenu(), D)).toEqual({ id: MENU_IDS.root, items: ['PROMPT', 'TEMP T2', 'WHY?', 'LOG', 'SPEED 1×'], index: 0 });
+  it('opens on the root: PROMPT, WHY?, LOG, NUMBERS, SPEED; no TEMP while temperature is locked (V12)', () => {
+    expect(menuView(initialMenu(), D)).toEqual({ id: MENU_IDS.root, items: ['PROMPT', 'WHY?', 'LOG', 'NUMBERS OFF', 'SPEED 1×'], index: 0 });
+    expect(menuView(initialMenu(), DT).items).toEqual(['PROMPT', 'TEMP T2', 'WHY?', 'LOG', 'NUMBERS OFF', 'SPEED 1×']);
   });
 
-  it('the root is a two-column grid: left/right change column, up/down change row and wrap', () => {
+  it('the root is a three-column grid: left/right move along the row, up/down along the column, both wrap', () => {
     const at = (...a: InputAction[]) => run(initialMenu(), D, ...a).state.rootIndex;
     expect(at(press('right'))).toBe(1);
-    expect(at(press('down'))).toBe(2);
-    expect(at(press('down'), press('down'))).toBe(4);
-    expect(at(press('down'), press('down'), press('down'))).toBe(0);
-    expect(at(press('up'))).toBe(4);
-    expect(at(press('right'), press('up'))).toBe(3);
-    // SPEED sits alone on its row: right stays put.
-    expect(at(press('up'), press('right'))).toBe(4);
+    expect(at(press('left'))).toBe(2);
+    expect(at(press('down'))).toBe(3);
+    expect(at(press('down'), press('down'))).toBe(0);
+    expect(at(press('up'))).toBe(3);
+    expect(at(press('right'), press('down'))).toBe(4);
+    // The second row has two items: right from SPEED wraps to NUMBERS; LOG's column has only LOG.
+    expect(at(press('down'), press('right'), press('right'))).toBe(3);
+    expect(at(press('left'), press('down'))).toBe(2);
+  });
+
+  it('NUMBERS toggles the move details between plain words and numbers', () => {
+    const r = run(initialMenu(), D, pick(MENU_IDS.root, ROOT.numbers));
+    expect(r.effects).toEqual([{ kind: 'numbers', numbers: true }]);
+    expect(menuView(r.state, D).items[ROOT.numbers]).toBe('NUMBERS ON');
+    expect(run(r.state, D, pick(MENU_IDS.root, ROOT.numbers)).state.numbers).toBe(false);
+  });
+
+  it('a locked dial cannot be opened, even by a stray TEMP state', () => {
+    const s = { ...initialMenu(), screen: 'temp' as const };
+    expect(run(s, D, press('right')).state).toMatchObject({ screen: 'root', temperature: 2 });
   });
 
   it('PROMPT → a move with one target submits it with the current temperature (keyboard: one press)', () => {
@@ -100,7 +116,7 @@ describe('battle menu', () => {
 
   it('B backs out of every submenu to the root, and does nothing on the root', () => {
     expect(run(initialMenu(), D, press('a'), press('b')).state.screen).toBe('root');
-    expect(run(initialMenu(), D, press('right'), press('a'), press('b')).state.screen).toBe('root');
+    expect(run(initialMenu(), DT, press('right'), press('a'), press('b')).state.screen).toBe('root');
     expect(run(initialMenu(), D, pick(MENU_IDS.root, ROOT.log), press('b')).state.screen).toBe('root');
     const r = run(initialMenu(), D, press('b'));
     expect(r.state).toEqual(initialMenu());
@@ -109,22 +125,22 @@ describe('battle menu', () => {
 
   it('TEMP: left/right turn the dial T0–T4 (clamped), A sets it, B cancels; taps select then set', () => {
     const toTemp = [press('right'), press('a')];
-    let r = run(initialMenu(), D, ...toTemp, press('right'), press('right'), press('right'));
-    expect(menuView(r.state, D)).toEqual({ id: MENU_IDS.temp, items: ['T0', 'T1', 'T2', 'T3', 'T4'], index: 4 });
-    r = run(r.state, D, press('a'));
+    let r = run(initialMenu(), DT, ...toTemp, press('right'), press('right'), press('right'));
+    expect(menuView(r.state, DT)).toEqual({ id: MENU_IDS.temp, items: ['T0', 'T1', 'T2', 'T3', 'T4'], index: 4 });
+    r = run(r.state, DT, press('a'));
     expect(r.state).toMatchObject({ screen: 'root', temperature: 4 });
     expect(r.effects).toEqual([{ kind: 'temperature', temperature: 4 }]);
-    r = run(r.state, D, ...toTemp, press('left'), press('left'), press('b'));
+    r = run(r.state, DT, ...toTemp, press('left'), press('left'), press('b'));
     expect(r.state).toMatchObject({ screen: 'root', temperature: 4, tempIndex: 4 });
-    r = run(initialMenu(), D, ...toTemp, press('left'), press('left'), press('left'), press('a'));
+    r = run(initialMenu(), DT, ...toTemp, press('left'), press('left'), press('left'), press('a'));
     expect(r.state.temperature).toBe(0);
-    r = run(initialMenu(), D, ...toTemp, pick(MENU_IDS.temp, 3));
+    r = run(initialMenu(), DT, ...toTemp, pick(MENU_IDS.temp, 3));
     expect(r.state).toMatchObject({ screen: 'temp', tempIndex: 3, temperature: 2 });
-    expect(run(r.state, D, pick(MENU_IDS.temp, 3)).state.temperature).toBe(3);
+    expect(run(r.state, DT, pick(MENU_IDS.temp, 3)).state.temperature).toBe(3);
   });
 
   it('the chosen temperature goes into the command', () => {
-    const r = run(initialMenu(), D, press('right'), press('a'), press('left'), press('a'), press('left'), press('a'), press('a'));
+    const r = run(initialMenu(), DT, press('right'), press('a'), press('left'), press('a'), press('left'), press('a'), press('a'));
     expect(r.effects.at(-1)).toEqual({ kind: 'submit', choice: { moveId: 'ship-it', target: 1, temperature: 1 } });
   });
 
