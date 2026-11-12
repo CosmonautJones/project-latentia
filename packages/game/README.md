@@ -160,10 +160,17 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
   the engine allows it), **WHY?** (each deck-driven creature's latest CardTrace in plain words, only ever after it
   acted), **LOG** (the last 40 battle lines) and a 1×/2× speed toggle. B backs out of every submenu.
 - **Input**: keys and the D-pad act at once; on touch and pointer a move, notch or target takes two taps (the first
-  selects it and shows its hint, the second commits). A click or tap on the screen advances dialogue.
-- **Layout** (v0.1 Q1, before Q2's redesign): landscape keeps v0's 320×136 field centred in the safe area; portrait
-  stacks the foe over the player's side (`src/battle-ui/stage-layout.ts`). The command box holds the prompt and the
-  highlighted item's hint; the menus are framed panels of tappable buttons above it (`src/battle-ui/command-box.ts`).
+  selects it and shows its hint, the second commits). A click or tap on the screen advances dialogue. The arrows move
+  through each grid the way it is drawn (the root three to a row, the moves two or three, the targets two): left and
+  right along the row, up and down along the column, wrapping at the ends; on a paged move list, down past the last
+  row turns the page (`src/battle/battle-menu.ts`).
+- **Layout** (`src/battle-ui/stage-layout.ts`, `src/battle-ui/command-box.ts`): the field above a band of text lines
+  and buttons. Nothing the player reads or taps sits under a touch control: the viewport exports the controls as
+  occluders in logical px (placed with the safe-area insets), and a unit invariant checks every panel, telegraph,
+  sprite, text line and button against them at every review size, with and without iPhone insets. Only decoration
+  (the band's notched frame, the floor) may run under them. On a portrait screen 500 logical px tall or more the
+  moves are the first screen, with WHY? LOG NUMBERS SPEED in one compact row under them (no PROMPT step); shorter
+  screens and landscape keep PROMPT. A rotation rebuilds the menu from live state, so an armed move stays drawn.
 - **First-time hints** explain PROMPT, context (CX, COST, Drift and the DR chip), the dial, WHY? and the intent
   preview (taught at the first battle with your own subagent), once each; the save remembers them (schema v2).
 - **Playback**: `src/battle/event-steps.ts` maps every engine event type to UI steps (a text fallback at least;
@@ -207,7 +214,8 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
   really blocks the way on.
 - **Rules** are pure (`src/overworld/`): `walker.ts` (a tile per step, 250 ms, hold to walk, tap to turn), `rules.ts`
   (collision, what a finished step sets off, what A does), `sight.ts`, `camera.ts` (2×1-tile deadzone, clamped,
-  small rooms centred; its view is the logical screen, so portrait shows more of the map up and down), `reach.ts`
+  small rooms centred; its view is the logical screen, so portrait shows more of the map up and down, and it centres
+  the player in the part the touch controls leave clear, letting that part reach the map's edges), `reach.ts`
   (BFS through warps), `border.ts` (the scenery around an area: trees and the path carry on past an outdoor edge,
   a room sits in the dark, so a small map the camera centres never shows a bare edge).
 - **Art:** the tileset and the people are the art pass's sheets (see "Art"). People stand with their feet 4 px above
