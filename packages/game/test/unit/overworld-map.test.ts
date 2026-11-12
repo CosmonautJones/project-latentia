@@ -23,8 +23,8 @@ const fixture = (): WorldSource => ({
     },
   },
   signs: [{ at: { area: 'yard', x: 1, y: 1 }, text: 'A sign.' }],
-  npcs: [{ id: 'host', look: 'professor', at: { area: 'room', x: 1, y: 1, facing: 'down' }, line: 'Hi.' }],
-  trainer: { id: 'grad', look: 'grad', at: { area: 'yard', x: 8, y: 2, facing: 'left' }, line: 'Not yet.', engage: 'Battle!', sight: 3 },
+  npcs: [{ id: 'host', at: { area: 'room', x: 1, y: 1, facing: 'down' }, line: 'Hi.' }],
+  trainer: { id: 'grad', at: { area: 'yard', x: 8, y: 2, facing: 'left' }, line: 'Not yet.', engage: 'Battle!', sight: 3 },
   warps: [
     { from: { area: 'room', x: 2, y: 3 }, to: { area: 'yard', x: 2, y: 1, facing: 'down' } },
     { from: { area: 'yard', x: 2, y: 0 }, to: { area: 'room', x: 2, y: 2, facing: 'up' } },
@@ -205,12 +205,13 @@ describe('the Localhost → Deprecated Forest trailhead map', () => {
   it('names the place you stand in: the lab, Localhost, then the Deprecated Forest from the trailhead on', () => {
     expect(regionName(w, w.spawns.walk)).toBe("Prof. Epoch's lab");
     expect(regionName(w, { area: 'outside', x: 5, y: 4 })).toBe('Localhost');
-    expect(regionName(w, { area: 'outside', x: w.signs[0]!.at.x, y: 3 })).toBe('Deprecated Forest');
-    expect(regionName(w, w.trainer.at)).toBe('Deprecated Forest');
+    expect(regionName(w, { area: 'outside', x: w.signs[0]!.at.x, y: 3 })).toBe('Deprecated Forest — Trailhead');
+    expect(regionName(w, w.trainer.at)).toBe('Deprecated Forest — Trailhead');
   });
 
-  it('NPCs are where the brief puts them: the professor in the lab, one townsperson outside', () => {
-    expect(w.npcs.map((n) => n.id)).toEqual(['professor', 'farmer']);
+  it('NPCs are where the brief puts them: the professor and Kip (Q2a: his sprite stands in the lab) in the lab, one townsperson outside', () => {
+    expect(w.npcs.map((n) => n.id)).toEqual(['professor', 'kip', 'farmer']);
+    expect(w.npcs.filter((n) => n.at.area === 'lab').map((n) => n.id)).toEqual(['professor', 'kip']);
     expect(npcAt(w, w.trainer.at)?.id).toBe('bootcamp-grad');
   });
 });

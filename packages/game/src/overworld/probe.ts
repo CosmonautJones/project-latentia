@@ -18,6 +18,8 @@ export interface OverworldProbe {
   readonly mode: OverworldMode;
   /** The dialogue on screen, if any. */
   readonly dialogue: string | null;
+  /** The place-name caption on screen, if any. */
+  readonly caption: string | null;
   readonly encounterLive: boolean;
   readonly trainerLive: boolean;
   /** Where the trainer stands now (it walks over once it spots you), when it is in the shown area. */

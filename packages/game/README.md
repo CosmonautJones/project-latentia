@@ -2,8 +2,9 @@
 
 **Latentia v0**, the first playable version of Latentia: a satirical creature collector where the creatures are AI
 agents. You command an orchestrator model in turn-based battles, distill a wild model into a subagent, teach it an
-`IF … THEN …` example card, and find out what it does with it. 8-bit art, 480×270 (270 wide in portrait), desktop
-and phone. v0.1 Q1 made the image fill a phone screen and moved every menu into it.
+`IF … THEN …` example card, and find out what it does with it. 8-bit art at a flexible logical size (240 to 270 on
+the short side, 426 to 540 on the long), desktop and phone. v0.1 Q1 made the image fill a phone screen and moved every
+menu into it; Q2a brought in the art pass's tiles, people and 96 px creatures and let both orientations flex.
 
 The client is Phaser 4, TypeScript (strict) and Vite, and it uses only `@latentia/engine`'s public API. It covers
 P1–P5 of the playable-v0 plan (`docs/superpowers/plans/2026-11-10-playable-v0.md`).
@@ -114,12 +115,13 @@ All input goes through one action stream (`src/input/hub.ts`) of six buttons: up
 `src/layout/viewport.ts` (pure, unit-tested at 1366×768, 1920×1080, 844×390, 390×844, 360×640 and 412×915) turns the
 CSS viewport, the DPR and the orientation into the layout every scene lays out from:
 
-- **Logical size**: 480×270 in landscape and on desktop; in portrait 270 wide and 480 to 540 tall (the long side grows
-  to fill the screen). Phaser runs at that size with `pixelArt: true`.
-- **Scale**: the largest integer number of **device** pixels per logical pixel that fits, which is also the one that
-  fills the most screen, so every game pixel is an exact square of device pixels (nearest filtering, never a fraction).
-  A 390×844 iPhone (DPR 3) gets 4 device px: 270×540 at 360×720 CSS, 79% of the screen; turned to 844×390 it gets
-  640×360 CSS (70.0%); a 360×640 Android at DPR 3 is filled exactly. 1366×768 at DPR 1 gets 2× (960×540, centred).
+- **Logical size and scale** (ruling V16): both orientations flex, the short side 240 to 270 logical px and the long
+  side 426 to 540. Of every integer number of **device** pixels per logical pixel, with the largest in-range size that
+  fits at it, the layout takes the one that covers the most screen (a tie goes to the larger logical size), so every
+  game pixel is an exact square of device pixels (nearest filtering, never a fraction). Phaser runs at that size with
+  `pixelArt: true`. 1366×768 at DPR 1: 455×256 at 3× (99.9%); 1920×1080: 480×270 at 4×; a 390×844 iPhone (DPR 3):
+  270×540 at 4 device px (78.7%), turned 540×270 (78.7%); a 360×640 Android at DPR 3: 270×480, exact; at DPR 2:
+  240×426 at 3× (99.8%). Every scene lays out at the 240 px short side.
 - **Touch controls**: a translucent DOM overlay at the screen edges, each button at least 44 CSS px and placed by the
   layout: along the bottom in portrait, vertically centred at the sides in landscape. Desktop shows none.
 - **Safe area** (`layout.safe`, logical px): the part of the image no control covers. The dialogue box sits at its
@@ -132,7 +134,7 @@ CSS viewport, the DPR and the orientation into the layout every scene lays out f
 ## Text
 
 The font is drawn in code (`src/text/glyphs.ts`): 5×8 glyphs on a 6×10 cell, covering printable ASCII plus
-`… → ← ↑ ↓ ✓ × ▶ ▼`. At boot it is rasterised to a canvas texture and registered as a Phaser RetroFont. No
+`… — → ← ↑ ↓ ✓ × ▶ ▼` (the hyphen is 3 px, the em dash 5). At boot it is rasterised to a canvas texture and registered as a Phaser RetroFont. No
 font files and no licences are involved. Text the font can't draw becomes `?`, and smart quotes and dashes become
 ASCII. All story text goes through `DialogueBox` (`src/ui/dialogue-box.ts`): a typewriter showing at most 3 lines of
 36 characters, per the design bible.
@@ -172,17 +174,22 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 - **Result**: a win sends `battleWon`; a loss (or a round-cap draw) sends `battleLost`, which restarts the fight. A
   loss to the trainer also says what the player's deck-driven teammates kept doing (`summarizeTraces`).
 
-## Creature art
+## Art
 
-- **Sagelet, Blitzr and Forkling** use the Fable style-test idle sheets from the `art/style-test` branch
-  (`art/style-test/<starter>-idle-sheet.png`, commit 1766d4c), copied to `public/assets/<starter>-idle.png`: six
-  64×64 frames at 100 ms (Blitzr 75 ms), as authored. They are placeholder art by the project's own art pipeline;
-  see that branch's `art/style-test/NOTES.md`.
-- **Every other species** gets a generated placeholder (`src/battle/creature-art.ts`): a rounded silhouette in its
-  type colour with a dark outline, shade on the lower left and its initial, all from Endesga 32, breathing on two
-  frames.
-- **Back view (v0 stand-in):** the player's creatures are the front art flipped to face right and darkened with a
-  multiply tint. Real back sprites come with the final art.
+- **The art pass** (`packages/art`, `pnpm --filter @latentia/art build:pass2`) builds every sheet and a
+  `manifest.json` into `packages/art/out/`. `pnpm --filter @latentia/game sync-art` copies the sheets to
+  `public/assets/art/` and the manifest to `src/art/manifest.json`; `test/unit/art-sheets.test.ts` fails if the copy
+  is stale or a frame the game uses is missing. Boot loads every sheet and animation the manifest lists
+  (`src/art/load.ts`); `build:single` inlines them as data: URIs through `src/asset-url.ts`.
+- **`src/art/sheets.ts`** is the one module that knows sheet ids, animation names and frame numbers: tile kind to
+  tileset frame, the patch sway and the lurker eyes, the character sheet for each map id (`player`, `professor`,
+  `kip`, `farmer`, `bootcamp-grad`), and each species' battle sheet.
+- **Creatures:** Sagelet, Blitzr, Forkling, Tokenibble and Vibrat have 96×96 sheets (a 6-frame idle loop, a 2-frame
+  hit), drawn facing the viewer's left; the player's side mirrors them (ruling V15). A creature stands with its feet
+  on its position (the sheet's baseline). Any other species gets a generated placeholder (`src/battle/creature-art.ts`):
+  a rounded silhouette in its type colour with its initial, all from Endesga 32, breathing on two frames.
+- **The starter pick, the distill choice and the debrief** show the creatures in their battle art with the idle
+  animation (`src/overworld-ui/starter-showcase.ts`, `scenes/distill.ts`, `scenes/debrief.ts`).
 
 ## Overworld
 
@@ -201,10 +208,13 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 - **Rules** are pure (`src/overworld/`): `walker.ts` (a tile per step, 250 ms, hold to walk, tap to turn), `rules.ts`
   (collision, what a finished step sets off, what A does), `sight.ts`, `camera.ts` (2×1-tile deadzone, clamped,
   small rooms centred; its view is the logical screen, so portrait shows more of the map up and down), `reach.ts`
-  (BFS through warps). Tiles and figures are generated from Endesga 32 at 16 px (`tile-art.ts`, `figure-art.ts`);
-  until the art pass lands they are shown on 24 px tiles through a clean ×1.5 pixel pattern (each pair of pixels
-  becomes three, `a a b`, so no colour is blended: `upscale.ts`), and each 16×32 figure stands centred in a 24×32
-  frame. The patch sways on 2 frames.
+  (BFS through warps), `border.ts` (the scenery around an area: trees and the path carry on past an outdoor edge,
+  a room sits in the dark, so a small map the camera centres never shows a bare edge).
+- **Art:** the tileset and the people are the art pass's sheets (see "Art"). People stand with their feet 4 px above
+  their tile's bottom edge and play their facing's 4-step walk (130 ms a frame) while moving. The patch sways on 2
+  frames and the wild model's eyes blink in it.
+- **Place names:** entering a map, or walking into a named stretch of one, slides its name in at the top left for
+  about 2 s (`overworld-ui/place-caption.ts`): "Prof. Epoch's lab", "Localhost", "Deprecated Forest — Trailhead".
 - **Triggers:** the patch starts the wild battle on the first walk only (`reachedTrailhead`); after the distill the
   flow's `forest` step makes the patch calm and Bootcamp Grad's sight (4 tiles) live: "!", it walks over, says its
   line, then `trainerEngaged` starts the battle. Before the distill the Grad only blocks the way with a line.
@@ -267,5 +277,5 @@ check, which the production build folds away; `test/e2e/dist.spec.ts` greps the 
 ## Credits
 
 The Endesga 32 palette is by Endesga ([Lospec](https://lospec.com/palette-list/endesga-32)). The font, the
-placeholder creatures, the overworld tiles and figures, and all other visuals are generated in code for this project. The three starter battle idles
-come from the Fable style test on the `art/style-test` branch (see "Creature art").
+placeholder creatures for undrawn species, and the UI are generated in code for this project. The creatures, the
+overworld tiles and the people come from the project's own art pass (`packages/art`, see "Art").

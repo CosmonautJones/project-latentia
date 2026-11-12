@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Dir } from '../../src/overworld/direction.js';
-import { createWalker, pixelPos, placeWalker, STEP_MS, TURN_MS, updateWalker, walkFrame, type WalkerState } from '../../src/overworld/walker.js';
+import { createWalker, pixelPos, placeWalker, STEP_MS, TURN_MS, updateWalker, isWalking, type WalkerState } from '../../src/overworld/walker.js';
 import { cameraFollow, cameraSnap, type CameraBox } from '../../src/overworld/camera.js';
 
 const open = () => true;
@@ -85,18 +85,29 @@ describe('walker: grid movement, a tile per step', () => {
     expect(again.state.move).toBeNull();
   });
 
-  it('pixel position is an integer tween from tile to tile; the 2-frame bob shows in the first half of a step', () => {
+  it('pixel position is an integer tween from tile to tile', () => {
     const s0 = createWalker({ x: 2, y: 1, facing: 'right' });
     expect(pixelPos(s0, 16)).toEqual({ x: 32, y: 16 });
-    expect(walkFrame(s0)).toBe(0);
     const mid = run(s0, STEP_MS / 2 - FRAME, 'right').state;
     const p = pixelPos(mid, 16);
     expect(Number.isInteger(p.x) && Number.isInteger(p.y)).toBe(true);
     expect(p.x).toBeGreaterThan(32);
     expect(p.x).toBeLessThan(48);
-    expect(walkFrame(mid)).toBe(1);
-    const late = run(mid, STEP_MS / 2 - FRAME, null).state;
-    expect(walkFrame(late)).toBe(0);
+  });
+
+  it('walking (the walk animation plays) through a held walk, including the update between two tiles; standing once released', () => {
+    const s0 = createWalker({ x: 2, y: 1, facing: 'right' });
+    expect(isWalking(s0)).toBe(false);
+    let s = s0;
+    for (let t = 0; t < 3 * STEP_MS; t += FRAME) {
+      const r = updateWalker(s, FRAME, 'right', () => true);
+      s = r.state;
+      expect(isWalking(s), `at ${t} ms${r.arrived ? ' (arrival)' : ''}`).toBe(true);
+    }
+    // Released: the step in progress finishes, then the walker stands.
+    s = run(s, STEP_MS + 2 * FRAME, null).state;
+    expect(s.move).toBeNull();
+    expect(isWalking(s)).toBe(false);
   });
 
   it('placing (a warp, a scripted turn) drops any step in progress', () => {

@@ -12,20 +12,19 @@ import { isOverworldStep, type FlowEvent, type OverworldStep } from '../flow/flo
 import type { InputAction } from '../input/hub.js';
 import { cameraFollow, cameraSnap, type CameraBox } from '../overworld/camera.js';
 import { DIRS, HeldDirections, isDir, OPPOSITE } from '../overworld/direction.js';
-import type { LookId, Place, Pos, Spot } from '../overworld/map.js';
+import { regionName, type Place, type Pos, type Spot } from '../overworld/map.js';
 import type { OverworldMode } from '../overworld/probe.js';
 import { afterStep, canEnter, encounterLive, interact, trainerLive } from '../overworld/rules.js';
-import { TILE } from '../overworld/tile-art.js';
-import { createWalker, pixelPos, placeWalker, updateWalker, walkFrame, type WalkerState } from '../overworld/walker.js';
+import { TILE } from '../overworld/tile.js';
+import { createWalker, isWalking, pixelPos, placeWalker, updateWalker, type WalkerState } from '../overworld/walker.js';
 import { Actor } from '../overworld-ui/actor.js';
 import { MapView } from '../overworld-ui/map-view.js';
+import { PlaceCaption } from '../overworld-ui/place-caption.js';
 import { cardTutorial, labIntro } from '../overworld-ui/step-beats.js';
-import { ensureOverworldTextures } from '../overworld-ui/textures.js';
 import { DialogueBox } from '../ui/dialogue-box.js';
 import { BaseScene } from './base-scene.js';
 
 const PROBE = import.meta.env.DEV || import.meta.env.MODE === 'test';
-const LOOKS: readonly LookId[] = ['player', 'professor', 'farmer', 'grad'];
 /** The bible's 2x1-tile camera deadzone. */
 const DEADZONE = { width: 2 * TILE, height: TILE };
 const FADE_MS = 140;
@@ -38,6 +37,9 @@ export class OverworldScene extends BaseScene {
   private view!: MapView;
   private player: Actor | null = null;
   private box!: DialogueBox;
+  private caption!: PlaceCaption;
+  /** The place name last announced, so walking into a named stretch announces it once. */
+  private placeName: string | null = null;
   private walker!: WalkerState;
   private held = new HeldDirections();
   private mode: OverworldMode = 'walk';
@@ -66,10 +68,11 @@ export class OverworldScene extends BaseScene {
     for (const d of DIRS) if (this.app.input.isHeld(d)) this.held.press(d);
 
     this.player = null;
-    ensureOverworldTextures(this, LOOKS);
-    this.cameras.main.setRoundPixels(true);
+    this.placeName = null;
+    this.cameras.main.setRoundPixels(true).setBackgroundColor(0x181425);
     this.view = new MapView(this, this.world, step);
     this.box = new DialogueBox(this, this.app);
+    this.caption = new PlaceCaption(this, this.app);
     const spawn = this.world.spawns[step];
     this.enterArea(spawn);
     this.listen((a) => this.onInput(a, gen));
@@ -113,6 +116,15 @@ export class OverworldScene extends BaseScene {
     this.player = new Actor(this, 'player', at);
     this.scroll = cameraSnap(this.playerCentre(), this.cameraBox());
     this.drawPlayer();
+    this.announce();
+  }
+
+  /** Show the place's name when it changes: entering a map, or walking into a named stretch of one. */
+  private announce(): void {
+    const name = regionName(this.world, this.spot);
+    if (name === this.placeName) return;
+    this.placeName = name;
+    this.caption.show(name);
   }
 
   private cameraBox(): CameraBox {
@@ -127,7 +139,7 @@ export class OverworldScene extends BaseScene {
   }
 
   private drawPlayer(): void {
-    this.player?.place(pixelPos(this.walker, TILE), this.walker.facing, walkFrame(this.walker));
+    this.player?.place(pixelPos(this.walker, TILE), this.walker.facing, isWalking(this.walker));
     this.scroll = cameraFollow(this.scroll, this.playerCentre(), this.cameraBox());
     this.cameras.main.setScroll(this.scroll.x, this.scroll.y);
   }
@@ -135,6 +147,7 @@ export class OverworldScene extends BaseScene {
   /** A step completed: warps, the wild patch and the trainer's sight are checked here (and only here). */
   private arrive(gen: number): void {
     const here: Place = this.spot;
+    this.announce();
     const o = afterStep(this.world, this.step, here);
     if (o.kind === 'warp') void this.warp(gen, o.to);
     else if (o.kind === 'encounter') void this.encounter(gen);
@@ -151,7 +164,7 @@ export class OverworldScene extends BaseScene {
       return;
     }
     // NPCs turn to face whoever talks to them.
-    if (it.kind === 'talk') this.view.actor(it.npc.id)?.place({ x: it.npc.at.x * TILE, y: it.npc.at.y * TILE }, OPPOSITE[this.walker.facing], 0);
+    if (it.kind === 'talk') this.view.actor(it.npc.id)?.place({ x: it.npc.at.x * TILE, y: it.npc.at.y * TILE }, OPPOSITE[this.walker.facing], false);
     this.mode = 'talk';
     await this.say(gen, it.text);
     if (this.live(gen)) this.mode = 'walk';
@@ -250,6 +263,7 @@ export class OverworldScene extends BaseScene {
       moving: this.walker.move !== null,
       mode: this.mode,
       dialogue: this.dialogue,
+      caption: this.caption.text,
       encounterLive: encounterLive(this.step),
       trainerLive: trainerLive(this.step),
       trainer: grad ? grad.tile : null,

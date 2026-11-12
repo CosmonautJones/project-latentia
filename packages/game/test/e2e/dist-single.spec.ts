@@ -75,8 +75,9 @@ test('dist-single is one self-contained index.html under 16 MiB: inline script a
   expect(markup.length).toBeLessThan(10_000);
   for (const ref of markup.match(/\b(?:src|href)="[^"]{0,40}/g) ?? []) expect(ref).toMatch(/^(src|href)="data:/);
   expect(html).not.toMatch(/url\(\s*["']?(?!data:)[^)"']+\.(png|svg|woff2?|ttf|otf)/);
-  // The three starter sheets are in as PNG data: URIs; the favicon as an SVG one.
-  for (const sheet of ['sagelet', 'blitzr', 'forkling']) expect(html).toMatch(new RegExp(`"assets/${sheet}-idle\\.png":"data:image/png;base64,`));
+  // Every art sheet the manifest lists is in as a PNG data: URI; the favicon as an SVG one.
+  const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../src/art/manifest.json'), 'utf8')) as { sheets: Record<string, { file: string }> };
+  for (const { file } of Object.values(manifest.sheets)) expect(html, file).toContain(`"assets/art/${file}":"data:image/png;base64,`);
   expect(html).toContain('<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,');
   for (const devOnly of ['__latentia', 'installHook', 'plannedMs', 'actualMs']) expect(html, devOnly).not.toContain(devOnly);
   const urls = new Set(html.match(/https?:\/\/[^\s"'`)]+/g) ?? []);

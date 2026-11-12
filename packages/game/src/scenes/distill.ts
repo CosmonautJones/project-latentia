@@ -52,7 +52,7 @@ export class DistillScene extends BaseScene {
     const { objects, floor } = drawFloor(this, l);
     const cx = l.safe.x + Math.floor(l.safe.width / 2);
     const shadow = this.add.graphics().setDepth(-1);
-    shadow.fillStyle(COLOR.slate).fillEllipse(cx, floor - 2, 64, 10);
+    shadow.fillStyle(COLOR.slate).fillEllipse(cx, floor + 1, 88, 10);
     const tok = new CreatureSprite(this, cx, floor, 'tokenibble', false);
     tok.sprite.setAlpha(0.85).setDepth(-1);
     this.statics = [...objects, shadow, tok.sprite];

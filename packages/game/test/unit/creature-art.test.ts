@@ -1,22 +1,13 @@
 import { SPECIES_IDS } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
-import { FABLE_SHEETS, placeholderArt, PLACEHOLDER_FRAMES } from '../../src/battle/creature-art.js';
+import { BATTLE_SPECIES } from '../../src/art/sheets.js';
+import { placeholderArt, PLACEHOLDER_FRAMES } from '../../src/battle/creature-art.js';
 import { ENDESGA_32 } from '../../src/ui/palette.js';
-
-describe('Fable starter sheets', () => {
-  it('cover the three starters at the bible frame timing (6 frames of 64×64; Blitzr faster)', () => {
-    expect(Object.keys(FABLE_SHEETS).sort()).toEqual(['blitzr', 'forkling', 'sagelet']);
-    for (const s of Object.values(FABLE_SHEETS)) expect(s).toMatchObject({ frames: 6, frameSize: 64 });
-    expect(FABLE_SHEETS.sagelet.frameMs).toBe(100);
-    expect(FABLE_SHEETS.forkling.frameMs).toBe(100);
-    expect(FABLE_SHEETS.blitzr.frameMs).toBe(75);
-  });
-});
 
 describe('placeholder creature art', () => {
   const palette = new Set<number>(ENDESGA_32);
 
-  it.each(SPECIES_IDS.filter((s) => !(s in FABLE_SHEETS)).map((s) => [s] as const))('%s: a 64×64 Endesga 32 silhouette, deterministic', (species) => {
+  it.each(SPECIES_IDS.filter((s) => !BATTLE_SPECIES.includes(s)).map((s) => [s] as const))('%s: a 64×64 Endesga 32 silhouette, deterministic', (species) => {
     const a = placeholderArt(species);
     expect(a.size).toBe(64);
     expect(a.frames).toHaveLength(PLACEHOLDER_FRAMES);

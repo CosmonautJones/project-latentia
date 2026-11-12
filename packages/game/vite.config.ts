@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { extname, join, relative, sep } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
@@ -7,10 +7,15 @@ const PUBLIC = join(import.meta.dirname, 'public');
 const MIME: Readonly<Record<string, string>> = { '.png': 'image/png', '.svg': 'image/svg+xml' };
 const dataUri = (file: string) => `data:${MIME[extname(file)] ?? 'application/octet-stream'};base64,${readFileSync(file).toString('base64')}`;
 
-/** Every file under public/assets/ as `assets/<name>` → a data: URI, for the single-file build. */
+/** Every file under public/assets/ (folders included) as `assets/<path>` → a data: URI, for the single-file build. */
 function inlineAssets(): Record<string, string> {
-  const dir = join(PUBLIC, 'assets');
-  return Object.fromEntries(readdirSync(dir).map((f) => [`assets/${f}`, dataUri(join(dir, f))]));
+  const files = readdirSync(join(PUBLIC, 'assets'), { recursive: true, withFileTypes: true }).filter((e) => e.isFile());
+  return Object.fromEntries(
+    files.map((e) => {
+      const rel = relative(PUBLIC, join(e.parentPath, e.name)).split(sep).join('/');
+      return [rel, dataUri(join(PUBLIC, rel))];
+    }),
+  );
 }
 
 /** The single-file build's page: the favicon (a public file the page links) becomes a data: URI too. */

@@ -8,8 +8,9 @@ import { CARD_TUTORIAL_HINT, CARD_TUTORIAL_TITLE, PROFESSOR_INTRO, STARTER_CHOIC
 import { TOKENIBBLE_PRESETS } from '../content/trainers.js';
 import { STARTERS, type StarterId } from '../flow/flow.js';
 import { cardChoices } from '../journey/debrief.js';
-import { ChoicePanel, type ChoiceItem } from '../ui/choice-panel.js';
+import { ChoicePanel, type ChoiceItem, type ChoicePanelOptions } from '../ui/choice-panel.js';
 import type { DialogueBox } from '../ui/dialogue-box.js';
+import { StarterShowcase } from './starter-showcase.js';
 
 interface Beat {
   readonly scene: Phaser.Scene;
@@ -22,7 +23,9 @@ interface Beat {
 }
 
 /** Say `lines`, then offer `items`; B replays the lines. Resolves with the picked index, or null if the scene went away. */
-async function sayThenChoose(b: Beat, lines: readonly string[], panel: { id: string; title: string; items: readonly ChoiceItem[] }, closeOnB: boolean): Promise<number | null> {
+type PanelSpec = Pick<ChoicePanelOptions, 'id' | 'title' | 'items' | 'reserveRight' | 'onDraw'> & { readonly items: readonly ChoiceItem[]; readonly onClose?: () => void };
+
+async function sayThenChoose(b: Beat, lines: readonly string[], panel: PanelSpec, closeOnB: boolean): Promise<number | null> {
   for (;;) {
     for (const line of lines) {
       b.onSay(line);
@@ -35,10 +38,12 @@ async function sayThenChoose(b: Beat, lines: readonly string[], panel: { id: str
         ...panel,
         onConfirm: (i) => {
           p.destroy();
+          panel.onClose?.();
           resolve(i);
         },
         onCancel: () => {
           p.destroy();
+          panel.onClose?.();
           resolve(-1);
         },
       });
@@ -48,10 +53,11 @@ async function sayThenChoose(b: Beat, lines: readonly string[], panel: { id: str
   }
 }
 
-/** Prof. Epoch's intro, then Sagelet, Blitzr or Forkling, each with a line on what it is like. */
+/** Prof. Epoch's intro, then Sagelet, Blitzr or Forkling, each with a line on what it is like, and its art. */
 export async function labIntro(b: Beat): Promise<StarterId | null> {
   const items = STARTERS.map((s) => STARTER_CHOICES[s]);
-  const i = await sayThenChoose(b, PROFESSOR_INTRO, { id: 'starter', title: 'CHOOSE YOUR FIRST MODEL', items }, false);
+  const show = new StarterShowcase(b.scene, STARTERS);
+  const i = await sayThenChoose(b, PROFESSOR_INTRO, { id: 'starter', title: 'CHOOSE YOUR FIRST MODEL', items, reserveRight: show.reserve, onDraw: show.draw, onClose: () => show.clear() }, false);
   return i === null ? null : (STARTERS[i] ?? null);
 }
 

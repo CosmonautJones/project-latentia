@@ -85,10 +85,11 @@ export class BattleStage {
     g.fillStyle(COLOR.night).fillRect(0, floorY, W, height - floorY);
     // A dithered horizon between sky and floor.
     for (let y = floorY - 6; y < floorY; y++) for (let x = (y * 3) % 4; x < W; x += y < floorY - 3 ? 4 : 2) g.fillRect(x, y, 1, 1);
-    g.fillStyle(COLOR.slate).fillEllipse(slots.foe.sprite.x, slots.foe.sprite.y - 6, 92, 14);
-    g.fillStyle(COLOR.steel).fillEllipse(slots.foe.sprite.x, slots.foe.sprite.y - 7, 84, 10);
-    g.fillStyle(COLOR.slate).fillEllipse(slots.player.sprite.x + 30, slots.player.sprite.y - 4, 150, 18);
-    g.fillStyle(COLOR.steel).fillEllipse(slots.player.sprite.x + 30, slots.player.sprite.y - 5, 140, 12);
+    // The platforms the creatures stand on, centred under their feet.
+    g.fillStyle(COLOR.slate).fillEllipse(slots.foe.sprite.x, slots.foe.sprite.y + 1, 104, 14);
+    g.fillStyle(COLOR.steel).fillEllipse(slots.foe.sprite.x, slots.foe.sprite.y, 96, 10);
+    g.fillStyle(COLOR.slate).fillEllipse(slots.player.sprite.x + 36, slots.player.sprite.y + 1, 168, 18);
+    g.fillStyle(COLOR.steel).fillEllipse(slots.player.sprite.x + 36, slots.player.sprite.y, 156, 12);
   }
 
   private slotOf(index: number): Slot | undefined {

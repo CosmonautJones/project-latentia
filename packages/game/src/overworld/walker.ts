@@ -85,5 +85,5 @@ export function pixelPos(s: WalkerState, tile: number): Pos {
   };
 }
 
-/** The 2-frame walk bob: the stride frame in the first half of each step, standing otherwise. */
-export const walkFrame = (s: WalkerState): 0 | 1 => (s.move && s.move.elapsed < STEP_MS / 2 ? 1 : 0);
+/** Whether the walk animation plays: mid-step, or just arrived with the walk going on (no stand between tiles). */
+export const isWalking = (s: WalkerState): boolean => s.move !== null || s.momentum;

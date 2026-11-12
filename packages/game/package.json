@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "e2e": "vite build --mode test --outDir dist-test && vite build && vite build --mode single && playwright test",
     "screenshots": "vite build --mode test --outDir dist-test && SCREENSHOTS=1 playwright test screenshots",
-    "measure-loop": "tsx scripts/measure-loop.ts"
+    "measure-loop": "tsx scripts/measure-loop.ts",
+    "sync-art": "tsx scripts/sync-art.ts"
   },
   "dependencies": {
     "@latentia/engine": "workspace:*",

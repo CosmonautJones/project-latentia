@@ -46,6 +46,9 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
 
   // The walk step starts at its spawn in the lab, and the step is saved.
   expect(await ow(page)).toMatchObject({ step: 'walk', area: 'lab', x: 5, y: 4, mode: 'walk', encounterLive: true, trainerLive: false });
+  // Entering a map shows its name for about 2 s, GBA style, then it goes.
+  expect((await ow(page))?.caption).toBe("Prof. Epoch's lab");
+  await expect.poll(() => ow(page).then((o) => o?.caption ?? null), { timeout: 4000 }).toBeNull();
   const saved = await page.evaluate(() => JSON.parse(window.localStorage.getItem('latentia.save.v0') ?? 'null'));
   expect(saved).toMatchObject({ progress: { step: 'walk', starter: 'forkling' } });
 
@@ -66,7 +69,7 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
 
   // Out the door: the warp lands outside the lab, in Localhost.
   await walkTo(page, (p) => p.area === 'outside');
-  expect(await ow(page)).toMatchObject({ area: 'outside', x: 5, y: 4, facing: 'down' });
+  expect(await ow(page)).toMatchObject({ area: 'outside', x: 5, y: 4, facing: 'down', caption: 'Localhost' });
   // Back in and out again: each warp's fades remove their listeners, so none pile up.
   const listeners = (await ow(page))?.shutdownListeners;
   expect(listeners).toBeGreaterThan(0);
@@ -85,6 +88,8 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
   // The trailhead sign.
   const sign = LOCALHOST.signs[0]!;
   await walkTo(page, at('outside', sign.at.x, sign.at.y + 1));
+  // Walking into the trailhead's stretch of the map names it.
+  expect((await ow(page))?.caption).toBe('Deprecated Forest — Trailhead');
   await face(page, 'up');
   await page.keyboard.press('KeyZ');
   await expect.poll(() => ow(page).then((o) => o?.dialogue)).toBe('Deprecated Forest. Models here were sunset, not deleted.');

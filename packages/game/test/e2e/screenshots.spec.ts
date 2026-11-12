@@ -1,5 +1,6 @@
 // Screenshots for layout review, committed: desktop 1366x768, a 390x844 iPhone in portrait and turned to 844x390,
-// and a 360x640 Android (DPR 3). Every menu is drawn in the game image; on the phones the translucent D-pad and A/B
+// a 360x640 Android (DPR 3), and that Android at DPR 2 both ways up, where V16 makes the short side 240 (240x426 and
+// 426x240). Every menu is drawn in the game image; on the phones the translucent D-pad and A/B
 // overlay the screen edges, clear of the dialogue box and the menus.
 // Run with `pnpm --filter @latentia/game screenshots`; the normal e2e run skips this file.
 
@@ -17,12 +18,14 @@ import { GRAFT_MOVE } from '../../src/content/grids.js';
 import { GRAFT_HINTS } from '../../src/content/journey-text.js';
 import { at, face, LOCALHOST, ow, walkTo } from './walk.js';
 
-/** The four review sizes (plan v0.1 Q1). */
+/** The four review sizes (plan v0.1 Q1), then the two 240 px short sides (V16). */
 const DEVICES = [
   { name: '1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
   { name: '390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
   { name: '844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
   { name: '360x640', width: 360, height: 640, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  { name: '360x640-dpr2', width: 360, height: 640, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  { name: '640x360-dpr2', width: 640, height: 360, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
 ] as const;
 
 const SIZES = DEVICES.map((d) => ({ ...d, name: `title-${d.name}` }));

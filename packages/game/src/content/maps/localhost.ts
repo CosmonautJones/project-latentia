@@ -41,27 +41,31 @@ const OUTSIDE = [
 export const LOCALHOST_SOURCE: WorldSource = {
   areas: {
     lab: { name: "Prof. Epoch's lab", rows: LAB },
-    outside: { name: 'Localhost', rows: OUTSIDE, regions: [{ fromX: 30, name: 'Deprecated Forest' }] },
+    outside: { name: 'Localhost', rows: OUTSIDE, regions: [{ fromX: 30, name: 'Deprecated Forest — Trailhead' }] },
   },
   signs: [{ at: { area: 'outside', x: 30, y: 2 }, text: 'Deprecated Forest. Models here were sunset, not deleted.' }],
   npcs: [
     {
       id: 'professor',
-      look: 'professor',
       at: { area: 'lab', x: 5, y: 2, facing: 'down' },
       line: "PROF. EPOCH: The Deprecated Forest is east of town. Beat a wild model there, then distill it. We don't 'catch' them. Legal was very clear.",
       lines: { forest: 'PROF. EPOCH: A distilled model already! They grow up so fast. Then they get deprecated.' },
     },
     {
+      // The rival, who picked the starter that beats yours, waits by the racks.
+      id: 'kip',
+      at: { area: 'lab', x: 8, y: 3, facing: 'left' },
+      line: "KIP: One loss is a sample size of one. I'm not retraining over a sample size of one.",
+      lines: { forest: "KIP: You distilled one already? I'm still reading its license. All forty pages." },
+    },
+    {
       id: 'farmer',
-      look: 'farmer',
       at: { area: 'outside', x: 13, y: 5, facing: 'down' },
       line: "FARMER: My irrigation feeds the cooling towers now. The corn's thirsty, but the PR bot says we're water-positive. By 2040. Projected.",
     },
   ],
   trainer: {
     id: 'bootcamp-grad',
-    look: 'grad',
     at: { area: 'outside', x: 39, y: 6, facing: 'left' },
     sight: 4,
     line: 'BOOTCAMP GRAD: No distilled model, no battle. Twelve weeks of bootcamp taught me that much.',

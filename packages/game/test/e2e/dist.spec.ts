@@ -63,7 +63,7 @@ test('served from a nested path, the build plays from the title into the lab and
   page.on('requestfailed', (r) => errors.push(`failed: ${r.url()} ${r.failure()?.errorText ?? ''}`));
   page.on('response', (r) => {
     if (r.status() >= 400) errors.push(`HTTP ${r.status()}: ${r.url()}`);
-    else if (r.url().endsWith('-idle.png')) sprites.push(r.url().slice(ORIGIN.length));
+    else if (r.url().includes('/assets/art/')) sprites.push(r.url().slice(ORIGIN.length));
   });
   page.on('request', (r) => {
     const url = r.url();
@@ -92,9 +92,9 @@ test('served from a nested path, the build plays from the title into the lab and
       { timeout: 20_000 },
     )
     .toBe('rival');
-  // The starter sprites come from the sub-path too (relative asset URLs).
-  await expect.poll(() => sprites.length, { timeout: 10_000 }).toBeGreaterThan(0);
-  for (const s of sprites) expect(s.startsWith(`${BASE}assets/`)).toBe(true);
+  // The art sheets (tiles, people, creatures) come from the sub-path too (relative asset URLs).
+  await expect.poll(() => sprites.length, { timeout: 10_000 }).toBeGreaterThanOrEqual(11);
+  for (const s of sprites) expect(s.startsWith(`${BASE}assets/art/`)).toBe(true);
   await page.waitForTimeout(500);
   expect(offPath).toEqual([]);
   expect(errors).toEqual([]);

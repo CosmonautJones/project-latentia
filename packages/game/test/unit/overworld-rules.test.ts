@@ -12,8 +12,8 @@ const world: World = parseWorld({
     yard: { name: 'Yard', rows: ['##D#######', '#S.#....##', '#..".....,', '#..#######', '##########'] },
   },
   signs: [{ at: { area: 'yard', x: 1, y: 1 }, text: 'A sign.' }],
-  npcs: [{ id: 'host', look: 'professor', at: { area: 'room', x: 1, y: 1, facing: 'down' }, line: 'Hi.', lines: { forest: 'Back so soon?' } }],
-  trainer: { id: 'grad', look: 'grad', at: { area: 'yard', x: 8, y: 2, facing: 'left' }, line: 'Not yet.', engage: 'Battle!', sight: 3 },
+  npcs: [{ id: 'host', at: { area: 'room', x: 1, y: 1, facing: 'down' }, line: 'Hi.', lines: { forest: 'Back so soon?' } }],
+  trainer: { id: 'grad', at: { area: 'yard', x: 8, y: 2, facing: 'left' }, line: 'Not yet.', engage: 'Battle!', sight: 3 },
   warps: [
     { from: { area: 'room', x: 2, y: 3 }, to: { area: 'yard', x: 2, y: 1, facing: 'down' } },
     { from: { area: 'yard', x: 2, y: 0 }, to: { area: 'room', x: 2, y: 2, facing: 'up' } },

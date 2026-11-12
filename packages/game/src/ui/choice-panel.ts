@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 import type { App } from '../app.js';
-import type { Layout } from '../layout/viewport.js';
+import type { Layout, Rect } from '../layout/viewport.js';
 import { CELL_HEIGHT, CELL_WIDTH } from '../text/font-sheet.js';
 import { addPixelText } from '../text/phaser-font.js';
 import { wrapText } from '../text/wrap.js';
@@ -35,6 +35,10 @@ export interface ChoicePanelOptions {
   /** B: omit for a choice that must be made (B then does nothing). */
   readonly onCancel?: () => void;
   readonly depth?: number;
+  /** Logical px kept free right of the panel (e.g. for art beside it), per layout. */
+  readonly reserveRight?: (layout: Layout) => number;
+  /** After every draw (a cursor move, a relayout): where the panel is, and the cursor's row. */
+  readonly onDraw?: (panel: Rect, index: number, layout: Layout) => void;
 }
 
 /** What the dev hook sees of the open panel. */
@@ -118,7 +122,7 @@ export class ChoicePanel {
     const { scene, opts } = this;
     const depth = opts.depth ?? 90;
     const x = l.safe.x + MARGIN;
-    const width = l.safe.width - 2 * MARGIN;
+    const width = l.safe.width - 2 * MARGIN - (opts.reserveRight?.(l) ?? 0);
     const chars = Math.floor((width - 2 * PAD - CURSOR) / CELL_WIDTH);
     const head = [...(opts.title ? [opts.title] : []), ...(opts.body ?? []).flatMap((p) => wrapText(p, chars + 1))];
     const headHeight = head.length * LINE + (opts.title ? 2 : 0) + (head.length > 0 ? 4 : 0);
@@ -169,5 +173,6 @@ export class ChoicePanel {
       this.objects.push(addTapZone(scene, this.app, { x: x + 3, y, width: width - 6, height: h }, opts.id, i, { depth: depth + 2 }));
       y += h + ROW_GAP;
     });
+    opts.onDraw?.({ x, y: top, width, height }, this.state.index, l);
   }
 }
