@@ -2,7 +2,8 @@
 
 **Latentia v0**, the first playable version of Latentia: a satirical creature collector where the creatures are AI
 agents. You command an orchestrator model in turn-based battles, distill a wild model into a subagent, teach it an
-`IF … THEN …` example card, and find out what it does with it. 8-bit art, 320×180, desktop and phone.
+`IF … THEN …` example card, and find out what it does with it. 8-bit art, 480×270 (270 wide in portrait), desktop
+and phone. v0.1 Q1 made the image fill a phone screen and moved every menu into it.
 
 The client is Phaser 4, TypeScript (strict) and Vite, and it uses only `@latentia/engine`'s public API. It covers
 P1–P5 of the playable-v0 plan (`docs/superpowers/plans/2026-11-10-playable-v0.md`).
@@ -100,8 +101,8 @@ All input goes through one action stream (`src/input/hub.ts`) of six buttons: up
 
 - Keys are matched by physical position (`KeyboardEvent.code`), so WASD/ZX sit in the same place on any layout.
   Chords with Ctrl, Cmd or Alt are left to the browser.
-- Tapping or clicking a menu item moves the cursor there and confirms it. On a phone every menu (title, choices,
-  battle commands, the end card) is a row of DOM buttons in the band, at least 44×44 CSS px, in both orientations.
+- Tapping or clicking a menu item moves the cursor there and confirms it. Every menu (title, choices, battle commands,
+  the end card) is drawn in the game image, and every option's hit area is at least 44 CSS px tall (`ui/tap-zone.ts`).
 - In battle, a move, a temperature notch or a target takes two taps on touch: the first selects it and shows its
   hint, the second commits. Keys and the D-pad act at once.
 - In dialogue, A while a page is typing finishes it at once; A on a finished page turns it. Holding A or B types
@@ -110,25 +111,23 @@ All input goes through one action stream (`src/input/hub.ts`) of six buttons: up
 
 ## Layout
 
-The game renders at **320×180** with `pixelArt: true` and is scaled by an **integer number of device pixels** per
-game pixel (`src/layout/compute.ts`, unit-tested). So a 390-CSS-px phone at DPR 3 gets 3× = 320 CSS px, and every
-game pixel is an exact square of device pixels.
+`src/layout/viewport.ts` (pure, unit-tested at 1366×768, 1920×1080, 844×390, 390×844, 360×640 and 412×915) turns the
+CSS viewport, the DPR and the orientation into the layout every scene lays out from:
 
-- **Landscape** (the viewport is wider than it is tall): the largest integer scale that fits, centred and
-  letterboxed. For example, 1920×1080 gets 6× with no bars, and 1366×768 gets 4× (1280×720 at 43, 24). On touch
-  devices (touch landscape) the D-pad and A/B sit in 150 CSS px side margins, and the game sits on top at the largest
-  scale that also leaves a **menu band** of at least 140 CSS px under it, between the controls (844×390 at DPR 3 gets
-  4×, 427×240, with a 150 px band). Menus there are band buttons in two or three columns. If no scale leaves room for
-  a band, the menus stay on the canvas; if none leaves the side margins either, the controls overlay the corners.
-- **Portrait**: the screen sits at the top, scaled to the width while leaving at least 200 CSS px below it. Below
-  it is a DS-style **bottom band** holding the touch controls and `#band-panel`, where every menu goes as DOM
-  buttons. A choice panel then keeps only its title and text on the canvas; each band button carries the label and
-  a smaller detail line, so nothing shows twice. `layout.menus` (`canvas` or `band`) says which.
-- **Rotation** keeps the state: a menu keeps its cursor and an armed two-tap move, a dialogue stays up, and keys keep
-  working; choice panels rebuild for the new layout (`test/e2e/mobile.spec.ts`).
-- The layout is recomputed on resize, orientation change and DPR change, at most once per frame
-  (`src/layout/apply.ts`). Phaser runs in `FIT` mode inside a parent that is sized to the exact integer rect.
-- The touch controls are DOM buttons (56–64 CSS px). Their labels are drawn from the game font as inline SVG.
+- **Logical size**: 480×270 in landscape and on desktop; in portrait 270 wide and 480 to 540 tall (the long side grows
+  to fill the screen). Phaser runs at that size with `pixelArt: true`.
+- **Scale**: the largest integer number of **device** pixels per logical pixel that fits, which is also the one that
+  fills the most screen, so every game pixel is an exact square of device pixels (nearest filtering, never a fraction).
+  A 390×844 iPhone (DPR 3) gets 4 device px: 270×540 at 360×720 CSS, 79% of the screen; turned to 844×390 it gets
+  640×360 CSS (70.0%); a 360×640 Android at DPR 3 is filled exactly. 1366×768 at DPR 1 gets 2× (960×540, centred).
+- **Touch controls**: a translucent DOM overlay at the screen edges, each button at least 44 CSS px and placed by the
+  layout: along the bottom in portrait, vertically centred at the sides in landscape. Desktop shows none.
+- **Safe area** (`layout.safe`, logical px): the part of the image no control covers. The dialogue box sits at its
+  bottom and every menu inside it, so the controls never cover them. `layout.tap` is the logical height of 44 CSS px.
+- **Rotation** recomputes the layout (on resize, orientation change and DPR change, at most once per frame,
+  `src/layout/apply.ts`), resizes the game to the new logical size and calls every `onLayout` (relayout) listener.
+  Each scene lays itself out again and keeps its state: a dialogue keeps its page, a menu its cursor, a battle its
+  round, its armed two-tap move and its running animations (`test/e2e/rotation.spec.ts`).
 
 ## Text
 
@@ -152,7 +151,7 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
   tutorial presets are one good, one situational and one bad card, measured in a unit test.
   Every setup is checked with `validateSetup` in `test/unit/battles.test.ts`. Kip's deck is a coin flip between a
   weak jab and Compact, because at L5 a counter-type that attacked every round could not be beaten.
-- **UI** at 320×180: foe and player panels (name, level, HP with a lagging ghost chunk, context bar, status chips),
+- **UI**: foe and player panels (name, level, HP with a lagging ghost chunk, context bar, status chips),
   the intent preview (your subagents' plans in full; a foe's shows "?" unless your side reveals it: Red Team,
   Saliency Map, Socratic Method), the temperature dial (named "T2·1.0", with a tooltip per notch), a move menu with
   context costs (moves that would overflow are greyed with an "overflow → Drift" warning, and stay selectable because
@@ -160,9 +159,9 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
   acted), **LOG** (the last 40 battle lines) and a 1×/2× speed toggle. B backs out of every submenu.
 - **Input**: keys and the D-pad act at once; on touch and pointer a move, notch or target takes two taps (the first
   selects it and shows its hint, the second commits). A click or tap on the screen advances dialogue.
-- **Layout**: on desktop the menus are on the canvas; on phones (portrait, and touch landscape when the band fits)
-  they are DOM buttons in the band (`src/battle-ui/band-menu.ts`, 44 CSS px rows, scrolling on short screens), drawn
-  in the game font, while the canvas box keeps the prompt and the highlighted move's hint.
+- **Layout** (v0.1 Q1, before Q2's redesign): landscape keeps v0's 320×136 field centred in the safe area; portrait
+  stacks the foe over the player's side (`src/battle-ui/stage-layout.ts`). The command box holds the prompt and the
+  highlighted item's hint; the menus are framed panels of tappable buttons above it (`src/battle-ui/command-box.ts`).
 - **First-time hints** explain PROMPT, context (CX, COST, Drift and the DR chip), the dial, WHY? and the intent
   preview (taught at the first battle with your own subagent), once each; the save remembers them (schema v2).
 - **Playback**: `src/battle/event-steps.ts` maps every engine event type to UI steps (a text fallback at least;
@@ -189,7 +188,7 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 
 - **The map** is `src/content/maps/localhost.ts`: Prof. Epoch's lab (12×8), then one 48×13 exterior running west to
   east through Localhost, a short path and the Deprecated Forest trailhead (sign, the "unindexed data" patch where
-  Tokenibble waits, then Bootcamp Grad in the one-tile gap beyond). 16×16 tiles.
+  Tokenibble waits, then Bootcamp Grad in the one-tile gap beyond). 24×24 tiles; characters in 24×32 frames.
 - **Format:** typed character grids, one char per tile, read through `LEGEND` in `src/overworld/map.ts`
   (`W` wall, `K` server rack, `_` floor, `D` door, `R` roof, `.` grass, `,` path, `#` tree, `%` autumn tree, `S`
   sign, `"` the wild patch). Signs, NPCs, the trainer, warps, the encounter and each overworld step's spawn are
@@ -201,8 +200,11 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
   really blocks the way on.
 - **Rules** are pure (`src/overworld/`): `walker.ts` (a tile per step, 250 ms, hold to walk, tap to turn), `rules.ts`
   (collision, what a finished step sets off, what A does), `sight.ts`, `camera.ts` (2×1-tile deadzone, clamped,
-  small rooms centred), `reach.ts` (BFS through warps). Tiles and figures are generated from Endesga 32
-  (`tile-art.ts`, `figure-art.ts`); the patch sways on 2 frames.
+  small rooms centred; its view is the logical screen, so portrait shows more of the map up and down), `reach.ts`
+  (BFS through warps). Tiles and figures are generated from Endesga 32 at 16 px (`tile-art.ts`, `figure-art.ts`);
+  until the art pass lands they are shown on 24 px tiles through a clean ×1.5 pixel pattern (each pair of pixels
+  becomes three, `a a b`, so no colour is blended: `upscale.ts`), and each 16×32 figure stands centred in a 24×32
+  frame. The patch sways on 2 frames.
 - **Triggers:** the patch starts the wild battle on the first walk only (`reachedTrailhead`); after the distill the
   flow's `forest` step makes the patch calm and Bootcamp Grad's sight (4 tiles) live: "!", it walks over, says its
   line, then `trainerEngaged` starts the battle. Before the distill the Grad only blocks the way with a line.
@@ -248,11 +250,16 @@ Tokenibble, the Bootcamp Grad) send no command and are driven by their decks, an
 
 In dev and in the test build only, `window.__latentia` exposes:
 
-- `flow()`, `scene()`, `menu()`, `layout()`, `battle()` (phase, round, moves, intents as shown, the why text,
+- `flow()`, `scene()`, `menu()`, `battle()` (phase, round, moves, intents as shown, the why text,
   the log, per-round timings and the result) and `overworld()` (the player's tile and facing, the scene's mode, the
   dialogue on screen, the trainer's tile, fps) and `panel()` (the choice panel on screen: its title, text and rows)
   for reading state;
+- `layout()` (the viewport layout) and `taps()` (every option drawn in the image, with its rect in page CSS px, so
+  e2e taps the real pixels: `tapOption` in `test/e2e/drive.ts`);
 - `press(button)`, `pick(menuId, index)` and `send(flowEvent)` for injecting actions.
+
+Production builds have one marker instead: `<body data-scene="…">` names the running scene, which the hookless
+single-file e2e follows inside the sandboxed iframe.
 
 Production builds don't contain it: `main.ts` installs it behind the static `import.meta.env.DEV || MODE === 'test'`
 check, which the production build folds away; `test/e2e/dist.spec.ts` greps the bundle to prove it.
