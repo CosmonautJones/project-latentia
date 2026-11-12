@@ -1,5 +1,6 @@
-// Screenshots for layout review, committed: desktop 1366x768, a 390x844 phone in portrait, and the same phone turned
-// to touch landscape (844x390), where the menus sit in a band under the game and the controls beside it.
+// Screenshots for layout review, committed: desktop 1366x768, a 390x844 iPhone in portrait and turned to 844x390,
+// and a 360x640 Android (DPR 3). Every menu is drawn in the game image; on the phones the translucent D-pad and A/B
+// overlay the screen edges, clear of the dialogue box and the menus.
 // Run with `pnpm --filter @latentia/game screenshots`; the normal e2e run skips this file.
 
 import { expect, test } from '@playwright/test';
@@ -16,11 +17,15 @@ import { GRAFT_MOVE } from '../../src/content/grids.js';
 import { GRAFT_HINTS } from '../../src/content/journey-text.js';
 import { at, face, LOCALHOST, ow, walkTo } from './walk.js';
 
-const SIZES = [
-  { name: 'title-1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
-  { name: 'title-390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
-  { name: 'title-844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+/** The four review sizes (plan v0.1 Q1). */
+const DEVICES = [
+  { name: '1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
+  { name: '390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  { name: '844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
+  { name: '360x640', width: 360, height: 640, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
 ] as const;
+
+const SIZES = DEVICES.map((d) => ({ ...d, name: `title-${d.name}` }));
 
 for (const s of SIZES) {
   test(s.name, async ({ browser }) => {
@@ -40,14 +45,9 @@ for (const s of SIZES) {
   });
 }
 
-// Battle screenshots: the rival fight after one round with the move menu open (landscape: on the canvas; portrait: in
-// the band; landscape touch: with the D-pad and A/B beside the game), then a moment of playback.
-const BATTLE_SIZES = [
-  { name: 'battle-1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
-  { name: 'battle-390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
-  { name: 'battle-375x667', width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
-  { name: 'battle-844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
-] as const;
+// Battle screenshots: the rival fight after one round with the move menu open and a move armed by a first tap, then a
+// moment of playback. (Q1 only has the battle render at every size; Q2 redesigns it.)
+const BATTLE_SIZES = DEVICES.map((d) => ({ ...d, name: `battle-${d.name}` }));
 
 for (const s of BATTLE_SIZES) {
   test(s.name, async ({ browser }) => {
@@ -93,11 +93,7 @@ for (const s of BATTLE_SIZES) {
 
 // Overworld screenshots: the lab just after the rival fight, then the trailhead (sign, the wild patch and Bootcamp
 // Grad beyond it), walked to with real input, and the sign read out in the dialogue box.
-const OVERWORLD_SIZES = [
-  { name: 'overworld-1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
-  { name: 'overworld-390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
-  { name: 'overworld-375x667', width: 375, height: 667, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
-] as const;
+const OVERWORLD_SIZES = DEVICES.map((d) => ({ ...d, name: `overworld-${d.name}` }));
 
 for (const s of OVERWORLD_SIZES) {
   test(s.name, async ({ browser }) => {
@@ -135,11 +131,7 @@ for (const s of OVERWORLD_SIZES) {
 // Journey screenshots (P4): the distill choice, the card tutorial, the debrief after a loss and the end card. The
 // Bootcamp Grad fights are the real seeded ones the core-loop measurement plays (Blitzr: the bad card loses on seed
 // 0, the good card wins on seed 1), simulated here and reported through the hook. Run alone with --grep journey.
-const JOURNEY_SIZES = [
-  { name: '1366x768', width: 1366, height: 768, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
-  { name: '390x844', width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
-  { name: '844x390', width: 844, height: 390, deviceScaleFactor: 3, isMobile: true, hasTouch: true },
-] as const;
+const JOURNEY_SIZES = DEVICES;
 
 /** Blitzr's first lost graft fight (naive play), as the battle scene reports it (the debrief shows the graft hint). */
 function graftReport(): FightReport {

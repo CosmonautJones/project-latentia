@@ -5,6 +5,7 @@ import Phaser from 'phaser';
 import type { App } from '../app.js';
 import type { FlowEvent } from '../flow/flow.js';
 import type { InputListener } from '../input/hub.js';
+import type { Layout } from '../layout/viewport.js';
 
 export abstract class BaseScene extends Phaser.Scene {
   private leaving = false;
@@ -21,6 +22,17 @@ export abstract class BaseScene extends Phaser.Scene {
     const off = this.app.input.subscribe((a) => {
       if (!this.leaving) listener(a);
     });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, off);
+  }
+
+  /** The current layout: the logical size, the safe area and the tap size every scene lays out from. */
+  protected get layout(): Layout {
+    return this.app.screen.layout();
+  }
+
+  /** On every relayout (a rotation, a resize) until this scene shuts down: lay the scene out again, keeping its state. */
+  protected onRelayout(listener: (layout: Layout) => void): void {
+    const off = this.app.screen.onLayout(listener);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, off);
   }
 

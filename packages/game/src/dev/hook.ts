@@ -6,9 +6,10 @@ import type { Button } from '../input/actions.js';
 import type { InputHub } from '../input/hub.js';
 import type { FlowController } from '../flow/controller.js';
 import type { FlowEvent, FlowState } from '../flow/flow.js';
-import type { Layout } from '../layout/compute.js';
+import type { Layout, Rect } from '../layout/viewport.js';
 import type { OverworldProbe } from '../overworld/probe.js';
 import type { PanelProbe } from '../ui/choice-panel.js';
+import type { TapData } from '../ui/tap-zone.js';
 import type { MenuState } from '../ui/menu.js';
 
 export interface LatentiaHook {
@@ -25,6 +26,8 @@ export interface LatentiaHook {
   /** The choice panel on screen (starter, distill, card tutorial, debrief, card swap), if any. */
   panel(): PanelProbe | null;
   layout(): Layout;
+  /** Every tappable option drawn in the game image (menu id, index), in page CSS px, for real taps in e2e. */
+  taps(): (TapData & Rect)[];
   /** Inject a button tap (press and release) into the action stream. */
   press(button: Button): void;
   /** Inject a pointer tap on item `index` of menu `menuId`. */
@@ -44,6 +47,8 @@ export interface HookDeps {
     readonly panel: PanelProbe | null;
   };
   readonly layout: () => Layout;
+  /** The live tap zones, logical px (ui/tap-zone.ts liveTapZones). */
+  readonly taps: () => (TapData & Rect)[];
 }
 
 declare global {
@@ -65,6 +70,11 @@ export function installHook(target: Window, deps: HookDeps): void {
     overworld: () => deps.probe.overworld,
     panel: () => deps.probe.panel,
     layout: deps.layout,
+    taps: () => {
+      const l = deps.layout();
+      const k = l.game.width / l.logical.width;
+      return deps.taps().map((t) => ({ menu: t.menu, index: t.index, x: l.game.x + t.x * k, y: l.game.y + t.y * k, width: t.width * k, height: t.height * k }));
+    },
     press: (button) => deps.input.tap(button),
     pick: (menuId, index) => deps.input.pick(menuId, index),
     send: (event) => deps.flow.send(event),

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DIRS } from '../../src/overworld/direction.js';
 import { FIGURE_H, FIGURE_W, figureFrame, LOOKS } from '../../src/overworld/figure-art.js';
 import { LEGEND } from '../../src/overworld/map.js';
-import { lurkPixels, TILE, tileIndex, tilePixels, TILESET } from '../../src/overworld/tile-art.js';
+import { ART_TILE as TILE, lurkPixels, tileIndex, tilePixels, TILESET } from '../../src/overworld/tile-art.js';
 import { ENDESGA_32 } from '../../src/ui/palette.js';
 
 const PALETTE = new Set<number>(ENDESGA_32);
@@ -12,7 +12,7 @@ const same = (a: readonly unknown[], b: readonly unknown[]) => a.length === b.le
 describe('generated tiles', () => {
   const kinds = [...new Set(Object.values(LEGEND))];
 
-  it('every legend tile has an opaque 16x16 tile drawn only from Endesga 32', () => {
+  it('every legend tile has an opaque 16x16 art tile drawn only from Endesga 32', () => {
     expect(TILE).toBe(16);
     for (const k of kinds) {
       const px = tilePixels(k);

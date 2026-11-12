@@ -1,10 +1,11 @@
-// Turns the generated overworld pixels (tile-art, figure-art) into Phaser canvas textures, once per game.
+// Turns the generated overworld pixels (tile-art, figure-art) into Phaser canvas textures, once per game: 24 px tiles
+// and 24x32 figure frames.
 
 import Phaser from 'phaser';
-import { FIGURE_FRAMES, FIGURE_H, FIGURE_W, figureFrame } from '../overworld/figure-art.js';
+import { FIGURE_FRAME_W, FIGURE_FRAMES, FIGURE_H, figureSheetFrame } from '../overworld/figure-art.js';
 import { DIRS } from '../overworld/direction.js';
 import type { LookId } from '../overworld/map.js';
-import { lurkPixels, TILE, tilePixels, TILESET } from '../overworld/tile-art.js';
+import { lurkTile, TILE, TILESET, worldTile } from '../overworld/tile-art.js';
 
 export const TILESET_KEY = 'ow.tiles';
 export const LURK_KEY = 'ow.lurk';
@@ -40,10 +41,10 @@ export function ensureOverworldTextures(scene: Phaser.Scene, looks: readonly Loo
   sheet(scene, TILESET_KEY, TILESET.length, TILE, TILE, (i) => {
     const f = TILESET[i];
     if (!f) throw new Error(`no tileset frame ${i}`);
-    return tilePixels(f.kind, f.frame);
+    return worldTile(f.kind, f.frame);
   });
-  sheet(scene, LURK_KEY, 2, TILE, TILE, (i) => lurkPixels(i));
+  sheet(scene, LURK_KEY, 2, TILE, TILE, (i) => lurkTile(i));
   for (const look of looks) {
-    sheet(scene, figureKey(look), FIGURE_FRAMES, FIGURE_W, FIGURE_H, (i) => figureFrame(look, DIRS[Math.floor(i / 2)] ?? 'down', i % 2 === 0 ? 0 : 1));
+    sheet(scene, figureKey(look), FIGURE_FRAMES, FIGURE_FRAME_W, FIGURE_H, (i) => figureSheetFrame(look, DIRS[Math.floor(i / 2)] ?? 'down', i % 2 === 0 ? 0 : 1));
   }
 }

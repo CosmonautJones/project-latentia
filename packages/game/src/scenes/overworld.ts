@@ -10,16 +10,14 @@ import type { App } from '../app.js';
 import { LOCALHOST } from '../content/maps/localhost.js';
 import { isOverworldStep, type FlowEvent, type OverworldStep } from '../flow/flow.js';
 import type { InputAction } from '../input/hub.js';
-import { GAME_HEIGHT, GAME_WIDTH } from '../layout/compute.js';
 import { cameraFollow, cameraSnap, type CameraBox } from '../overworld/camera.js';
 import { DIRS, HeldDirections, isDir, OPPOSITE } from '../overworld/direction.js';
-import { regionName, type LookId, type Place, type Pos, type Spot } from '../overworld/map.js';
+import type { LookId, Place, Pos, Spot } from '../overworld/map.js';
 import type { OverworldMode } from '../overworld/probe.js';
 import { afterStep, canEnter, encounterLive, interact, trainerLive } from '../overworld/rules.js';
 import { TILE } from '../overworld/tile-art.js';
 import { createWalker, pixelPos, placeWalker, updateWalker, walkFrame, type WalkerState } from '../overworld/walker.js';
 import { Actor } from '../overworld-ui/actor.js';
-import { BandCaption } from '../overworld-ui/band-caption.js';
 import { MapView } from '../overworld-ui/map-view.js';
 import { cardTutorial, labIntro } from '../overworld-ui/step-beats.js';
 import { ensureOverworldTextures } from '../overworld-ui/textures.js';
@@ -40,7 +38,6 @@ export class OverworldScene extends BaseScene {
   private view!: MapView;
   private player: Actor | null = null;
   private box!: DialogueBox;
-  private caption: BandCaption | null = null;
   private walker!: WalkerState;
   private held = new HeldDirections();
   private mode: OverworldMode = 'walk';
@@ -57,12 +54,9 @@ export class OverworldScene extends BaseScene {
     const step = this.app.flow.state.step;
     if (!isOverworldStep(step)) throw new Error(`Overworld started at step ${step}`);
     const gen = ++this.generation;
-    this.caption = new BandCaption(this.app.screen.bandPanel);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.generation++;
       this.app.probe.overworld = null;
-      this.caption?.destroy();
-      this.caption = null;
     });
     this.step = step;
     this.mode = 'walk';
@@ -122,7 +116,9 @@ export class OverworldScene extends BaseScene {
   }
 
   private cameraBox(): CameraBox {
-    return { view: { width: GAME_WIDTH, height: GAME_HEIGHT }, map: this.view.size, deadzone: DEADZONE };
+    // The view is the current logical screen: a portrait phone sees more of the map up and down, and a rotation
+    // changes it on the next frame (the follow re-clamps).
+    return { view: { width: this.scale.width, height: this.scale.height }, map: this.view.size, deadzone: DEADZONE };
   }
 
   private playerCentre(): Pos {
@@ -132,7 +128,6 @@ export class OverworldScene extends BaseScene {
 
   private drawPlayer(): void {
     this.player?.place(pixelPos(this.walker, TILE), this.walker.facing, walkFrame(this.walker));
-    this.caption?.show(regionName(this.world, this.spot));
     this.scroll = cameraFollow(this.scroll, this.playerCentre(), this.cameraBox());
     this.cameras.main.setScroll(this.scroll.x, this.scroll.y);
   }

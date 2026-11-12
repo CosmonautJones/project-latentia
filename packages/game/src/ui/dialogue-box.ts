@@ -1,11 +1,11 @@
-// The one dialogue box all story text goes through: a typewriter over the pixel font in a 320x42 panel at the
-// bottom of the screen (design bible: 3 lines of at most 36 characters). A finishes a typing page, then advances;
-// holding A or B speeds up. A click or tap anywhere on the screen counts as A. A popup opened with `closeOnB` also
-// closes on B (a back path for "why?").
+// The one dialogue box all story text goes through: a typewriter over the pixel font in a 42 px panel along the bottom
+// of the layout's safe area, so the touch controls never cover it (design bible: 3 lines of at most 36 characters).
+// A finishes a typing page, then advances; holding A or B speeds up. A click or tap anywhere on the screen counts as A.
+// A popup opened with `closeOnB` also closes on B (a back path for "why?"). It lays itself out again on a relayout.
 
 import Phaser from 'phaser';
 import type { App } from '../app.js';
-import { GAME_HEIGHT, GAME_WIDTH } from '../layout/compute.js';
+import type { Layout, Rect } from '../layout/viewport.js';
 import { CELL_HEIGHT } from '../text/font-sheet.js';
 import { addPixelText } from '../text/phaser-font.js';
 import { COLOR } from './palette.js';
@@ -14,13 +14,23 @@ import { advance, createTypewriter, isPageComplete, tick, visibleText, type Type
 export const DIALOGUE_MAX_CHARS = 36;
 export const DIALOGUE_MAX_LINES = 3;
 const CHARS_PER_SECOND = 40;
-/** The bottom box's geometry, shared with the battle command box so the two frames line up exactly. */
+/** The bottom box's height, shared with the battle command box so the two frames line up exactly. */
 export const BOX_HEIGHT = 42;
-export const BOX_Y = GAME_HEIGHT - BOX_HEIGHT;
 const BLINK_MS = 400;
+
+/** The bottom box's rect for a layout: the full width of the safe area, at its bottom. */
+export const boxRect = (l: Layout): Rect => ({ x: l.safe.x, y: l.safe.y + l.safe.height - BOX_HEIGHT, width: l.safe.width, height: BOX_HEIGHT });
+
+/** Draw the box's frame (cloud border, ink fill, a slate rule) into `g`. */
+export function drawBoxFrame(g: Phaser.GameObjects.Graphics, r: Rect): void {
+  g.fillStyle(COLOR.cloud).fillRect(r.x, r.y, r.width, r.height);
+  g.fillStyle(COLOR.ink).fillRect(r.x + 1, r.y + 1, r.width - 2, r.height - 2);
+  g.fillStyle(COLOR.slate).fillRect(r.x + 2, r.y + 2, r.width - 4, 1);
+}
 
 export class DialogueBox {
   private readonly container: Phaser.GameObjects.Container;
+  private readonly frame: Phaser.GameObjects.Graphics;
   private readonly text: Phaser.GameObjects.BitmapText;
   private readonly more: Phaser.GameObjects.BitmapText;
   /** A full-screen tap target, on top while the box is open, so a click advances like A (and nothing below sees it). */
@@ -34,30 +44,29 @@ export class DialogueBox {
     private readonly scene: Phaser.Scene,
     private readonly app: App,
   ) {
-    const y = BOX_Y;
-    const g = scene.add.graphics();
-    g.fillStyle(COLOR.cloud).fillRect(0, y, GAME_WIDTH, BOX_HEIGHT);
-    g.fillStyle(COLOR.ink).fillRect(1, y + 1, GAME_WIDTH - 2, BOX_HEIGHT - 2);
-    g.fillStyle(COLOR.slate).fillRect(2, y + 2, GAME_WIDTH - 4, 1);
-    this.text = addPixelText(scene, 8, y + 6, '');
-    this.more = addPixelText(scene, GAME_WIDTH - 12, y + BOX_HEIGHT - CELL_HEIGHT - 1, '▼', { color: COLOR.amber });
+    this.frame = scene.add.graphics();
+    this.text = addPixelText(scene, 0, 0, '');
+    this.more = addPixelText(scene, 0, 0, '▼', { color: COLOR.amber });
     // Pinned to the screen (scroll factor 0), so it stays put over a scrolling overworld camera.
-    this.container = scene.add.container(0, 0, [g, this.text, this.more]).setVisible(false).setDepth(100).setScrollFactor(0);
-    this.clickZone = scene.add.zone(0, 0, GAME_WIDTH, GAME_HEIGHT).setOrigin(0).setDepth(101).setScrollFactor(0).setInteractive();
+    this.container = scene.add.container(0, 0, [this.frame, this.text, this.more]).setVisible(false).setDepth(100).setScrollFactor(0);
+    this.clickZone = scene.add.zone(0, 0, 1, 1).setOrigin(0).setDepth(101).setScrollFactor(0).setInteractive();
     this.clickZone.on(Phaser.Input.Events.GAMEOBJECT_POINTER_UP, () => {
       if (this.state) this.onA();
     });
     this.setZone(false);
+    this.layout(app.screen.layout());
 
     const off = app.input.subscribe((a) => {
       if (!this.state || a.kind !== 'press') return;
       if (a.button === 'a') this.onA();
       else if (a.button === 'b' && this.closeOnB) this.close();
     });
+    const offLayout = app.screen.onLayout((l) => this.layout(l));
     const onUpdate = (_time: number, delta: number) => this.update(delta);
     scene.events.on(Phaser.Scenes.Events.UPDATE, onUpdate);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       off();
+      offLayout();
       scene.events.off(Phaser.Scenes.Events.UPDATE, onUpdate);
     });
   }
@@ -72,6 +81,16 @@ export class DialogueBox {
     return new Promise((resolve) => {
       this.resolve = resolve;
     });
+  }
+
+  /** Fit the box to the layout's safe area, and the tap catcher to the whole screen. */
+  private layout(l: Layout): void {
+    const r = boxRect(l);
+    drawBoxFrame(this.frame.clear(), r);
+    this.text.setPosition(r.x + 8, r.y + 6);
+    this.more.setPosition(r.x + r.width - 12, r.y + BOX_HEIGHT - CELL_HEIGHT - 1);
+    this.clickZone.setSize(l.logical.width, l.logical.height);
+    if (this.clickZone.input) this.clickZone.input.hitArea.setTo(0, 0, l.logical.width, l.logical.height);
   }
 
   private onA(): void {

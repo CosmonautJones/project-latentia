@@ -58,8 +58,8 @@ export const tween = (scene: Phaser.Scene, config: Phaser.Types.Tweens.TweenBuil
 
 export class CreatureSprite {
   readonly sprite: Phaser.GameObjects.Sprite;
-  private readonly homeX: number;
-  private readonly homeY: number;
+  private homeX: number;
+  private homeY: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -72,6 +72,13 @@ export class CreatureSprite {
     this.homeY = y;
     this.sprite = scene.add.sprite(x, y, sheetKey(species)).setOrigin(0.5, 1);
     this.setSpecies(species);
+  }
+
+  /** Stand somewhere else (a relayout). A running tween ends at the old spot; the next one starts from here. */
+  setHome(x: number, y: number): void {
+    this.homeX = x;
+    this.homeY = y;
+    this.sprite.setPosition(x, y);
   }
 
   /** Show another species here (a swap). */

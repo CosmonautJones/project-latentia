@@ -15,7 +15,7 @@ async function phone(browser: Browser): Promise<{ page: Page; close: () => Promi
 }
 
 const phase = async (page: Page) => (await battle(page))?.phase ?? null;
-const layoutMenus = (page: Page) => page.evaluate(() => window.__latentia?.layout().menus ?? null);
+const layoutMenus = (page: Page) => page.evaluate(() => window.__latentia?.layout().controls ?? null);
 const controls = (page: Page) => page.evaluate(() => window.__latentia?.layout().controls ?? null);
 
 async function toRival(page: Page): Promise<void> {

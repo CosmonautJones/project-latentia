@@ -1,12 +1,16 @@
 // Placeholder people as data: a 16x32 two-tone figure (top and bottom colours) with an ink outline, in 4 facings
 // (the eyes, and the backpack from behind, show which way it looks) and 2 frames (standing, and a walk bob where
-// the body drops a pixel and the legs part). Left is right mirrored. Pure; the scene builds textures from it.
+// the body drops a pixel and the legs part). Left is right mirrored. Shown centred in 24x32 frames on the 24 px
+// tiles until the art pass lands. Pure; the scene builds textures from it.
 
 import { DIRS, type Dir } from './direction.js';
 import type { LookId } from './map.js';
+import { padWidth } from './upscale.js';
 
 export const FIGURE_W = 16;
 export const FIGURE_H = 32;
+/** v0.1's overworld character frames are 24x32; the 16 px placeholder figure stands centred in one. */
+export const FIGURE_FRAME_W = 24;
 
 export interface Look {
   readonly top: number;
@@ -99,6 +103,9 @@ export function figureFrame(look: LookId, dir: Dir, frame: 0 | 1): Px {
   const l = LOOKS[look];
   return dir === 'left' ? mirror(draw(l, 'right', frame)) : draw(l, dir, frame);
 }
+
+/** One frame of a figure's 24x32 sheet: the 16 px figure centred (one tile wide, a third of a tile above it). */
+export const figureSheetFrame = (look: LookId, dir: Dir, frame: 0 | 1): Px => padWidth(figureFrame(look, dir, frame), FIGURE_W, FIGURE_H, FIGURE_FRAME_W);
 
 /** The frame number in a figure's sheet: two per facing, in DIRS order. */
 export const figureFrameIndex = (dir: Dir, frame: 0 | 1): number => DIRS.indexOf(dir) * 2 + frame;

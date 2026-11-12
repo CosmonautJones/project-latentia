@@ -1,110 +1,46 @@
-/* The touch D-pad and A/B (input/touch-controls.ts): in the portrait band, beside the game in touch landscape, or
-   overlaid on screens too small for either. Positions come from layout/apply.ts (data-placement). */
+/* The touch D-pad and A/B (input/touch-controls.ts): a translucent overlay at the screen edges. Each button's rect
+   comes from layout/viewport.ts (applied in layout/apply.ts); the layout keeps them clear of the dialogue and menus. */
 
 #controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-sizing: border-box;
-  padding: 16px 20px 24px;
-}
-
-#controls[data-placement='overlay'] {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 0 calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
-  pointer-events: none;
-  opacity: 0.55;
-}
-
-/* Touch landscape with room beside the game: the D-pad in the left margin, A/B in the right, vertically centred. */
-#controls[data-placement='sides'] {
   position: fixed;
   inset: 0;
-  padding: 0 calc(8px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left));
   pointer-events: none;
+  z-index: 5;
 }
-
-#controls[data-placement='sides'] .touch-btn {
-  pointer-events: auto;
-}
-
-#controls[data-placement='sides'] .dpad {
-  grid-template-columns: repeat(3, 44px);
-  grid-template-rows: repeat(3, 44px);
-}
-
-#controls[data-placement='sides'] .dpad .touch-btn {
-  width: 44px;
-  height: 44px;
-}
-
-#controls[data-placement='sides'] .ab {
-  flex-direction: column-reverse;
-  gap: 12px;
-}
-
-#controls[data-placement='sides'] .ab .btn-b,
-#controls[data-placement='sides'] .ab .btn-a {
-  margin: 0;
-}
-
-#controls[data-placement='overlay'] .touch-btn {
-  pointer-events: auto;
-}
-
-.dpad {
-  display: grid;
-  grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(3, 56px);
-}
-
-.dpad-up { grid-area: 1 / 2; }
-.dpad-left { grid-area: 2 / 1; }
-.dpad-right { grid-area: 2 / 3; }
-.dpad-down { grid-area: 3 / 2; }
-
-.ab {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  /* B low-left, A high-right, like a handheld. */
-}
-
-.ab .btn-b { margin-top: 40px; }
-.ab .btn-a { margin-bottom: 40px; }
 
 .touch-btn {
+  position: absolute;
   display: grid;
   place-items: center;
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
   border: 0;
   background: #3a4466;
   /* Pixel-art bevel: a light top-left and dark bottom-right edge, square corners. */
   box-shadow: inset 4px 4px 0 #5a6988, inset -4px -4px 0 #181425;
+  opacity: 0.55;
+  pointer-events: auto;
   touch-action: none;
   cursor: pointer;
 }
 
-.dpad .touch-btn {
-  width: 56px;
-  height: 56px;
+.touch-btn[hidden] {
+  display: none;
 }
 
-.ab .touch-btn {
-  width: 64px;
-  height: 64px;
+.touch-btn.btn-a,
+.touch-btn.btn-b {
   background: #a22633;
   box-shadow: inset 4px 4px 0 #e43b44, inset -4px -4px 0 #3e2731;
 }
 
 .touch-btn.held {
+  opacity: 0.8;
   box-shadow: inset 4px 4px 0 #181425, inset -4px -4px 0 #5a6988;
 }
 
-.ab .touch-btn.held {
+.touch-btn.btn-a.held,
+.touch-btn.btn-b.held {
   box-shadow: inset 4px 4px 0 #3e2731, inset -4px -4px 0 #e43b44;
 }

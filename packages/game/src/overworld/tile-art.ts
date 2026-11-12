@@ -1,10 +1,15 @@
 // Placeholder overworld tiles as data: 16x16 Endesga 32 swatches with simple patterns, one per tile kind, plus a
 // second frame for the wild patch (its tall "unindexed data" grass sways and its data bits flicker) and the two
-// blink frames of the eyes peeking out of it. Pure: overworld-ui/textures.ts turns these pixels into textures.
+// blink frames of the eyes peeking out of it. The world uses 24 px tiles (v0.1): until the art pass's tiles land,
+// these are shown through the clean x1.5 pixel pattern of upscale.ts. Pure: overworld-ui/textures.ts makes textures.
 
 import type { TileKind } from './map.js';
+import { upscaleHalf } from './upscale.js';
 
-export const TILE = 16;
+/** The world's tile size, px. */
+export const TILE = 24;
+/** The placeholder art's own tile size, px. */
+export const ART_TILE = 16;
 /** The patch's sway, and the lurker's blink, per frame. */
 export const PATCH_FRAME_MS = 420;
 
@@ -44,9 +49,9 @@ const noise = (x: number, y: number, seed: number): number => {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 };
 
-const blank = (fill: number | null): Px => new Array<number | null>(TILE * TILE).fill(fill);
+const blank = (fill: number | null): Px => new Array<number | null>(ART_TILE * ART_TILE).fill(fill);
 const put = (px: Px, x: number, y: number, c: number | null) => {
-  if (x >= 0 && y >= 0 && x < TILE && y < TILE) px[y * TILE + x] = c;
+  if (x >= 0 && y >= 0 && x < ART_TILE && y < ART_TILE) px[y * ART_TILE + x] = c;
 };
 const rect = (px: Px, x0: number, y0: number, w: number, h: number, c: number) => {
   for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) put(px, x, y, c);
@@ -54,8 +59,8 @@ const rect = (px: Px, x0: number, y0: number, w: number, h: number, c: number) =
 
 function grass(): Px {
   const px = blank(C.green);
-  for (let y = 0; y < TILE; y++) {
-    for (let x = 0; x < TILE; x++) {
+  for (let y = 0; y < ART_TILE; y++) {
+    for (let x = 0; x < ART_TILE; x++) {
       const n = noise(x, y, 1);
       if (n < 0.08) put(px, x, y, C.leaf);
       else if (n > 0.95) put(px, x, y, C.pine);
@@ -72,8 +77,8 @@ function grass(): Px {
 
 function path(): Px {
   const px = blank(C.tan);
-  for (let y = 0; y < TILE; y++) {
-    for (let x = 0; x < TILE; x++) {
+  for (let y = 0; y < ART_TILE; y++) {
+    for (let x = 0; x < ART_TILE; x++) {
       const n = noise(x, y, 2);
       if (n < 0.07) put(px, x, y, C.wood);
       else if (n > 0.94) put(px, x, y, C.cream);
@@ -87,7 +92,7 @@ function tree(canopy: readonly [number, number, number], outline: number): Px {
   const [dark, mid, light] = canopy;
   rect(px, 7, 12, 2, 4, C.bark);
   for (let y = 0; y < 13; y++) {
-    for (let x = 0; x < TILE; x++) {
+    for (let x = 0; x < ART_TILE; x++) {
       const d = Math.hypot(x - 7.5, y - 6.5);
       if (d > 7.2) continue;
       const lit = x + y < 11 && d < 5.5;
@@ -100,8 +105,8 @@ function tree(canopy: readonly [number, number, number], outline: number): Px {
 
 function wall(): Px {
   const px = blank(C.steel);
-  rect(px, 0, 0, TILE, 1, C.mist);
-  for (let y = 4; y < TILE; y += 4) rect(px, 0, y, TILE, 1, C.slate);
+  rect(px, 0, 0, ART_TILE, 1, C.mist);
+  for (let y = 4; y < ART_TILE; y += 4) rect(px, 0, y, ART_TILE, 1, C.slate);
   for (let row = 0; row < 4; row++) {
     const off = row % 2 === 0 ? 3 : 11;
     rect(px, off, row * 4 + 1, 1, 3, C.slate);
@@ -111,9 +116,9 @@ function wall(): Px {
 
 function roof(): Px {
   const px = blank(C.red);
-  for (let y = 0; y < TILE; y++) {
+  for (let y = 0; y < ART_TILE; y++) {
     const shift = Math.floor(y / 4) % 2 === 0 ? 0 : 2;
-    for (let x = 0; x < TILE; x++) {
+    for (let x = 0; x < ART_TILE; x++) {
       if (y % 4 === 3) put(px, x, y, C.plum);
       else if ((x + shift) % 4 === 0) put(px, x, y, C.scarlet);
     }
@@ -123,10 +128,10 @@ function roof(): Px {
 
 function rack(): Px {
   const px = blank(C.night);
-  rect(px, 0, 0, TILE, 1, C.steel);
+  rect(px, 0, 0, ART_TILE, 1, C.steel);
   rect(px, 1, 1, 1, 15, C.slate);
   rect(px, 14, 1, 1, 15, C.slate);
-  for (let y = 3; y < TILE; y += 4) {
+  for (let y = 3; y < ART_TILE; y += 4) {
     rect(px, 2, y, 12, 1, C.slate);
     put(px, 4, y - 1, C.leaf);
     put(px, 6, y - 1, y % 8 === 3 ? C.cyan : C.amber);
@@ -136,10 +141,10 @@ function rack(): Px {
 
 function floor(): Px {
   const px = blank(C.cloud);
-  rect(px, 0, 15, TILE, 1, C.mist);
-  rect(px, 15, 0, 1, TILE, C.mist);
-  rect(px, 0, 7, TILE, 1, C.mist);
-  rect(px, 7, 0, 1, TILE, C.mist);
+  rect(px, 0, 15, ART_TILE, 1, C.mist);
+  rect(px, 15, 0, 1, ART_TILE, C.mist);
+  rect(px, 0, 7, ART_TILE, 1, C.mist);
+  rect(px, 7, 0, 1, ART_TILE, C.mist);
   put(px, 2, 2, C.white);
   put(px, 10, 10, C.white);
   return px;
@@ -167,14 +172,14 @@ function sign(): Px {
 /** Tall dark grass with glitchy data bits; frame 1 sways the blade tips and moves the bits. */
 function patch(frame: number): Px {
   const px = blank(C.deep);
-  for (let x = 0; x < TILE; x++) {
+  for (let x = 0; x < ART_TILE; x++) {
     const height = 9 + Math.floor(noise(x, 0, 7) * 6);
     const sway = frame === 1 && x % 2 === 0 ? 1 : 0;
-    for (let y = TILE - height; y < TILE; y++) put(px, x, y, (x + Math.floor(y / 3)) % 3 === 0 ? C.green : C.pine);
-    put(px, Math.min(TILE - 1, x + sway), TILE - height - 1, C.green);
+    for (let y = ART_TILE - height; y < ART_TILE; y++) put(px, x, y, (x + Math.floor(y / 3)) % 3 === 0 ? C.green : C.pine);
+    put(px, Math.min(ART_TILE - 1, x + sway), ART_TILE - height - 1, C.green);
   }
   for (let i = 0; i < 5; i++) {
-    const x = Math.floor(noise(i, frame, 11) * TILE);
+    const x = Math.floor(noise(i, frame, 11) * ART_TILE);
     const y = 3 + Math.floor(noise(i, frame, 13) * 12);
     put(px, x, y, i % 2 === 0 ? C.cyan : C.magenta);
   }
@@ -198,7 +203,7 @@ const DRAW: Readonly<Record<TileKind, (frame: number) => Px>> = {
 
 const FRAMES_OF: Readonly<Partial<Record<TileKind, number>>> = { patch: 2 };
 
-/** The 16x16 pixels of a tile kind (row-major, opaque). */
+/** The 16x16 art pixels of a tile kind (row-major, opaque). */
 export const tilePixels = (kind: TileKind, frame = 0): Px => DRAW[kind](frame);
 
 /** Every tile frame in the generated tileset texture, in order: one per kind, then the patch's second frame. */
@@ -221,3 +226,9 @@ export function lurkPixels(frame: number): Px {
   }
   return px;
 }
+
+/** A tile kind's pixels at the world's 24x24 tile size. */
+export const worldTile = (kind: TileKind, frame = 0): Px => upscaleHalf(tilePixels(kind, frame), ART_TILE, ART_TILE);
+
+/** The lurker's eyes at the world's 24x24 tile size. */
+export const lurkTile = (frame: number): Px => upscaleHalf(lurkPixels(frame), ART_TILE, ART_TILE);

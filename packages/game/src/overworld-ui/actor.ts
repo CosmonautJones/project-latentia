@@ -1,9 +1,9 @@
-// A person on the overworld: a 16x32 figure sprite standing on a tile (it rises one tile above it), depth-sorted by
+// A person on the overworld: a 24x32 figure sprite standing on a 24 px tile (it rises 8 px above it), depth-sorted by
 // its feet. The player is moved by the scene's walker; NPCs stand still, and a trainer can show a "!" and walk a
 // scripted path up to the player.
 
 import Phaser from 'phaser';
-import { figureFrameIndex } from '../overworld/figure-art.js';
+import { FIGURE_FRAME_W, FIGURE_H, figureFrameIndex } from '../overworld/figure-art.js';
 import type { Dir } from '../overworld/direction.js';
 import type { LookId, Pos } from '../overworld/map.js';
 import { TILE } from '../overworld/tile-art.js';
@@ -18,6 +18,8 @@ const BUBBLE_DEPTH = 60;
 
 /** Figures sort among themselves by their feet, above the ground and the lurker, below bubbles and the dialogue box. */
 const depthFor = (feetY: number): number => 10 + feetY / 1000;
+/** How far the figure rises above its tile. */
+const RISE = FIGURE_H - TILE;
 
 export class Actor {
   readonly sprite: Phaser.GameObjects.Sprite;
@@ -36,16 +38,17 @@ export class Actor {
   /** Stand with the feet on the tile whose top-left pixel is `px`. */
   place(px: Pos, facing: Dir, frame: 0 | 1): void {
     this.facing = facing;
-    this.sprite.setPosition(px.x, px.y - TILE).setFrame(figureFrameIndex(facing, frame)).setDepth(depthFor(px.y + TILE));
+    this.sprite.setPosition(px.x, px.y - RISE).setFrame(figureFrameIndex(facing, frame)).setDepth(depthFor(px.y + TILE));
   }
 
   /** Show a "!" over the head for ALERT_MS. */
   alert(): Promise<void> {
     const { x, y } = this.sprite;
     const g = this.scene.add.graphics().setDepth(BUBBLE_DEPTH);
-    g.fillStyle(COLOR.ink).fillRect(x + 4, y - 2, 9, 12);
-    g.fillStyle(COLOR.white).fillRect(x + 5, y - 1, 7, 10);
-    const mark = addPixelText(this.scene, x + 6, y, '!', { color: COLOR.red }).setDepth(BUBBLE_DEPTH + 1);
+    const cx = x + FIGURE_FRAME_W / 2;
+    g.fillStyle(COLOR.ink).fillRect(cx - 4, y - 2, 9, 12);
+    g.fillStyle(COLOR.white).fillRect(cx - 3, y - 1, 7, 10);
+    const mark = addPixelText(this.scene, cx - 2, y, '!', { color: COLOR.red }).setDepth(BUBBLE_DEPTH + 1);
     return new Promise((resolve) => {
       this.scene.time.delayedCall(ALERT_MS, () => {
         g.destroy();
@@ -58,7 +61,7 @@ export class Actor {
   /** Walk tile by tile along `path` (pixel-tweened at the player's pace, with the walk bob). */
   async walk(path: readonly Pos[]): Promise<void> {
     for (const tile of path) {
-      const from = { x: this.sprite.x, y: this.sprite.y + TILE };
+      const from = { x: this.sprite.x, y: this.sprite.y + RISE };
       const to = { x: tile.x * TILE, y: tile.y * TILE };
       await new Promise<void>((resolve) => {
         const p = { t: 0 };
@@ -81,7 +84,7 @@ export class Actor {
 
   /** The tile the actor stands on now. */
   get tile(): Pos {
-    return { x: Math.round(this.sprite.x / TILE), y: Math.round((this.sprite.y + TILE) / TILE) };
+    return { x: Math.round(this.sprite.x / TILE), y: Math.round((this.sprite.y + RISE) / TILE) };
   }
 
   destroy(): void {

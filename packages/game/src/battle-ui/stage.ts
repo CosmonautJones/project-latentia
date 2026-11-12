@@ -1,28 +1,20 @@
-// The battlefield at 320×180 (bible "battle UI that works in landscape and portrait"): the foe up and to the right
-// with its panel top-left and its intent under the panel, the player's side bottom-left with its panel (and the
-// temperature dial) bottom-right, and a subagent's intent floating over its sprite. `apply` plays one UI step.
+// The battlefield (bible "battle UI that works in landscape and portrait"): the foe up and to the right with its
+// panel top-left and its intent under the panel, the player's side under it with its panel (and the temperature dial),
+// and a subagent's intent floating over its sprite. Where each goes comes from stage-layout.ts for the orientation;
+// `relayout` moves everything in place, so a rotation mid-round keeps every bar and tween. `apply` plays one UI step.
 
 import Phaser from 'phaser';
 import type { Intent, Temperature } from '@latentia/engine';
 import type { UiStep } from '../battle/event-steps.js';
 import { intentLine } from '../battle/intent-visibility.js';
 import type { BattleSession, CreatureView } from '../battle/session.js';
-import { GAME_WIDTH } from '../layout/compute.js';
+import type { Layout } from '../layout/viewport.js';
 import { addPixelText, textWidth } from '../text/phaser-font.js';
 import { COLOR } from '../ui/palette.js';
-import { CreaturePanel, type PanelVariant } from './creature-panel.js';
+import { CreaturePanel } from './creature-panel.js';
 import { CreatureSprite } from './creature-sprite.js';
+import { stageGeometry, type SlotName, type StageGeometry } from './stage-layout.js';
 import { TemperatureDial } from './temperature-dial.js';
-
-/** Bottom edges of sprites (feet sit 6 px above), panel corners, intent anchors. */
-const SLOTS = {
-  foe: { sprite: { x: 248, y: 74 }, panel: { x: 6, y: 6 }, variant: 'foe', intent: { x: 6, y: 40, align: 'left', chars: 32 } },
-  foeSub: { sprite: { x: 188, y: 64 }, panel: { x: 6, y: 52 }, variant: 'foe', intent: { x: 6, y: 84, align: 'left', chars: 28 } },
-  player: { sprite: { x: 64, y: 140 }, panel: { x: 188, y: 90 }, variant: 'player', intent: null },
-  playerSub: { sprite: { x: 136, y: 142 }, panel: { x: 188, y: 72 }, variant: 'sub', intent: { x: 136, y: 62, align: 'center', chars: 24 } },
-} as const satisfies Record<string, { sprite: { x: number; y: number }; panel: { x: number; y: number }; variant: PanelVariant; intent: unknown }>;
-
-type SlotName = keyof typeof SLOTS;
 
 interface Slot {
   readonly name: SlotName;
@@ -46,35 +38,57 @@ export class BattleStage {
   /** The intents last shown, and the foes the player can see this round (hidden "?" otherwise). */
   private intents: readonly Intent[] = [];
   private revealed: Set<number> = new Set();
+  private geo: StageGeometry;
+  private readonly backdrop: Phaser.GameObjects.Graphics;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly session: BattleSession,
+    layout: Layout,
   ) {
-    this.drawBackdrop();
+    this.geo = stageGeometry(layout);
+    this.backdrop = scene.add.graphics();
+    this.drawBackdrop(layout);
     for (const v of session.creatures()) {
       if (!v.onField || this.slots.some((s) => s.name === slotFor(v))) continue;
-      const def = SLOTS[slotFor(v)];
+      const def = this.geo.slots[slotFor(v)];
       const sprite = new CreatureSprite(scene, def.sprite.x, def.sprite.y, v.speciesId, v.side === 0);
       const panel = new CreaturePanel(scene, def.panel.x, def.panel.y, def.variant, v);
       const intent = def.intent === null ? null : addPixelText(scene, def.intent.x, def.intent.y, '', { color: v.side === 1 ? COLOR.amber : COLOR.cyan });
       if (v.fainted) sprite.setFainted();
       this.slots.push({ name: slotFor(v), index: v.index, sprite, panel, intent });
     }
-    const p = SLOTS.player.panel;
+    const p = this.geo.slots.player.panel;
     this.dial = new TemperatureDial(scene, p.x + 93, p.y + 10);
   }
 
-  private drawBackdrop(): void {
-    const g = this.scene.add.graphics();
-    g.fillStyle(COLOR.ink).fillRect(0, 0, GAME_WIDTH, 136);
-    g.fillStyle(COLOR.night).fillRect(0, 40, GAME_WIDTH, 96);
+  /** Lay the field out for a new layout, in place: sprites, panels, intents, the dial and the backdrop. */
+  relayout(layout: Layout): void {
+    this.geo = stageGeometry(layout);
+    this.drawBackdrop(layout);
+    for (const s of this.slots) {
+      const def = this.geo.slots[s.name];
+      s.sprite.setHome(def.sprite.x, def.sprite.y);
+      s.panel.container.setPosition(def.panel.x, def.panel.y);
+      if (s.intent && def.intent) s.intent.setPosition(def.intent.x, def.intent.y);
+    }
+    const p = this.geo.slots.player.panel;
+    this.dial.moveTo(p.x + 93, p.y + 10);
+    this.drawIntents();
+  }
+
+  private drawBackdrop(layout: Layout): void {
+    const { slots, height, floorY } = this.geo;
+    const W = layout.logical.width;
+    const g = this.backdrop.clear();
+    g.fillStyle(COLOR.ink).fillRect(0, 0, W, layout.logical.height);
+    g.fillStyle(COLOR.night).fillRect(0, floorY, W, height - floorY);
     // A dithered horizon between sky and floor.
-    for (let y = 34; y < 40; y++) for (let x = (y * 3) % 4; x < GAME_WIDTH; x += y < 37 ? 4 : 2) g.fillRect(x, y, 1, 1);
-    g.fillStyle(COLOR.slate).fillEllipse(SLOTS.foe.sprite.x, SLOTS.foe.sprite.y - 6, 92, 14);
-    g.fillStyle(COLOR.steel).fillEllipse(SLOTS.foe.sprite.x, SLOTS.foe.sprite.y - 7, 84, 10);
-    g.fillStyle(COLOR.slate).fillEllipse(SLOTS.player.sprite.x + 30, SLOTS.player.sprite.y - 4, 150, 18);
-    g.fillStyle(COLOR.steel).fillEllipse(SLOTS.player.sprite.x + 30, SLOTS.player.sprite.y - 5, 140, 12);
+    for (let y = floorY - 6; y < floorY; y++) for (let x = (y * 3) % 4; x < W; x += y < floorY - 3 ? 4 : 2) g.fillRect(x, y, 1, 1);
+    g.fillStyle(COLOR.slate).fillEllipse(slots.foe.sprite.x, slots.foe.sprite.y - 6, 92, 14);
+    g.fillStyle(COLOR.steel).fillEllipse(slots.foe.sprite.x, slots.foe.sprite.y - 7, 84, 10);
+    g.fillStyle(COLOR.slate).fillEllipse(slots.player.sprite.x + 30, slots.player.sprite.y - 4, 150, 18);
+    g.fillStyle(COLOR.steel).fillEllipse(slots.player.sprite.x + 30, slots.player.sprite.y - 5, 140, 12);
   }
 
   private slotOf(index: number): Slot | undefined {
@@ -104,7 +118,7 @@ export class BattleStage {
   private drawIntents(): void {
     for (const s of this.slots) {
       if (s.intent === null) continue;
-      const def = SLOTS[s.name].intent;
+      const def = this.geo.slots[s.name].intent;
       const intent = this.intents.find((i) => i.actor === s.index);
       if (intent === undefined || def === null) {
         s.intent.setText('');

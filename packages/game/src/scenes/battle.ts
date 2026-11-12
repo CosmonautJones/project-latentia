@@ -1,5 +1,5 @@
 // Battle: runs the flow step's BattleDef through a BattleSession. Each round: preview intents (foes hidden unless
-// revealed), take the player's command from the menu (on the canvas, or in the band on phones), submit it, and
+// revealed), take the player's command from the menu (drawn and tapped in the game image), submit it, and
 // play the events back on the round plan: animation within the 1.5 s budget, each line on screen for its dwell.
 // One-time hints introduce each element. The result goes to the flow with the fight's report: a rival or wild loss
 // restarts the fight, a trainer result opens the debrief (scenes/debrief.ts).
@@ -14,7 +14,6 @@ import type { BattlePhase, BattleResultProbe, RoundTiming } from '../battle/prob
 import { battleResult } from '../battle/result.js';
 import { BattleSession, type PlayerChoice, type RoundResult } from '../battle/session.js';
 import { planRound } from '../battle/timeline.js';
-import { BandMenu } from '../battle-ui/band-menu.js';
 import { CommandBox, type BoxModel } from '../battle-ui/command-box.js';
 import { BattleStage } from '../battle-ui/stage.js';
 import { battleForStep, type BattleDef } from '../content/battles.js';
@@ -34,7 +33,6 @@ export class BattleScene extends BaseScene {
   private session!: BattleSession;
   private stage!: BattleStage;
   private box!: CommandBox;
-  private band!: BandMenu;
   private dialogue!: DialogueBox;
   /** Survives a lose → restart (the scene instance is reused): speed and temperature stay as the player left them. */
   private menu: BattleMenuState = initialMenu();
@@ -64,19 +62,20 @@ export class BattleScene extends BaseScene {
     this.roundMs = [];
     this.result = null;
 
-    this.stage = new BattleStage(this, this.session);
+    this.stage = new BattleStage(this, this.session, this.layout);
     this.box = new CommandBox(this, this.app);
-    this.band = new BandMenu(this.app.screen.bandPanel, this.app);
     this.dialogue = new DialogueBox(this, this.app);
     this.stage.setIntents(this.session.intents(), this.session.revealedFoes());
     this.box.render({ kind: 'message', text: '' });
 
     this.listen((a) => this.onInput(a));
-    const offLayout = this.app.screen.onLayout(() => this.renderMenu());
+    // A rotation lays the field and the box out again in place: the round, the menu and an armed move all stay.
+    this.onRelayout((l) => {
+      this.stage.relayout(l);
+      this.box.relayout();
+    });
     this.events.once('shutdown', () => {
       this.generation++;
-      offLayout();
-      this.band.destroy();
       this.app.probe.battle = null;
     });
     this.ready();
@@ -159,7 +158,6 @@ export class BattleScene extends BaseScene {
     this.stage.setTemperature((this.menu.screen === 'temp' && showing ? this.menu.tempIndex : this.menu.temperature) as Temperature);
     if (!showing) {
       this.app.probe.menu = null;
-      this.band.render({ kind: 'message', text: '' });
       this.publish();
       return;
     }
@@ -169,11 +167,9 @@ export class BattleScene extends BaseScene {
       menu: this.menu,
       data,
       prompt: `What will ${this.session.shortName(this.session.playerIndex)} do?`,
-      buttons: this.app.screen.layout().menus === 'canvas',
       whyFresh: this.whyFresh,
     };
     this.box.render(model);
-    this.band.render(this.phase === 'hint' ? { kind: 'message', text: '' } : model);
     this.app.probe.menu = this.phase === 'command' ? menuView(this.menu, data) : null;
     this.publish();
   }

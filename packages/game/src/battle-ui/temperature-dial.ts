@@ -21,8 +21,8 @@ export class TemperatureDial {
 
   constructor(
     scene: Phaser.Scene,
-    private readonly x: number,
-    private readonly y: number,
+    private x: number,
+    private y: number,
   ) {
     this.g = scene.add.graphics();
     this.label = addPixelText(scene, x, y + 16, '', { color: COLOR.cloud });
@@ -36,6 +36,13 @@ export class TemperatureDial {
     };
     scene.events.on(Phaser.Scenes.Events.UPDATE, onUpdate);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.events.off(Phaser.Scenes.Events.UPDATE, onUpdate));
+    this.draw();
+  }
+
+  /** Move the dial (a relayout). */
+  moveTo(x: number, y: number): void {
+    this.x = x;
+    this.y = y;
     this.draw();
   }
 
