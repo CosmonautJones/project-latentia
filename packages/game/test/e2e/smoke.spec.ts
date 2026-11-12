@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 // Brings in the global `window.__latentia` typing.
 import type {} from '../../src/dev/hook.js';
 import type { FlowEvent } from '../../src/flow/flow.js';
+import { expectTargets, tapOption, target } from './drive.js';
 
 /** Collect console errors and uncaught exceptions; the test fails on any. */
 function watchErrors(page: Page): string[] {
@@ -17,10 +18,20 @@ const scene = (page: Page) => page.evaluate(() => window.__latentia?.scene() ?? 
 const step = (page: Page) => page.evaluate(() => window.__latentia?.flow().step ?? null);
 const menu = (page: Page) => page.evaluate(() => window.__latentia?.menu() ?? null);
 
-/** The canvas fills exactly the integer-scaled rect the layout manager computed. */
+/**
+ * The canvas fills exactly the integer-scaled rect the layout manager computed, to within 1/32 CSS px: with a
+ * fractional DPR such as 2.625, 1080 device px is 411.4286 CSS px, which the browser's 1/64 px layout unit (and
+ * Phaser's FIT rounding) can only approximate; the error stays under 0.1 device px.
+ */
 async function expectCanvasMatchesLayout(page: Page): Promise<void> {
   const game = await page.evaluate(() => window.__latentia?.layout().game);
-  await expect.poll(() => page.locator('#frame canvas').boundingBox()).toEqual(game);
+  if (!game) throw new Error('no layout');
+  await expect
+    .poll(async () => {
+      const box = await page.locator('#frame canvas').boundingBox();
+      return box !== null && (['x', 'y', 'width', 'height'] as const).every((k) => Math.abs(box[k] - game[k]) <= 1 / 32);
+    })
+    .toBe(true);
 }
 
 test('boots to the title, starts a new game by keyboard and reaches the Lab', async ({ page }) => {
@@ -193,3 +204,36 @@ test('with localStorage blocked the game still runs, shows one "saves unavailabl
   await expect(page.locator('#notice')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
+
+// Every size the plan lists, each rotated too: the canvas is exactly the integer-scaled rect at the logical size the
+// layout chose, the title's options are 44 px targets clear of the controls, and a real tap or click on NEW GAME plays.
+for (const v of [
+  { width: 1366, height: 768, dpr: 1, touch: false },
+  { width: 1920, height: 1080, dpr: 1, touch: false },
+  { width: 844, height: 390, dpr: 3, touch: true },
+  { width: 390, height: 844, dpr: 3, touch: true },
+  { width: 360, height: 640, dpr: 3, touch: true },
+  { width: 412, height: 915, dpr: 2.625, touch: true },
+]) {
+  test(`${v.width}x${v.height} at DPR ${v.dpr} and rotated: pixel-exact canvas, logical size, tappable title`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: v.width, height: v.height }, deviceScaleFactor: v.dpr, isMobile: v.touch, hasTouch: v.touch });
+    const page = await context.newPage();
+    const errors = watchErrors(page);
+    await page.goto('/');
+    await expect.poll(() => scene(page)).toBe('Title');
+    for (const size of [{ width: v.width, height: v.height }, { width: v.height, height: v.width }]) {
+      await page.setViewportSize(size);
+      await expect.poll(() => page.evaluate(() => window.__latentia?.layout().mode)).toBe(size.width > size.height ? 'landscape' : 'portrait');
+      const l = await page.evaluate(() => window.__latentia?.layout());
+      expect(l?.logical).toEqual(size.height > size.width ? { width: 270, height: l?.logical.height } : { width: 480, height: 270 });
+      await expect.poll(() => page.locator('#frame canvas').getAttribute('width')).toBe(String(l?.logical.width));
+      await expectCanvasMatchesLayout(page);
+      await target(page, 'title', 0);
+      await expectTargets(page);
+    }
+    await tapOption(page, 'title', 0);
+    await expect.poll(() => scene(page)).toBe('Overworld');
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+}
