@@ -184,6 +184,17 @@ Each round therefore opens with **intent preview**. The engine evaluates every s
 
 The orchestrator has three levers over subagents. **Directive** costs 2 cells and the orchestrator's turn, and overrides one subagent's next action. **Policy Update** costs 2 cells and pushes a team-wide rule card to the top of every deck for 3 rounds. **Swap** brings in a bench creature. The orchestrator is never benched, because it *is* the player. If it is KO'd, the team enters **Headless Mode** and subagents keep fighting from their decks; the battle is lost only when every creature is down. In ghost battles an **Autopilot deck** stands in for the absent player.
 
+**Battle presentation (Travis, 2026-11-12, after the v0 playtest: "confusing, but explained well").** There are three battle modes, all on the same engine.
+- **Normal battles** are simple turns with telegraphs.
+  - The foe's intent is always shown by category, Slay the Spire style: Attack ~N, Guard, Buff, Debuff, Special. Reveal moves upgrade it to the exact move.
+  - Context shows as pips, and each move shows its cost in pips.
+  - The temperature dial stays hidden until the first gym.
+  - Each fight shows only the systems taught so far, with plain-word move details and the numbers behind a toggle.
+- **Gyms** are **eval puzzles**: a fixed, visible foe behaviour, and you win by teaching the card that beats it.
+- **Ghost battles** use **coach mode**: you set the cards before the fight, then get 2–3 mid-fight prompts.
+
+The plan is in docs/superpowers/plans/2026-11-12-v0.1-screen-and-battle-clarity.md.
+
 The orchestrator's moveset is its signature move (from the System Prompt piece), up to 4 Skill pieces, the universals Compact, /clear and Guardrail, and Directive, Policy Update and Swap. A subagent has 4 moves plus the 3 universals. A round is 1 orchestrator command plus up to 2 subagent auto-actions.
 
 ### Turn order and RNG discipline make every replay exact
