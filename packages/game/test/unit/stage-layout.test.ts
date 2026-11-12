@@ -163,7 +163,7 @@ describe('nothing to read or tap is under the touch controls', () => {
       const l = computeViewport(v);
       const at = `${v.width}x${v.height}@${v.dpr} (${l.logical.width}x${l.logical.height})${notch ? ' with insets' : ''}`;
 
-      it(`${at}: the occluders are the controls in logical px, and the safe area and dialogue box are clear of them`, () => {
+      it(`${at}: the occluders are the controls in logical px, and the safe area (where every other scene lays out its dialogue box, menus and panels) is clear of them`, () => {
         // Each control's part over the image is inside an occluder; controls entirely off the image have none.
         const onImage = controls(l)
           .map((c) => ({ x: Math.max(0, c.x), y: Math.max(0, c.y), right: Math.min(l.logical.width, c.x + c.width), bottom: Math.min(l.logical.height, c.y + c.height) }))
