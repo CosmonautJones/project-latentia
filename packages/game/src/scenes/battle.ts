@@ -166,8 +166,8 @@ export class BattleScene extends BaseScene {
     }
     if (e?.kind === 'numbers') this.stage.setNumbers(e.numbers);
     this.renderMenu();
-    // The first visit to the moves or the dial explains it.
-    const opened = this.menu.screen !== before ? this.menu.screen : null;
+    // The first visit to the moves or the dial explains it (in direct mode the moves are always up: nextRound does).
+    const opened = this.menu.screen !== before && !this.stage.geometry.direct ? this.menu.screen : null;
     if (opened === 'moves' && !this.app.flow.hasSeenHint('battle.context')) void this.hint(this.generation, 'battle.context');
     if (opened === 'temp' && !this.app.flow.hasSeenHint('battle.temperature')) void this.hint(this.generation, 'battle.temperature');
   }

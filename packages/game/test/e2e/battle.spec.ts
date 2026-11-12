@@ -7,7 +7,7 @@
 import { expect, test, type Page } from '@playwright/test';
 // Brings in the global `window.__latentia` typing.
 import type {} from '../../src/dev/hook.js';
-import { expectTargets, tapOption, target } from './drive.js';
+import { expectTargets, tapOption, taps, target } from './drive.js';
 
 function watchErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -177,29 +177,22 @@ test('a lose → restart keeps the speed and NUMBERS the player set; the tempera
   expect(errors).toEqual([]);
 });
 
-test('in portrait the battle menu is drawn in the image: a tap selects, a second tap commits', async ({ browser }) => {
+test('on a tall phone the moves are the first screen (no PROMPT), the system row under them; a tap selects, a second tap commits', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   const errors = watchErrors(page);
   await startRival(page, 2);
   await toCommand(page);
-  await target(page, 'battle-root', 4);
-  await tapOption(page, 'battle-root', 0);
-  // The first visit to the moves shows the context hint; the A button closes it.
-  await expect.poll(() => phase(page)).toBe('hint');
-  await expect
-    .poll(async () => {
-      if ((await phase(page)) === 'hint') await page.locator('[data-control="btn-a"]').tap();
-      return phase(page);
-    })
-    .toBe('command');
+  expect((await menu(page))?.id).toBe('battle-moves');
+  // All seven moves and WHY? LOG NUMBERS SPEED, never PROMPT, each a 44 px target clear of the controls.
   await target(page, 'battle-moves', 6);
-  // All seven moves fit on a tall phone; shorter screens page them, MORE included (every option still a 44 px target).
-  expect(await expectTargets(page)).toBeGreaterThanOrEqual(2);
-  // B (the B button) backs out to the root.
+  for (const i of [ROOT.why, ROOT.log, ROOT.numbers, ROOT.speed]) await target(page, 'battle-root', i);
+  expect((await taps(page)).some((t) => t.menu === 'battle-root' && t.index === ROOT.prompt)).toBe(false);
+  expect(await expectTargets(page)).toBe(11);
+  // NUMBERS in the row toggles in place; B (the B button) stays on the moves.
+  await tapOption(page, 'battle-root', ROOT.numbers);
+  await expect.poll(() => battle(page).then((b) => b?.numbers)).toBe(true);
   await page.locator('[data-control="btn-b"]').tap();
-  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('battle-root');
-  await tapOption(page, 'battle-root', 0);
   await tapOption(page, 'battle-moves', 0);
   await expect.poll(() => battle(page).then((b) => b?.armed)).toEqual({ screen: 'moves', index: 0 });
   expect(await phase(page)).toBe('command');
@@ -207,6 +200,7 @@ test('in portrait the battle menu is drawn in the image: a tap selects, a second
   await expect.poll(() => phase(page)).toBe('playback');
   await toCommand(page);
   expect((await battle(page))?.round).toBe(1);
+  expect((await menu(page))?.id).toBe('battle-moves');
   expect(errors).toEqual([]);
   await context.close();
 });

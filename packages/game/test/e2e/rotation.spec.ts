@@ -2,7 +2,7 @@
 // game resizes to the new logical size, the state is kept, nothing stacks twice, and taps and keys still work.
 
 import { expect, test } from '@playwright/test';
-import { battle, expectTargets, LANDSCAPE, menu, panel, phase, phone, PORTRAIT, rotate, scene, send, tapOption, target, toRival, untilCommand, watchErrors } from './drive.js';
+import { battle, drawnOnScreen, expectTargets, LANDSCAPE, menu, openMoves, panel, phase, phone, PORTRAIT, rotate, scene, send, tapOption, target, toRival, untilCommand, watchErrors } from './drive.js';
 
 test('rotating mid-battle keeps the menu, the armed move and keyboard input; the second tap still commits', async ({ browser }) => {
   const { page, close } = await phone(browser);
@@ -14,8 +14,8 @@ test('rotating mid-battle keeps the menu, the armed move and keyboard input; the
   expect(await phase(page)).toBe('intro');
   await untilCommand(page);
   await rotate(page, PORTRAIT);
-  await tapOption(page, 'battle-root', 0);
-  await untilCommand(page);
+  // On the tall phone the moves are the first screen (no PROMPT step).
+  await openMoves(page);
   // First tap arms Compact (index 4), then rotate: still armed, still on the moves, and its button is drawn again.
   await tapOption(page, 'battle-moves', 4);
   await expect.poll(() => battle(page).then((b) => b?.armed)).toEqual({ screen: 'moves', index: 4 });
@@ -28,6 +28,8 @@ test('rotating mid-battle keeps the menu, the armed move and keyboard input; the
   await page.keyboard.press('KeyX');
   await expect.poll(() => menu(page).then((m) => m?.id)).toBe('battle-root');
   await page.keyboard.press('Enter');
+  // The first visit to the moves in landscape may bring the context hint (portrait showed them directly).
+  await untilCommand(page);
   await expect.poll(() => menu(page).then((m) => m?.id)).toBe('battle-moves');
   // Two taps on the drawn button commit, in the new orientation.
   await tapOption(page, 'battle-moves', 4);
@@ -42,6 +44,39 @@ test('rotating mid-battle keeps the menu, the armed move and keyboard input; the
   await close();
 });
 
+
+// Review I-2: the 7th move fits portrait's 4x2 grid but not landscape's 3x2 page; after the rotation the armed move's
+// page must be the one drawn, so the button the text says to tap again is on screen, and a second tap uses it.
+test('rotating with the 7th move armed keeps it drawn on screen, and the second tap uses it (both ways round)', async ({ browser }) => {
+  const { page, close } = await phone(browser);
+  const errors = watchErrors(page);
+  await toRival(page);
+  await untilCommand(page);
+  await openMoves(page);
+  const guardrail = 6;
+  expect((await battle(page))?.moves[guardrail]?.moveId).toBe('guardrail');
+  await tapOption(page, 'battle-moves', guardrail);
+  await expect.poll(() => battle(page).then((b) => b?.armed)).toEqual({ screen: 'moves', index: guardrail });
+  await rotate(page, LANDSCAPE);
+  expect((await battle(page))?.armed).toEqual({ screen: 'moves', index: guardrail });
+  expect(await drawnOnScreen(page, 'battle-moves', guardrail)).toBe(true);
+  // Its page, MORE included, every option a 44 px target clear of the controls.
+  expect(await drawnOnScreen(page, 'battle-page', 0)).toBe(true);
+  await expectTargets(page);
+  expect((await battle(page))?.band.join(' ')).toMatch(/TAP AGAIN TO USE\. GUARDRAIL/);
+  // Back to portrait with Guardrail armed on landscape's second page: all seven are drawn again, no MORE.
+  await rotate(page, PORTRAIT);
+  expect(await drawnOnScreen(page, 'battle-moves', guardrail)).toBe(true);
+  expect(await drawnOnScreen(page, 'battle-page', 0)).toBe(false);
+  for (let i = 0; i < 7; i++) expect(await drawnOnScreen(page, 'battle-moves', i), `move ${i}`).toBe(true);
+  await rotate(page, LANDSCAPE);
+  // The second tap, on the button where it is drawn, uses Guardrail.
+  await tapOption(page, 'battle-moves', guardrail);
+  await expect.poll(() => phase(page)).toBe('playback');
+  await expect.poll(() => battle(page).then((b) => b?.log.some((l) => /GUARDRAIL|Guardrail/.test(l)) ?? false), { timeout: 10_000 }).toBe(true);
+  expect(errors).toEqual([]);
+  await close();
+});
 
 test('rotating with a choice panel open keeps the cursor and draws the choices once', async ({ browser }) => {
   const { page, close } = await phone(browser);

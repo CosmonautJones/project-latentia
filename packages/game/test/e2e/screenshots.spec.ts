@@ -103,16 +103,17 @@ for (const s of BATTLE_SIZES) {
           }, { timeout: 20_000 })
           .toBe('command');
       await toCommand();
-      // Round 1: Compact (the last move), so round 2 shows a damaged bar and the foe's next telegraph.
+      // Round 1: Compact (the last move), so round 2 shows a damaged bar and the foe's next telegraph. PROMPT opens the
+      // moves (on a tall portrait screen they are already open, and the tap changes nothing).
       await pick('battle-root', 0);
       // The first visit to the moves shows the context hint; close it before steering.
       await toCommand();
       const moves = await hook(() => window.__latentia?.battle()?.moves.length ?? 0);
       const compact = (await hook(() => window.__latentia?.battle()?.moves.map((m) => m.moveId) ?? [])).indexOf('compact');
       expect(compact).toBeGreaterThanOrEqual(0);
-      // A paged list: step the cursor to Compact with the keys, then commit with A.
-      for (let i = 0; i < compact; i++) await hook(() => window.__latentia?.press('down'));
-      await hook(() => window.__latentia?.press('a'));
+      // Two taps on Compact (on whichever page it is) commit it.
+      await pick('battle-moves', compact);
+      await pick('battle-moves', compact);
       expect(moves).toBeGreaterThan(0);
       await toCommand();
       expect(await hook(() => window.__latentia?.battle()?.round ?? 0)).toBe(1);

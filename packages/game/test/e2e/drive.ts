@@ -208,3 +208,20 @@ export async function untilCommand(page: Page): Promise<void> {
     .toBe('command');
 }
 
+
+/**
+ * Open the move list: tap PROMPT, or nothing on a tall portrait screen, where the moves are already the first screen
+ * (direct mode). Closes a first-visit hint.
+ */
+export async function openMoves(page: Page): Promise<void> {
+  if ((await menu(page))?.id !== 'battle-moves') await tapOption(page, 'battle-root', 0);
+  await untilCommand(page);
+  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('battle-moves');
+}
+
+/** Whether option `index` of `menuId` is drawn right now, wholly inside the viewport (no paging to find it). */
+export async function drawnOnScreen(page: Page, menuId: string, index: number): Promise<boolean> {
+  const size = page.viewportSize() ?? { width: 0, height: 0 };
+  const t = (await taps(page)).find((o) => o.menu === menuId && o.index === index);
+  return t !== undefined && t.x >= 0 && t.y >= 0 && t.x + t.width <= size.width + 1e-6 && t.y + t.height <= size.height + 1e-6;
+}
