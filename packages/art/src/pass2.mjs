@@ -176,6 +176,8 @@ function buildTiles(a) {
       const f = byChar[ch];
       if (f) blit(png, f, gap + tx * TILE * 2, y + ty * TILE * 2, 2);
     }));
+    if (a.lurkAt?.[0] === mock.indexOf(m)) blit(png, a.overlays[0], gap + a.lurkAt[1] * TILE * 2, y + a.lurkAt[2] * TILE * 2, 2);
+    // Feet sit 4 px above the tile's bottom edge, so a figure stands in its tile and not on the seam.
     for (const [f, tx, ty] of a.mockActors?.[mock.indexOf(m)] ?? []) blit(png, f, gap + tx * TILE * 2, y + ty * TILE * 2 - 16 - 8, 2);
     y += m.length * TILE * 2 + gap;
   }

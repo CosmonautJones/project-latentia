@@ -1,0 +1,657 @@
+{
+  "version": 2,
+  "palette": "endesga-32",
+  "note": "Frames are laid out in one row per sheet, left to right. Battle creatures face the viewer's left; mirror them for the player's side.",
+  "sheets": {
+    "battle/tokenibble": {
+      "file": "battle/tokenibble.png",
+      "kind": "battle",
+      "frameWidth": 96,
+      "frameHeight": 96,
+      "frameCount": 8,
+      "facing": "left",
+      "baseline": 87,
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "frameMs": 90,
+          "loop": true
+        },
+        "hit": {
+          "frames": [
+            6,
+            7
+          ],
+          "frameMs": 130,
+          "loop": false
+        }
+      }
+    },
+    "battle/vibrat": {
+      "file": "battle/vibrat.png",
+      "kind": "battle",
+      "frameWidth": 96,
+      "frameHeight": 96,
+      "frameCount": 8,
+      "facing": "left",
+      "baseline": 87,
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "frameMs": 70,
+          "loop": true
+        },
+        "hit": {
+          "frames": [
+            6,
+            7
+          ],
+          "frameMs": 130,
+          "loop": false
+        }
+      }
+    },
+    "battle/sagelet": {
+      "file": "battle/sagelet.png",
+      "kind": "battle",
+      "frameWidth": 96,
+      "frameHeight": 96,
+      "frameCount": 8,
+      "facing": "left",
+      "baseline": 87,
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "frameMs": 100,
+          "loop": true
+        },
+        "hit": {
+          "frames": [
+            6,
+            7
+          ],
+          "frameMs": 130,
+          "loop": false
+        }
+      }
+    },
+    "battle/blitzr": {
+      "file": "battle/blitzr.png",
+      "kind": "battle",
+      "frameWidth": 96,
+      "frameHeight": 96,
+      "frameCount": 8,
+      "facing": "left",
+      "baseline": 87,
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "frameMs": 75,
+          "loop": true
+        },
+        "hit": {
+          "frames": [
+            6,
+            7
+          ],
+          "frameMs": 130,
+          "loop": false
+        }
+      }
+    },
+    "battle/forkling": {
+      "file": "battle/forkling.png",
+      "kind": "battle",
+      "frameWidth": 96,
+      "frameHeight": 96,
+      "frameCount": 8,
+      "facing": "left",
+      "baseline": 87,
+      "animations": {
+        "idle": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "frameMs": 100,
+          "loop": true
+        },
+        "hit": {
+          "frames": [
+            6,
+            7
+          ],
+          "frameMs": 130,
+          "loop": false
+        }
+      }
+    },
+    "tiles": {
+      "file": "tiles.png",
+      "kind": "tiles",
+      "frameWidth": 24,
+      "frameHeight": 24,
+      "frameCount": 15,
+      "tiles": {
+        "void": [
+          0
+        ],
+        "grass": [
+          1
+        ],
+        "path": [
+          2
+        ],
+        "tree": [
+          3
+        ],
+        "oldTree": [
+          4
+        ],
+        "wall": [
+          5
+        ],
+        "roof": [
+          6
+        ],
+        "rack": [
+          7
+        ],
+        "floor": [
+          8
+        ],
+        "door": [
+          9
+        ],
+        "sign": [
+          10
+        ],
+        "patch": [
+          11,
+          12
+        ]
+      },
+      "overlays": {
+        "lurk": [
+          13,
+          14
+        ]
+      },
+      "animations": {
+        "patch": {
+          "frames": [
+            11,
+            12
+          ],
+          "frameMs": 420,
+          "loop": true
+        },
+        "lurk": {
+          "frames": [
+            13,
+            14
+          ],
+          "frameMs": 420,
+          "loop": true
+        }
+      }
+    },
+    "characters/player": {
+      "file": "characters/player.png",
+      "kind": "character",
+      "frameWidth": 24,
+      "frameHeight": 32,
+      "frameCount": 12,
+      "directions": [
+        "down",
+        "up",
+        "left",
+        "right"
+      ],
+      "framesPerDirection": 3,
+      "footY": 30,
+      "animations": {
+        "idle-down": {
+          "frames": [
+            0
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-down": {
+          "frames": [
+            1,
+            0,
+            2,
+            0
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-up": {
+          "frames": [
+            3
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-up": {
+          "frames": [
+            4,
+            3,
+            5,
+            3
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-left": {
+          "frames": [
+            6
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-left": {
+          "frames": [
+            7,
+            6,
+            8,
+            6
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-right": {
+          "frames": [
+            9
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-right": {
+          "frames": [
+            10,
+            9,
+            11,
+            9
+          ],
+          "frameMs": 130,
+          "loop": true
+        }
+      }
+    },
+    "characters/kip": {
+      "file": "characters/kip.png",
+      "kind": "character",
+      "frameWidth": 24,
+      "frameHeight": 32,
+      "frameCount": 12,
+      "directions": [
+        "down",
+        "up",
+        "left",
+        "right"
+      ],
+      "framesPerDirection": 3,
+      "footY": 30,
+      "animations": {
+        "idle-down": {
+          "frames": [
+            0
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-down": {
+          "frames": [
+            1,
+            0,
+            2,
+            0
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-up": {
+          "frames": [
+            3
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-up": {
+          "frames": [
+            4,
+            3,
+            5,
+            3
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-left": {
+          "frames": [
+            6
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-left": {
+          "frames": [
+            7,
+            6,
+            8,
+            6
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-right": {
+          "frames": [
+            9
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-right": {
+          "frames": [
+            10,
+            9,
+            11,
+            9
+          ],
+          "frameMs": 130,
+          "loop": true
+        }
+      }
+    },
+    "characters/professor": {
+      "file": "characters/professor.png",
+      "kind": "character",
+      "frameWidth": 24,
+      "frameHeight": 32,
+      "frameCount": 12,
+      "directions": [
+        "down",
+        "up",
+        "left",
+        "right"
+      ],
+      "framesPerDirection": 3,
+      "footY": 30,
+      "animations": {
+        "idle-down": {
+          "frames": [
+            0
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-down": {
+          "frames": [
+            1,
+            0,
+            2,
+            0
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-up": {
+          "frames": [
+            3
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-up": {
+          "frames": [
+            4,
+            3,
+            5,
+            3
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-left": {
+          "frames": [
+            6
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-left": {
+          "frames": [
+            7,
+            6,
+            8,
+            6
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-right": {
+          "frames": [
+            9
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-right": {
+          "frames": [
+            10,
+            9,
+            11,
+            9
+          ],
+          "frameMs": 130,
+          "loop": true
+        }
+      }
+    },
+    "characters/grad": {
+      "file": "characters/grad.png",
+      "kind": "character",
+      "frameWidth": 24,
+      "frameHeight": 32,
+      "frameCount": 12,
+      "directions": [
+        "down",
+        "up",
+        "left",
+        "right"
+      ],
+      "framesPerDirection": 3,
+      "footY": 30,
+      "animations": {
+        "idle-down": {
+          "frames": [
+            0
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-down": {
+          "frames": [
+            1,
+            0,
+            2,
+            0
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-up": {
+          "frames": [
+            3
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-up": {
+          "frames": [
+            4,
+            3,
+            5,
+            3
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-left": {
+          "frames": [
+            6
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-left": {
+          "frames": [
+            7,
+            6,
+            8,
+            6
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-right": {
+          "frames": [
+            9
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-right": {
+          "frames": [
+            10,
+            9,
+            11,
+            9
+          ],
+          "frameMs": 130,
+          "loop": true
+        }
+      }
+    },
+    "characters/farmer": {
+      "file": "characters/farmer.png",
+      "kind": "character",
+      "frameWidth": 24,
+      "frameHeight": 32,
+      "frameCount": 12,
+      "directions": [
+        "down",
+        "up",
+        "left",
+        "right"
+      ],
+      "framesPerDirection": 3,
+      "footY": 30,
+      "animations": {
+        "idle-down": {
+          "frames": [
+            0
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-down": {
+          "frames": [
+            1,
+            0,
+            2,
+            0
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-up": {
+          "frames": [
+            3
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-up": {
+          "frames": [
+            4,
+            3,
+            5,
+            3
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-left": {
+          "frames": [
+            6
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-left": {
+          "frames": [
+            7,
+            6,
+            8,
+            6
+          ],
+          "frameMs": 130,
+          "loop": true
+        },
+        "idle-right": {
+          "frames": [
+            9
+          ],
+          "frameMs": 0,
+          "loop": false
+        },
+        "walk-right": {
+          "frames": [
+            10,
+            9,
+            11,
+            9
+          ],
+          "frameMs": 130,
+          "loop": true
+        }
+      }
+    }
+  }
+}

@@ -6,4 +6,9 @@ export const ASSETS = [
   { name: 'blitzr', type: 'battle', load: () => import('./battle/blitzr.mjs') },
   { name: 'forkling', type: 'battle', load: () => import('./battle/forkling.mjs') },
   { name: 'tiles', type: 'tiles', load: () => import('./tiles.mjs') },
+  { name: 'player', type: 'char', load: () => import('./chars/all.mjs').then((m) => ({ default: m.player })) },
+  { name: 'kip', type: 'char', load: () => import('./chars/all.mjs').then((m) => ({ default: m.kip })) },
+  { name: 'professor', type: 'char', load: () => import('./chars/all.mjs').then((m) => ({ default: m.professor })) },
+  { name: 'grad', type: 'char', load: () => import('./chars/all.mjs').then((m) => ({ default: m.grad })) },
+  { name: 'farmer', type: 'char', load: () => import('./chars/all.mjs').then((m) => ({ default: m.farmer })) },
 ];

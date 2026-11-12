@@ -4,6 +4,7 @@
 // the sign bring their own grass, the rack and door their own wall.
 
 import { Cv, noise, and, sub, or } from '../src/draw.mjs';
+import { CAST } from './chars/all.mjs';
 
 const N = 24;
 const tile = (fill) => {
@@ -256,6 +257,13 @@ export default {
   overlayNames: { lurk: 2 },
   patchMs: 420,
   legend,
+  // People standing where the map puts them: [frame, tileX, tileY] per mock-up.
+  mockActors: [
+    [[CAST.professor.frames.down[0], 5, 2], [CAST.player.frames.up[0], 5, 3], [CAST.kip.frames.left[0], 8, 4]],
+    [[CAST.farmer.frames.down[0], 13, 5], [CAST.player.frames.right[1], 7, 6]],
+    [[CAST.grad.frames.left[0], 15, 6], [CAST.player.frames.right[0], 10, 4]],
+  ],
+  lurkAt: [2, 8, 3],
   mock: [LAB, OUTSIDE.map((r) => r.slice(0, 24)), OUTSIDE.map((r) => r.slice(24))],
 };
 void and; void sub;
