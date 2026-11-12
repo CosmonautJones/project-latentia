@@ -1,7 +1,7 @@
 {
   "name": "injection-payloads",
   "log": {
-    "engineVersion": "0.4.1",
+    "engineVersion": "0.4.2",
     "seed": "708cb0c6ad21d24119cf0f9a5cbbe5dc",
     "setup": {
       "a": {

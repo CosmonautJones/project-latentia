@@ -46,9 +46,11 @@ describe('public surface (spec §4, so far)', () => {
         'gridSizeFor',
         // the orchestrator's stored moveset (C4 m1, for the sim's deck search)
         'orchestratorMoves',
+        // the damage preview for the game's foe telegraph (0.4.2, read-only)
+        'previewDamage',
       ].sort(),
     );
-    expect(engine.ENGINE_VERSION).toBe('0.4.1');
+    expect(engine.ENGINE_VERSION).toBe('0.4.2');
   });
 
   it('runs and replays a battle through the public surface alone', () => {

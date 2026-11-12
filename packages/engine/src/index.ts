@@ -2,7 +2,8 @@
 // computeGeneralization), plus the thrown error classes as values for instanceof (Ruling 67), and, read-only
 // (frozen), the content catalogs and the deck-editor constants a client needs (Ruling 119 m3), and the grid-size
 // table (C2 fix round 1, for the sim's starter grid), and the orchestrator's stored moveset (C4 m1, for the sim's deck
-// search, so it never copies the rule).
+// search, so it never copies the rule), and previewDamage (0.4.2, a pure read-only helper for the game's foe
+// telegraph: the damage range an intent's move would deal, before the round).
 // Everything else in src/ is internal.
 
 export { ENGINE_VERSION } from './battle/log.js';
@@ -16,6 +17,8 @@ export { MAX_AUTOPILOT_CARDS, MAX_DECK_CARDS } from './battle/validate-deck.js';
 export { submitRound } from './battle/round.js';
 export { getIntents } from './battle/intents.js';
 export type { Intent } from './battle/intents.js';
+export { previewDamage } from './battle/preview.js';
+export type { DamagePreview } from './battle/preview.js';
 export type { CommandError } from './battle/errors.js';
 
 export { simulate, SimulateError } from './battle/simulate.js';

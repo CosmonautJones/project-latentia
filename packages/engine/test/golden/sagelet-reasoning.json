@@ -1,7 +1,7 @@
 {
   "name": "sagelet-reasoning",
   "log": {
-    "engineVersion": "0.4.1",
+    "engineVersion": "0.4.2",
     "seed": "03bd336a88a467f27d89f8827a04d4e3",
     "setup": {
       "a": {

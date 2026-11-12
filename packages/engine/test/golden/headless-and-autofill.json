@@ -1,7 +1,7 @@
 {
   "name": "headless-and-autofill",
   "log": {
-    "engineVersion": "0.4.1",
+    "engineVersion": "0.4.2",
     "seed": "037e428d63a56f2a40af934b8506119b",
     "setup": {
       "a": {
