@@ -371,3 +371,18 @@ function edgeDistance(m, w, h, max) {
 
 /** Smooth 0..1..0 loop helpers for six-frame idles: phase p in [0,1). */
 export const wave = (p, lag = 0) => Math.sin((p - lag) * Math.PI * 2);
+
+/**
+ * A zigzag ribbon as polygon points: pts = [[x, y, halfWidth], ...]. Unlike `tube` the joints stay
+ * sharp, which is what a lightning bolt wants. Feed the result to cv.poly().
+ */
+export function ribbon(pts) {
+  const left = [], right = [];
+  pts.forEach(([x, y, w], i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    const dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1;
+    left.push([x - (dy / n) * w, y + (dx / n) * w]);
+    right.push([x + (dy / n) * w, y - (dx / n) * w]);
+  });
+  return [...left, ...right.reverse()];
+}
