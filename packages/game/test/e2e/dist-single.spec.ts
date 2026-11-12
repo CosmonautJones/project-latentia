@@ -64,7 +64,7 @@ test('dist-single is one self-contained index.html under 16 MiB: inline script a
   console.log(`dist-single/index.html: ${bytes} bytes (${(bytes / 1024 / 1024).toFixed(2)} MiB)`);
   expect(bytes).toBeLessThan(16 * 1024 * 1024);
   const html = readFileSync(FILE, 'utf8');
-  expect(html).toContain('<title>Latentia v0</title>');
+  expect(html).toContain('<title>Latentia v0.1</title>');
   // One inline module script, no chunk imports, no external stylesheet, no src= or url() to fetch.
   const scripts = html.match(/<script\b[^>]*>/g) ?? [];
   expect(scripts).toEqual(['<script type="module">']);
@@ -89,7 +89,7 @@ test('from a plain nested path it plays from the title into the lab and the firs
   const { errors, requests } = watch(page);
   const saved = () => page.evaluate(() => JSON.parse(window.localStorage.getItem('latentia.save.v0') ?? 'null')?.progress?.step ?? null);
   await page.goto(`${ORIGIN}${GAME}`);
-  await expect(page).toHaveTitle('Latentia v0');
+  await expect(page).toHaveTitle('Latentia v0.1');
   await expect(page.locator('#frame canvas')).toBeVisible();
   await expect.poll(async () => (await page.keyboard.press('Enter'), saved())).toBe('lab');
   await expect.poll(async () => (await page.keyboard.press('KeyZ'), saved()), { timeout: 20_000 }).toBe('rival');

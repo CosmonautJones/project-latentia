@@ -47,7 +47,7 @@ test('the production bundle has no dev hook or test-only code, no external URLs,
   const urls = new Set(bundle.match(/https?:\/\/[^\s"'`)]+/g) ?? []);
   for (const url of urls) expect(url).toMatch(/^(http:\/\/www\.w3\.org\/|https:\/\/phaser\.io\/?$)/);
   const html = readFileSync(join(DIST, 'index.html'), 'utf8');
-  expect(html).toContain('<title>Latentia v0</title>');
+  expect(html).toContain('<title>Latentia v0.1</title>');
   expect(html).toMatch(/<meta name="viewport" content="[^"]*maximum-scale=1[^"]*user-scalable=no/);
   for (const ref of html.match(/(?:src|href)="[^"]+"/g) ?? []) expect(ref).toMatch(/^(src|href)="\.\//);
 });
@@ -72,7 +72,7 @@ test('served from a nested path, the build plays from the title into the lab and
   const saved = () => page.evaluate(() => JSON.parse(window.localStorage.getItem('latentia.save.v0') ?? 'null')?.progress?.step ?? null);
 
   await page.goto(`${ORIGIN}${BASE}`);
-  await expect(page).toHaveTitle('Latentia v0');
+  await expect(page).toHaveTitle('Latentia v0.1');
   await expect(page.locator('#frame canvas')).toBeVisible();
   expect(await page.evaluate(() => 'latentia' in window || '__latentia' in window)).toBe(false);
   // The title's menu takes Enter once it is up; entering the lab saves the step.
