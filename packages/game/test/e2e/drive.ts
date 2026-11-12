@@ -2,7 +2,7 @@
 // of scripts/loop-balance.ts does (the strongest affordable damaging move at T2, Compact when nothing fits), so a
 // seeded fight in the browser ends the way the measurement says it does.
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type Browser, type Page } from '@playwright/test';
 // Brings in the global `window.__latentia` typing.
 import type {} from '../../src/dev/hook.js';
 import type { FlowEvent } from '../../src/flow/flow.js';
@@ -38,7 +38,6 @@ export async function untilMenu(page: Page, id: string): Promise<void> {
     .toBe(true);
 }
 
-const phase = async (page: Page) => (await battle(page))?.phase ?? null;
 
 /** Close dialogue (intro, hints) until the command menu is up or the battle is over. */
 async function toCommand(page: Page): Promise<void> {
@@ -157,3 +156,47 @@ export async function expectTargets(page: Page): Promise<number> {
   }
   return options.length;
 }
+
+export const PORTRAIT = { width: 390, height: 844 };
+export const LANDSCAPE = { width: 844, height: 390 };
+
+/** A 390x844 touch phone at DPR 3 (or the viewport and DPR given). */
+export async function phone(browser: Browser, viewport = PORTRAIT, deviceScaleFactor = 3): Promise<{ page: Page; close: () => Promise<void> }> {
+  const context = await browser.newContext({ viewport, deviceScaleFactor, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  return { page, close: () => context.close() };
+}
+
+export const phase = async (page: Page) => (await battle(page))?.phase ?? null;
+const mode = (page: Page) => page.evaluate(() => window.__latentia?.layout().mode ?? null);
+export const logical = (page: Page) => page.evaluate(() => window.__latentia?.layout().logical ?? null);
+
+/** Rotate, and wait until the game has been resized for the new orientation. */
+export async function rotate(page: Page, to: { width: number; height: number }): Promise<void> {
+  await page.setViewportSize(to);
+  const want = to.width > to.height ? 'landscape' : 'portrait';
+  await expect.poll(() => mode(page)).toBe(want);
+  await expect.poll(() => page.evaluate(() => [window.__latentia?.layout().logical.width, document.querySelector('#frame canvas')?.getAttribute('width')]).then(([a, b]) => String(a) === b)).toBe(true);
+}
+
+export async function toRival(page: Page): Promise<void> {
+  await page.goto('/');
+  await expect.poll(() => scene(page)).toBe('Title');
+  await send(page, { type: 'newGame' });
+  await send(page, { type: 'starterPicked', starter: 'sagelet' });
+  await expect.poll(() => battle(page).then((b) => b?.id ?? null)).toBe('rival');
+}
+
+export async function untilCommand(page: Page): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        const p = await phase(page);
+        if (p === 'intro' || p === 'hint' || p === 'why') await page.evaluate(() => window.__latentia?.press('a'));
+        return p;
+      },
+      { timeout: 20_000 },
+    )
+    .toBe('command');
+}
+
