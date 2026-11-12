@@ -48,6 +48,9 @@ export abstract class BaseScene extends Phaser.Scene {
   protected ready(): void {
     this.leaving = false;
     this.app.probe.scene = this.scene.key;
+    // The one scene marker production builds have too (no hook there): the single-file build's sandboxed-iframe e2e
+    // reads it to follow the game, now that every menu is drawn in the image.
+    document.body.dataset['scene'] = this.scene.key;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (this.app.probe.scene === this.scene.key) this.app.probe.scene = null;
       this.app.probe.menu = null;

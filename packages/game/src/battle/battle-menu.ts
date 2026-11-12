@@ -2,7 +2,7 @@
 // when a move has a choice of targets, the temperature dial and the round log. B backs out of every submenu. Taps on a
 // menu that is not showing are ignored. On touch and pointer a commit takes two taps (ruling V5.2): the first tap on a
 // move, notch or target selects it and shows its hint (and any overflow → Drift warning), a second tap on the same
-// item commits. Keys and the D-pad are unchanged. The canvas menu and the portrait band menu render this one state.
+// item commits. Keys and the D-pad are unchanged. The in-image command box renders this one state.
 
 import type { Temperature } from '@latentia/engine';
 import type { InputAction } from '../input/hub.js';

@@ -32,8 +32,8 @@ test('boots to the title, starts a new game by keyboard and reaches the Lab', as
   // A fresh browser has no save: only New Game.
   expect(await menu(page)).toMatchObject({ id: 'title', items: ['NEW GAME'] });
   await expect(page.locator('#frame canvas')).toBeVisible();
-  // Playwright's default 1280x720 viewport: exactly 4x.
-  expect(await page.evaluate(() => window.__latentia?.layout())).toMatchObject({ mode: 'landscape', scale: 4 });
+  // Playwright's default 1280x720 viewport: 480x270 at 2x (960x540).
+  expect(await page.evaluate(() => window.__latentia?.layout())).toMatchObject({ mode: 'landscape', scale: 2, logical: { width: 480, height: 270 } });
   await expectCanvasMatchesLayout(page);
 
   await page.keyboard.press('Enter');
@@ -91,17 +91,18 @@ test('with a save, NEW GAME by keyboard asks first: A A and Escape keep the save
   expect(errors).toEqual([]);
 });
 
-test('the touch band and the hook drive the same flow: lab dialogue, starter pick, a lost and a won battle', async ({ page }) => {
+test('the touch controls and the hook drive the same flow: lab dialogue, starter pick, a lost and a won battle', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
   const errors = watchErrors(page);
-  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect.poll(() => scene(page)).toBe('Title');
-  await expect(page.locator('#band')).toBeVisible();
-  expect(await page.evaluate(() => window.__latentia?.layout())).toMatchObject({ mode: 'portrait', controls: 'band' });
+  await expect(page.locator('#controls')).toBeVisible();
+  expect(await page.evaluate(() => window.__latentia?.layout())).toMatchObject({ mode: 'portrait', controls: 'overlay' });
   await expectCanvasMatchesLayout(page);
 
-  // Tap A in the band.
-  await page.locator('[data-control="btn-a"]').click();
+  // Tap the A button.
+  await page.locator('[data-control="btn-a"]').tap();
   await expect.poll(() => scene(page)).toBe('Overworld');
 
   // In the lab, Prof. Epoch talks first: hold A to speed his lines up, then A through them; the starter panel opens.
@@ -118,13 +119,13 @@ test('the touch band and the hook drive the same flow: lab dialogue, starter pic
   await expect.poll(() => menu(page)).toMatchObject({ id: 'starter', index: 0 });
 
   // D-pad down to Blitzr, then a pointer pick through the hook confirms it.
-  await page.locator('[data-control="dpad-down"]').click();
+  await page.locator('[data-control="dpad-down"]').tap();
   await expect.poll(() => menu(page)).toMatchObject({ id: 'starter', index: 1 });
   await page.evaluate(() => window.__latentia?.pick('starter', 1));
   await expect.poll(() => scene(page)).toBe('Battle');
   expect(await page.evaluate(() => window.__latentia?.flow())).toMatchObject({ step: 'rival', starter: 'blitzr', attempt: 0 });
 
-  // The real battle opens; in portrait its menu lives in the band. A loss restarts the same battle.
+  // The real battle opens. A loss restarts the same battle.
   await expect.poll(() => page.evaluate(() => window.__latentia?.battle()?.id ?? null)).toBe('rival');
   expect(await page.evaluate(() => window.__latentia?.send({ type: 'battleLost' }))).toBe(true);
   await expect.poll(() => page.evaluate(() => window.__latentia?.flow().attempt)).toBe(1);
@@ -134,13 +135,14 @@ test('the touch band and the hook drive the same flow: lab dialogue, starter pic
   await expect.poll(() => step(page)).toBe('walk');
   await expect.poll(() => scene(page)).toBe('Overworld');
 
-  // Rotating to landscape re-lays out: no band, the screen letterboxed and still pixel-exact.
+  // Rotating to landscape re-lays out: the game resized to 480x270, letterboxed and still pixel-exact.
   await page.setViewportSize({ width: 844, height: 390 });
   await expect.poll(() => page.evaluate(() => window.__latentia?.layout().mode)).toBe('landscape');
-  await expect(page.locator('#band')).toBeHidden();
+  await expect.poll(() => page.locator('#frame canvas').getAttribute('width')).toBe('480');
   await expectCanvasMatchesLayout(page);
 
   expect(errors).toEqual([]);
+  await context.close();
 });
 
 test('every stub scene renders without errors through to the end card and back to the title', async ({ page }) => {

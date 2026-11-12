@@ -124,31 +124,27 @@ test('inside <iframe sandbox="allow-scripts"> (opaque origin, no CORS) on a phon
   await expect(game.locator('#notice')).toHaveCount(1);
   await expect(game.locator('#notice')).toHaveAttribute('aria-label', 'SAVES UNAVAILABLE');
 
-  // The title's band button starts a new game (no save, so no confirm); A through the professor until the starter
-  // panel's band buttons appear, which only happens in the lab.
-  await game.locator('#band-panel [data-menu="title"][data-index="0"]').click();
+  // Every menu is drawn in the game image now; <body data-scene> follows the game. A on the title starts a new game (no
+  // save, so no confirm); A through the professor and on the starter panel (Sagelet) reaches the rival battle, whose
+  // starter sprite comes from a data: URI. Then real taps on the canvas turn the battle's intro.
+  const sceneIs = () => game.locator('body').getAttribute('data-scene');
+  await expect.poll(sceneIs).toBe('Title');
   await expect
     .poll(
       async () => {
-        if ((await game.locator('#band-panel [data-menu="starter"]').count()) > 0) return true;
-        await game.locator('[data-control="btn-a"]').click();
+        if ((await sceneIs()) === 'Battle') return true;
+        await game.locator('[data-control="btn-a"]').tap();
         return false;
       },
-      { timeout: 20_000 },
+      { timeout: 30_000 },
     )
     .toBe(true);
-  // Pick Sagelet: the rival battle (its starter sprite came from a data: URI); A through the intro to the command menu.
-  await game.locator('#band-panel [data-menu="starter"][data-index="0"]').click();
-  await expect
-    .poll(
-      async () => {
-        if ((await game.locator('#band-panel [data-menu="battle-root"]').count()) > 0) return true;
-        await game.locator('[data-control="btn-a"]').click();
-        return false;
-      },
-      { timeout: 20_000 },
-    )
-    .toBe(true);
+  const canvas = await game.locator('#frame canvas').boundingBox();
+  if (!canvas) throw new Error('no canvas');
+  for (let i = 0; i < 3; i++) {
+    await page.touchscreen.tap(canvas.x + canvas.width / 2, canvas.y + canvas.height / 3);
+    await page.waitForTimeout(150);
+  }
   await page.waitForTimeout(500);
   await expect(game.locator('#notice')).toHaveCount(1);
   expect(requests).toEqual([`${ORIGIN}${HOST}`, `${ORIGIN}${GAME}`]);

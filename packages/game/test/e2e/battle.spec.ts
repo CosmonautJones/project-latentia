@@ -1,11 +1,12 @@
 // The rival battle end to end on the real engine: new game → starter → Kip, driven through the dev hook until a
 // result arrives. Also checks hidden foe intents, the first-time hints (and that they are saved), the TEMP dial,
-// WHY?, LOG, the speed toggle, the round timing (animation within 1.5 s), the portrait band with two-tap commit, a
-// short phone reaching all seven moves, and landscape touch controls clear of the game. Any console error fails.
+// WHY?, LOG, the speed toggle, the round timing (animation within 1.5 s), the in-image portrait menu with two-tap
+// commit, a small phone tapping all seven moves, and landscape touch controls clear of the menus. Any console error fails.
 
 import { expect, test, type Page } from '@playwright/test';
 // Brings in the global `window.__latentia` typing.
 import type {} from '../../src/dev/hook.js';
+import { expectTargets, tapOption, target } from './drive.js';
 
 function watchErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -168,34 +169,32 @@ test('a lose → restart keeps the temperature and speed the player set', async 
   expect(errors).toEqual([]);
 });
 
-test('in portrait the battle menu is in the band: taps select, a second tap commits', async ({ browser }) => {
+test('in portrait the battle menu is drawn in the image: a tap selects, a second tap commits', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   const errors = watchErrors(page);
   await startRival(page, 2);
   await toCommand(page);
-  const band = page.locator('#band-panel');
-  await expect(band.locator('[data-menu="battle-root"]')).toHaveCount(5);
-  await band.locator('[data-menu="battle-root"][data-index="0"]').click();
-  // The first visit to the moves shows the context hint; the band's A closes it.
+  await target(page, 'battle-root', 4);
+  await tapOption(page, 'battle-root', 0);
+  // The first visit to the moves shows the context hint; the A button closes it.
   await expect.poll(() => phase(page)).toBe('hint');
   await expect
     .poll(async () => {
-      if ((await phase(page)) === 'hint') await page.locator('[data-control="btn-a"]').click();
+      if ((await phase(page)) === 'hint') await page.locator('[data-control="btn-a"]').tap();
       return phase(page);
     })
     .toBe('command');
-  await expect(band.locator('[data-menu="battle-moves"]')).toHaveCount(7);
-  for (const b of await band.locator('.band-btn').all()) expect((await b.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
-  // B (the band's B button) backs out to the root.
-  await page.locator('[data-control="btn-b"]').click();
-  await expect(band.locator('[data-menu="battle-root"]')).toHaveCount(5);
-  await band.locator('[data-menu="battle-root"][data-index="0"]').click();
-  const first = band.locator('[data-menu="battle-moves"][data-index="0"]');
-  await first.click();
-  await expect(band.locator('.band-btn.armed')).toHaveCount(1);
+  await target(page, 'battle-moves', 6);
+  expect(await expectTargets(page)).toBe(7);
+  // B (the B button) backs out to the root.
+  await page.locator('[data-control="btn-b"]').tap();
+  await expect.poll(() => menu(page).then((m) => m?.id)).toBe('battle-root');
+  await tapOption(page, 'battle-root', 0);
+  await tapOption(page, 'battle-moves', 0);
+  await expect.poll(() => battle(page).then((b) => b?.armed)).toEqual({ screen: 'moves', index: 0 });
   expect(await phase(page)).toBe('command');
-  await band.locator('[data-menu="battle-moves"][data-index="0"]').click();
+  await tapOption(page, 'battle-moves', 0);
   await expect.poll(() => phase(page)).toBe('playback');
   await toCommand(page);
   expect((await battle(page))?.round).toBe(1);
@@ -203,38 +202,41 @@ test('in portrait the battle menu is in the band: taps select, a second tap comm
   await context.close();
 });
 
-test('a 375×667 phone reaches all seven moves, Guardrail included', async ({ browser }) => {
-  const context = await browser.newContext({ viewport: { width: 375, height: 667 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+test('a 360x640 phone reaches all seven moves, Guardrail included, by tapping them', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   const errors = watchErrors(page);
   await startRival(page, 0);
   await toCommand(page);
-  const band = page.locator('#band-panel');
-  await band.locator('[data-menu="battle-root"][data-index="0"]').click();
+  await tapOption(page, 'battle-root', 0);
   await toCommand(page);
-  await expect(band.locator('[data-menu="battle-moves"]')).toHaveCount(7);
-  const guardrail = band.locator('[data-menu="battle-moves"][data-index="6"]');
-  await guardrail.click();
-  await guardrail.click();
+  await target(page, 'battle-moves', 6);
+  await tapOption(page, 'battle-moves', 6);
+  await tapOption(page, 'battle-moves', 6);
   await expect.poll(() => phase(page)).not.toBe('command');
   expect(errors).toEqual([]);
   await context.close();
 });
 
-test('landscape touch puts the D-pad and A/B beside the game, never over it', async ({ browser }) => {
+test('landscape touch: the D-pad and A/B overlay the edges, translucent, clear of the safe area where the menus go', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   const errors = watchErrors(page);
   await startRival(page, 0);
-  expect(await page.evaluate(() => window.__latentia?.layout().controls)).toBe('sides');
-  const canvas = await page.locator('#frame canvas').boundingBox();
-  if (!canvas) throw new Error('no canvas');
+  const layout = await page.evaluate(() => window.__latentia?.layout());
+  expect(layout?.controls).toBe('overlay');
+  if (!layout) throw new Error('no layout');
+  const k = layout.game.width / layout.logical.width;
+  const safe = { x: layout.game.x + layout.safe.x * k, y: layout.game.y + layout.safe.y * k, width: layout.safe.width * k, height: layout.safe.height * k };
   for (const b of await page.locator('#controls .touch-btn').all()) {
     const r = await b.boundingBox();
     if (!r) throw new Error('no button box');
-    const overlaps = r.x < canvas.x + canvas.width && r.x + r.width > canvas.x && r.y < canvas.y + canvas.height && r.y + r.height > canvas.y;
+    const overlaps = r.x < safe.x + safe.width && r.x + r.width > safe.x && r.y < safe.y + safe.height && r.y + r.height > safe.y;
     expect(overlaps).toBe(false);
+    expect(Number(await b.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
   }
+  await toCommand(page);
+  await expectTargets(page);
   expect(errors).toEqual([]);
   await context.close();
 });

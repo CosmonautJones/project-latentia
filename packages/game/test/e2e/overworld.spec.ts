@@ -161,20 +161,19 @@ test('after the distill: the patch is calm, Continue resumes at the spawn, and B
 });
 
 for (const v of [
-  { name: 'portrait 390x844: the band D-pad walks', width: 390, height: 844 },
-  { name: 'touch landscape 844x390: the side D-pad walks', width: 844, height: 390 },
+  { name: 'portrait 390x844: the overlay D-pad walks', width: 390, height: 844 },
+  { name: 'touch landscape 844x390: the overlay D-pad walks', width: 844, height: 390 },
 ]) {
   test(v.name, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: v.width, height: v.height }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
     const page = await context.newPage();
     const errors = watchErrors(page);
     await toOverworld(page);
-    const expected = v.width < v.height ? 'band' : 'sides';
-    expect(await page.evaluate(() => window.__latentia?.layout().controls)).toBe(expected);
+    expect(await page.evaluate(() => window.__latentia?.layout().controls)).toBe('overlay');
     await step(page, 'down', 'touch');
     await step(page, 'right', 'touch');
     expect(await ow(page)).toMatchObject({ area: 'lab', x: 6, y: 5, facing: 'right' });
-    // The band's A talks too: face the professor from below and tap it.
+    // The A button talks too: face the professor from below and tap it.
     await walkTo(page, at('lab', 5, 3), 'touch');
     await bump(page, 'up', 'touch');
     await page.locator('[data-control="btn-a"]').click();

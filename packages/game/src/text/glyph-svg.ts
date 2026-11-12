@@ -21,7 +21,7 @@ export function glyphSvg(ch: string, scale: number, fill: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="${fill}" shape-rendering="crispEdges" aria-hidden="true">${rects.join('')}</svg>`;
 }
 
-/** A single line of text as an inline SVG (descenders included), for DOM menus in the portrait band. */
+/** A single line of text as an inline SVG (descenders included), for DOM text such as the touch-control labels. */
 export function textSvg(text: string, scale: number, fill: string): string {
   const chars = [...sanitize(text)];
   const rects: string[] = [];
