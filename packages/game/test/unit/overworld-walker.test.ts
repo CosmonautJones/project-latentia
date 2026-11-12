@@ -135,6 +135,24 @@ describe('camera: follows the player, clamped to the map', () => {
     expect(cameraSnap({ x: 760, y: 200 }, b)).toEqual({ x: 448, y: 28 });
   });
 
+  it('with a focus (the area the touch controls leave clear), the player is centred in it, even at the map edges', () => {
+    // A 270x480 portrait view whose bottom 110 px are under the controls.
+    const b: CameraBox = { view: { width: 270, height: 480 }, map: { width: 768, height: 960 }, deadzone, focus: { x: 0, y: 0, width: 270, height: 370 } };
+    expect(cameraSnap({ x: 400, y: 500 }, b)).toEqual({ x: 265, y: 315 });
+    // At the south edge the focus runs to the map's edge: the player is still above the controls.
+    const south = cameraSnap({ x: 400, y: 950 }, b);
+    expect(south.y).toBe(960 - 370);
+    expect(950 - south.y).toBeLessThan(370);
+    expect(cameraFollow(south, { x: 400, y: 958 }, b).y).toBe(960 - 370);
+    // Landscape with side controls: the strip between them is the focus; at the west edge the map starts at its left.
+    const side: CameraBox = { view: { width: 426, height: 240 }, map: { width: 960, height: 480 }, deadzone, focus: { x: 98, y: 0, width: 281, height: 240 } };
+    expect(cameraSnap({ x: 5, y: 200 }, side).x).toBe(-98);
+    expect(cameraSnap({ x: 480, y: 200 }, side).x).toBe(480 - 98 - 140);
+    // A map narrower than the focus is centred in it.
+    const small: CameraBox = { ...side, map: { width: 192, height: 128 } };
+    expect(cameraSnap({ x: 5, y: 5 }, small)).toEqual({ x: Math.floor((192 - 281) / 2) - 98, y: -56 });
+  });
+
   it('inside the 2x1-tile deadzone the camera holds; past it, it moves just enough (integer scroll)', () => {
     const b = box(768, 208);
     const start = cameraSnap({ x: 400, y: 100 }, b);

@@ -54,6 +54,12 @@ export interface Layout {
   readonly buttons: Readonly<Partial<Record<TouchControlId, Rect>>>;
   /** Logical px: the part of the image no control covers. Dialogue and menus are laid out inside it. */
   readonly safe: Rect;
+  /**
+   * Logical px: each touch control's button as it sits over the image (placed with the safe-area insets), padded by
+   * GAP, clipped to the image; empty without touch. Anything the player reads or taps stays clear of these (isClear);
+   * only decoration may run under them.
+   */
+  readonly occluders: readonly Rect[];
   /** Logical px of a 44 CSS px tap target: the least row pitch of a tappable menu. */
   readonly tap: number;
   /** The fraction of the screen's area the game image covers. */
@@ -71,8 +77,8 @@ const CELL = 44;
 const PAD = 3 * CELL;
 const BTN = 56;
 const EDGE = 12;
-/** Logical px kept between a control and the safe area. */
-const GAP = 2;
+/** Logical px kept between a control and the safe area (and around each occluder). */
+export const GAP = 2;
 
 const NO_INSET: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -125,14 +131,19 @@ export function computeViewport(v: Viewport): Layout {
   const gw = logical.width * scale;
   const gh = logical.height * scale;
   const top = (v.inset?.top ?? 0) * dpr;
-  // Centred; in portrait at the top (below a notch), so the controls get the room underneath.
+  const bottom = (v.inset?.bottom ?? 0) * dpr;
+  // Centred; in portrait at the top (below a notch), so the controls get the room underneath; in landscape centred
+  // between the notch and the home bar where it fits, else as low as it can go and still clear the notch.
   const gx = Math.max(0, Math.floor((wDev - gw) / 2));
-  const gy = mode === 'portrait' ? Math.min(Math.max(0, Math.floor(hDev - gh)), Math.ceil(top)) : Math.max(0, Math.floor((hDev - gh) / 2));
+  const gy =
+    mode === 'portrait'
+      ? Math.min(Math.max(0, Math.floor(hDev - gh)), Math.ceil(top))
+      : Math.min(Math.max(0, Math.floor(hDev - gh)), Math.max(0, Math.floor(top + (hDev - top - bottom - gh) / 2)));
   const game: Rect = { x: gx / dpr, y: gy / dpr, width: gw / dpr, height: gh / dpr };
   const coverage = (Math.min(game.width, v.width - game.x) * Math.min(game.height, v.height - game.y)) / (v.width * v.height);
   const tap = Math.ceil((TAP_CSS * dpr) / scale);
   const full: Rect = { x: 0, y: 0, ...logical };
-  if (!v.touch) return { mode, logical, scale, game, controls: 'none', buttons: {}, safe: full, tap, coverage };
+  if (!v.touch) return { mode, logical, scale, game, controls: 'none', buttons: {}, safe: full, occluders: [], tap, coverage };
 
   const buttons = placeButtons(v, mode);
   // CSS px to logical px.
@@ -151,5 +162,23 @@ export function computeViewport(v: Viewport): Layout {
     const rightEdge = Math.min(logical.width, ...rightRects.filter((r) => lx(r.x) < logical.width).map((r) => Math.floor(lx(r.x)) - GAP));
     safe = { x: leftEdge, y: 0, width: Math.max(0, rightEdge - leftEdge), height: logical.height };
   }
-  return { mode, logical, scale, game, controls: 'overlay', buttons, safe, tap, coverage };
+  const occluders = rects
+    .map((r) => clip({ x: Math.floor(lx(r.x)) - GAP, y: Math.floor(ly(r.y)) - GAP, width: Math.ceil(lx(r.x + r.width)) - Math.floor(lx(r.x)) + 2 * GAP, height: Math.ceil(ly(r.y + r.height)) - Math.floor(ly(r.y)) + 2 * GAP }, full))
+    .filter((r): r is Rect => r !== null);
+  return { mode, logical, scale, game, controls: 'overlay', buttons, safe, occluders, tap, coverage };
 }
+
+/** `r` cut to `to`, or null when nothing is left. */
+function clip(r: Rect, to: Rect): Rect | null {
+  const x = Math.max(r.x, to.x);
+  const y = Math.max(r.y, to.y);
+  const w = Math.min(r.x + r.width, to.x + to.width) - x;
+  const h = Math.min(r.y + r.height, to.y + to.height) - y;
+  return w > 0 && h > 0 ? { x, y, width: w, height: h } : null;
+}
+
+/** Whether two rects share any area (touching edges do not). */
+export const overlaps = (a: Rect, b: Rect): boolean => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/** Whether `r` is clear of every touch control (its occluders): what the player reads or taps must be. */
+export const isClear = (r: Rect, l: Pick<Layout, 'occluders'>): boolean => l.occluders.every((o) => !overlaps(r, o));

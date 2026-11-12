@@ -129,8 +129,8 @@ export class OverworldScene extends BaseScene {
 
   private cameraBox(): CameraBox {
     // The view is the current logical screen: a portrait phone sees more of the map up and down, and a rotation
-    // changes it on the next frame (the follow re-clamps).
-    return { view: { width: this.scale.width, height: this.scale.height }, map: this.view.size, deadzone: DEADZONE };
+    // changes it on the next frame (the follow re-clamps). The player is centred in the part the controls leave clear.
+    return { view: { width: this.scale.width, height: this.scale.height }, map: this.view.size, deadzone: DEADZONE, focus: this.layout.safe };
   }
 
   private playerCentre(): Pos {
