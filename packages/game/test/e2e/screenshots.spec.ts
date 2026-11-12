@@ -105,6 +105,8 @@ for (const s of BATTLE_SIZES) {
       await toCommand();
       // Round 1: Compact (the last move), so round 2 shows a damaged bar and the foe's next telegraph.
       await pick('battle-root', 0);
+      // The first visit to the moves shows the context hint; close it before steering.
+      await toCommand();
       const moves = await hook(() => window.__latentia?.battle()?.moves.length ?? 0);
       const compact = (await hook(() => window.__latentia?.battle()?.moves.map((m) => m.moveId) ?? [])).indexOf('compact');
       expect(compact).toBeGreaterThanOrEqual(0);
@@ -113,6 +115,7 @@ for (const s of BATTLE_SIZES) {
       await hook(() => window.__latentia?.press('a'));
       expect(moves).toBeGreaterThan(0);
       await toCommand();
+      expect(await hook(() => window.__latentia?.battle()?.round ?? 0)).toBe(1);
       await page.waitForTimeout(200);
       await page.screenshot({ path: `test/screenshots/${s.name}-${fight}.png` });
       await pick('battle-root', 0);

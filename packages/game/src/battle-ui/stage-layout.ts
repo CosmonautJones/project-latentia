@@ -87,7 +87,8 @@ function landscape(l: Layout, o: GeometryOptions): BattleGeometry {
   const L = l.safe.x;
   const R = l.safe.x + l.safe.width;
   const span = controlSpan(l);
-  const pitch = Math.max(l.tap, 16);
+  // At least two text lines tall, so a long move name wraps instead of being cut (desktop's tap is only 15 px).
+  const pitch = Math.max(l.tap, 24);
   const lines = o.mate ? 4 : 2;
   const b = band(l, 0, W, H, lines, 2, pitch);
   const F = b.band.y;
