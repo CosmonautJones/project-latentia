@@ -130,7 +130,7 @@ function buildBattle(a, zoom) {
   save(`contact/battle-${a.name}@4x.png`, png);
   save(`contact/battle-${a.name}-idle.gif`, gif(a.anims.idle.frames, a.anims.idle.delay, k));
   if (zoom) {
-    const z = image(BATTLE * 8 * 2, BATTLE * 8, RGB[22]);
+    const z = image(BATTLE * 8 * 2, BATTLE * 8, [104, 140, 112]);
     blit(z, frames[0], 0, 0, 8);
     blit(z, a.anims.hit.frames[0], BATTLE * 8, 0, 8);
     mkdirSync(zoom, { recursive: true });
