@@ -5,4 +5,5 @@ export const ASSETS = [
   { name: 'sagelet', type: 'battle', load: () => import('./battle/sagelet.mjs') },
   { name: 'blitzr', type: 'battle', load: () => import('./battle/blitzr.mjs') },
   { name: 'forkling', type: 'battle', load: () => import('./battle/forkling.mjs') },
+  { name: 'tiles', type: 'tiles', load: () => import('./tiles.mjs') },
 ];
