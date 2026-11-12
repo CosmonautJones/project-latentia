@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { armedHere, initialMenu, MENU_IDS, menuStep, menuView, moveHint, TEMPERATURE_TIPS, type BattleMenuState, type MenuData, type MenuEffect } from '../../src/battle/battle-menu.js';
+import { armedHere, initialMenu, MENU_IDS, menuStep, menuView, moveHint, normalizeMenu, rootLabels, TEMPERATURE_TIPS, type BattleMenuState, type MenuData, type MenuEffect } from '../../src/battle/battle-menu.js';
 import type { MoveOption } from '../../src/battle/session.js';
 import type { InputAction } from '../../src/input/hub.js';
 
@@ -72,7 +72,7 @@ describe('battle menu', () => {
   });
 
   it('PROMPT → a move with one target submits it with the current temperature (keyboard: one press)', () => {
-    const { state, effects } = run(initialMenu(), D, press('a'), press('down'), press('a'));
+    const { state, effects } = run(initialMenu(), D, press('a'), press('right'), press('a'));
     expect(effects).toEqual([{ kind: 'submit', choice: { moveId: 'token-burst', target: 1, temperature: 2 } }]);
     expect(state.screen).toBe('root');
   });
@@ -106,7 +106,7 @@ describe('battle menu', () => {
     expect(menuView(r.state, d)).toEqual({ id: MENU_IDS.targets, items: ['FOE', 'FOE2'], index: 0 });
     r = run(r.state, d, press('b'));
     expect(r.state.screen).toBe('moves');
-    r = run(r.state, d, press('a'), press('down'), press('a'));
+    r = run(r.state, d, press('a'), press('right'), press('a'));
     expect(r.effects).toEqual([{ kind: 'submit', choice: { moveId: 'ship-it', target: 3, temperature: 2 } }]);
     // By taps: select, then commit.
     r = run(initialMenu(), d, press('a'), press('a'), pick(MENU_IDS.targets, 1));
@@ -185,5 +185,105 @@ describe('battle menu', () => {
   it('temperature tips name each notch as "Tn · x.x"', () => {
     expect(TEMPERATURE_TIPS[2].startsWith('T2 · 1.0')).toBe(true);
     expect(TEMPERATURE_TIPS[4].startsWith('T4 · 2.0')).toBe(true);
+  });
+});
+
+// I-3: the arrows move through the move and target grids the way they are drawn (wrapping), page by page.
+describe('battle menu arrows on the drawn grids', () => {
+  const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((id) => mv(id, 1));
+  const onMoves = (moveIndex = 0): BattleMenuState => ({ ...initialMenu(), screen: 'moves', moveIndex });
+  const at = (d: MenuData, from: number, ...buttons: ('up' | 'down' | 'left' | 'right')[]) => run(onMoves(from), d, ...buttons.map(press)).state;
+
+  it('7 moves in 2 columns (rows a b / c d / e f / g): left/right along the row, up/down along the column, both wrap', () => {
+    const d: MenuData = { ...data(seven), columns: 2 };
+    expect(at(d, 0, 'right').moveIndex).toBe(1);
+    expect(at(d, 1, 'right').moveIndex).toBe(0);
+    expect(at(d, 0, 'left').moveIndex).toBe(1);
+    expect(at(d, 0, 'down').moveIndex).toBe(2);
+    expect(at(d, 0, 'down', 'down', 'down').moveIndex).toBe(6);
+    expect(at(d, 6, 'down').moveIndex).toBe(0);
+    expect(at(d, 0, 'up').moveIndex).toBe(6);
+    // The second column is a, c, e short: d's column wraps b → d → f → b.
+    expect(at(d, 5, 'down').moveIndex).toBe(1);
+    expect(at(d, 1, 'up').moveIndex).toBe(5);
+    // The last row has one item: left/right stay on it.
+    expect(at(d, 6, 'right').moveIndex).toBe(6);
+    expect(at(d, 6, 'left').moveIndex).toBe(6);
+  });
+
+  it('7 moves in 3 columns (a b c / d e f / g)', () => {
+    const d: MenuData = { ...data(seven), columns: 3 };
+    expect(at(d, 0, 'right', 'right').moveIndex).toBe(2);
+    expect(at(d, 2, 'right').moveIndex).toBe(0);
+    expect(at(d, 1, 'down').moveIndex).toBe(4);
+    expect(at(d, 4, 'down').moveIndex).toBe(1);
+    expect(at(d, 0, 'down', 'down').moveIndex).toBe(6);
+    expect(at(d, 6, 'down').moveIndex).toBe(0);
+    expect(at(d, 2, 'up').moveIndex).toBe(5);
+  });
+
+  it('a paged list (3 columns, 5 a page + MORE): down past the last row turns the page, up past the first turns back', () => {
+    const d: MenuData = { ...data(seven), columns: 3, pageSize: 5 };
+    // Page 1: a b c / d e (MORE); page 2: f g.
+    expect(at(d, 1, 'down').moveIndex).toBe(4);
+    expect(at(d, 4, 'down').moveIndex).toBe(6);
+    expect(at(d, 3, 'down').moveIndex).toBe(5);
+    expect(at(d, 2, 'down').moveIndex).toBe(6);
+    expect(at(d, 5, 'down').moveIndex).toBe(0);
+    expect(at(d, 5, 'up').moveIndex).toBe(3);
+    expect(at(d, 0, 'up').moveIndex).toBe(5);
+    expect(at(d, 3, 'right', 'right').moveIndex).toBe(3);
+  });
+
+  it('targets are two to a row: left/right swap columns, up/down move along the column', () => {
+    const d = data([mv('fork', 1)], { fork: [1, 3, 2] });
+    const t = (...b: ('up' | 'down' | 'left' | 'right')[]) => run(initialMenu(), d, pick(MENU_IDS.root, 0), press('a'), ...b.map(press)).state;
+    expect(t().screen).toBe('targets');
+    expect(t('right').targetIndex).toBe(1);
+    expect(t('left').targetIndex).toBe(1);
+    expect(t('down').targetIndex).toBe(2);
+    expect(t('down', 'down').targetIndex).toBe(0);
+    expect(t('right', 'down').targetIndex).toBe(1);
+  });
+});
+
+// I-4: tall portrait shows the moves directly, the root's other items in one row under them.
+describe('battle menu in direct mode', () => {
+  const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((id) => mv(id, 1));
+  const d: MenuData = { ...data(seven), columns: 2, direct: true };
+  const start: BattleMenuState = { ...initialMenu(), screen: 'moves' };
+
+  it('the system row is reached from the bottom of a column and leads back up; it never lands on PROMPT', () => {
+    expect(run(start, d, press('down'), press('down'), press('down'), press('down')).state).toMatchObject({ screen: 'root', rootIndex: ROOT.why });
+    expect(run(start, d, press('right'), press('down'), press('down'), press('down')).state).toMatchObject({ screen: 'root', rootIndex: ROOT.numbers });
+    expect(run(start, d, press('up')).state).toMatchObject({ screen: 'root', rootIndex: ROOT.why });
+    const sys: BattleMenuState = { ...start, screen: 'root', rootIndex: ROOT.why };
+    expect(run(sys, d, press('left')).state.rootIndex).toBe(ROOT.speed);
+    expect(run(sys, d, press('right'), press('right'), press('right'), press('right')).state.rootIndex).toBe(ROOT.why);
+    expect(run(sys, d, press('up')).state).toMatchObject({ screen: 'moves', moveIndex: 6 });
+    expect(run(sys, d, press('down')).state).toMatchObject({ screen: 'moves', moveIndex: 0 });
+    expect(run({ ...sys, rootIndex: ROOT.speed }, d, press('up')).state).toMatchObject({ screen: 'moves', moveIndex: 5 });
+  });
+
+  it('taps on the moves and on the system row both work from either screen; B on the moves stays', () => {
+    const sys: BattleMenuState = { ...start, screen: 'root', rootIndex: ROOT.log };
+    expect(run(sys, d, pick(MENU_IDS.moves, 6)).state).toMatchObject({ screen: 'moves', moveIndex: 6, armed: { screen: 'moves', index: 6 } });
+    const r = run(start, d, pick(MENU_IDS.root, ROOT.speed));
+    expect(r.state).toMatchObject({ screen: 'root', speed: 2 });
+    expect(r.effects).toEqual([{ kind: 'speed', speed: 2 }]);
+    expect(run(start, d, pick(MENU_IDS.moves, 2), pick(MENU_IDS.moves, 2)).effects).toEqual([{ kind: 'submit', choice: { moveId: 'c', target: 1, temperature: 2 } }]);
+    expect(run(start, d, press('b')).state.screen).toBe('moves');
+    // LOG closes back to the cursor on LOG in the row.
+    expect(run(start, d, pick(MENU_IDS.root, ROOT.log), press('b')).state).toMatchObject({ screen: 'root', rootIndex: ROOT.log });
+  });
+
+  it('normalizeMenu moves a cursor on PROMPT (e.g. after a rotation from landscape) onto the moves', () => {
+    expect(normalizeMenu(initialMenu(), d).screen).toBe('moves');
+    expect(normalizeMenu({ ...initialMenu(), rootIndex: ROOT.log }, d).screen).toBe('root');
+    expect(normalizeMenu(initialMenu(), { ...d, direct: false }).screen).toBe('root');
+  });
+
+  it('the compact row uses short labels', () => {
+    expect(rootLabels(initialMenu(), d, true)).toEqual(['PROMPT', 'WHY?', 'LOG', 'NUM OFF', 'SPEED 1×']);
   });
 });
