@@ -6,13 +6,19 @@ export type HintId = (typeof HINT_IDS)[number];
 
 export const HINTS: Readonly<Record<HintId, string>> = {
   'battle.prompt': 'PROMPT is your moves. Pick one and your model runs it. Results may vary. They usually do.',
-  'battle.telegraph': "The box under the foe is what it will do next turn. ATTACK ~6: about 6 damage. GUARD, BUFF, DEBUFF and SPECIAL deal none. Plan around it.",
+  'battle.telegraph': "The red box under the foe's name is what it will do next turn. ATTACK ~6: about 6 damage. GUARD, BUFF, DEBUFF and SPECIAL deal none. Plan around it.",
   'battle.context':
     'The pips by CX are your context window. Each move costs the pips on its button. Overflow it and the spill turns into Drift (a DR2 chip): worse aim. COMPACT makes room.',
   'battle.temperature': 'This dial is temperature, from T0 · 0.0 to T4 · 2.0 (default T2 · 1.0). Cold plays it safe. Hot hits wider, crits more and starts to hallucinate.',
   'battle.why': "WHY? explains which card a deck fired, after it acts. Never before. Nobody reads the plan in advance, not even the model.",
   'battle.intents': "The top line is your subagent's plan for next turn, and the card that picked it. You don't command it: its deck does.",
 };
+
+/** The PROMPT hint where the moves are shown directly (tall portrait, no PROMPT button). */
+export const PROMPT_DIRECT_HINT = 'These buttons are your moves. Pick one and your model runs it. Results may vary. They usually do.';
+
+/** A hint's text as shown: in direct mode the PROMPT hint names the moves themselves. */
+export const hintText = (id: HintId, direct: boolean): string => (id === 'battle.prompt' && direct ? PROMPT_DIRECT_HINT : HINTS[id]);
 
 /**
  * The round-start hint due now, if any (at most one a round): PROMPT first, then the foe's telegraph, then WHY? after

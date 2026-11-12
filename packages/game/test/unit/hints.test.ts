@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dueRoundHint, HINTS, HINT_IDS } from '../../src/battle/hints.js';
+import { dueRoundHint, hintText, HINTS, HINT_IDS, PROMPT_DIRECT_HINT } from '../../src/battle/hints.js';
 import { sanitize } from '../../src/text/wrap.js';
 
 describe('first-time battle hints', () => {
@@ -17,6 +17,16 @@ describe('first-time battle hints', () => {
     expect(HINTS['battle.intents']).toMatch(/card/);
     // V11: the "?" is gone from the main battles.
     for (const id of HINT_IDS) expect(HINTS[id]).not.toMatch(/: \?$/);
+  });
+
+  it('in direct mode (no PROMPT button) the PROMPT hint names the moves instead', () => {
+    expect(hintText('battle.prompt', true)).toBe(PROMPT_DIRECT_HINT);
+    expect(PROMPT_DIRECT_HINT).not.toMatch(/PROMPT/);
+    expect(PROMPT_DIRECT_HINT.length).toBeLessThanOrEqual(200);
+    expect(sanitize(PROMPT_DIRECT_HINT)).toBe(PROMPT_DIRECT_HINT);
+    expect(hintText('battle.prompt', false)).toBe(HINTS['battle.prompt']);
+    expect(hintText('battle.why', true)).toBe(HINTS['battle.why']);
+    expect(HINTS['battle.telegraph']).toMatch(/under the foe's name/);
   });
 
   it('are short (at most two dialogue pages) and drawable in the pixel font', () => {

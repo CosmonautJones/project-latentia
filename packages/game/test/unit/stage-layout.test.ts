@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ART_REACH, battleGeometry, controlSpan, PANEL_HEIGHT, SPRITE_REACH } from '../../src/battle-ui/stage-layout.js';
-import { computeViewport, type Layout, type Rect } from '../../src/layout/viewport.js';
+import { ART_REACH, battleGeometry, DIRECT_MIN_HEIGHT, LINE, PANEL_HEIGHT, spriteBox, SPRITE_REACH, type BattleGeometry } from '../../src/battle-ui/stage-layout.js';
+import { computeViewport, type Insets, type Layout, type Rect, type Viewport } from '../../src/layout/viewport.js';
 
 // The battle layout (plan v0.1 Q2) at every size the plan reviews, both 240 px short sides (V16) and the largest
 // logical sizes, with and without a subagent on the player's side.
@@ -55,7 +55,8 @@ describe('battleGeometry', () => {
         expect(g.text.x + g.text.width).toBeLessThanOrEqual(l.safe.x + l.safe.width);
         expect(g.text.y).toBeGreaterThan(g.band.y);
         expect(g.text.y + g.text.height).toBeLessThanOrEqual(g.buttons.y);
-        expect(g.lines).toBe(l.mode === 'portrait' ? (mate ? 5 : 3) : mate ? 4 : 2);
+        if (l.mode === 'landscape') expect(g.lines).toBe(mate ? 4 : 2);
+        else expect(g.lines).toBeGreaterThanOrEqual(mate ? 5 : 3);
       });
 
       it(`${at}: the menu never covers a panel; panels are in the safe area, on screen and clear of each other and the telegraph`, () => {
@@ -89,16 +90,105 @@ describe('battleGeometry', () => {
     }
   }
 
-  it('portrait has no empty stretch: the band takes the rows the moves need, the player panels sit right on it', () => {
-    const tall = computeViewport({ width: 390, height: 844, dpr: 3, touch: true });
-    const g = battleGeometry(tall, { mate: false, moves: 7 });
-    expect(g.rows).toBe(4);
-    expect(g.band.y - (g.slots.player.panel.y + g.slots.player.panel.height)).toBeLessThanOrEqual(4);
+  it('tall portrait shows the moves directly: every move row and one system row, and the field has no big gap', () => {
+    for (const v of [{ width: 390, height: 844, dpr: 3 }, { width: 412, height: 915, dpr: 2.625 }]) {
+      const l = computeViewport({ ...v, touch: true });
+      expect(l.logical.height).toBeGreaterThanOrEqual(DIRECT_MIN_HEIGHT);
+      for (const mate of [false, true]) {
+        const g = battleGeometry(l, { mate, moves: 7 });
+        expect(g.direct).toBe(true);
+        expect(g.rows).toBe(4);
+        expect(g.system).not.toBeNull();
+        const sys = g.system as Rect;
+        expect(sys.height).toBeGreaterThanOrEqual(l.tap);
+        expect(sys.y).toBeGreaterThanOrEqual(g.buttons.y + g.buttons.height);
+        expect(sys.y + sys.height).toBeLessThanOrEqual(g.band.y + g.band.height);
+        // The spare height went to the text and the field: no stretch of more than 48 px between the foe and your side.
+        const playerTop = g.slots.player.sprite.y - SPRITE_REACH.up;
+        expect(playerTop - g.slots.foe.sprite.y, `${v.width}x${v.height}${mate ? ' mate' : ''}`).toBeLessThanOrEqual(48);
+        expect(g.slots.foe.sprite.y - SPRITE_REACH.up - l.safe.y).toBeLessThanOrEqual(48);
+        expect(g.band.y - (g.slots.player.panel.y + g.slots.player.panel.height)).toBeLessThanOrEqual(4);
+        expect(g.lines).toBeGreaterThan(mate ? 5 : 3);
+        expect(g.text.height).toBe(g.lines * LINE);
+      }
+    }
   });
 
-  it('controlSpan reads the side controls in landscape and is null on desktop', () => {
-    expect(controlSpan(computeViewport({ width: 1366, height: 768, dpr: 1, touch: false }))).toBeNull();
-    const span = controlSpan(computeViewport({ width: 640, height: 360, dpr: 2, touch: true }));
-    expect(span !== null && span.top > 60 && span.bottom < 170).toBe(true);
+  it('shorter portrait screens and every landscape keep the PROMPT step', () => {
+    for (const v of [{ width: 360, height: 640, dpr: 3 }, { width: 360, height: 640, dpr: 2 }, { width: 844, height: 390, dpr: 3 }, { width: 1366, height: 768, dpr: 1 }]) {
+      const l = computeViewport({ ...v, touch: v.dpr > 1 });
+      const g = battleGeometry(l, { mate: false, moves: 7 });
+      expect(g.direct, `${v.width}x${v.height}`).toBe(false);
+      expect(g.system).toBeNull();
+    }
   });
+});
+
+// I-1: nothing the player reads or taps is under a touch control, at every plan size and both 240 px short sides, with
+// and without an iPhone's safe-area insets (landscape: 47 px each side for the notch and 21 px for the home bar;
+// portrait: 47 px at the top and 34 px at the bottom). Decoration (the band's frame, the floor) may run under them.
+const LANDSCAPE_INSET: Insets = { top: 0, right: 47, bottom: 21, left: 47 };
+const PORTRAIT_INSET: Insets = { top: 47, right: 0, bottom: 34, left: 0 };
+const TOUCH_SIZES: Viewport[] = [
+  ...SIZES.filter((v) => v.touch),
+  { width: 667, height: 375, dpr: 2, touch: true },
+  { width: 375, height: 667, dpr: 2, touch: true },
+  { width: 926, height: 428, dpr: 3, touch: true },
+  { width: 428, height: 926, dpr: 3, touch: true },
+];
+
+/** Every rect of the battle the player reads or taps, by name. */
+function hud(g: BattleGeometry, foeReach: number, mate: boolean): { name: string; r: Rect }[] {
+  const s = g.slots;
+  return [
+    { name: 'foe panel', r: s.foe.panel },
+    { name: 'foe telegraph', r: g.foePlan },
+    { name: 'foe subagent panel', r: s.foeSub.panel },
+    { name: 'foe subagent telegraph', r: g.foeSubPlan },
+    { name: 'player panel', r: s.player.panel },
+    ...(mate ? [{ name: 'subagent panel', r: s.playerSub.panel }] : []),
+    { name: 'text lines', r: g.text },
+    { name: 'buttons', r: g.buttons },
+    ...(g.system === null ? [] : [{ name: 'system row', r: g.system }]),
+    { name: 'foe sprite', r: spriteBox(s.foe.sprite.x, s.foe.sprite.y, foeReach) },
+    { name: 'player sprite', r: spriteBox(s.player.sprite.x, s.player.sprite.y, SPRITE_REACH.up) },
+    ...(mate ? [{ name: 'subagent sprite', r: spriteBox(s.playerSub.sprite.x, s.playerSub.sprite.y, SPRITE_REACH.up) }] : []),
+  ];
+}
+
+describe('nothing to read or tap is under the touch controls', () => {
+  for (const v0 of TOUCH_SIZES) {
+    for (const notch of [false, true]) {
+      const v: Viewport = notch ? { ...v0, inset: v0.width > v0.height ? LANDSCAPE_INSET : PORTRAIT_INSET } : v0;
+      const l = computeViewport(v);
+      const at = `${v.width}x${v.height}@${v.dpr} (${l.logical.width}x${l.logical.height})${notch ? ' with insets' : ''}`;
+
+      it(`${at}: the occluders are the controls in logical px, and the safe area and dialogue box are clear of them`, () => {
+        // Each control's part over the image is inside an occluder; controls entirely off the image have none.
+        const onImage = controls(l)
+          .map((c) => ({ x: Math.max(0, c.x), y: Math.max(0, c.y), right: Math.min(l.logical.width, c.x + c.width), bottom: Math.min(l.logical.height, c.y + c.height) }))
+          .filter((c) => c.right > c.x && c.bottom > c.y);
+        expect(l.occluders).toHaveLength(onImage.length);
+        for (const c of onImage) expect(l.occluders.some((o) => o.x <= c.x && o.y <= c.y && o.x + o.width >= c.right && o.y + o.height >= c.bottom)).toBe(true);
+        for (const o of l.occluders) expect(overlaps(o, l.safe), 'the safe area vs a control').toBe(false);
+      });
+
+      for (const mate of [false, true]) {
+        for (const foeReach of [SPRITE_REACH.up, ART_REACH['tokenibble'] ?? 57]) {
+          it(`${at}${mate ? ' with a subagent' : ''}, foe reach ${foeReach}: no HUD, sprite, text or button rect meets a control`, () => {
+            const g = battleGeometry(l, { mate, moves: 7, foeReach });
+            for (const { name, r } of hud(g, foeReach, mate)) {
+              for (const o of l.occluders) expect(overlaps(r, o), `${name} ${JSON.stringify(r)} vs control ${JSON.stringify(o)}`).toBe(false);
+              expect(r.width, `${name} width`).toBeGreaterThan(0);
+            }
+            // The player's panel keeps 6 px from the button beside it (the occluder is already padded by 2).
+            for (const o of l.occluders) {
+              const p = g.slots.player.panel;
+              if (p.y < o.y + o.height && o.y < p.y + p.height && o.x >= p.x + p.width) expect(o.x - (p.x + p.width)).toBeGreaterThanOrEqual(4);
+            }
+          });
+        }
+      }
+    }
+  }
 });
