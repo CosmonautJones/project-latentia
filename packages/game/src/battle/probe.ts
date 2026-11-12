@@ -30,6 +30,8 @@ export interface BattleProbe {
   readonly temperature: Temperature;
   readonly speed: Speed;
   readonly moves: readonly { readonly moveId: string; readonly cost: number; readonly affordable: boolean; readonly damaging: boolean; readonly power: number | null }[];
+  /** The item a first tap selected (two-tap), waiting for the second tap; null when none. */
+  readonly armed: { readonly screen: string; readonly index: number } | null;
   /** The intent preview lines as on screen ("Kip's Blitzr: ?" while hidden). */
   readonly intents: readonly string[];
   /** The "why?" popup's text for the latest traces, or null before any deck-driven action. */

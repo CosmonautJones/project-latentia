@@ -72,9 +72,14 @@ export class TitleScene extends BaseScene {
     this.ready();
   }
 
-  /** The logo's top: a third of the way down the safe area in landscape, a little higher in portrait. */
+  /** The skyline's ground: just above the footers at the bottom of the safe area (clear of the touch controls). */
+  private groundY(l: Layout): number {
+    return l.safe.y + l.safe.height - 16;
+  }
+
+  /** The logo's top: about a third of the way down the sky. */
   private logoY(l: Layout): number {
-    return l.safe.y + Math.floor(l.safe.height * (l.mode === 'portrait' ? 0.22 : 0.16));
+    return l.safe.y + Math.floor((this.groundY(l) - l.safe.y) * 0.3) - 12;
   }
 
   private drawStatics(l: Layout): void {
@@ -93,7 +98,7 @@ export class TitleScene extends BaseScene {
     keep(addPixelText(this, logoX, y, LOGO, { scale: LOGO_SCALE, color: COLOR.cyan }));
     keep(addPixelText(this, Math.floor((width - textWidth(TAGLINE)) / 2), y + 30, TAGLINE, { color: COLOR.amber }));
     // The footers sit at the bottom of the safe area, clear of the touch controls.
-    const footY = l.safe.y + l.safe.height - 12;
+    const footY = this.groundY(l) + 4;
     const hint = this.sys.game.device.input.touch ? 'A: SELECT' : 'Z/ENTER: SELECT';
     keep(addPixelText(this, l.safe.x + 4, footY, `v0.1  engine ${ENGINE_VERSION}`, { color: COLOR.steel }));
     keep(addPixelText(this, l.safe.x + l.safe.width - 4 - textWidth(hint), footY, hint, { color: COLOR.steel }));
@@ -124,10 +129,12 @@ export class TitleScene extends BaseScene {
 
   private drawBackdrop(l: Layout): Phaser.GameObjects.Graphics {
     // A dark sky over a skyline of server racks; the glow behind the racks is dithered in, not banded.
-    const { width: W, height: H } = l.logical;
+    const W = l.logical.width;
+    // The skyline stands on the ground line; below it (footers, and the touch controls on a phone) is plain ink.
+    const H = this.groundY(l) + 20;
     const g = this.add.graphics();
-    g.fillStyle(COLOR.ink).fillRect(0, 0, W, H);
-    for (const m of motes(W, H)) g.fillStyle(m.bright ? COLOR.cloud : COLOR.steel).fillRect(m.x, m.y, 1, 1);
+    g.fillStyle(COLOR.ink).fillRect(0, 0, W, l.logical.height);
+    for (const m of motes(W, H - 30)) g.fillStyle(m.bright ? COLOR.cloud : COLOR.steel).fillRect(m.x, m.y, 1, 1);
     const glowTop = H - 62;
     g.fillStyle(COLOR.night).fillRect(0, glowTop + 6, W, H - glowTop - 6);
     for (let y = glowTop; y < glowTop + 6; y++) {
@@ -142,7 +149,7 @@ export class TitleScene extends BaseScene {
         g.fillStyle(((x + y) & 4) === 0 ? COLOR.green : COLOR.blue).fillRect(x + 3, y, 1, 1);
       }
     }
-    g.fillStyle(COLOR.ink).fillRect(0, H - 20, W, 20);
+    g.fillStyle(COLOR.ink).fillRect(0, H - 20, W, l.logical.height - H + 20);
     return g;
   }
 }

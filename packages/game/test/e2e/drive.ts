@@ -92,3 +92,68 @@ export async function leaveBattle(page: Page, from: string): Promise<void> {
     })
     .toBe(true);
 }
+
+export interface Target {
+  readonly menu: string;
+  readonly index: number;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/** Every option tappable in the game image now, in page CSS px (the hook's `taps()`). */
+export const taps = (page: Page): Promise<Target[]> => page.evaluate(() => window.__latentia?.taps() ?? []);
+
+/** Wait until option `index` of menu `menuId` is drawn, and return where. */
+export async function target(page: Page, menuId: string, index: number): Promise<Target> {
+  let found: Target | undefined;
+  await expect
+    .poll(async () => {
+      found = (await taps(page)).find((t) => t.menu === menuId && t.index === index);
+      return found !== undefined;
+    }, { message: `${menuId}[${index}] is drawn` })
+    .toBe(true);
+  return found as Target;
+}
+
+/** Tap option `index` of menu `menuId` where it is drawn: a real touch at its centre (a click without touch). */
+export async function tapOption(page: Page, menuId: string, index: number): Promise<void> {
+  const t = await target(page, menuId, index);
+  const x = t.x + t.width / 2;
+  const y = t.y + t.height / 2;
+  const touch = await page.evaluate(() => window.__latentia?.layout().controls === 'overlay');
+  if (touch) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+}
+
+/**
+ * Every in-image option and every touch control is at least 44x44 CSS px and on screen, and no control covers an
+ * option. Returns how many options there are.
+ */
+export async function expectTargets(page: Page): Promise<number> {
+  const size = page.viewportSize() ?? { width: 0, height: 0 };
+  const options = await taps(page);
+  const controls = await page.locator('#controls .touch-btn:visible').evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { menu: el.getAttribute('data-control') ?? '?', index: -1, x: r.x, y: r.y, width: r.width, height: r.height };
+    }),
+  );
+  for (const b of [...options, ...controls]) {
+    const label = `${b.menu}[${b.index}]`;
+    expect(b.height, `${label} height`).toBeGreaterThanOrEqual(44 - 1e-6);
+    expect(b.width, `${label} width`).toBeGreaterThanOrEqual(44 - 1e-6);
+    expect(b.x, `${label} left`).toBeGreaterThanOrEqual(-1e-6);
+    expect(b.y, `${label} top`).toBeGreaterThanOrEqual(-1e-6);
+    expect(b.x + b.width, `${label} right`).toBeLessThanOrEqual(size.width + 1e-6);
+    expect(b.y + b.height, `${label} bottom`).toBeLessThanOrEqual(size.height + 1e-6);
+  }
+  for (const o of options) {
+    for (const c of controls) {
+      const hit = o.x < c.x + c.width && c.x < o.x + o.width && o.y < c.y + c.height && c.y < o.y + o.height;
+      expect(hit, `${c.menu} covers ${o.menu}[${o.index}]`).toBe(false);
+    }
+  }
+  return options.length;
+}

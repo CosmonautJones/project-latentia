@@ -17,6 +17,7 @@ import { wrapText } from '../text/wrap.js';
 import { boxRect, drawBoxFrame } from '../ui/dialogue-box.js';
 import { COLOR } from '../ui/palette.js';
 import { addTapZone } from '../ui/tap-zone.js';
+import { stageGeometry } from './stage-layout.js';
 
 export type BoxModel =
   | { readonly kind: 'message'; readonly text: string }
@@ -72,7 +73,6 @@ export class CommandBox {
     const { menu, data } = model;
     const view = menuView(menu, data);
     const armed = armedHere(menu);
-    const portrait = l.mode === 'portrait';
     switch (menu.screen) {
       case 'root':
         say(model.prompt, COLOR.white);
@@ -82,12 +82,12 @@ export class CommandBox {
         const m = data.moves[menu.moveIndex];
         say(`${m?.name ?? ''}: ${m === undefined ? '' : moveHint(m)}${armed ? ' TAP AGAIN TO USE.' : ''}`, m?.affordable === false ? COLOR.amber : COLOR.white);
         const items = data.moves.map((opt) => ({ label: opt.name.toUpperCase(), meta: { cost: String(opt.cost), ok: opt.affordable, color: typeColor(opt.type) } }));
-        this.panel(l, box, MENU_IDS.moves, `PROMPT   T${menu.temperature}   COST`, items, view.index, armed, portrait ? 1 : this.listColumns(l, items.length));
+        this.panel(l, box, MENU_IDS.moves, `PROMPT   T${menu.temperature}   COST`, items, view.index, armed, this.listColumns(l, box, items.length));
         return;
       }
       case 'targets':
         say(armed ? 'Tap again to use it on this one.' : 'Pick a target.', COLOR.white);
-        this.panel(l, box, MENU_IDS.targets, 'TARGET?', view.items.map((label) => ({ label })), view.index, armed, portrait ? 1 : 2);
+        this.panel(l, box, MENU_IDS.targets, 'TARGET?', view.items.map((label) => ({ label })), view.index, armed, l.mode === 'portrait' ? 1 : 2);
         return;
       case 'temp': {
         const tip = TEMPERATURE_TIPS[menu.tempIndex as Temperature];
@@ -102,8 +102,12 @@ export class CommandBox {
     }
   }
 
-  /** Landscape move lists: three columns when they are wide enough for a move name, else two. */
-  private listColumns(l: Layout, n: number): number {
+  /**
+   * Move lists. Landscape: three columns when they are wide enough for a move name, else two. Portrait: one column when
+   * it fits between the field and the box, else two (so the foe stays in view).
+   */
+  private listColumns(l: Layout, box: Rect, n: number): number {
+    if (l.mode === 'portrait') return HEADER + n * l.tap + 2 * INSET <= box.y - stageGeometry(l).height ? 1 : 2;
     if (n <= 2) return 2;
     return l.safe.width - 2 * INSET >= 3 * 140 ? 3 : 2;
   }
@@ -158,7 +162,7 @@ export class CommandBox {
       if (on) this.text(bx + 4, by + textDy, '▶', COLOR.amber);
       if (m !== undefined) g.fillStyle(m.color).fillRect(bx + 12, by + textDy, 2, 7);
       const nameX = bx + (m === undefined ? 12 : 17);
-      const room = Math.floor((colW - (nameX - bx) - (m === undefined ? 4 : 6 + textWidth(m.cost) + 4)) / CELL_WIDTH) + 1;
+      const room = Math.floor((colW - (nameX - bx) - (m === undefined ? 4 : 6 + textWidth(m.cost) + 4) + 1) / CELL_WIDTH);
       const label = [...item.label].length > room ? `${[...item.label].slice(0, room - 1).join('')}…` : item.label;
       this.text(nameX, by + textDy, label, dim ? COLOR.steel : on ? COLOR.white : COLOR.cloud);
       if (item.mark !== undefined) this.text(nameX + textWidth(label) + 2, by + textDy, item.mark, COLOR.amber);

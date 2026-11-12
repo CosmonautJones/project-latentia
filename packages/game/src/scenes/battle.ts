@@ -272,6 +272,7 @@ export class BattleScene extends BaseScene {
       round: this.session.round,
       temperature: this.menu.temperature,
       speed: this.menu.speed,
+      armed: this.menu.armed,
       moves: this.session.moveOptions().map((m) => ({ moveId: m.moveId, cost: m.cost, affordable: m.affordable, damaging: m.power !== null, power: m.power })),
       intents: this.stage.intentLines().map((i) => `${this.session.name(i.actor)}: ${i.line}`),
       why: this.session.explainLatestTraces().join(' ') || null,
