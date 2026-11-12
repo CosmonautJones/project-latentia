@@ -2,4 +2,5 @@
 export const ASSETS = [
   { name: 'tokenibble', type: 'battle', load: () => import('./battle/tokenibble.mjs') },
   { name: 'vibrat', type: 'battle', load: () => import('./battle/vibrat.mjs') },
+  { name: 'sagelet', type: 'battle', load: () => import('./battle/sagelet.mjs') },
 ];

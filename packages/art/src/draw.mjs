@@ -223,7 +223,11 @@ export class Cv {
   }
 
   /** A 1 px line around a mask, outside it. `lit` colours the top and left edges (selective outlining). */
-  outline(m, c, lit = c) {
+  inline(m, c, lit = c) {
+    return this.outline(m, c, lit, true);
+  }
+
+  outline(m, c, lit = c, inside = false) {
     const dark = ci(c), light = ci(lit);
     const at = (x, y) => x >= 0 && y >= 0 && x < this.w && y < this.h && m[y * this.w + x];
     for (let y = 0; y < this.h; y++) {
@@ -231,6 +235,7 @@ export class Cv {
         if (at(x, y)) continue;
         const below = at(x, y + 1), right = at(x + 1, y), above = at(x, y - 1), left = at(x - 1, y);
         if (!(below || right || above || left)) continue;
+        if (inside && this.px[y * this.w + x] === T) continue; // an inner line never grows the silhouette
         this.px[y * this.w + x] = (below || right) && !above && !left ? light : dark;
       }
     }
