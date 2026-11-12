@@ -241,7 +241,7 @@
         "right"
       ],
       "framesPerDirection": 3,
-      "footY": 30,
+      "footY": 31,
       "animations": {
         "idle-down": {
           "frames": [
@@ -326,7 +326,7 @@
         "right"
       ],
       "framesPerDirection": 3,
-      "footY": 30,
+      "footY": 31,
       "animations": {
         "idle-down": {
           "frames": [
@@ -411,7 +411,7 @@
         "right"
       ],
       "framesPerDirection": 3,
-      "footY": 30,
+      "footY": 31,
       "animations": {
         "idle-down": {
           "frames": [
@@ -496,7 +496,7 @@
         "right"
       ],
       "framesPerDirection": 3,
-      "footY": 30,
+      "footY": 31,
       "animations": {
         "idle-down": {
           "frames": [
@@ -581,7 +581,7 @@
         "right"
       ],
       "framesPerDirection": 3,
-      "footY": 30,
+      "footY": 31,
       "animations": {
         "idle-down": {
           "frames": [

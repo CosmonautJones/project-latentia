@@ -212,7 +212,7 @@ function buildChar(a) {
     animations[`walk-${d}`] = { frames: [i * 3 + 1, i * 3, i * 3 + 2, i * 3], frameMs: a.walkMs ?? 130, loop: true };
   });
   return {
-    sheet: { file: `characters/${a.name}.png`, kind: 'character', frameWidth: 24, frameHeight: 32, frameCount: frames.length, directions: DIRS, framesPerDirection: 3, footY: 30, animations },
+    sheet: { file: `characters/${a.name}.png`, kind: 'character', frameWidth: 24, frameHeight: 32, frameCount: frames.length, directions: DIRS, framesPerDirection: 3, footY: 31, animations },
     frames,
   };
 }
