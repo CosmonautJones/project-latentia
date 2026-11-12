@@ -1,5 +1,5 @@
 // Where the battlefield's pieces go, per orientation (plan v0.1 Q1: the battle only has to render at both sizes; Q2
-// redesigns it). Landscape keeps v0's 320x136 field, centred in the safe area of the 480x270 screen, with the backdrop
+// redesigns it). Landscape keeps v0's 320x136 field, centred in the safe area of the landscape screen, with the backdrop
 // running the full width. Portrait (270 wide) stacks it: the foe and its panel at the top, the player's side under
 // them, both panels in a row under the player's sprites. Pure, so it is unit-tested.
 

@@ -1,10 +1,10 @@
 // Pure viewport math (plan v0.1 Q1): from the CSS viewport, the DPR and the orientation, the logical size the game
 // runs at, the integer DEVICE-pixel scale, where the image goes, where the touch controls go, and the safe area of the
 // logical screen that they never cover (the dialogue box and every menu stay inside it).
-// - Landscape and desktop: 480x270. Portrait: 270 wide, 480 to 540 tall (the long side grows to fill the screen).
-// - The scale is the largest integer number of device pixels per logical pixel that fits (for a fixed aspect, and for
-//   portrait's flexible height, the largest scale that fits is also the one that fills the most screen). Every image
-//   edge lands on a device pixel, so nearest filtering never scales by a fraction.
+// - Both orientations flex (ruling V16): the short side is 240 to 270 logical px and the long side 426 to 540.
+// - Of every integer number of device pixels per logical pixel, and the largest logical size in range that fits at it,
+//   the pick is the one whose image covers the most screen; a tie goes to the larger logical size. Every image edge
+//   lands on a device pixel, so nearest filtering never scales by a fraction.
 // - The touch controls are a translucent overlay at the screen edges: in portrait along the bottom (the safe area ends
 //   above them), in landscape vertically centred at the sides (the safe area starts and ends beside them).
 
@@ -60,10 +60,10 @@ export interface Layout {
   readonly coverage: number;
 }
 
-export const LANDSCAPE_SIZE: Size = { width: 480, height: 270 };
-export const PORTRAIT_WIDTH = 270;
-export const PORTRAIT_MIN_HEIGHT = 480;
-export const PORTRAIT_MAX_HEIGHT = 540;
+/** V16: the logical short side's range, px. */
+export const SHORT_SIDE = { min: 240, max: 270 } as const;
+/** V16: the logical long side's range, px. */
+export const LONG_SIDE = { min: 426, max: 540 } as const;
 /** The least touch target, CSS px. */
 export const TAP_CSS = 44;
 /** The controls' geometry, CSS px: a 3x3 D-pad of 44 px cells and two 56 px buttons, 12 px in from the edges. */
@@ -97,23 +97,31 @@ function placeButtons(v: Viewport, mode: LayoutMode): Record<TouchControlId, Rec
   return { ...dpad(left, mid - PAD / 2), 'btn-a': btn(right - BTN, mid - BTN - 6), 'btn-b': btn(right - BTN, mid + 6) };
 }
 
-/** The largest integer scale (>= 1) at which `logical` fits in `widthDev` x `heightDev` device px. */
-const fit = (widthDev: number, heightDev: number, w: number, h: number): number => Math.max(1, Math.floor(Math.min(widthDev / w, heightDev / h)));
+/**
+ * The integer scale and the logical (short, long) sides that cover the most of a `shortDev` x `longDev` device-pixel
+ * screen. At each scale the largest in-range size that fits is the best one; across scales, the most area wins and a
+ * tie goes to the larger logical size. A screen too small for the least size gets it at 1x, clipped.
+ */
+export function pickScale(shortDev: number, longDev: number): { scale: number; short: number; long: number } {
+  let best: { scale: number; short: number; long: number; area: number } = { scale: 1, short: Math.min(SHORT_SIDE.max, Math.max(SHORT_SIDE.min, Math.floor(shortDev))), long: LONG_SIDE.min, area: -1 };
+  for (let k = 1; k * SHORT_SIDE.min <= shortDev; k++) {
+    const short = Math.min(SHORT_SIDE.max, Math.floor(shortDev / k));
+    const long = Math.min(LONG_SIDE.max, Math.floor(longDev / k));
+    if (long < LONG_SIDE.min) continue;
+    const area = short * long * k * k;
+    if (area > best.area || (area === best.area && short * long > best.short * best.long)) best = { scale: k, short, long, area };
+  }
+  return { scale: best.scale, short: best.short, long: best.long };
+}
 
 export function computeViewport(v: Viewport): Layout {
   const { dpr } = v;
   const wDev = v.width * dpr;
   const hDev = v.height * dpr;
   const mode: LayoutMode = v.height > v.width ? 'portrait' : 'landscape';
-  let logical: Size;
-  let scale: number;
-  if (mode === 'portrait') {
-    scale = fit(wDev, hDev, PORTRAIT_WIDTH, PORTRAIT_MIN_HEIGHT);
-    logical = { width: PORTRAIT_WIDTH, height: Math.min(PORTRAIT_MAX_HEIGHT, Math.max(PORTRAIT_MIN_HEIGHT, Math.floor(hDev / scale))) };
-  } else {
-    scale = fit(wDev, hDev, LANDSCAPE_SIZE.width, LANDSCAPE_SIZE.height);
-    logical = LANDSCAPE_SIZE;
-  }
+  const pick = pickScale(Math.min(wDev, hDev), Math.max(wDev, hDev));
+  const { scale } = pick;
+  const logical: Size = mode === 'portrait' ? { width: pick.short, height: pick.long } : { width: pick.long, height: pick.short };
   const gw = logical.width * scale;
   const gh = logical.height * scale;
   const top = (v.inset?.top ?? 0) * dpr;

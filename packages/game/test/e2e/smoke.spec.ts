@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 // Brings in the global `window.__latentia` typing.
 import type {} from '../../src/dev/hook.js';
 import type { FlowEvent } from '../../src/flow/flow.js';
+import { computeViewport } from '../../src/layout/viewport.js';
 import { expectTargets, tapOption, target } from './drive.js';
 
 /** Collect console errors and uncaught exceptions; the test fails on any. */
@@ -43,8 +44,8 @@ test('boots to the title, starts a new game by keyboard and reaches the Lab', as
   // A fresh browser has no save: only New Game.
   expect(await menu(page)).toMatchObject({ id: 'title', items: ['NEW GAME'] });
   await expect(page.locator('#frame canvas')).toBeVisible();
-  // Playwright's default 1280x720 viewport: 480x270 at 2x (960x540).
-  expect(await page.evaluate(() => window.__latentia?.layout())).toMatchObject({ mode: 'landscape', scale: 2, logical: { width: 480, height: 270 } });
+  // Playwright's default 1280x720 viewport: 426x240 at 3x (1278x720) covers more than 540x270 at 2x (V16).
+  expect(await page.evaluate(() => window.__latentia?.layout())).toMatchObject({ mode: 'landscape', scale: 3, logical: { width: 426, height: 240 } });
   await expectCanvasMatchesLayout(page);
 
   await page.keyboard.press('Enter');
@@ -146,10 +147,10 @@ test('the touch controls and the hook drive the same flow: lab dialogue, starter
   await expect.poll(() => step(page)).toBe('walk');
   await expect.poll(() => scene(page)).toBe('Overworld');
 
-  // Rotating to landscape re-lays out: the game resized to 480x270, letterboxed and still pixel-exact.
+  // Rotating to landscape re-lays out: the game resized to 540x270 (V16: the long side flexes), still pixel-exact.
   await page.setViewportSize({ width: 844, height: 390 });
   await expect.poll(() => page.evaluate(() => window.__latentia?.layout().mode)).toBe('landscape');
-  await expect.poll(() => page.locator('#frame canvas').getAttribute('width')).toBe('480');
+  await expect.poll(() => page.locator('#frame canvas').getAttribute('width')).toBe('540');
   await expectCanvasMatchesLayout(page);
 
   expect(errors).toEqual([]);
@@ -225,7 +226,7 @@ for (const v of [
       await page.setViewportSize(size);
       await expect.poll(() => page.evaluate(() => window.__latentia?.layout().mode)).toBe(size.width > size.height ? 'landscape' : 'portrait');
       const l = await page.evaluate(() => window.__latentia?.layout());
-      expect(l?.logical).toEqual(size.height > size.width ? { width: 270, height: l?.logical.height } : { width: 480, height: 270 });
+      expect(l?.logical).toEqual(computeViewport({ ...size, dpr: v.dpr, touch: v.touch }).logical);
       await expect.poll(() => page.locator('#frame canvas').getAttribute('width')).toBe(String(l?.logical.width));
       await expectCanvasMatchesLayout(page);
       await target(page, 'title', 0);

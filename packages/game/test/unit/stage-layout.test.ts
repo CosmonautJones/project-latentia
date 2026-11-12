@@ -26,6 +26,6 @@ describe('stageGeometry', () => {
 
   it('landscape centres v0 field in the safe area', () => {
     const l = computeViewport({ width: 1366, height: 768, dpr: 1, touch: false });
-    expect(stageGeometry(l).slots.foe.panel.x).toBe(6 + (480 - FIELD_WIDTH) / 2);
+    expect(stageGeometry(l).slots.foe.panel.x).toBe(6 + Math.floor((l.logical.width - FIELD_WIDTH) / 2));
   });
 });

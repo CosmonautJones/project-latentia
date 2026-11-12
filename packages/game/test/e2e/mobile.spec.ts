@@ -14,7 +14,7 @@ test('the title, a choice panel and the battle menus are tapped in the image, 44
   await target(page, 'title', 0);
   expect(await expectTargets(page)).toBe(1);
   await rotate(page, LANDSCAPE);
-  expect(await logical(page)).toEqual({ width: 480, height: 270 });
+  expect(await logical(page)).toEqual({ width: 540, height: 270 });
   await target(page, 'title', 0);
   await expectTargets(page);
   // A real tap on NEW GAME, drawn in the game image, starts the game.
