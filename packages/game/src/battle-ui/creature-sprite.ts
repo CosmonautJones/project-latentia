@@ -1,6 +1,6 @@
 // A creature on the battlefield, or standing in a scene: its idle animation (the art pass's 96 px battle sheet, or a
 // generated placeholder for a species it has not drawn), and the juice the playback uses: windup lunge, white hit
-// flash, faint drop. Its position is where its feet stand. The sheets face the viewer's left; the player's side
+// flash then the sheet's hit frames, faint drop. Its position is where its feet stand. The sheets face the viewer's left; the player's side
 // mirrors them (ruling V15).
 
 import Phaser from 'phaser';
@@ -13,6 +13,8 @@ const placeholderAnim = (species: string) => `creature.${species}.idle`;
 interface CreatureArt {
   readonly texture: string;
   readonly anim: string;
+  /** The art pass's 2-frame hit reaction, when the sheet has one. */
+  readonly hit: string | null;
   readonly frameSize: number;
   /** The row the feet stand on. */
   readonly baseline: number;
@@ -21,7 +23,10 @@ interface CreatureArt {
 /** The texture and idle animation for a species: its sheet (loaded in Boot), or a placeholder generated once. */
 function ensureCreature(scene: Phaser.Scene, species: string): CreatureArt {
   const sheet = battleSheet(species);
-  if (sheet) return { texture: sheetKey(sheet.id), anim: animKey(sheet.id, 'idle'), frameSize: sheet.frameSize, baseline: sheet.baseline };
+  if (sheet) {
+    const hit = animKey(sheet.id, 'hit');
+    return { texture: sheetKey(sheet.id), anim: animKey(sheet.id, 'idle'), hit: scene.anims.exists(hit) ? hit : null, frameSize: sheet.frameSize, baseline: sheet.baseline };
+  }
   const key = placeholderKey(species);
   const art = placeholderArt(species);
   if (!scene.textures.exists(key)) {
@@ -46,7 +51,7 @@ function ensureCreature(scene: Phaser.Scene, species: string): CreatureArt {
       repeat: -1,
     });
   }
-  return { texture: key, anim: placeholderAnim(species), frameSize: art.size, baseline: PLACEHOLDER_BASELINE };
+  return { texture: key, anim: placeholderAnim(species), hit: null, frameSize: art.size, baseline: PLACEHOLDER_BASELINE };
 }
 
 export const tween = (scene: Phaser.Scene, config: Phaser.Types.Tweens.TweenBuilderConfig): Promise<void> =>
@@ -62,6 +67,7 @@ export class CreatureSprite {
   readonly sprite: Phaser.GameObjects.Sprite;
   private homeX: number;
   private homeY: number;
+  private art: CreatureArt | null = null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -86,6 +92,7 @@ export class CreatureSprite {
   /** Show another species here (a swap). */
   setSpecies(species: string): void {
     const art = ensureCreature(this.scene, species);
+    this.art = art;
     // Feet on the position: whole pixels of origin, so nothing lands between pixels.
     this.sprite.setTexture(art.texture).setOrigin(0.5, (art.baseline + 1) / art.frameSize).setFlipX(this.back);
     this.sprite.play(art.anim);
@@ -119,9 +126,19 @@ export class CreatureSprite {
     this.sprite.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
   }
 
+  /** After the flash: the sheet's hit reaction (2 frames), then back to idle; without one, idle resumes. */
   flashOff(): void {
-    this.sprite.anims.resume();
     this.baseTint();
+    const art = this.art;
+    if (art?.hit == null) {
+      this.sprite.anims.resume();
+      return;
+    }
+    const hit = art.hit;
+    this.sprite.play(hit);
+    this.sprite.once(`${Phaser.Animations.Events.ANIMATION_COMPLETE_KEY}${hit}`, () => {
+      if (this.art === art && this.sprite.alpha > 0) this.sprite.play(art.anim);
+    });
   }
 
   async faint(ms: number): Promise<void> {
