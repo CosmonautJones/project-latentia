@@ -6,6 +6,7 @@
   "description": "Text-grid pixel art sources and the build script that renders them. Not shipped; the engine never depends on this package.",
   "scripts": {
     "build": "node src/build.mjs",
+    "build:pass2": "node src/pass2.mjs",
     "check": "node src/build.mjs --check"
   },
   "devDependencies": {
