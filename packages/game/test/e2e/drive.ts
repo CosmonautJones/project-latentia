@@ -104,12 +104,25 @@ export interface Target {
 /** Every option tappable in the game image now, in page CSS px (the hook's `taps()`). */
 export const taps = (page: Page): Promise<Target[]> => page.evaluate(() => window.__latentia?.taps() ?? []);
 
-/** Wait until option `index` of menu `menuId` is drawn, and return where. */
+/** Tap a drawn option where it is: a real touch at its centre (a click without touch). */
+async function tapAt(page: Page, t: Target): Promise<void> {
+  const touch = await page.evaluate(() => window.__latentia?.layout().controls === 'overlay');
+  if (touch) await page.touchscreen.tap(t.x + t.width / 2, t.y + t.height / 2);
+  else await page.mouse.click(t.x + t.width / 2, t.y + t.height / 2);
+}
+
+/**
+ * Wait until option `index` of menu `menuId` is drawn, and return where. A move on another page of a long move list is
+ * reached the way a player does: by tapping MORE until its page shows.
+ */
 export async function target(page: Page, menuId: string, index: number): Promise<Target> {
   let found: Target | undefined;
   await expect
     .poll(async () => {
-      found = (await taps(page)).find((t) => t.menu === menuId && t.index === index);
+      const all = await taps(page);
+      found = all.find((t) => t.menu === menuId && t.index === index);
+      const more = all.find((t) => t.menu === 'battle-page');
+      if (found === undefined && menuId === 'battle-moves' && more !== undefined) await tapAt(page, more);
       return found !== undefined;
     }, { message: `${menuId}[${index}] is drawn` })
     .toBe(true);
@@ -118,12 +131,7 @@ export async function target(page: Page, menuId: string, index: number): Promise
 
 /** Tap option `index` of menu `menuId` where it is drawn: a real touch at its centre (a click without touch). */
 export async function tapOption(page: Page, menuId: string, index: number): Promise<void> {
-  const t = await target(page, menuId, index);
-  const x = t.x + t.width / 2;
-  const y = t.y + t.height / 2;
-  const touch = await page.evaluate(() => window.__latentia?.layout().controls === 'overlay');
-  if (touch) await page.touchscreen.tap(x, y);
-  else await page.mouse.click(x, y);
+  await tapAt(page, await target(page, menuId, index));
 }
 
 /**

@@ -4,7 +4,7 @@
 // (scripts/loop-balance.ts measures exactly these fights). The graft run goes through its own debrief. Saves are
 // checked at each step, and Continue resumes the debrief. Any console error fails.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { flow, leaveBattle, menu, panel, pick, playNaive, scene, send, untilMenu, watchErrors } from './drive.js';
 
 const save = (page: Page) => page.evaluate(() => JSON.parse(window.localStorage.getItem('latentia.save.v0') ?? 'null'));
@@ -30,11 +30,25 @@ async function throughTheRival(page: Page, starterIndex: number): Promise<void> 
   expect((await panel(page))?.items.map((i) => i.label)).toEqual(['SPIN UP  (recommended)', 'GRAFT']);
 }
 
-test('spin-up: lab → rival → wild → distill → card tutorial → Bootcamp Grad lost → swap → rematch won → end card', async ({ page }) => {
-  test.setTimeout(180_000);
+/** The spin-up run on desktop (the default page) and on a 390x844 phone in portrait and turned (plan v0.1 Q2b). */
+const DEVICES = [
+  { name: 'desktop', viewport: null },
+  { name: 'portrait 390x844', viewport: { width: 390, height: 844 } },
+  { name: 'landscape 844x390', viewport: { width: 844, height: 390 } },
+] as const;
+
+async function device(browser: Browser, page: Page, viewport: { width: number; height: number } | null): Promise<{ page: Page; close: () => Promise<void> }> {
+  if (viewport === null) return { page, close: async () => {} };
+  const context = await browser.newContext({ viewport, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  return { page: await context.newPage(), close: () => context.close() };
+}
+
+for (const d of DEVICES) test(`spin-up (${d.name}): lab → rival → wild → distill → card tutorial → Bootcamp Grad lost → swap → rematch won → end card`, async ({ browser, page: desktop }) => {
+  test.setTimeout(240_000);
+  const { page, close } = await device(browser, desktop, d.viewport);
   const errors = watchErrors(page);
   await throughTheRival(page, 1);
-  expect(await save(page)).toMatchObject({ schemaVersion: 3, progress: { step: 'distill', starter: 'blitzr' } });
+  expect(await save(page)).toMatchObject({ schemaVersion: 4, progress: { step: 'distill', starter: 'blitzr' } });
 
   await pick(page, 'distill', 0);
   await expect.poll(() => page.evaluate(() => window.__latentia?.overworld()?.dialogue ?? null)).toMatch(/^CARDS: /);
@@ -48,6 +62,12 @@ test('spin-up: lab → rival → wild → distill → card tutorial → Bootcamp
   // Bootcamp Grad, seed 0: the bad card loses.
   expect(await send(page, { type: 'trainerEngaged' })).toBe(true);
   await expect.poll(() => page.evaluate(() => window.__latentia?.battle()?.id ?? null)).toBe('trainer');
+  // The Grad fight adds the teammate's telegraph (V14): Tokenibble's plan and its card, beside the foe's telegraph.
+  await expect.poll(() => page.evaluate(() => window.__latentia?.battle()?.phase ?? null)).not.toBe(null);
+  const shown = await page.evaluate(() => window.__latentia?.battle() ?? null);
+  expect(shown?.disclosure.teammateTelegraph).toBe(true);
+  expect(shown?.intents).toContainEqual(expect.stringMatching(/^Tokenibble: LOW LATENCY \(SELF\) \(its card: IF own HP >= 50%\)$/));
+  expect(shown?.intents).toContainEqual(expect.stringMatching(/^Bootcamp Grad's Vibrat: (ATTACK ~\d+ → BLITZR|SPECIAL|BUFF)$/));
   expect(await playNaive(page)).toBe('lose');
   await leaveBattle(page, 'trainer');
   await expect.poll(() => scene(page)).toBe('Debrief');
@@ -101,6 +121,7 @@ test('spin-up: lab → rival → wild → distill → card tutorial → Bootcamp
   await pick(page, 'title', 0);
   await expect.poll(() => scene(page)).toBe('End');
   expect(errors).toEqual([]);
+  await close();
 });
 
 test('graft: distill → forest → Bootcamp Grad → debrief with the graft hint → rematch → end card', async ({ page }) => {

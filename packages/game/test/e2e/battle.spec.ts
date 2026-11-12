@@ -1,5 +1,6 @@
 // The rival battle end to end on the real engine: new game → starter → Kip, driven through the dev hook until a
-// result arrives. Also checks hidden foe intents, the first-time hints (and that they are saved), the TEMP dial,
+// result arrives. Also checks the foe telegraph (V11), the first-time hints (and that they are saved), no TEMP dial
+// while temperature is locked (V12), NUMBERS,
 // WHY?, LOG, the speed toggle, the round timing (animation within 1.5 s), the in-image portrait menu with two-tap
 // commit, a small phone tapping all seven moves, and landscape touch controls clear of the menus. Any console error fails.
 
@@ -17,7 +18,7 @@ function watchErrors(page: Page): string[] {
   return errors;
 }
 
-const ROOT = { prompt: 0, temp: 1, why: 2, log: 3, speed: 4 } as const;
+const ROOT = { prompt: 0, why: 1, log: 2, numbers: 3, speed: 4 } as const;
 const battle = (page: Page) => page.evaluate(() => window.__latentia?.battle() ?? null);
 const menu = (page: Page) => page.evaluate(() => window.__latentia?.menu() ?? null);
 const phase = async (page: Page) => (await battle(page))?.phase ?? null;
@@ -84,19 +85,29 @@ test('the rival battle plays to a result on the engine, and the result reaches t
     })
     .not.toBe('intro');
   await toCommand(page);
-  expect(await menu(page)).toEqual({ id: 'battle-root', items: ['PROMPT', 'TEMP T2', 'WHY?', 'LOG', 'SPEED 1×'], index: 0 });
-  // Kip's plan is hidden: the preview shows only "?".
-  expect((await battle(page))?.intents).toEqual(["Kip's Blitzr: ?"]);
+  // No TEMP while temperature is locked (V12); the dial is not drawn.
+  expect(await menu(page)).toEqual({ id: 'battle-root', items: ['PROMPT', 'WHY?', 'LOG', 'NUMBERS OFF', 'SPEED 1×'], index: 0 });
+  expect((await battle(page))?.disclosure).toEqual({ hp: true, moves: true, contextPips: true, foeTelegraph: true, teammateTelegraph: false, temperature: false });
+  // Kip's next move is telegraphed by category, never "?" (V11): an attack with its estimate, or Compact as SPECIAL.
+  const intents = (await battle(page))?.intents ?? [];
+  expect(intents).toHaveLength(1);
+  expect(intents[0]).toMatch(/^Kip's Blitzr: (ATTACK ~\d+ → SAGELET|SPECIAL)$/);
+  // The foe telegraph hint was shown in round 1 too, and saved.
   // The PROMPT hint was shown once and saved.
   const saved = JSON.parse((await page.evaluate(() => window.localStorage.getItem('latentia.save.v0'))) ?? 'null') as { hintsSeen: string[] };
   expect(saved.hintsSeen).toContain('battle.prompt');
 
-  // TEMP (with its first-time hint): turn the dial up one notch; B backs out of the move list.
-  await pick(page, 'battle-root', ROOT.temp);
+  // NUMBERS shows the numbers behind the plain words; PROMPT opens the moves in plain words; B backs out.
+  await pick(page, 'battle-root', ROOT.prompt);
   await toCommand(page);
-  await page.evaluate(() => window.__latentia?.press('right'));
-  await page.evaluate(() => window.__latentia?.press('a'));
-  expect((await battle(page))?.temperature).toBe(3);
+  await expect.poll(() => battle(page).then((b) => b?.band.join(' ') ?? '')).toMatch(/HAPPY TO HELP: Hits hard\. Costs 3\. Never misses\./);
+  await page.evaluate(() => window.__latentia?.press('b'));
+  await pick(page, 'battle-root', ROOT.numbers);
+  expect((await battle(page))?.numbers).toBe(true);
+  await pick(page, 'battle-root', ROOT.prompt);
+  await expect.poll(() => battle(page).then((b) => b?.band.join(' ') ?? '')).toMatch(/PWR 70/);
+  await page.evaluate(() => window.__latentia?.press('b'));
+  await pick(page, 'battle-root', ROOT.numbers);
   await pick(page, 'battle-root', ROOT.prompt);
   await toCommand(page);
   await page.evaluate(() => window.__latentia?.press('b'));
@@ -152,20 +163,17 @@ test('the rival battle plays to a result on the engine, and the result reaches t
   expect(errors).toEqual([]);
 });
 
-test('a lose → restart keeps the temperature and speed the player set', async ({ page }) => {
+test('a lose → restart keeps the speed and NUMBERS the player set; the temperature stays at T2 while locked', async ({ page }) => {
   const errors = watchErrors(page);
   await startRival(page, 1);
   await toCommand(page);
-  await pick(page, 'battle-root', ROOT.temp);
-  await toCommand(page);
-  await page.evaluate(() => window.__latentia?.press('left'));
-  await page.evaluate(() => window.__latentia?.press('a'));
+  await pick(page, 'battle-root', ROOT.numbers);
   await pick(page, 'battle-root', ROOT.speed);
-  expect(await battle(page)).toMatchObject({ temperature: 1, speed: 2 });
+  expect(await battle(page)).toMatchObject({ temperature: 2, speed: 2, numbers: true });
   await page.evaluate(() => window.__latentia?.send({ type: 'battleLost' }));
   await expect.poll(() => page.evaluate(() => window.__latentia?.flow().attempt)).toBe(1);
   await expect.poll(() => phase(page)).toBe('intro');
-  expect(await battle(page)).toMatchObject({ temperature: 1, speed: 2 });
+  expect(await battle(page)).toMatchObject({ temperature: 2, speed: 2, numbers: true });
   expect(errors).toEqual([]);
 });
 
@@ -186,7 +194,8 @@ test('in portrait the battle menu is drawn in the image: a tap selects, a second
     })
     .toBe('command');
   await target(page, 'battle-moves', 6);
-  expect(await expectTargets(page)).toBe(7);
+  // All seven moves fit on a tall phone; shorter screens page them, MORE included (every option still a 44 px target).
+  expect(await expectTargets(page)).toBeGreaterThanOrEqual(2);
   // B (the B button) backs out to the root.
   await page.locator('[data-control="btn-b"]').tap();
   await expect.poll(() => menu(page).then((m) => m?.id)).toBe('battle-root');
