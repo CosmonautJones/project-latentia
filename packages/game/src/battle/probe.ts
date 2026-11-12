@@ -3,6 +3,7 @@
 
 import type { Temperature } from '@latentia/engine';
 import type { BattleId } from '../content/battles.js';
+import type { Disclosure } from './disclosure.js';
 import type { FightReport } from '../flow/telemetry.js';
 import type { Outcome } from './session.js';
 import type { Speed } from './timeline.js';
@@ -32,8 +33,14 @@ export interface BattleProbe {
   readonly moves: readonly { readonly moveId: string; readonly cost: number; readonly affordable: boolean; readonly damaging: boolean; readonly power: number | null }[];
   /** The item a first tap selected (two-tap), waiting for the second tap; null when none. */
   readonly armed: { readonly screen: string; readonly index: number } | null;
-  /** The intent preview lines as on screen ("Kip's Blitzr: ?" while hidden). */
+  /** The telegraphs as on screen ("Kip's Blitzr: NEXT: ATTACK ~6 → SAGELET"; the teammate's with its card). */
   readonly intents: readonly string[];
+  /** NUMBERS is on: the details show the numbers. */
+  readonly numbers: boolean;
+  /** The band's text lines as on screen. */
+  readonly band: readonly string[];
+  /** What this fight shows (V14). */
+  readonly disclosure: Disclosure;
   /** The "why?" popup's text for the latest traces, or null before any deck-driven action. */
   readonly why: string | null;
   /** The round log (the LOG screen), oldest first. */

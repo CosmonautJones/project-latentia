@@ -48,50 +48,86 @@ for (const s of SIZES) {
   });
 }
 
-// Battle screenshots: the rival fight after one round with the move menu open and a move armed by a first tap, then a
-// moment of playback. (Q1 only has the battle render at every size; Q2 redesigns it.)
+// Battle screenshots (plan v0.1 Q2b): the Kip fight, the wild Tokenibble and the Bootcamp Grad (with Tokenibble beside
+// your starter, so its plan line shows), each at the command prompt after one round, then with the move list open and
+// the first move focused by a tap (its plain-word details up, waiting for the second tap). Kip's also gets a moment of
+// playback. A first-time player should tell at a glance what the foe will do, what each move does, what the teammate
+// will do and how much context is left.
 const BATTLE_SIZES = DEVICES.map((d) => ({ ...d, name: `battle-${d.name}` }));
+const FIGHTS = ['kip', 'wild', 'grad'] as const;
 
 for (const s of BATTLE_SIZES) {
-  test(s.name, async ({ browser }) => {
-    const context = await browser.newContext({
-      viewport: { width: s.width, height: s.height },
-      deviceScaleFactor: s.deviceScaleFactor,
-      isMobile: s.isMobile,
-      hasTouch: s.hasTouch,
+  for (const fight of FIGHTS) {
+    test(`${s.name}-${fight}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport: { width: s.width, height: s.height },
+        deviceScaleFactor: s.deviceScaleFactor,
+        isMobile: s.isMobile,
+        hasTouch: s.hasTouch,
+      });
+      const page = await context.newPage();
+      const hook = <T>(fn: () => T) => page.evaluate(fn);
+      const send = (e: FlowEvent) => page.evaluate((ev) => window.__latentia?.send(ev), e);
+      const pick = (menuId: string, i: number) => page.evaluate(([m, n]) => window.__latentia?.pick(m as string, n as number), [menuId, i] as const);
+      await page.goto('/');
+      await expect.poll(() => hook(() => window.__latentia?.scene() ?? null)).toBe('Title');
+      await send({ type: 'newGame' });
+      await send({ type: 'starterPicked', starter: 'sagelet' });
+      if (fight !== 'kip') {
+        await expect.poll(() => hook(() => window.__latentia?.battle()?.id ?? null)).toBe('rival');
+        await send({ type: 'battleWon' });
+        await send({ type: 'reachedTrailhead' });
+      }
+      if (fight === 'grad') {
+        await expect.poll(() => hook(() => window.__latentia?.battle()?.id ?? null)).toBe('wild');
+        await send({ type: 'battleWon' });
+        await expect.poll(() => hook(() => window.__latentia?.menu()?.id ?? null)).toBe('distill');
+        await pick('distill', 0);
+        await expect
+          .poll(async () => {
+            if ((await hook(() => window.__latentia?.menu()?.id ?? null)) === 'tutorial-card') return true;
+            await hook(() => window.__latentia?.press('a'));
+            return false;
+          })
+          .toBe(true);
+        await pick('tutorial-card', 0);
+        await expect.poll(() => hook(() => window.__latentia?.flow().step)).toBe('forest');
+        await send({ type: 'trainerEngaged' });
+      }
+      const toCommand = () =>
+        expect
+          .poll(async () => {
+            const phase = await hook(() => window.__latentia?.battle()?.phase ?? null);
+            if (phase === 'intro' || phase === 'hint') await hook(() => window.__latentia?.press('a'));
+            return phase;
+          }, { timeout: 20_000 })
+          .toBe('command');
+      await toCommand();
+      // Round 1: Compact (the last move), so round 2 shows a damaged bar and the foe's next telegraph.
+      await pick('battle-root', 0);
+      const moves = await hook(() => window.__latentia?.battle()?.moves.length ?? 0);
+      const compact = (await hook(() => window.__latentia?.battle()?.moves.map((m) => m.moveId) ?? [])).indexOf('compact');
+      expect(compact).toBeGreaterThanOrEqual(0);
+      // A paged list: step the cursor to Compact with the keys, then commit with A.
+      for (let i = 0; i < compact; i++) await hook(() => window.__latentia?.press('down'));
+      await hook(() => window.__latentia?.press('a'));
+      expect(moves).toBeGreaterThan(0);
+      await toCommand();
+      await page.waitForTimeout(200);
+      await page.screenshot({ path: `test/screenshots/${s.name}-${fight}.png` });
+      await pick('battle-root', 0);
+      // A first tap on the first move: selected, its details up, waiting for the second tap.
+      await pick('battle-moves', 0);
+      await page.waitForTimeout(200);
+      await page.screenshot({ path: `test/screenshots/${s.name}-${fight}-moves.png` });
+      if (fight === 'kip') {
+        await pick('battle-moves', 0);
+        await page.waitForTimeout(450);
+        await page.screenshot({ path: `test/screenshots/${s.name}-${fight}-playback.png` });
+      }
+      await context.close();
     });
-    const page = await context.newPage();
-    const hook = <T>(fn: () => T) => page.evaluate(fn);
-    const pick = (menuId: string, i: number) => page.evaluate(([m, n]) => window.__latentia?.pick(m as string, n as number), [menuId, i] as const);
-    await page.goto('/');
-    await expect.poll(() => hook(() => window.__latentia?.scene() ?? null)).toBe('Title');
-    await hook(() => window.__latentia?.send({ type: 'newGame' }));
-    await hook(() => window.__latentia?.send({ type: 'starterPicked', starter: 'sagelet' }));
-    const toCommand = () =>
-      expect
-        .poll(async () => {
-          const phase = await hook(() => window.__latentia?.battle()?.phase ?? null);
-          if (phase === 'intro' || phase === 'hint') await hook(() => window.__latentia?.press('a'));
-          return phase;
-        }, { timeout: 20_000 })
-        .toBe('command');
-    await toCommand();
-    // Round 1: Step-Back Prompt (a buff), so round 2 shows context used and a damaged bar.
-    await pick('battle-root', 0);
-    await toCommand();
-    await pick('battle-moves', 2);
-    await pick('battle-moves', 2);
-    await toCommand();
-    await pick('battle-root', 0);
-    // A first tap on Happy to Help: selected, its hint up, waiting for the second tap.
-    await pick('battle-moves', 0);
-    await page.waitForTimeout(150);
-    await page.screenshot({ path: `test/screenshots/${s.name}.png` });
-    await pick('battle-moves', 0);
-    await page.waitForTimeout(450);
-    await page.screenshot({ path: `test/screenshots/${s.name}-playback.png` });
-    await context.close();
-  });
+  }
 }
 
 // Overworld screenshots: the lab just after the rival fight, then the trailhead (sign, the wild patch and Bootcamp

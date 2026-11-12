@@ -44,14 +44,15 @@ export interface PlanSource {
 
 /** The plan line of the player's subagent: its move and target, upper case like the panels. */
 const mateLine = (i: Intent, s: PlanSource): string => {
+  // "TOKENIBBLE WILL:" plus this must fit the 240 px band's 38 characters; "(SELF)" keeps Low Latency inside it.
   const move = s.moveName(i.moveId).toUpperCase();
-  return i.target === i.actor ? `${move} (ITSELF)` : `${move} → ${s.shortName(i.target)}`;
+  return i.target === i.actor ? `${move} (SELF)` : `${move} → ${s.shortName(i.target)}`;
 };
 
 /** The card text for a fired card id: its trigger, or "Default" for the card that fires when nothing above does. */
 export function cardLine(deck: Deck | null, cardId: string | null, moveName: (m: string) => string): string {
   if (deck === null || cardId === null) return 'its card: none';
-  if (deck.default.id === cardId) return 'its card: Default (nothing above it fired)';
+  if (deck.default.id === cardId) return 'its card: Default';
   const card = deck.cards.find((c) => c.id === cardId);
   return card === undefined ? `its card: ${cardId}` : `its card: ${cardTrigger(card, moveName)}`;
 }

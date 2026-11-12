@@ -21,6 +21,9 @@ export const MENU_IDS: Readonly<Record<MenuScreen, string>> = {
   log: 'battle-log',
 };
 
+/** The MORE button of a paged move list (a tap shows the next page). */
+export const PAGE_MENU_ID = 'battle-page';
+
 export type RootItem = 'prompt' | 'temp' | 'why' | 'log' | 'numbers' | 'speed';
 /** The root is laid out three to a row (command-box.ts); the arrows move on that grid. */
 export const ROOT_COLUMNS = 3;
@@ -58,6 +61,15 @@ export interface MenuData {
   readonly log: readonly string[];
   /** The save has unlocked the temperature dial (V12); absent means locked. */
   readonly tempUnlocked?: boolean;
+  /** Moves shown per page when the list does not fit the band (its last slot is MORE); absent means all at once. */
+  readonly pageSize?: number;
+}
+
+/** The page of the move list the cursor is on: its first index and size (the whole list when it fits). */
+export function movePage(index: number, d: Pick<MenuData, 'moves' | 'pageSize'>): { first: number; size: number; pages: number } {
+  const n = d.moves.length;
+  const size = d.pageSize === undefined || d.pageSize >= n ? n : Math.max(1, d.pageSize);
+  return { first: Math.floor(index / size) * size, size, pages: Math.max(1, Math.ceil(n / size)) };
 }
 
 export type MenuEffect =
@@ -104,7 +116,8 @@ const wrap = (i: number, n: number): number => (n === 0 ? 0 : (i + n) % n);
 const clampTemp = (i: number): Temperature => TEMPS[Math.max(0, Math.min(TEMPS.length - 1, i))] ?? 2;
 
 /** The row the cursor is on and the action, for the screen showing; a tap elsewhere is null. */
-function decode(s: BattleMenuState, a: InputAction): { button: 'up' | 'down' | 'left' | 'right' | 'a' | 'b' } | { pickAt: number } | null {
+function decode(s: BattleMenuState, a: InputAction): { button: 'up' | 'down' | 'left' | 'right' | 'a' | 'b' } | { pickAt: number } | { page: true } | null {
+  if (a.kind === 'pick' && a.menuId === PAGE_MENU_ID) return s.screen === 'moves' ? { page: true } : null;
   if (a.kind === 'pick') return a.menuId === MENU_IDS[s.screen] ? { pickAt: a.index } : null;
   return a.kind === 'press' ? { button: a.button } : null;
 }
@@ -148,6 +161,11 @@ function chooseRoot(s: BattleMenuState, index: number, d: MenuData): MenuResult 
 export function menuStep(s0: BattleMenuState, action: InputAction, d: MenuData): MenuResult {
   const input = decode(s0, action);
   if (input === null) return { state: s0 };
+  if ('page' in input) {
+    const p = movePage(s0.moveIndex, d);
+    const next = p.first + p.size >= d.moves.length ? 0 : p.first + p.size;
+    return { state: { ...s0, moveIndex: next, armed: null } };
+  }
   const button = 'button' in input ? input.button : null;
   const picked = 'pickAt' in input ? input.pickAt : null;
   // Any key press disarms a tap selection.

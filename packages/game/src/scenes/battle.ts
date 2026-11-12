@@ -7,6 +7,8 @@
 import type { Temperature } from '@latentia/engine';
 import type { App } from '../app.js';
 import { initialMenu, menuStep, menuView, type BattleMenuState, type MenuData } from '../battle/battle-menu.js';
+import { disclosureFor, type Disclosure } from '../battle/disclosure.js';
+import { cardLine, plansFor, type MatePlan, type Plan } from '../battle/plans.js';
 import { mapEvents, type UiStep } from '../battle/event-steps.js';
 import { dueRoundHint, HINTS, type HintId } from '../battle/hints.js';
 import { COMMAND_ERRORS, WHY_EMPTY } from '../battle/labels.js';
@@ -34,6 +36,9 @@ export class BattleScene extends BaseScene {
   private stage!: BattleStage;
   private box!: CommandBox;
   private dialogue!: DialogueBox;
+  private disclosure!: Disclosure;
+  /** The plans shown for the coming round (the foe's telegraph, the subagent's plan). */
+  private plans: Plan[] = [];
   /** Survives a lose → restart (the scene instance is reused): speed and temperature stay as the player left them. */
   private menu: BattleMenuState = initialMenu();
   private phase: BattlePhase = 'intro';
@@ -55,17 +60,19 @@ export class BattleScene extends BaseScene {
     if (def === null) throw new Error(`no battle for step ${state.step}`);
     this.def = def;
     this.session = BattleSession.start(def);
-    this.menu = initialMenu(this.menu.temperature, this.menu.speed);
+    this.menu = initialMenu(this.menu.temperature, this.menu.speed, this.menu.numbers);
+    this.disclosure = disclosureFor(def.id, this.app.flow.unlocks);
     this.phase = 'intro';
     this.whyFresh = false;
     this.log = [];
     this.roundMs = [];
     this.result = null;
 
-    this.stage = new BattleStage(this, this.session, this.layout);
-    this.box = new CommandBox(this, this.app);
+    this.stage = new BattleStage(this, this.session, this.layout, this.disclosure);
+    this.stage.setNumbers(this.menu.numbers);
+    this.box = new CommandBox(this, this.app, () => this.stage.geometry);
     this.dialogue = new DialogueBox(this, this.app);
-    this.stage.setIntents(this.session.intents(), this.session.revealedFoes());
+    this.showPlans();
     this.box.render({ kind: 'message', text: '' });
 
     this.listen((a) => this.onInput(a));
@@ -100,7 +107,7 @@ export class BattleScene extends BaseScene {
       await this.finish(gen);
       return;
     }
-    this.stage.setIntents(this.session.intents(), this.session.revealedFoes());
+    this.showPlans();
     const pass = this.session.passReason();
     if (pass !== null) {
       const me = this.session.name(this.session.playerIndex);
@@ -109,8 +116,9 @@ export class BattleScene extends BaseScene {
     }
     this.menu = { ...this.menu, screen: 'root', rootIndex: 0, armed: null };
     // At most one first-time hint per round, before the menu comes up.
-    const ownIntent = this.session.intents().some((i) => this.session.sideOf(i.actor) === 0);
-    const due = dueRoundHint((id) => this.app.flow.hasSeenHint(id), { whyFresh: this.whyFresh, ownIntent });
+    const ownIntent = this.mate() !== null;
+    const foeIntent = this.plans.some((p) => p.kind === 'foe');
+    const due = dueRoundHint((id) => this.app.flow.hasSeenHint(id), { whyFresh: this.whyFresh, ownIntent, foeIntent });
     if (due !== undefined) await this.hint(gen, due);
     if (!this.live(gen)) return;
     this.setPhase('command');
@@ -123,12 +131,27 @@ export class BattleScene extends BaseScene {
     if (this.live(gen)) this.setPhase('command');
   }
 
+  /** The coming round's plans, read before the round (the telegraphs follow this fight's disclosure, V14). */
+  private showPlans(): void {
+    this.plans = plansFor(this.session).filter((p) => (p.kind === 'foe' ? this.disclosure.foeTelegraph : this.disclosure.teammateTelegraph));
+    this.stage.setPlans(this.plans, this.session.revealedFoes());
+  }
+
+  private mate(): MatePlan | null {
+    return this.plans.find((p): p is MatePlan => p.kind === 'mate') ?? null;
+  }
+
   private menuData(): MenuData {
+    const moves = this.session.moveOptions();
+    const g = this.stage.geometry;
+    const slots = g.rows * g.columns;
     return {
-      moves: this.session.moveOptions(),
+      moves,
       targets: (id) => this.session.targetsFor(id),
       targetName: (i) => this.session.shortName(i),
       log: this.log,
+      tempUnlocked: this.disclosure.temperature,
+      ...(moves.length > slots ? { pageSize: slots - 1 } : {}),
     };
   }
 
@@ -146,6 +169,7 @@ export class BattleScene extends BaseScene {
       void this.showWhy(this.generation);
       return;
     }
+    if (e?.kind === 'numbers') this.stage.setNumbers(e.numbers);
     this.renderMenu();
     // The first visit to the moves or the dial explains it.
     const opened = this.menu.screen !== before ? this.menu.screen : null;
@@ -168,6 +192,7 @@ export class BattleScene extends BaseScene {
       data,
       prompt: `What will ${this.session.shortName(this.session.playerIndex)} do?`,
       whyFresh: this.whyFresh,
+      mate: this.mate(),
     };
     this.box.render(model);
     this.app.probe.menu = this.phase === 'command' ? menuView(this.menu, data) : null;
@@ -217,7 +242,7 @@ export class BattleScene extends BaseScene {
    */
   private async playEvents(gen: number, events: Parameters<typeof mapEvents>[0], revealed: ReadonlySet<number>): Promise<void> {
     this.setPhase('playback');
-    this.stage.setIntents([], revealed);
+    void revealed;
     const round = this.session.round;
     const steps = mapEvents(events, { name: (i) => this.session.name(i), moveName: (m) => this.session.moveName(m), side: (i) => this.session.sideOf(i) });
     const plan = planRound(steps, this.menu.speed);
@@ -241,7 +266,16 @@ export class BattleScene extends BaseScene {
       this.log = [...this.log, `R${round} ${step.text}`].slice(-LOG_LINES);
       return;
     }
-    if (step.kind === 'trace') this.whyFresh = true;
+    if (step.kind === 'trace') {
+      this.whyFresh = true;
+      // The teammate's card was re-planned mid-round (its condition changed before it acted): say so.
+      const planned = this.plans.find((p): p is MatePlan => p.kind === 'mate' && p.actor === step.trace.actor);
+      if (planned !== undefined && planned.cardId !== step.trace.firedCardId) {
+        const text = `${this.session.shortName(step.trace.actor)} RE-PLANNED: ${cardLine(this.session.deckOf(step.trace.actor), step.trace.firedCardId, (m) => this.session.moveName(m))}`;
+        this.box.render({ kind: 'message', text });
+        this.log = [...this.log, `R${round} ${text}`].slice(-LOG_LINES);
+      }
+    }
     await this.stage.apply(step, ms);
   }
 
@@ -274,7 +308,10 @@ export class BattleScene extends BaseScene {
       speed: this.menu.speed,
       armed: this.menu.armed,
       moves: this.session.moveOptions().map((m) => ({ moveId: m.moveId, cost: m.cost, affordable: m.affordable, damaging: m.power !== null, power: m.power })),
-      intents: this.stage.intentLines().map((i) => `${this.session.name(i.actor)}: ${i.line}`),
+      intents: this.stage.planLines().map((i) => `${this.session.name(i.actor)}: ${i.line}`),
+      numbers: this.menu.numbers,
+      band: this.box.lines(),
+      disclosure: this.disclosure,
       why: this.session.explainLatestTraces().join(' ') || null,
       log: [...this.log],
       roundMs: [...this.roundMs],
