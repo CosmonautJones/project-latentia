@@ -9,6 +9,9 @@ import { addPixelText, textWidth } from '../text/phaser-font.js';
 import { COLOR } from '../ui/palette.js';
 import { CATEGORY_COLOR, drawIntentIcon } from './intent-icons.js';
 
+/** `text` cut to `room` characters, ending in "…" when cut. */
+export const clip = (text: string, room: number): string => ([...text].length > room ? `${[...text].slice(0, Math.max(0, room - 1)).join('')}…` : text);
+
 export class PlanBox {
   private readonly g: Phaser.GameObjects.Graphics;
   private readonly label: Phaser.GameObjects.BitmapText;
@@ -65,12 +68,13 @@ export class PlanBox {
     const room = Math.floor((r.width - (iconX + 10 - r.x) - 2) / 6);
     const arrow = line.indexOf(' → ');
     if (twoLines && arrow > 0) {
-      this.line1.setText(line.slice(0, arrow)).setPosition(iconX + 10, r.y + 3).setTint(color);
-      this.line2.setText(line.slice(arrow + 1)).setPosition(r.x + 3, r.y + 13).setTint(COLOR.cream);
+      this.line1.setText(clip(line.slice(0, arrow), room)).setPosition(iconX + 10, r.y + 3).setTint(color);
+      this.line2.setText(clip(line.slice(arrow + 1), Math.floor((r.width - 6) / 6))).setPosition(r.x + 3, r.y + 13).setTint(COLOR.cream);
       return;
     }
-    const fit = [...line].length > room ? `${[...line].slice(0, room - 1).join('')}…` : line;
-    this.line1.setText(fit).setPosition(iconX + 10, r.y + 3).setTint(color);
+    // One line: when it does not fit, the "~N" goes before the target does.
+    const short = [...line].length > room ? line.replace(/ ~\d+(?= →)/, '') : line;
+    this.line1.setText(clip(short, room)).setPosition(iconX + 10, r.y + 3).setTint(color);
     this.line2.setText('');
   }
 }
