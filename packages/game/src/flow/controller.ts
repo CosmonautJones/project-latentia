@@ -18,7 +18,11 @@ export class FlowController {
   constructor(
     private readonly storage: KeyValueStorage,
     private readonly switchScene: SceneSwitcher,
-  ) {}
+  ) {
+    // Read now, not only on Continue: a New Game after a page reload must keep what the player unlocked.
+    const saved = loadSave(storage);
+    if (saved.status === 'ok') this.unlocked = saved.save.unlocks;
+  }
 
   get state(): FlowState {
     return this.current;
