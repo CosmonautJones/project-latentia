@@ -1,7 +1,7 @@
 {
   "name": "scrapion-steals-buffs",
   "log": {
-    "engineVersion": "0.4.1",
+    "engineVersion": "0.4.2",
     "seed": "6484b5f0be1e6d559a764a6048db7810",
     "setup": {
       "a": {

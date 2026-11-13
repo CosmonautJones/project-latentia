@@ -1,7 +1,7 @@
-// Boot/Preload: loads the Fable starter sheets and builds the generated assets (the pixel font; placeholder creatures
-// are generated on first use), then hands over to the flow, which opens the title.
+// Boot/Preload: loads the art pass's sheets (tiles, people, creatures) and their animations, builds the pixel font,
+// then hands over to the flow, which opens the title.
 
-import { preloadCreatureSheets } from '../battle-ui/creature-sprite.js';
+import { createArtAnims, preloadArt } from '../art/load.js';
 import { registerPixelFont } from '../text/phaser-font.js';
 import { BaseScene } from './base-scene.js';
 import type { App } from '../app.js';
@@ -12,11 +12,12 @@ export class BootScene extends BaseScene {
   }
 
   preload(): void {
-    preloadCreatureSheets(this);
+    preloadArt(this);
   }
 
   create(): void {
     registerPixelFont(this);
+    createArtAnims(this);
     this.app.flow.start();
   }
 }

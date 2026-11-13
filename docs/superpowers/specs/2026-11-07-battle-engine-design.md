@@ -135,6 +135,10 @@ export function validateSetup(setup: BattleSetup): ValidationResult;
 export function createBattle(setup: BattleSetup, seed: SeedHex): BattleState;
 
 export function getIntents(state: BattleState): Intent[];
+// 0.4.2 (plan v0.1 Q2, read-only): the HP an intent's move would take from its target if it hits without a crit,
+// lowest and highest damage roll (and hit count), capped at the target's HP; null for a move that deals none this
+// round. Pure: no state change, no rng draw. The game's foe telegraph ("Attack ~N") shows the midpoint.
+export function previewDamage(state: BattleState, intent: Intent): { min: number; max: number } | null;
 export function submitRound(state: BattleState, cmd: RoundCommand):
   { state: BattleState; events: BattleEvent[] } | { error: CommandError };
 

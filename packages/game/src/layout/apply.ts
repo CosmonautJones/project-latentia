@@ -1,13 +1,12 @@
 // Applies a computed layout to the page and re-applies it on resize, orientation change and DPR change.
 
-import { computeLayout, type Layout, type Rect, type Viewport } from './compute.js';
+import type { TouchControlId } from '../input/actions.js';
+import { computeViewport, type Insets, type Layout, type Rect, type Viewport } from './viewport.js';
 
 export interface LayoutElements {
   /** Phaser's parent; sized to exactly the integer-scaled game rect. */
   readonly frame: HTMLElement;
-  /** The DS-style bottom band (portrait). */
-  readonly band: HTMLElement;
-  /** The touch controls: moved into the band, or overlaid on landscape touch screens. */
+  /** The touch controls' overlay; each button is placed at its computed rect. */
   readonly controls: HTMLElement;
 }
 
@@ -18,23 +17,37 @@ const place = (el: HTMLElement, r: Rect) => {
   el.style.height = `${r.height}px`;
 };
 
+/** env(safe-area-inset-*), read through a probe element (0 where the browser has none). */
+function readInsets(doc: Document): Insets {
+  const probe = doc.createElement('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+  doc.body.append(probe);
+  const s = doc.defaultView?.getComputedStyle(probe);
+  const px = (v: string | undefined) => Number.parseFloat(v ?? '0') || 0;
+  const insets = { top: px(s?.paddingTop), right: px(s?.paddingRight), bottom: px(s?.paddingBottom), left: px(s?.paddingLeft) };
+  probe.remove();
+  return insets;
+}
+
 export function readViewport(win: Window): Viewport {
   return {
     width: win.innerWidth,
     height: win.innerHeight,
     dpr: win.devicePixelRatio || 1,
     touch: win.matchMedia('(pointer: coarse)').matches,
+    inset: readInsets(win.document),
   };
 }
 
 export function applyLayout(layout: Layout, els: LayoutElements): void {
   place(els.frame, layout.game);
-  els.band.hidden = layout.band === null;
-  if (layout.band) place(els.band, layout.band);
-  els.controls.dataset['placement'] = layout.controls;
   els.controls.hidden = layout.controls === 'none';
-  if (layout.controls === 'band' && els.controls.parentElement !== els.band) els.band.append(els.controls);
-  if ((layout.controls === 'overlay' || layout.controls === 'sides') && els.controls.parentElement === els.band) els.band.after(els.controls);
+  els.controls.dataset['mode'] = layout.mode;
+  for (const el of els.controls.querySelectorAll<HTMLElement>('[data-control]')) {
+    const r = layout.buttons[el.dataset['control'] as TouchControlId];
+    el.hidden = r === undefined;
+    if (r) place(el, r);
+  }
 }
 
 /** Lay out now and on every viewport change (coalesced to one per frame). Calls `onLayout` after each apply. */
@@ -43,7 +56,7 @@ export function watchLayout(win: Window, els: LayoutElements, onLayout: (layout:
   let dprQuery: MediaQueryList | null = null;
   const run = () => {
     frame = 0;
-    const layout = computeLayout(readViewport(win));
+    const layout = computeViewport(readViewport(win));
     applyLayout(layout, els);
     onLayout(layout);
     watchDpr();

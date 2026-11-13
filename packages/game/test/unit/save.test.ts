@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ENGINE_VERSION } from '@latentia/engine';
 import type { Progress } from '../../src/flow/flow.js';
+import { NO_TELEMETRY, type FightReport } from '../../src/flow/telemetry.js';
 import {
   clearSave,
   loadSave,
   parseSave,
   SAVE_KEY,
+  NO_UNLOCKS,
   SCHEMA_VERSION,
   writeSave,
   type KeyValueStorage,
@@ -38,12 +40,27 @@ const throwing: KeyValueStorage = {
   },
 };
 
-const progress: Progress = { step: 'cardTutorial', starter: 'blitzr', distill: 'spinUp', tutorialCardId: null };
+/** A v1/v2 save's progress: the journey fields only. */
+const oldProgress = { step: 'cardTutorial', starter: 'blitzr', distill: 'spinUp', tutorialCardId: null } as const;
+/** What v3 adds when it upgrades one: no trainer result yet, and no telemetry. */
+const upgraded: Progress = { ...oldProgress, trainerBeaten: false, lastFight: null, telemetry: NO_TELEMETRY };
+const progress = upgraded;
+const fight: FightReport = { battle: 'trainer', outcome: 'lose', rounds: 5, moves: 11, cardsFired: 5, cardId: 'tutorial.c', kept: ['Tokenibble kept using Low Latency.'] };
+const debrief: Progress = {
+  step: 'debrief',
+  starter: 'blitzr',
+  distill: 'spinUp',
+  tutorialCardId: 'tutorial.c',
+  trainerBeaten: false,
+  lastFight: fight,
+  telemetry: { ...NO_TELEMETRY, losses: 1, turns: 5, moves: 11, cardsFired: 5, fights: [{ battle: 'trainer', outcome: 'lose', rounds: 5, moves: 11, cardsFired: 5, cardId: 'tutorial.c' }] },
+};
+const v3 = (p: unknown) => JSON.stringify({ schemaVersion: 3, engineVersion: ENGINE_VERSION, progress: p, hintsSeen: [] });
 
 describe('save: constants', () => {
-  it('uses the v0 key and schema version 2 (v2 added the first-time hints seen)', () => {
+  it('uses the v0 key and schema version 4 (v2 added the hints seen; v3 the trainer result and the telemetry; v4 the unlocks)', () => {
     expect(SAVE_KEY).toBe('latentia.save.v0');
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(4);
   });
 });
 
@@ -52,16 +69,41 @@ describe('save: round trip', () => {
     const store = new MemoryStorage();
     expect(writeSave(store, progress, ['battle.prompt'])).toBe(true);
     const raw = JSON.parse(store.getItem(SAVE_KEY) as string) as Record<string, unknown>;
-    expect(raw['schemaVersion']).toBe(2);
+    expect(raw['schemaVersion']).toBe(4);
     expect(raw['engineVersion']).toBe(ENGINE_VERSION);
-    expect(loadSave(store)).toEqual({ status: 'ok', save: { schemaVersion: 2, engineVersion: ENGINE_VERSION, progress, hintsSeen: ['battle.prompt'] } });
+    expect(loadSave(store)).toEqual({ status: 'ok', save: { schemaVersion: 4, engineVersion: ENGINE_VERSION, progress, hintsSeen: ['battle.prompt'], unlocks: NO_UNLOCKS } });
     writeSave(store, progress);
     expect(loadSave(store)).toMatchObject({ save: { hintsSeen: [] } });
   });
 
-  it('a v1 save (before hints) upgrades to v2 with no hints seen', () => {
-    const v1 = JSON.stringify({ schemaVersion: 1, engineVersion: '0.3.0', progress });
-    expect(parseSave(v1)).toEqual({ status: 'ok', save: { schemaVersion: 2, engineVersion: '0.3.0', progress, hintsSeen: [] } });
+  it('a debrief with its fight and telemetry round-trips', () => {
+    const store = new MemoryStorage();
+    writeSave(store, debrief);
+    expect(loadSave(store)).toMatchObject({ status: 'ok', save: { progress: debrief } });
+  });
+
+  it('a v1 save (before hints) upgrades through v2 to v3', () => {
+    const v1 = JSON.stringify({ schemaVersion: 1, engineVersion: '0.3.0', progress: oldProgress });
+    expect(parseSave(v1)).toEqual({ status: 'ok', save: { schemaVersion: 4, engineVersion: '0.3.0', progress: upgraded, hintsSeen: [], unlocks: NO_UNLOCKS } });
+  });
+
+  it('a v2 save upgrades to v3 with no trainer result and no telemetry; a v2 end card counts the trainer as beaten', () => {
+    const v2 = (p: unknown) => JSON.stringify({ schemaVersion: 2, engineVersion: '0.3.0', progress: p, hintsSeen: ['battle.why'] });
+    expect(parseSave(v2(oldProgress))).toEqual({ status: 'ok', save: { schemaVersion: 4, engineVersion: '0.3.0', progress: upgraded, hintsSeen: ['battle.why'], unlocks: NO_UNLOCKS } });
+    const end = { step: 'end', starter: 'sagelet', distill: 'graft', tutorialCardId: null };
+    expect(parseSave(v2(end))).toMatchObject({ status: 'ok', save: { progress: { step: 'end', trainerBeaten: true, lastFight: null, telemetry: NO_TELEMETRY } } });
+  });
+
+  it('a v3 save (v0 and v0.1 before Q2b) upgrades to v4 with nothing unlocked, keeping its progress and hints', () => {
+    const text = JSON.stringify({ schemaVersion: 3, engineVersion: '0.4.1', progress: debrief, hintsSeen: ['battle.prompt', 'battle.context'] });
+    expect(parseSave(text)).toEqual({ status: 'ok', save: { schemaVersion: 4, engineVersion: '0.4.1', progress: debrief, hintsSeen: ['battle.prompt', 'battle.context'], unlocks: { temperature: false } } });
+  });
+
+  it('unlocks round-trip, and temperature defaults to locked', () => {
+    const store = new MemoryStorage();
+    expect(writeSave(store, progress, [], { temperature: true })).toBe(true);
+    expect(loadSave(store)).toMatchObject({ status: 'ok', save: { unlocks: { temperature: true } } });
+    expect(NO_UNLOCKS).toEqual({ temperature: false });
   });
 
   it('an empty store loads as empty', () => {
@@ -90,6 +132,16 @@ describe('save: corrupt data starts fresh and never throws', () => {
     ['engineVersion not a string', JSON.stringify({ schemaVersion: 1, engineVersion: 3, progress })],
     ['hintsSeen not an array', JSON.stringify({ schemaVersion: 2, engineVersion: ENGINE_VERSION, progress, hintsSeen: 'all' })],
     ['hintsSeen with a non-string', JSON.stringify({ schemaVersion: 2, engineVersion: ENGINE_VERSION, progress, hintsSeen: ['a', 3] })],
+    ['trainerBeaten not a boolean', v3({ ...debrief, trainerBeaten: 'yes' })],
+    ['unlocks missing', JSON.stringify({ schemaVersion: 4, engineVersion: ENGINE_VERSION, progress, hintsSeen: [] })],
+    ['unlocks.temperature not a boolean', JSON.stringify({ schemaVersion: 4, engineVersion: ENGINE_VERSION, progress, hintsSeen: [], unlocks: { temperature: 'yes' } })],
+    ['a debrief without its fight', v3({ ...debrief, lastFight: null })],
+    ['a fight with an unknown outcome', v3({ ...debrief, lastFight: { ...fight, outcome: 'meh' } })],
+    ['a fight with negative rounds', v3({ ...debrief, lastFight: { ...fight, rounds: -1 } })],
+    ['a fight whose lines are not strings', v3({ ...debrief, lastFight: { ...fight, kept: [1] } })],
+    ['telemetry missing', v3({ ...debrief, telemetry: undefined })],
+    ['telemetry with a fractional count', v3({ ...debrief, telemetry: { ...debrief.telemetry, swaps: 0.5 } })],
+    ['a logged fight from an unknown battle', v3({ ...debrief, telemetry: { ...debrief.telemetry, fights: [{ ...fight, battle: 'gym' }] } })],
   ];
   it.each(bad)('%s', (_name, text) => {
     const store = new MemoryStorage();
@@ -144,7 +196,7 @@ describe('save: versions and migrations', () => {
     expect(calls).toEqual([-1, 0]);
     expect(r).toEqual({
       status: 'ok',
-      save: { schemaVersion: 2, engineVersion: 'unknown', progress: { step: 'lab', starter: null, distill: null, tutorialCardId: null }, hintsSeen: [] },
+      save: { schemaVersion: 4, engineVersion: 'unknown', progress: { step: 'lab', starter: null, distill: null, tutorialCardId: null, trainerBeaten: false, lastFight: null, telemetry: NO_TELEMETRY }, hintsSeen: [], unlocks: NO_UNLOCKS },
     });
   });
 

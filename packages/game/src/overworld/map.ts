@@ -2,7 +2,7 @@
 // (signs, NPCs, the trainer, warps, the wild encounter and the spawn point of each overworld step). Pure: parsing
 // throws on a malformed grid; the design rules (warps land, spawns are walkable, ...) are in validate.ts.
 //
-// Format (see content/maps/localhost.ts): `areas.<id>.rows` are equal-length strings, one char per 16x16 tile, x to
+// Format (see content/maps/localhost.ts): `areas.<id>.rows` are equal-length strings, one char per 24x24 tile, x to
 // the right and y down from the top-left. Everything else refers to tiles as { area, x, y }.
 
 import type { OverworldStep } from '../flow/flow.js';
@@ -41,11 +41,9 @@ export interface Spot extends Place {
   readonly facing: Dir;
 }
 
-export type LookId = 'player' | 'professor' | 'farmer' | 'grad';
-
 export interface NpcDef {
+  /** Also picks the sprite (art/sheets.ts characterFor). */
   readonly id: string;
-  readonly look: LookId;
   readonly at: Spot;
   /** What A gets them to say. */
   readonly line: string;

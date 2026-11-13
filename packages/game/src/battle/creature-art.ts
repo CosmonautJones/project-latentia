@@ -1,36 +1,20 @@
-// Battle art for creatures, as data. The three starters use the Fable style-test idle sheets (art/style-test on the
-// art branch; credited in the README). Every other species gets a generated placeholder: a rounded silhouette in
-// its type colour, outlined and shaded, with its initial in the font, all from the Endesga 32 palette. Pure: the
-// scene turns these pixels into textures.
+// The placeholder battle art for a species the art pass has not drawn (art/sheets.ts has the sheets; v0.1's fights
+// only use drawn species): a rounded silhouette in its type colour, outlined and shaded, with its initial in the font,
+// all from the Endesga 32 palette. Pure: the scene turns these pixels into textures.
 
 import { SPECIES } from '@latentia/engine';
 import { glyphRows, GLYPH_WIDTH } from '../text/glyphs.js';
 import { COLOR } from '../ui/palette.js';
 import { TYPE_COLORS } from './labels.js';
 
-export interface SheetDef {
-  /** Under public/. */
-  readonly file: string;
-  readonly frames: number;
-  readonly frameSize: number;
-  /** Per frame (the style test's authored delays: 100 ms, Blitzr's faster 75 ms per the bible). */
-  readonly frameMs: number;
-}
-
-export const FABLE_SHEETS = {
-  sagelet: { file: 'assets/sagelet-idle.png', frames: 6, frameSize: 64, frameMs: 100 },
-  blitzr: { file: 'assets/blitzr-idle.png', frames: 6, frameSize: 64, frameMs: 75 },
-  forkling: { file: 'assets/forkling-idle.png', frames: 6, frameSize: 64, frameMs: 100 },
-} as const satisfies Record<string, SheetDef>;
-
-export const hasSheet = (species: string): species is keyof typeof FABLE_SHEETS => Object.hasOwn(FABLE_SHEETS, species);
-
 export const PLACEHOLDER_FRAMES = 2;
 /** A slow two-frame breathe. */
 export const PLACEHOLDER_FRAME_MS = 400;
 const SIZE = 64;
-/** Where silhouettes stand, matching the Fable sheets' common baseline. */
+/** The row below the silhouettes' feet. */
 const BASELINE = 58;
+/** The row the silhouettes' feet stand on. */
+export const PLACEHOLDER_BASELINE = BASELINE - 1;
 
 export interface PlaceholderArt {
   readonly size: number;

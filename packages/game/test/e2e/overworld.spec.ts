@@ -24,7 +24,7 @@ async function toOverworld(page: Page): Promise<void> {
   await page.goto('/');
   await expect.poll(() => scene(page)).toBe('Title');
   await send(page, { type: 'newGame' });
-  await expect.poll(() => scene(page)).toBe('Lab');
+  await expect.poll(() => scene(page)).toBe('Overworld');
   await expect
     .poll(async () => {
       if ((await page.evaluate(() => window.__latentia?.menu()?.id)) === 'starter') return true;
@@ -46,6 +46,9 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
 
   // The walk step starts at its spawn in the lab, and the step is saved.
   expect(await ow(page)).toMatchObject({ step: 'walk', area: 'lab', x: 5, y: 4, mode: 'walk', encounterLive: true, trainerLive: false });
+  // Entering a map shows its name for about 2 s, GBA style, then it goes.
+  expect((await ow(page))?.caption).toBe("Prof. Epoch's lab");
+  await expect.poll(() => ow(page).then((o) => o?.caption ?? null), { timeout: 4000 }).toBeNull();
   const saved = await page.evaluate(() => JSON.parse(window.localStorage.getItem('latentia.save.v0') ?? 'null'));
   expect(saved).toMatchObject({ progress: { step: 'walk', starter: 'forkling' } });
 
@@ -66,7 +69,13 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
 
   // Out the door: the warp lands outside the lab, in Localhost.
   await walkTo(page, (p) => p.area === 'outside');
-  expect(await ow(page)).toMatchObject({ area: 'outside', x: 5, y: 4, facing: 'down' });
+  expect(await ow(page)).toMatchObject({ area: 'outside', x: 5, y: 4, facing: 'down', caption: 'Localhost' });
+  // Back in and out again: each warp's fades remove their listeners, so none pile up.
+  const listeners = (await ow(page))?.shutdownListeners;
+  expect(listeners).toBeGreaterThan(0);
+  await walkTo(page, (p) => p.area === 'lab');
+  await walkTo(page, (p) => p.area === 'outside');
+  expect((await ow(page))?.shutdownListeners).toBe(listeners);
 
   // The farmer on the way has a line.
   const farmer = LOCALHOST.npcs.find((n) => n.id === 'farmer')!;
@@ -79,6 +88,8 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
   // The trailhead sign.
   const sign = LOCALHOST.signs[0]!;
   await walkTo(page, at('outside', sign.at.x, sign.at.y + 1));
+  // Walking into the trailhead's stretch of the map names it.
+  expect((await ow(page))?.caption).toBe('Deprecated Forest — Trailhead');
   await face(page, 'up');
   await page.keyboard.press('KeyZ');
   await expect.poll(() => ow(page).then((o) => o?.dialogue)).toBe('Deprecated Forest. Models here were sunset, not deleted.');
@@ -102,8 +113,15 @@ test('new game → starter → rival won → walk the lab, Localhost and the pat
   await page.evaluate(() => window.__latentia?.pick('distill', 0));
   await expect.poll(() => scene(page)).toBe('Overworld');
   expect(await ow(page)).toMatchObject({ step: 'cardTutorial', mode: 'menu', ...LOCALHOST.spawns.cardTutorial });
-  // P4's card tutorial is still the stub menu over the trailhead.
-  await expect.poll(() => page.evaluate(() => window.__latentia?.menu()?.id ?? null)).toBe('tutorial-card');
+  // The card tutorial: its first-time hint, then the three example cards over the trailhead.
+  await expect.poll(() => ow(page).then((o) => o?.dialogue ?? null)).toMatch(/^CARDS: /);
+  await expect
+    .poll(async () => {
+      if ((await page.evaluate(() => window.__latentia?.menu()?.id)) === 'tutorial-card') return true;
+      await page.evaluate(() => window.__latentia?.press('a'));
+      return false;
+    })
+    .toBe(true);
   await page.evaluate(() => window.__latentia?.pick('tutorial-card', 1));
   await expect.poll(() => ow(page).then((o) => o?.step)).toBe('forest');
   expect(await ow(page)).toMatchObject({ mode: 'walk', encounterLive: false, trainerLive: true, ...LOCALHOST.spawns.forest });
@@ -148,20 +166,19 @@ test('after the distill: the patch is calm, Continue resumes at the spawn, and B
 });
 
 for (const v of [
-  { name: 'portrait 390x844: the band D-pad walks', width: 390, height: 844 },
-  { name: 'touch landscape 844x390: the side D-pad walks', width: 844, height: 390 },
+  { name: 'portrait 390x844: the overlay D-pad walks', width: 390, height: 844 },
+  { name: 'touch landscape 844x390: the overlay D-pad walks', width: 844, height: 390 },
 ]) {
   test(v.name, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: v.width, height: v.height }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
     const page = await context.newPage();
     const errors = watchErrors(page);
     await toOverworld(page);
-    const expected = v.width < v.height ? 'band' : 'sides';
-    expect(await page.evaluate(() => window.__latentia?.layout().controls)).toBe(expected);
+    expect(await page.evaluate(() => window.__latentia?.layout().controls)).toBe('overlay');
     await step(page, 'down', 'touch');
     await step(page, 'right', 'touch');
     expect(await ow(page)).toMatchObject({ area: 'lab', x: 6, y: 5, facing: 'right' });
-    // The band's A talks too: face the professor from below and tap it.
+    // The A button talks too: face the professor from below and tap it.
     await walkTo(page, at('lab', 5, 3), 'touch');
     await bump(page, 'up', 'touch');
     await page.locator('[data-control="btn-a"]').click();

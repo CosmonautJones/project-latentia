@@ -1,7 +1,7 @@
 {
   "name": "autopilot-both-sides",
   "log": {
-    "engineVersion": "0.4.1",
+    "engineVersion": "0.4.2",
     "seed": "92702e15ca13c10e6b7f03d463ce823f",
     "setup": {
       "a": {

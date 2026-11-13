@@ -1,0 +1,46 @@
+/* The touch D-pad and A/B (input/touch-controls.ts): a translucent overlay at the screen edges. Each button's rect
+   comes from layout/viewport.ts (applied in layout/apply.ts); the layout keeps them clear of the dialogue and menus. */
+
+#controls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.touch-btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #3a4466;
+  /* Pixel-art bevel: a light top-left and dark bottom-right edge, square corners. */
+  box-shadow: inset 4px 4px 0 #5a6988, inset -4px -4px 0 #181425;
+  opacity: 0.55;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.touch-btn[hidden] {
+  display: none;
+}
+
+.touch-btn.btn-a,
+.touch-btn.btn-b {
+  background: #a22633;
+  box-shadow: inset 4px 4px 0 #e43b44, inset -4px -4px 0 #3e2731;
+}
+
+.touch-btn.held {
+  opacity: 0.8;
+  box-shadow: inset 4px 4px 0 #181425, inset -4px -4px 0 #5a6988;
+}
+
+.touch-btn.btn-a.held,
+.touch-btn.btn-b.held {
+  box-shadow: inset 4px 4px 0 #3e2731, inset -4px -4px 0 #e43b44;
+}

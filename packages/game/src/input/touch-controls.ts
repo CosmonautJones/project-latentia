@@ -1,6 +1,7 @@
-// The touch D-pad and A/B buttons (DOM, so the hit areas stay large and exact at any game scale). They sit in
-// the portrait band, or overlay a touch landscape screen; labels are drawn from the game font as SVG.
+// The touch D-pad and A/B buttons (DOM, so the hit areas stay large and exact at any game scale): a translucent
+// overlay at the screen edges, each button placed by the layout (layout/apply.ts). Labels are the game font as SVG.
 
+import './touch-controls.css';
 import { glyphSvg } from '../text/glyph-svg.js';
 import { css, COLOR } from '../ui/palette.js';
 import { touchControlButton, type TouchControlId } from './actions.js';
@@ -46,12 +47,5 @@ function button(doc: Document, id: TouchControlId, hub: InputHub): HTMLButtonEle
 /** Build the controls into `root` (cleared first). */
 export function mountTouchControls(root: HTMLElement, hub: InputHub): void {
   const doc = root.ownerDocument;
-  root.replaceChildren();
-  const dpad = doc.createElement('div');
-  dpad.className = 'dpad';
-  for (const id of ['dpad-up', 'dpad-left', 'dpad-right', 'dpad-down'] as const) dpad.append(button(doc, id, hub));
-  const ab = doc.createElement('div');
-  ab.className = 'ab';
-  for (const id of ['btn-b', 'btn-a'] as const) ab.append(button(doc, id, hub));
-  root.append(dpad, ab);
+  root.replaceChildren(...(['dpad-up', 'dpad-left', 'dpad-right', 'dpad-down', 'btn-b', 'btn-a'] as const).map((id) => button(doc, id, hub)));
 }

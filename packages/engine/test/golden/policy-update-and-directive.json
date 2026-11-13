@@ -1,7 +1,7 @@
 {
   "name": "policy-update-and-directive",
   "log": {
-    "engineVersion": "0.4.1",
+    "engineVersion": "0.4.2",
     "seed": "5cba08d8f8b9c0ce26fafcc00dabb7ff",
     "setup": {
       "a": {

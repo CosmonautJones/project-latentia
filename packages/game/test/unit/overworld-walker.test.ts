@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Dir } from '../../src/overworld/direction.js';
-import { createWalker, pixelPos, placeWalker, STEP_MS, TURN_MS, updateWalker, walkFrame, type WalkerState } from '../../src/overworld/walker.js';
+import { createWalker, pixelPos, placeWalker, STEP_MS, TURN_MS, updateWalker, isWalking, type WalkerState } from '../../src/overworld/walker.js';
 import { cameraFollow, cameraSnap, type CameraBox } from '../../src/overworld/camera.js';
 
 const open = () => true;
@@ -85,18 +85,29 @@ describe('walker: grid movement, a tile per step', () => {
     expect(again.state.move).toBeNull();
   });
 
-  it('pixel position is an integer tween from tile to tile; the 2-frame bob shows in the first half of a step', () => {
+  it('pixel position is an integer tween from tile to tile', () => {
     const s0 = createWalker({ x: 2, y: 1, facing: 'right' });
     expect(pixelPos(s0, 16)).toEqual({ x: 32, y: 16 });
-    expect(walkFrame(s0)).toBe(0);
     const mid = run(s0, STEP_MS / 2 - FRAME, 'right').state;
     const p = pixelPos(mid, 16);
     expect(Number.isInteger(p.x) && Number.isInteger(p.y)).toBe(true);
     expect(p.x).toBeGreaterThan(32);
     expect(p.x).toBeLessThan(48);
-    expect(walkFrame(mid)).toBe(1);
-    const late = run(mid, STEP_MS / 2 - FRAME, null).state;
-    expect(walkFrame(late)).toBe(0);
+  });
+
+  it('walking (the walk animation plays) through a held walk, including the update between two tiles; standing once released', () => {
+    const s0 = createWalker({ x: 2, y: 1, facing: 'right' });
+    expect(isWalking(s0)).toBe(false);
+    let s = s0;
+    for (let t = 0; t < 3 * STEP_MS; t += FRAME) {
+      const r = updateWalker(s, FRAME, 'right', () => true);
+      s = r.state;
+      expect(isWalking(s), `at ${t} ms${r.arrived ? ' (arrival)' : ''}`).toBe(true);
+    }
+    // Released: the step in progress finishes, then the walker stands.
+    s = run(s, STEP_MS + 2 * FRAME, null).state;
+    expect(s.move).toBeNull();
+    expect(isWalking(s)).toBe(false);
   });
 
   it('placing (a warp, a scripted turn) drops any step in progress', () => {
@@ -122,6 +133,24 @@ describe('camera: follows the player, clamped to the map', () => {
     expect(cameraSnap({ x: 400, y: 100 }, b)).toEqual({ x: 240, y: 10 });
     expect(cameraSnap({ x: 20, y: 20 }, b)).toEqual({ x: 0, y: 0 });
     expect(cameraSnap({ x: 760, y: 200 }, b)).toEqual({ x: 448, y: 28 });
+  });
+
+  it('with a focus (the area the touch controls leave clear), the player is centred in it, even at the map edges', () => {
+    // A 270x480 portrait view whose bottom 110 px are under the controls.
+    const b: CameraBox = { view: { width: 270, height: 480 }, map: { width: 768, height: 960 }, deadzone, focus: { x: 0, y: 0, width: 270, height: 370 } };
+    expect(cameraSnap({ x: 400, y: 500 }, b)).toEqual({ x: 265, y: 315 });
+    // At the south edge the focus runs to the map's edge: the player is still above the controls.
+    const south = cameraSnap({ x: 400, y: 950 }, b);
+    expect(south.y).toBe(960 - 370);
+    expect(950 - south.y).toBeLessThan(370);
+    expect(cameraFollow(south, { x: 400, y: 958 }, b).y).toBe(960 - 370);
+    // Landscape with side controls: the strip between them is the focus; at the west edge the map starts at its left.
+    const side: CameraBox = { view: { width: 426, height: 240 }, map: { width: 960, height: 480 }, deadzone, focus: { x: 98, y: 0, width: 281, height: 240 } };
+    expect(cameraSnap({ x: 5, y: 200 }, side).x).toBe(-98);
+    expect(cameraSnap({ x: 480, y: 200 }, side).x).toBe(480 - 98 - 140);
+    // A map narrower than the focus is centred in it.
+    const small: CameraBox = { ...side, map: { width: 192, height: 128 } };
+    expect(cameraSnap({ x: 5, y: 5 }, small)).toEqual({ x: Math.floor((192 - 281) / 2) - 98, y: -56 });
   });
 
   it('inside the 2x1-tile deadzone the camera holds; past it, it moves just enough (integer scroll)', () => {

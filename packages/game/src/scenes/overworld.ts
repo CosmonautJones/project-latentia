@@ -2,43 +2,34 @@
 // Grid movement with the walker, collision, A to read and talk, the lab door warps, and the two triggers: the wild
 // patch (first walk only) and Bootcamp Grad's sight (after the distill). Everything that ends the scene goes through
 // the flow, which saves the step; each step starts at its map spawn, so Continue and a won battle land there.
-// P4 hook: the `cardTutorial` step shows the P1 stub card menu over the trailhead (openCardTutorial below).
+// Two steps open with a scripted choice instead of free walking (overworld-ui/step-beats.ts): `lab`, Prof. Epoch's
+// intro and the starter pick, and `cardTutorial`, teaching Tokenibble its card over the trailhead.
 
-import { moveDef } from '@latentia/engine';
 import Phaser from 'phaser';
 import type { App } from '../app.js';
-import { cardText } from '../battle/card-text.js';
 import { LOCALHOST } from '../content/maps/localhost.js';
-import { TOKENIBBLE_PRESETS } from '../content/trainers.js';
 import { isOverworldStep, type FlowEvent, type OverworldStep } from '../flow/flow.js';
 import type { InputAction } from '../input/hub.js';
-import { GAME_HEIGHT, GAME_WIDTH } from '../layout/compute.js';
 import { cameraFollow, cameraSnap, type CameraBox } from '../overworld/camera.js';
 import { DIRS, HeldDirections, isDir, OPPOSITE } from '../overworld/direction.js';
-import { regionName, type LookId, type Place, type Pos, type Spot } from '../overworld/map.js';
+import { regionName, type Place, type Pos, type Spot } from '../overworld/map.js';
 import type { OverworldMode } from '../overworld/probe.js';
 import { afterStep, canEnter, encounterLive, interact, trainerLive } from '../overworld/rules.js';
-import { TILE } from '../overworld/tile-art.js';
-import { createWalker, pixelPos, placeWalker, updateWalker, walkFrame, type WalkerState } from '../overworld/walker.js';
+import { TILE } from '../overworld/tile.js';
+import { createWalker, isWalking, pixelPos, placeWalker, updateWalker, type WalkerState } from '../overworld/walker.js';
 import { Actor } from '../overworld-ui/actor.js';
-import { BandCaption } from '../overworld-ui/band-caption.js';
 import { MapView } from '../overworld-ui/map-view.js';
-import { ensureOverworldTextures } from '../overworld-ui/textures.js';
-import { addPixelText } from '../text/phaser-font.js';
+import { PlaceCaption } from '../overworld-ui/place-caption.js';
+import { cardTutorial, labIntro } from '../overworld-ui/step-beats.js';
 import { DialogueBox } from '../ui/dialogue-box.js';
-import { MenuList } from '../ui/menu-list.js';
-import { COLOR } from '../ui/palette.js';
 import { BaseScene } from './base-scene.js';
 
 const PROBE = import.meta.env.DEV || import.meta.env.MODE === 'test';
-const LOOKS: readonly LookId[] = ['player', 'professor', 'farmer', 'grad'];
 /** The bible's 2x1-tile camera deadzone. */
 const DEADZONE = { width: 2 * TILE, height: TILE };
 const FADE_MS = 140;
 /** A long frame (a background tab) is clamped so the walker never skips a tile. */
 const MAX_FRAME_MS = 50;
-
-const STUB_CARDS = TOKENIBBLE_PRESETS.map((p) => ({ id: p.id, label: cardText(p.card, (m) => moveDef(m)?.name ?? m) }));
 
 export class OverworldScene extends BaseScene {
   private readonly world = LOCALHOST;
@@ -46,7 +37,9 @@ export class OverworldScene extends BaseScene {
   private view!: MapView;
   private player: Actor | null = null;
   private box!: DialogueBox;
-  private caption: BandCaption | null = null;
+  private caption!: PlaceCaption;
+  /** The place name last announced, so walking into a named stretch announces it once. */
+  private placeName: string | null = null;
   private walker!: WalkerState;
   private held = new HeldDirections();
   private mode: OverworldMode = 'walk';
@@ -63,12 +56,9 @@ export class OverworldScene extends BaseScene {
     const step = this.app.flow.state.step;
     if (!isOverworldStep(step)) throw new Error(`Overworld started at step ${step}`);
     const gen = ++this.generation;
-    this.caption = new BandCaption(this.app.screen.bandPanel);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.generation++;
       this.app.probe.overworld = null;
-      this.caption?.destroy();
-      this.caption = null;
     });
     this.step = step;
     this.mode = 'walk';
@@ -78,14 +68,15 @@ export class OverworldScene extends BaseScene {
     for (const d of DIRS) if (this.app.input.isHeld(d)) this.held.press(d);
 
     this.player = null;
-    ensureOverworldTextures(this, LOOKS);
-    this.cameras.main.setRoundPixels(true);
+    this.placeName = null;
+    this.cameras.main.setRoundPixels(true).setBackgroundColor(0x181425);
     this.view = new MapView(this, this.world, step);
     this.box = new DialogueBox(this, this.app);
+    this.caption = new PlaceCaption(this, this.app);
     const spawn = this.world.spawns[step];
     this.enterArea(spawn);
     this.listen((a) => this.onInput(a, gen));
-    if (step === 'cardTutorial') this.openCardTutorial();
+    if (step === 'lab' || step === 'cardTutorial') void this.choose(gen, step);
     this.publish();
     this.ready();
   }
@@ -125,10 +116,21 @@ export class OverworldScene extends BaseScene {
     this.player = new Actor(this, 'player', at);
     this.scroll = cameraSnap(this.playerCentre(), this.cameraBox());
     this.drawPlayer();
+    this.announce();
+  }
+
+  /** Show the place's name when it changes: entering a map, or walking into a named stretch of one. */
+  private announce(): void {
+    const name = regionName(this.world, this.spot);
+    if (name === this.placeName) return;
+    this.placeName = name;
+    this.caption.show(name);
   }
 
   private cameraBox(): CameraBox {
-    return { view: { width: GAME_WIDTH, height: GAME_HEIGHT }, map: this.view.size, deadzone: DEADZONE };
+    // The view is the current logical screen: a portrait phone sees more of the map up and down, and a rotation
+    // changes it on the next frame (the follow re-clamps). The player is centred in the part the controls leave clear.
+    return { view: { width: this.scale.width, height: this.scale.height }, map: this.view.size, deadzone: DEADZONE, focus: this.layout.safe };
   }
 
   private playerCentre(): Pos {
@@ -137,8 +139,7 @@ export class OverworldScene extends BaseScene {
   }
 
   private drawPlayer(): void {
-    this.player?.place(pixelPos(this.walker, TILE), this.walker.facing, walkFrame(this.walker));
-    this.caption?.show(regionName(this.world, this.spot));
+    this.player?.place(pixelPos(this.walker, TILE), this.walker.facing, isWalking(this.walker));
     this.scroll = cameraFollow(this.scroll, this.playerCentre(), this.cameraBox());
     this.cameras.main.setScroll(this.scroll.x, this.scroll.y);
   }
@@ -146,6 +147,7 @@ export class OverworldScene extends BaseScene {
   /** A step completed: warps, the wild patch and the trainer's sight are checked here (and only here). */
   private arrive(gen: number): void {
     const here: Place = this.spot;
+    this.announce();
     const o = afterStep(this.world, this.step, here);
     if (o.kind === 'warp') void this.warp(gen, o.to);
     else if (o.kind === 'encounter') void this.encounter(gen);
@@ -162,7 +164,7 @@ export class OverworldScene extends BaseScene {
       return;
     }
     // NPCs turn to face whoever talks to them.
-    if (it.kind === 'talk') this.view.actor(it.npc.id)?.place({ x: it.npc.at.x * TILE, y: it.npc.at.y * TILE }, OPPOSITE[this.walker.facing], 0);
+    if (it.kind === 'talk') this.view.actor(it.npc.id)?.place({ x: it.npc.at.x * TILE, y: it.npc.at.y * TILE }, OPPOSITE[this.walker.facing], false);
     this.mode = 'talk';
     await this.say(gen, it.text);
     if (this.live(gen)) this.mode = 'walk';
@@ -201,24 +203,17 @@ export class OverworldScene extends BaseScene {
     if (this.live(gen)) this.leave({ type: 'trainerEngaged' });
   }
 
-  /** P4 replaces this stub: the card tutorial as a menu over the trailhead (the real presets, as cards). */
-  private openCardTutorial(): void {
+  /** The lab's starter pick or the trailhead's card tutorial: movement waits while the beat runs. */
+  private async choose(gen: number, step: 'lab' | 'cardTutorial'): Promise<void> {
     this.mode = 'menu';
-    this.add.rectangle(8, 8, GAME_WIDTH - 16, 84, COLOR.ink).setOrigin(0).setStrokeStyle(1, COLOR.cloud).setScrollFactor(0).setDepth(90);
-    addPixelText(this, 16, 14, 'TEACH TOKENIBBLE ONE CARD (STUB)', { color: COLOR.amber }).setScrollFactor(0).setDepth(91);
-    new MenuList(this, this.app, {
-      id: 'tutorial-card',
-      items: STUB_CARDS.map((c) => c.label),
-      x: 16,
-      y: 32,
-      width: 280,
-      rowHeight: 16,
-      depth: 91,
-      onConfirm: (i) => {
-        const card = STUB_CARDS[i];
-        if (card) this.leave({ type: 'cardChosen', cardId: card.id });
-      },
-    });
+    const beat = { scene: this, app: this.app, box: this.box, live: () => this.live(gen), onSay: (t: string | null) => (this.dialogue = t) };
+    if (step === 'lab') {
+      const starter = await labIntro(beat);
+      if (starter !== null && this.live(gen)) this.leave({ type: 'starterPicked', starter }, 'menu');
+      return;
+    }
+    const cardId = await cardTutorial(beat);
+    if (cardId !== null && this.live(gen)) this.leave({ type: 'cardChosen', cardId }, 'menu');
   }
 
   private async say(gen: number, text: string): Promise<void> {
@@ -227,22 +222,30 @@ export class OverworldScene extends BaseScene {
     if (this.live(gen)) this.dialogue = null;
   }
 
-  /** Hand over to the flow; if it refuses, the player walks on rather than being stuck. */
-  private leave(event: FlowEvent): void {
+  /** Hand over to the flow; if it refuses, the player walks on (or the beat starts over) rather than being stuck. */
+  private leave(event: FlowEvent, fallback: 'walk' | 'menu' = 'walk'): void {
     this.mode = 'leaving';
-    if (!this.send(event)) this.mode = 'walk';
+    if (this.send(event)) return;
+    this.mode = fallback;
+    if (fallback === 'menu' && (this.step === 'lab' || this.step === 'cardTutorial')) void this.choose(this.generation, this.step);
   }
 
   private fade(gen: number, dir: 'in' | 'out'): Promise<void> {
     const cam = this.cameras.main;
     return new Promise((resolve) => {
       const done = dir === 'out' ? Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE : Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE;
-      cam.once(done, () => resolve());
-      // If the scene shuts down mid-fade the camera never completes it; the generation check drops the beat.
-      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => resolve());
+      // Whichever comes first (the fade completes, or the scene shuts down mid-fade and the camera never completes
+      // it) removes both listeners, so warping back and forth never piles them up; the generation check drops the beat.
+      const finish = () => {
+        cam.off(done, finish);
+        this.events.off(Phaser.Scenes.Events.SHUTDOWN, finish);
+        resolve();
+      };
+      cam.once(done, finish);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, finish);
       if (dir === 'out') cam.fadeOut(FADE_MS, 0x18, 0x14, 0x25);
       else cam.fadeIn(FADE_MS, 0x18, 0x14, 0x25);
-      if (!this.live(gen)) resolve();
+      if (!this.live(gen)) finish();
     });
   }
 
@@ -260,10 +263,12 @@ export class OverworldScene extends BaseScene {
       moving: this.walker.move !== null,
       mode: this.mode,
       dialogue: this.dialogue,
+      caption: this.caption.text,
       encounterLive: encounterLive(this.step),
       trainerLive: trainerLive(this.step),
       trainer: grad ? grad.tile : null,
       fps: Math.round(this.game.loop.actualFps),
+      shutdownListeners: this.events.listenerCount(Phaser.Scenes.Events.SHUTDOWN),
     };
   }
 }

@@ -23,6 +23,22 @@ const setup = () => {
 };
 
 describe('FlowController', () => {
+  it('unlocks survive a New Game after a reload (read at construction, not only on Continue)', () => {
+    const storage = new MemoryStorage();
+    const first = new FlowController(storage, () => {});
+    first.start();
+    first.send({ type: 'newGame' });
+    const raw = JSON.parse(storage.data.get(SAVE_KEY) ?? '{}') as Record<string, unknown>;
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...raw, unlocks: { temperature: true } }));
+    // A reload: a fresh controller, then NEW GAME without Continue.
+    const reloaded = new FlowController(storage, () => {});
+    expect(reloaded.unlocks.temperature).toBe(true);
+    reloaded.start();
+    reloaded.send({ type: 'newGame' });
+    const after = loadSave(storage);
+    expect(after.status === 'ok' && after.save.unlocks.temperature).toBe(true);
+  });
+
   it('start() shows the title without writing a save', () => {
     const { storage, scenes, flow } = setup();
     flow.start();
@@ -34,7 +50,7 @@ describe('FlowController', () => {
     const { storage, scenes, flow } = setup();
     flow.start();
     expect(flow.send({ type: 'newGame' })).toBe(true);
-    expect(scenes.at(-1)).toBe('Lab');
+    expect(scenes.at(-1)).toBe('Overworld');
     expect(loadSave(storage)).toMatchObject({ status: 'ok', save: { progress: { step: 'lab' } } });
     flow.send({ type: 'starterPicked', starter: 'sagelet' });
     expect(scenes.at(-1)).toBe('Battle');

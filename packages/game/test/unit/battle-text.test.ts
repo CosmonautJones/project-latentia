@@ -1,6 +1,6 @@
 import type { Card, CardTrace, Deck } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
-import { cardText, explainTrace, summarizeTraces, type TraceContext } from '../../src/battle/card-text.js';
+import { cardText, explainTrace, type TraceContext } from '../../src/battle/card-text.js';
 import { formatIntent, type IntentContext } from '../../src/battle/intent-text.js';
 
 const c = (id: string, subject: Card['subject'], condition: Card['condition'], move: string, target: Card['target'] = 'lowestHpFoe'): Card => ({ id, subject, condition, move, target });
@@ -94,13 +94,6 @@ describe('explainTrace', () => {
       expect(text).toMatch(/skipped 'Token Burst' \([a-z][^)]+\)\.$/);
       expect(text).not.toMatch(/undefined|weakToMove|revealIntents|token-burst/);
     }
-  });
-});
-
-describe('summarizeTraces', () => {
-  it('counts what each deck-driven creature kept doing, most-fired card first', () => {
-    const traces = [trace('nibble'), trace('nibble'), trace('default'), trace('nibble')];
-    expect(summarizeTraces(traces, ctx)).toEqual(["Tokenibble: 'IF foe HP < 50% THEN Token Nibble' x3, Default Token Burst x1."]);
   });
 });
 

@@ -1,4 +1,4 @@
-// One action stream for every input source. Keyboard, the touch band and pointer taps on menu items all call
+// One action stream for every input source. Keyboard, the touch controls and pointer taps on menu items all call
 // into the hub; scenes and UI components subscribe to it and never read devices directly.
 
 import { BUTTONS, type Button } from './actions.js';

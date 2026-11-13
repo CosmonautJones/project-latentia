@@ -1,27 +1,35 @@
-// A creature on the battlefield: its idle animation (a Fable sheet for the starters, a generated placeholder for the
-// rest), and the juice the playback uses: windup lunge, white hit flash, faint drop. The player's creatures face
-// right and are darkened, standing in for back sprites in v0.
+// A creature on the battlefield, or standing in a scene: its idle animation (the art pass's 96 px battle sheet, or a
+// generated placeholder for a species it has not drawn), and the juice the playback uses: windup lunge, white hit
+// flash then the sheet's hit frames, faint drop. Its position is where its feet stand. The sheets face the viewer's left; the player's side
+// mirrors them (ruling V15).
 
 import Phaser from 'phaser';
-import { FABLE_SHEETS, hasSheet, placeholderArt, PLACEHOLDER_FRAME_MS, PLACEHOLDER_FRAMES } from '../battle/creature-art.js';
+import { animKey, battleSheet, sheetKey } from '../art/sheets.js';
+import { placeholderArt, PLACEHOLDER_BASELINE, PLACEHOLDER_FRAME_MS, PLACEHOLDER_FRAMES } from '../battle/creature-art.js';
 
-const sheetKey = (species: string) => `creature.${species}`;
-const animKey = (species: string) => `creature.${species}.idle`;
-/** Multiply tint for the stand-in back view. */
-const BACK_TINT = 0xa8b0c8;
+const placeholderKey = (species: string) => `creature.${species}`;
+const placeholderAnim = (species: string) => `creature.${species}.idle`;
 
-/** Boot's preload: the three Fable idle sheets. */
-export function preloadCreatureSheets(scene: Phaser.Scene): void {
-  for (const [species, s] of Object.entries(FABLE_SHEETS)) {
-    scene.load.spritesheet(sheetKey(species), s.file, { frameWidth: s.frameSize, frameHeight: s.frameSize });
-  }
+interface CreatureArt {
+  readonly texture: string;
+  readonly anim: string;
+  /** The art pass's 2-frame hit reaction, when the sheet has one. */
+  readonly hit: string | null;
+  readonly frameSize: number;
+  /** The row the feet stand on. */
+  readonly baseline: number;
 }
 
-/** The texture and idle animation for a species, generating a placeholder the first time one is needed. */
-function ensureCreature(scene: Phaser.Scene, species: string): void {
-  const key = sheetKey(species);
+/** The texture and idle animation for a species: its sheet (loaded in Boot), or a placeholder generated once. */
+function ensureCreature(scene: Phaser.Scene, species: string): CreatureArt {
+  const sheet = battleSheet(species);
+  if (sheet) {
+    const hit = animKey(sheet.id, 'hit');
+    return { texture: sheetKey(sheet.id), anim: animKey(sheet.id, 'idle'), hit: scene.anims.exists(hit) ? hit : null, frameSize: sheet.frameSize, baseline: sheet.baseline };
+  }
+  const key = placeholderKey(species);
+  const art = placeholderArt(species);
   if (!scene.textures.exists(key)) {
-    const art = placeholderArt(species);
     const tex = scene.textures.createCanvas(key, art.size * PLACEHOLDER_FRAMES, art.size);
     if (!tex) throw new Error(`could not create ${key}`);
     const ctx = tex.getContext();
@@ -35,15 +43,15 @@ function ensureCreature(scene: Phaser.Scene, species: string): void {
     });
     tex.refresh();
   }
-  if (!scene.anims.exists(animKey(species))) {
-    const sheet = hasSheet(species) ? FABLE_SHEETS[species] : null;
+  if (!scene.anims.exists(placeholderAnim(species))) {
     scene.anims.create({
-      key: animKey(species),
-      frames: scene.anims.generateFrameNumbers(key, { start: 0, end: (sheet?.frames ?? PLACEHOLDER_FRAMES) - 1 }),
-      frameRate: 1000 / (sheet?.frameMs ?? PLACEHOLDER_FRAME_MS),
+      key: placeholderAnim(species),
+      frames: scene.anims.generateFrameNumbers(key, { start: 0, end: PLACEHOLDER_FRAMES - 1 }),
+      frameRate: 1000 / PLACEHOLDER_FRAME_MS,
       repeat: -1,
     });
   }
+  return { texture: key, anim: placeholderAnim(species), hit: null, frameSize: art.size, baseline: PLACEHOLDER_BASELINE };
 }
 
 export const tween = (scene: Phaser.Scene, config: Phaser.Types.Tweens.TweenBuilderConfig): Promise<void> =>
@@ -57,8 +65,9 @@ export const tween = (scene: Phaser.Scene, config: Phaser.Types.Tweens.TweenBuil
 
 export class CreatureSprite {
   readonly sprite: Phaser.GameObjects.Sprite;
-  private readonly homeX: number;
-  private readonly homeY: number;
+  private homeX: number;
+  private homeY: number;
+  private art: CreatureArt | null = null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -69,19 +78,28 @@ export class CreatureSprite {
   ) {
     this.homeX = x;
     this.homeY = y;
-    this.sprite = scene.add.sprite(x, y, sheetKey(species)).setOrigin(0.5, 1);
+    this.sprite = scene.add.sprite(x, y, ensureCreature(scene, species).texture);
     this.setSpecies(species);
+  }
+
+  /** Stand somewhere else (a relayout). A running tween ends at the old spot; the next one starts from here. */
+  setHome(x: number, y: number): void {
+    this.homeX = x;
+    this.homeY = y;
+    this.sprite.setPosition(x, y);
   }
 
   /** Show another species here (a swap). */
   setSpecies(species: string): void {
-    ensureCreature(this.scene, species);
-    this.sprite.setTexture(sheetKey(species)).setFlipX(this.back);
-    this.sprite.play(animKey(species));
+    const art = ensureCreature(this.scene, species);
+    this.art = art;
+    // Feet on the position: whole pixels of origin, so nothing lands between pixels.
+    this.sprite.setTexture(art.texture).setOrigin(0.5, (art.baseline + 1) / art.frameSize).setFlipX(this.back);
+    this.sprite.play(art.anim);
     this.restore();
   }
 
-  /** Back in place, fully visible and untinted (apart from the back-view darkening). */
+  /** Back in place, fully visible and untinted. */
   restore(): void {
     this.sprite.setPosition(this.homeX, this.homeY).setAlpha(1);
     this.baseTint();
@@ -89,8 +107,7 @@ export class CreatureSprite {
 
   private baseTint(): void {
     this.sprite.setTintMode(Phaser.TintModes.MULTIPLY);
-    if (this.back) this.sprite.setTint(BACK_TINT);
-    else this.sprite.clearTint();
+    this.sprite.clearTint();
   }
 
   /** Anticipation: lean back, then lunge toward the other side, then settle. */
@@ -109,9 +126,19 @@ export class CreatureSprite {
     this.sprite.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
   }
 
+  /** After the flash: the sheet's hit reaction (2 frames), then back to idle; without one, idle resumes. */
   flashOff(): void {
-    this.sprite.anims.resume();
     this.baseTint();
+    const art = this.art;
+    if (art?.hit == null) {
+      this.sprite.anims.resume();
+      return;
+    }
+    const hit = art.hit;
+    this.sprite.play(hit);
+    this.sprite.once(`${Phaser.Animations.Events.ANIMATION_COMPLETE_KEY}${hit}`, () => {
+      if (this.art === art && this.sprite.alpha > 0) this.sprite.play(art.anim);
+    });
   }
 
   async faint(ms: number): Promise<void> {

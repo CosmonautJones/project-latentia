@@ -2,17 +2,28 @@
 // local-first, versioned"). Loading never throws: corrupt data or a save from a newer build starts fresh.
 
 import { ENGINE_VERSION } from '@latentia/engine';
-import { DISTILL_CHOICES, isConsistentProgress, STARTERS, STEPS, type Progress } from '../flow/flow.js';
+import type { Progress } from '../flow/flow.js';
+import { NO_TELEMETRY } from '../flow/telemetry.js';
+import { isRecord, parseProgress } from './progress-shape.js';
 
 export const SAVE_KEY = 'latentia.save.v0';
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 4;
 
-export interface SaveFileV2 {
-  readonly schemaVersion: 2;
+/** What the save has unlocked (v4). `temperature` shows the battle's temperature dial (ruling V12); nothing sets it in v0.1. */
+export interface Unlocks {
+  readonly temperature: boolean;
+}
+
+export const NO_UNLOCKS: Unlocks = Object.freeze({ temperature: false });
+
+export interface SaveFile {
+  readonly schemaVersion: 4;
   readonly engineVersion: string;
   readonly progress: Progress;
   /** Ids of the one-time first-encounter hints already shown (v2). */
   readonly hintsSeen: readonly string[];
+  /** Systems the player has unlocked (v4). */
+  readonly unlocks: Unlocks;
 }
 
 /** The storage surface the save needs; `window.localStorage` fits, and tests pass an in-memory one. */
@@ -24,41 +35,37 @@ export interface Migration {
   readonly migrate: (raw: unknown) => unknown;
 }
 
-const isRecordLike = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+/** v2 → v3: the progress gains the trainer result and the telemetry. A v2 save at the end card had beaten the Grad. */
+function addTrainerResult(raw: unknown): unknown {
+  if (!isRecord(raw) || !isRecord(raw['progress'])) return raw;
+  const progress = raw['progress'];
+  return { ...raw, schemaVersion: 3, progress: { ...progress, trainerBeaten: progress['step'] === 'end', lastFight: null, telemetry: NO_TELEMETRY } };
+}
 
-/** Ordered upgrade steps. v1 → v2 adds `hintsSeen` (no hints seen yet). */
+/** Ordered upgrade steps. v1 → v2 adds `hintsSeen` (no hints seen yet); v2 → v3 adds the trainer result and telemetry; v3 → v4 the unlocks (nothing unlocked). */
 export const MIGRATIONS: readonly Migration[] = [
-  { from: 1, migrate: (raw) => (isRecordLike(raw) ? { ...raw, schemaVersion: 2, hintsSeen: [] } : raw) },
+  { from: 1, migrate: (raw) => (isRecord(raw) ? { ...raw, schemaVersion: 2, hintsSeen: [] } : raw) },
+  { from: 2, migrate: addTrainerResult },
+  { from: 3, migrate: (raw) => (isRecord(raw) ? { ...raw, schemaVersion: 4, unlocks: { ...NO_UNLOCKS } } : raw) },
 ];
 
 export type LoadResult =
-  | { readonly status: 'ok'; readonly save: SaveFileV2 }
+  | { readonly status: 'ok'; readonly save: SaveFile }
   | { readonly status: 'empty' }
   | { readonly status: 'corrupt'; readonly reason: string }
   | { readonly status: 'unsupported'; readonly version: number };
 
-const isRecord = isRecordLike;
-const oneOf = <T extends string>(values: readonly T[], v: unknown): v is T => typeof v === 'string' && (values as readonly string[]).includes(v);
 const corrupt = (reason: string): LoadResult => ({ status: 'corrupt', reason });
 
-function parseProgress(v: unknown): Progress | null {
-  if (!isRecord(v)) return null;
-  const { step, starter, distill, tutorialCardId } = v;
-  if (!oneOf(STEPS, step)) return null;
-  if (starter !== null && !oneOf(STARTERS, starter)) return null;
-  if (distill !== null && !oneOf(DISTILL_CHOICES, distill)) return null;
-  if (tutorialCardId !== null && typeof tutorialCardId !== 'string') return null;
-  const progress: Progress = { step, starter, distill, tutorialCardId };
-  return isConsistentProgress(progress) ? progress : null;
-}
-
-function parseV2(raw: Record<string, unknown>): LoadResult {
+function parseCurrent(raw: Record<string, unknown>): LoadResult {
   if (typeof raw['engineVersion'] !== 'string') return corrupt('engineVersion is not a string');
   const progress = parseProgress(raw['progress']);
   if (!progress) return corrupt('progress is missing or invalid');
   const hints = raw['hintsSeen'];
   if (!Array.isArray(hints) || !hints.every((h) => typeof h === 'string')) return corrupt('hintsSeen is not a list of ids');
-  return { status: 'ok', save: { schemaVersion: 2, engineVersion: raw['engineVersion'], progress, hintsSeen: [...(hints as string[])] } };
+  const unlocks = raw['unlocks'];
+  if (!isRecord(unlocks) || typeof unlocks['temperature'] !== 'boolean') return corrupt('unlocks is missing or invalid');
+  return { status: 'ok', save: { schemaVersion: 4, engineVersion: raw['engineVersion'], progress, hintsSeen: [...(hints as string[])], unlocks: { temperature: unlocks['temperature'] } } };
 }
 
 const versionOf = (raw: unknown): number | null =>
@@ -88,7 +95,7 @@ export function parseSave(text: string, migrations: readonly Migration[] = MIGRA
     version = versionOf(raw);
     if (version !== from + 1) return corrupt(`migration from v${from} did not produce v${from + 1}`);
   }
-  return parseV2(raw as Record<string, unknown>);
+  return parseCurrent(raw as Record<string, unknown>);
 }
 
 export function loadSave(storage: KeyValueStorage): LoadResult {
@@ -101,9 +108,9 @@ export function loadSave(storage: KeyValueStorage): LoadResult {
   return text === null ? { status: 'empty' } : parseSave(text);
 }
 
-/** Write the progress and hints. Returns false when storage refuses (quota, private mode); the game plays on unsaved. */
-export function writeSave(storage: KeyValueStorage, progress: Progress, hintsSeen: readonly string[] = []): boolean {
-  const file: SaveFileV2 = { schemaVersion: SCHEMA_VERSION, engineVersion: ENGINE_VERSION, progress, hintsSeen };
+/** Write the progress, hints and unlocks. Returns false when storage refuses (quota, private mode); the game plays on unsaved. */
+export function writeSave(storage: KeyValueStorage, progress: Progress, hintsSeen: readonly string[] = [], unlocks: Unlocks = NO_UNLOCKS): boolean {
+  const file: SaveFile = { schemaVersion: SCHEMA_VERSION, engineVersion: ENGINE_VERSION, progress, hintsSeen, unlocks };
   try {
     storage.setItem(SAVE_KEY, JSON.stringify(file));
     return true;

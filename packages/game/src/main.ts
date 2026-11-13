@@ -10,14 +10,17 @@ import { InputHub } from './input/hub.js';
 import { bindKeyboard } from './input/keyboard.js';
 import { mountTouchControls } from './input/touch-controls.js';
 import { readViewport, watchLayout } from './layout/apply.js';
-import { computeLayout, GAME_HEIGHT, GAME_WIDTH, type Layout } from './layout/compute.js';
+import { computeViewport, type Layout } from './layout/viewport.js';
 import { browserStorage } from './save/browser-storage.js';
 import { BattleScene } from './scenes/battle.js';
 import { BootScene } from './scenes/boot.js';
+import { DebriefScene } from './scenes/debrief.js';
+import { DistillScene } from './scenes/distill.js';
 import { EndScene } from './scenes/end.js';
-import { LabScene } from './scenes/lab.js';
 import { OverworldScene } from './scenes/overworld.js';
 import { TitleScene } from './scenes/title.js';
+import { showNotice } from './ui/notice.js';
+import { liveTapZones } from './ui/tap-zone.js';
 import { css, COLOR } from './ui/palette.js';
 
 const byId = (id: string): HTMLElement => {
@@ -27,9 +30,7 @@ const byId = (id: string): HTMLElement => {
 };
 
 const frame = byId('frame');
-const band = byId('band');
 const controls = byId('controls');
-const bandPanel = byId('band-panel');
 
 const input = new InputHub();
 bindKeyboard(window, input);
@@ -45,10 +46,11 @@ const switchScene = (key: SceneKey) => {
   }, 0);
 };
 
-const probe: Probe = { scene: null, menu: null, battle: null, overworld: null };
-const storage = browserStorage(window);
+const probe: Probe = { scene: null, menu: null, battle: null, overworld: null, panel: null };
+// A blocked or full localStorage never stops the game: it plays on in memory and says so once.
+const storage = browserStorage(window, () => showNotice(document, 'SAVES UNAVAILABLE'));
 
-let layout: Layout = computeLayout(readViewport(window));
+let layout: Layout = computeViewport(readViewport(window));
 let layoutListeners: ((l: Layout) => void)[] = [];
 const screen: Screen = {
   layout: () => layout,
@@ -58,23 +60,28 @@ const screen: Screen = {
       layoutListeners = layoutListeners.filter((l) => l !== listener);
     };
   },
-  bandPanel,
 };
 const app: App = { input, flow: new FlowController(storage, switchScene), storage, probe, screen };
 
-watchLayout(window, { frame, band, controls }, (l) => {
+watchLayout(window, { frame, controls }, (l) => {
+  const resized = l.logical.width !== layout.logical.width || l.logical.height !== layout.logical.height;
   layout = l;
-  // refresh() alone reuses the cached parent size; re-read it first.
-  game?.scale.getParentBounds();
-  game?.scale.refresh();
+  if (game) {
+    // The game runs at the logical size; FIT then fills the exactly-sized parent. refresh() alone reuses the cached
+    // parent size, so re-read it first.
+    if (resized) game.scale.setGameSize(l.logical.width, l.logical.height);
+    game.scale.getParentBounds();
+    game.scale.refresh();
+  }
+  // relayout: every scene lays itself out again for the new size.
   for (const listener of layoutListeners) listener(l);
 });
 
 game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: frame,
-  width: GAME_WIDTH,
-  height: GAME_HEIGHT,
+  width: layout.logical.width,
+  height: layout.logical.height,
   pixelArt: true,
   roundPixels: true,
   backgroundColor: css(COLOR.ink),
@@ -86,8 +93,8 @@ game = new Phaser.Game({
     autoCenter: Phaser.Scale.NO_CENTER,
     expandParent: false,
   },
-  scene: [new BootScene(app), new TitleScene(app), new LabScene(app), new OverworldScene(app), new BattleScene(app), new EndScene(app)],
+  scene: [new BootScene(app), new TitleScene(app), new OverworldScene(app), new BattleScene(app), new DistillScene(app), new DebriefScene(app), new EndScene(app)],
 });
 
 // The static form of shouldExposeHook (dev/hook.ts), so production folds it away and drops the hook entirely.
-if (import.meta.env.DEV || import.meta.env.MODE === 'test') installHook(window, { flow: app.flow, input, probe, layout: () => layout });
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') installHook(window, { flow: app.flow, input, probe, layout: () => layout, taps: () => (game ? liveTapZones(game) : []) });

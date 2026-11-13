@@ -6,6 +6,7 @@ import {
   createBattle,
   getIntents,
   moveDef,
+  previewDamage,
   SPECIES,
   submitRound,
   validateSetup,
@@ -14,13 +15,20 @@ import {
   type CardTrace,
   type CommandError,
   type CreatureState,
+  type DamagePreview,
   type Deck,
   type Intent,
   type Temperature,
   type TypeId,
 } from '@latentia/engine';
 import type { BattleDef } from '../content/battles.js';
-import { explainTrace, summarizeTraces, type TraceContext } from './card-text.js';
+import { GRAFT_MOVE } from '../content/grids.js';
+import { GRAFT_HINTS } from '../content/journey-text.js';
+import { STARTERS, type StarterId } from '../flow/flow.js';
+import type { FightReport } from '../flow/telemetry.js';
+import { fightReport } from '../journey/fight-report.js';
+import { graftSummary, keptSummary, type KeptCreature } from '../journey/kept-summary.js';
+import { explainTrace, type TraceContext } from './card-text.js';
 import { revealedFoes } from './intent-visibility.js';
 
 export interface CreatureView {
@@ -76,7 +84,7 @@ const speciesName = (id: string): string => SPECIES[id as keyof typeof SPECIES]?
 const moveName = (id: string): string => moveDef(id)?.name ?? id;
 
 /** The cells a move costs `c` now: the engine's pending-cost rule (costSet wins, then each costAdd), then Quantized −1. */
-function effectiveCost(c: CreatureState, base: number): number {
+export function effectiveCost(c: CreatureState, base: number): number {
   let cells = base;
   for (const m of c.nextActionMods) if (m.kind === 'costSet') cells = m.cells;
   for (const m of c.nextActionMods) if (m.kind === 'costAdd') cells += m.cells;
@@ -87,9 +95,13 @@ function effectiveCost(c: CreatureState, base: number): number {
 export class BattleSession {
   private current: BattleState;
   private readonly allTraces: CardTrace[] = [];
+  private readonly allEvents: BattleEvent[] = [];
+  /** Who was on the field at the start, for the debrief's HP context. */
+  private readonly start: readonly KeptCreature[];
 
   private constructor(readonly def: BattleDef) {
     this.current = createBattle(def.setup, def.seed);
+    this.start = this.creatures().map((c) => ({ index: c.index, side: c.side, isOrchestrator: c.isOrchestrator, hp: c.hp, maxHp: c.maxHp, name: speciesName(c.speciesId) }));
   }
 
   /** Validates the setup first, so a broken battle definition fails loudly with every engine error. */
@@ -173,6 +185,11 @@ export class BattleSession {
     return getIntents(this.current);
   }
 
+  /** The damage `intent` would deal before this round (engine previewDamage), or null for a move that deals none. */
+  damagePreview(intent: Intent): DamagePreview | null {
+    return previewDamage(this.current, intent);
+  }
+
   /** The player orchestrator's moves, universals last, with what each costs against the free cells now. */
   moveOptions(): MoveOption[] {
     const me = this.current.creatures[this.playerIndex];
@@ -218,7 +235,10 @@ export class BattleSession {
     const r = submitRound(this.current, cmd);
     if ('error' in r) return { ok: false, error: r.error };
     this.current = r.state;
-    for (const e of r.events) if (e.type === 'CardTrace') this.allTraces.push(e);
+    for (const e of r.events) {
+      this.allEvents.push(e);
+      if (e.type === 'CardTrace') this.allTraces.push(e);
+    }
     return { ok: true, events: r.events };
   }
 
@@ -242,12 +262,6 @@ export class BattleSession {
     return { name: (i) => this.name(i), moveName, deckOf: (i) => this.deckOf(i) };
   }
 
-  /** The last deck-driven action in plain words, or null before any. */
-  explainLastTrace(): string | null {
-    const t = this.lastTrace();
-    return t === null ? null : explainTrace(t, this.traceContext());
-  }
-
   /** The latest trace of each deck-driven creature, in plain words (the "why?" popup). */
   explainLatestTraces(): string[] {
     const latest = new Map<number, CardTrace>();
@@ -255,10 +269,17 @@ export class BattleSession {
     return [...latest.values()].map((t) => explainTrace(t, this.traceContext()));
   }
 
-  /** What each deck-driven creature (of one side, if given) kept doing all battle: the loss summary. */
-  traceSummary(side: 0 | 1 | null = null): string[] {
-    const sideId = side === null ? null : side === 0 ? 'a' : 'b';
-    const traces = this.allTraces.filter((t) => sideId === null || this.current.creatures[t.actor]?.side === sideId);
-    return summarizeTraces(traces, this.traceContext());
+  /**
+   * The finished fight for the flow: its size and the debrief's lines, what your subagent kept doing or, on a gridded
+   * (graft) side, how you used the grafted move. `cardId` is the card taught for this fight, if any.
+   */
+  report(outcome: Outcome, cardId: string | null): FightReport {
+    const graft = this.def.setup.a.grid !== null;
+    const species = this.def.setup.a.orchestrator.species;
+    const hint = (STARTERS as readonly string[]).includes(species) ? GRAFT_HINTS[species as StarterId] : GRAFT_HINTS.sagelet;
+    const kept = graft
+      ? graftSummary({ events: this.allEvents, playerIndex: this.playerIndex, graftMove: GRAFT_MOVE, moveName, hint })
+      : keptSummary({ events: this.allEvents, creatures: this.start, deckOf: (i) => this.deckOf(i), moveName });
+    return fightReport({ battle: this.def.id, outcome, rounds: this.round, events: this.allEvents, cardId, kept, mine: (i) => this.sideOf(i) === 0 });
   }
 }

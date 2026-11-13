@@ -5,9 +5,7 @@ import Phaser from 'phaser';
 import type { App } from '../app.js';
 import type { FlowEvent } from '../flow/flow.js';
 import type { InputListener } from '../input/hub.js';
-import { GAME_HEIGHT, GAME_WIDTH } from '../layout/compute.js';
-import { addPixelText } from '../text/phaser-font.js';
-import { COLOR } from '../ui/palette.js';
+import type { Layout } from '../layout/viewport.js';
 
 export abstract class BaseScene extends Phaser.Scene {
   private leaving = false;
@@ -27,6 +25,17 @@ export abstract class BaseScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, off);
   }
 
+  /** The current layout: the logical size, the safe area and the tap size every scene lays out from. */
+  protected get layout(): Layout {
+    return this.app.screen.layout();
+  }
+
+  /** On every relayout (a rotation, a resize) until this scene shuts down: lay the scene out again, keeping its state. */
+  protected onRelayout(listener: (layout: Layout) => void): void {
+    const off = this.app.screen.onLayout(listener);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, off);
+  }
+
   /** Send a flow event; once one is accepted this scene ignores further input while the next one starts. */
   protected send(event: FlowEvent): boolean {
     if (this.leaving) return false;
@@ -39,17 +48,12 @@ export abstract class BaseScene extends Phaser.Scene {
   protected ready(): void {
     this.leaving = false;
     this.app.probe.scene = this.scene.key;
+    // The one scene marker production builds have too (no hook there): the single-file build's sandboxed-iframe e2e
+    // reads it to follow the game, now that every menu is drawn in the image.
+    document.body.dataset['scene'] = this.scene.key;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (this.app.probe.scene === this.scene.key) this.app.probe.scene = null;
       this.app.probe.menu = null;
     });
-  }
-
-  /** The placeholder frame every P1 stub shares: a flat background and a "STUB" tag with the scene's name. */
-  protected stubFrame(title: string): void {
-    this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, COLOR.night).setOrigin(0);
-    this.add.rectangle(0, 0, GAME_WIDTH, 14, COLOR.ink).setOrigin(0);
-    addPixelText(this, 4, 3, 'STUB', { color: COLOR.amber });
-    addPixelText(this, 34, 3, title, { color: COLOR.cloud });
   }
 }

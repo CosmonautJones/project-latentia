@@ -4,7 +4,8 @@
 
 import { fnv1a64Hex, SPECIES, type BattleSetup, type CreatureSetup, type SeedHex, type SideSetup, type Version } from '@latentia/engine';
 import type { DistillChoice, FlowState, StarterId } from '../flow/flow.js';
-import { BOOTCAMP_GRAD_DECK, kipDeck, tokenibbleDeck, WILD_TOKENIBBLE_DECK } from './trainers.js';
+import { graftGrid } from './grids.js';
+import { BOOTCAMP_GRAD, kipDeck, tokenibbleDeck, WILD_TOKENIBBLE_DECK, type TrainerTuning } from './trainers.js';
 
 export type BattleId = 'rival' | 'wild' | 'trainer';
 
@@ -22,8 +23,8 @@ export interface BattleDef {
 }
 
 const RIVAL_LEVEL = 5;
-const WILD_LEVEL = 3;
-const GRAD_LEVEL = 6;
+/** The wild Tokenibble's level, and so the level a spun-up Tokenibble joins at (Ruling 145). */
+export const WILD_LEVEL = 3;
 
 /** Speed > Reasoning > Open > Speed: the starter that beats each one. */
 const COUNTER: Readonly<Record<StarterId, StarterId>> = { sagelet: 'blitzr', blitzr: 'forkling', forkling: 'sagelet' };
@@ -92,15 +93,26 @@ export function wildBattle(starter: StarterId, attempt: number): BattleDef {
 }
 
 /**
- * The Bootcamp Grad. On the spin-up path Tokenibble fights beside the starter from its taught deck (one card above
- * Default), with its three non-signature moves. The graft path's grid, with Token Nibble grafted onto the orchestrator, is P4's; until then a grafting
- * player brings the starter alone.
+ * The Bootcamp Grad (tuning in trainers.ts). On the spin-up path Tokenibble fights beside the starter from its taught
+ * deck: one Example Card above Default (Ruling 147's single active slot), with its three non-signature moves. On the
+ * graft path the starter fights alone on its preset grid, with Token Nibble grafted on (content/grids.ts).
+ * `grad` exists for the balance script's counterfactuals; the game always plays BOOTCAMP_GRAD.
  */
-export function trainerBattle(starter: StarterId, distill: DistillChoice | null, tutorialCardId: string | null, attempt: number): BattleDef {
+export function trainerBattle(
+  starter: StarterId,
+  distill: DistillChoice | null,
+  tutorialCardId: string | null,
+  attempt: number,
+  grad: TrainerTuning = BOOTCAMP_GRAD,
+): BattleDef {
   const active =
     distill === 'spinUp'
       ? [creature('you.tokenibble', 'tokenibble', WILD_LEVEL, { moves: spunUpMoves('tokenibble'), deck: tokenibbleDeck(tutorialCardId), generalization: 55, trainedTemperature: 2 })]
       : [];
+  const you =
+    distill === 'graft'
+      ? side(creature(`you.${starter}`, starter, RIVAL_LEVEL, { moves: [] }), 'bootcamp-grad', { grid: graftGrid(starter, RIVAL_LEVEL) })
+      : side(creature(`you.${starter}`, starter, RIVAL_LEVEL), 'bootcamp-grad', { active });
   return {
     id: 'trainer',
     opponent: 'Bootcamp Grad',
@@ -109,8 +121,8 @@ export function trainerBattle(starter: StarterId, distill: DistillChoice | null,
     lose: 'BOOTCAMP GRAD: Accept all, ship it, never look back!',
     setup: {
       kind: 'trainer',
-      a: side(creature(`you.${starter}`, starter, RIVAL_LEVEL), 'bootcamp-grad', { active }),
-      b: side(creature('grad.vibrat', 'vibrat', GRAD_LEVEL), PLAYER_ID, { autopilot: { deck: BOOTCAMP_GRAD_DECK, temperature: 2 } }),
+      a: you,
+      b: side(creature('grad.vibrat', 'vibrat', grad.level[starter]), PLAYER_ID, { autopilot: { deck: grad.deck, temperature: grad.temperature } }),
     },
     seed: seedFor('trainer', attempt),
   };

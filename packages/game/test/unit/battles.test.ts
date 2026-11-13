@@ -1,7 +1,7 @@
 import { createBattle, simulate, SPECIES, typeMultiplierBp, validateSetup, type SideSetup } from '@latentia/engine';
 import { describe, expect, it } from 'vitest';
-import { battleForStep, counterStarter, rivalBattle, trainerBattle, wildBattle, type BattleDef } from '../../src/content/battles.js';
-import { TOKENIBBLE_PRESETS } from '../../src/content/trainers.js';
+import { battleForStep, counterStarter, rivalBattle, seedFor, trainerBattle, wildBattle, type BattleDef } from '../../src/content/battles.js';
+import { BOOTCAMP_GRAD, TOKENIBBLE_PRESETS } from '../../src/content/trainers.js';
 import { initialFlow, STARTERS, type FlowState } from '../../src/flow/flow.js';
 
 const allDefs = (): BattleDef[] =>
@@ -62,20 +62,40 @@ describe('battle content', () => {
     expect(setup.b.autopilot).toBeDefined();
   });
 
-  it('the Bootcamp Grad is an L5-6 Autopilot trainer; on spin-up the player brings Tokenibble with a 1-card deck', () => {
+  it('the Bootcamp Grad is an Autopilot trainer at L7 against Sagelet and Blitzr and L6 against Forkling', () => {
+    expect(BOOTCAMP_GRAD.level).toEqual({ sagelet: 7, blitzr: 7, forkling: 6 });
+    for (const starter of STARTERS) {
+      for (const distill of ['spinUp', 'graft'] as const) {
+        const { setup, opponent } = trainerBattle(starter, distill, 'tutorial.a', 0);
+        expect(opponent).toBe('Bootcamp Grad');
+        expect(setup.b.orchestrator.level, `${starter} ${distill}`).toBe(BOOTCAMP_GRAD.level[starter]);
+        expect(setup.b.autopilot).toBeDefined();
+      }
+    }
+  });
+
+  it('on spin-up against the Bootcamp Grad the player brings Tokenibble with a 1-card deck', () => {
     const preset = TOKENIBBLE_PRESETS[1];
     if (!preset) throw new Error('no preset');
-    const { setup, opponent } = trainerBattle('forkling', 'spinUp', preset.id, 0);
-    expect(opponent).toBe('Bootcamp Grad');
-    expect(setup.b.orchestrator.level).toBeGreaterThanOrEqual(5);
-    expect(setup.b.orchestrator.level).toBeLessThanOrEqual(6);
-    expect(setup.b.autopilot).toBeDefined();
+    const { setup } = trainerBattle('forkling', 'spinUp', preset.id, 0);
     expect(setup.a.orchestrator).toMatchObject({ species: 'forkling', level: 5 });
     const [tok] = setup.a.active;
     expect(tok).toMatchObject({ species: 'tokenibble', level: 3 });
     expect(tok?.deck?.cards).toEqual([preset.card]);
     // Spun up, it keeps its three non-signature moves; Token Nibble does not come along (ruling V3).
     expect(tok?.moves).toEqual(['token-burst', 'early-exit', 'low-latency']);
+  });
+
+  it('on the graft path the starter fights alone on its preset grid, with Token Nibble grafted on, and the setup is legal', () => {
+    for (const s of STARTERS) {
+      const { setup } = trainerBattle(s, 'graft', null, 0);
+      expect(validateSetup(setup)).toEqual({ ok: true, errors: [] });
+      expect(setup.a.active).toEqual([]);
+      expect(setup.a.orchestrator.moves).toEqual([]);
+      expect(setup.a.grid?.pieces.find((p) => p.kind === 'graft')?.moveId).toBe('token-nibble');
+      // A gridded orchestrator's moves are its signature, then its Skill and Graft pieces: Token Nibble is usable.
+      expect(createBattle(setup, seedFor('trainer', 0)).creatures[0]?.moves).toContain('token-nibble');
+    }
   });
 
   it('the three tutorial presets are a real choice: one good, one situational, one bad, none using Token Nibble', () => {

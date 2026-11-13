@@ -1,7 +1,7 @@
 {
   "name": "handoff-chain-high-damage",
   "log": {
-    "engineVersion": "0.4.1",
+    "engineVersion": "0.4.2",
     "seed": "b6b84ddcba7e36c73ad370b436aadeba",
     "setup": {
       "a": {
